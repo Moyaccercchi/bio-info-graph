@@ -209,6 +209,7 @@ object FMain: TFMain
     Height = 25
     Caption = 'Options'
     TabOrder = 4
+    OnClick = BOptionsClick
   end
   object TCheckExternals: TTimer
     Enabled = False

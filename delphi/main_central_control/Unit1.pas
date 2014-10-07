@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ShellApi, ExtCtrls;
+  Dialogs, StdCtrls, ShellApi, ExtCtrls, registry;
 
 type
   TFMain = class(TForm)
@@ -40,12 +40,18 @@ type
     procedure FormCreate(Sender: TObject);
     procedure BGBCreateReadsCreateClick(Sender: TObject);
     procedure TCheckExternalsTimer(Sender: TObject);
+    procedure BOptionsClick(Sender: TObject);
   private
     function copyend(str, substr: string; depth: Integer): string;
     procedure BGBCreateReadsCreated;
+    procedure SaveDAB;
+    procedure LoadDAB;
   public
-    { Public declarations }
+    procedure SaveOptions;
   end;
+
+const
+  version = '0001';
 
 var
   FMain: TFMain;
@@ -53,6 +59,8 @@ var
   TCheckExternal_Call: procedure of object;
 
 implementation
+
+uses Unit2;
 
 {$R *.dfm}
 
@@ -101,6 +109,7 @@ end;
 
 procedure TFMain.BCloseClick(Sender: TObject);
 begin
+  SaveDAB;
   FMain.Close;
 end;
 
@@ -133,7 +142,7 @@ procedure TFMain.FormCreate(Sender: TObject);
 begin
   Path := copyend(Application.Exename, '\', 1) + '\';
   MainPath := copyend(Application.Exename, '\', 3) + '\';
-  PythonPath := 'D:\Dropbox\system\Python33\';
+  LoadDAB;
 end;
 
 function TFMain.copyend(str, substr: string; depth: Integer): string;
@@ -173,7 +182,7 @@ end;
 
 procedure TFMain.BGBCreateReadsCreateClick(Sender: TObject);
 var output: TStringList;
-    dnastring, lengthstring, amountstring, misprobstring, FilePath, InFilePath, OutFilePath: string;
+    dnastring, lengthstring, amountstring, misprobstring, alphabetstring, FilePath, InFilePath, OutFilePath: string;
 begin
   MCreateReadsres.Text := '';
 
@@ -194,8 +203,9 @@ begin
   lengthstring := ECreateReadsLength.Text;
   amountstring := ECreateReadsAmount.Text;
   misprobstring := ECreateReadsMisProb.Text;
+  alphabetstring := ECreateDNAAlphabet.Text;
 
-  output.Text := dnastring + #13#10 + lengthstring + #13#10 + amountstring + #13#10 + misprobstring;
+  output.Text := dnastring + #13#10 + lengthstring + #13#10 + amountstring + #13#10 + misprobstring + #13#10 + alphabetstring;
 
   FilePath := MainPath + 'python\1_read_generator\';
   InFilePath := FilePath + 'in.txt';
@@ -230,6 +240,80 @@ begin
       TCheckExternals.Enabled := false;
       TCheckExternal_Call;
     end;
+end;
+
+procedure TFMain.LoadDAB;
+var regist: TRegistry;
+begin
+  regist := TRegistry.Create;
+  try
+    regist.RootKey := HKEY_CURRENT_USER;
+
+    regist.OpenKey('Software\moyaccercchi\BioInfoGraph\MainCentralControl', true);
+
+    if regist.ValueExists('fmain.left') then
+      FMain.Left := StrtoInt(regist.ReadString('fmain.left'))
+    else
+      FMain.Left := (screen.Width - FMain.Width) div 2;
+
+    if regist.ValueExists('fmain.top') then
+      FMain.Top := StrtoInt(regist.ReadString('fmain.top'))
+    else
+      FMain.Top := (screen.Height - FMain.Height) div 2;
+
+    if regist.ValueExists('fmain.width') then
+      FMain.Width := StrtoInt(regist.ReadString('fmain.width'));
+
+    if regist.ValueExists('fmain.height') then
+      FMain.Height := StrtoInt(regist.ReadString('fmain.height'));
+
+    if regist.ValueExists('paths.python') then
+      PythonPath := regist.ReadString('paths.python')
+    else
+      PythonPath := 'C:\Python33\';
+
+  finally
+    regist.free;
+  end;
+end;
+
+procedure TFMain.SaveDAB;
+var regist: TRegistry;
+begin
+  regist := TRegistry.Create;
+  try
+    regist.RootKey := HKEY_CURRENT_USER;
+    regist.OpenKey('Software\moyaccercchi\BioInfoGraph\MainCentralControl', true);
+    regist.WriteString('fmain.left', InttoStr(FMain.Left));
+    regist.WriteString('fmain.top', InttoStr(FMain.Top));
+    regist.WriteString('fmain.width', InttoStr(FMain.Width));
+    regist.WriteString('fmain.height', InttoStr(FMain.Height));
+    regist.WriteString('version', version);
+    regist.WriteString('paths.python', PythonPath);
+  finally
+    regist.free;
+  end;
+end;
+
+procedure TFMain.BOptionsClick(Sender: TObject);
+begin           
+  FOptions.EPythonPath.Text := PythonPath;
+  FOptions.Show;
+end;
+
+procedure TFMain.SaveOptions;
+var i: Integer;
+begin
+  if Length(FOptions.EPythonPath.Text) > 0 then
+    PythonPath := FOptions.EPythonPath.Text;
+
+  i := Length(PythonPath);
+  while (i > 0) and (PythonPath[i] = '\') do
+    Dec(i);
+
+  PythonPath := copy(PythonPath, 1, i) + '\';
+
+  SaveDAB;
 end;
 
 end.

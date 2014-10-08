@@ -32,6 +32,10 @@ type
     ECreateReadsMisProbAfter: TLabel;
     TCheckExternals: TTimer;
     MCreateReadsres: TMemo;
+    CBReconstructDNAReference: TCheckBox;
+    MReconstructDNAReference: TMemo;
+    BReconstructDNACreateReference: TButton;
+    BCreateDNACreateBasedOnRef: TButton;
     procedure FormResize(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure BCloseClick(Sender: TObject);
@@ -41,6 +45,8 @@ type
     procedure BGBCreateReadsCreateClick(Sender: TObject);
     procedure TCheckExternalsTimer(Sender: TObject);
     procedure BOptionsClick(Sender: TObject);
+    procedure BCreateDNACreateBasedOnRefClick(Sender: TObject);
+    procedure BReconstructDNACreateReferenceClick(Sender: TObject);
   private
     function copyend(str, substr: string; depth: Integer): string;
     procedure BGBCreateReadsCreated;
@@ -71,13 +77,16 @@ begin
   GBReconstructDNA.Width := GBCreateDNA.Width;
 
   MCreateDNAres.Width := GBCreateDNA.ClientWidth - (2 * MCreateDNAres.Left);
-  BCreateDNACreate.Width := (MCreateDNAres.Width - MCreateDNAres.Left) div 2;
-  BCreateDNACopy.Width := BCreateDNACreate.Width;
+  BCreateDNACreateBasedOnRef.Width := (GBCreateDNA.Width - (4 * BCreateDNACreate.Left)) div 3;
+  BCreateDNACreate.Width := BCreateDNACreateBasedOnRef.Width;
+  BCreateDNACopy.Width := BCreateDNACreateBasedOnRef.Width;
+  BCreateDNACreateBasedOnRef.Left := BCreateDNACreate.Width + (BCreateDNACreate.Left * 2);
   BCreateDNACopy.Left := GBCreateDNA.ClientWidth - (BCreateDNACreate.Left + BCreateDNACopy.Width);
-  LCreateDNAAlphabet.Left := BCreateDNACopy.Left;
+
+  LCreateDNAAlphabet.Left := (GBCreateDNA.Width - (3 * BCreateDNACreate.Left)) div 2;
   ECreateDNAAlphabet.Left := LCreateDNAAlphabet.Left + LCreateDNAAlphabet.Width + 4;
   ECreateDNAAlphabet.Width := GBCreateDNA.ClientWidth - (BCreateDNACreate.Left + ECreateDNAAlphabet.Left);
-  LCreateDNALengthBasepairs.Left := BCreateDNACreate.Width + BCreateDNACreate.Left - (LCreateDNALengthBasepairs.Width);
+  LCreateDNALengthBasepairs.Left := LCreateDNAAlphabet.Left - (LCreateDNALengthBasepairs.Width + LCreateDNALength.Left);
   ECreateDNALength.Left := LCreateDNALength.Width + LCreateDNALength.Left + 4;
   ECreateDNALength.Width := LCreateDNALengthBasepairs.Left - (ECreateDNALength.Left + 4);
 
@@ -100,6 +109,9 @@ begin
   ECreateReadsLength.Width := ECreateReadsLengthAfter.Left - (ECreateReadsLength.Left + 4);
   BGBCreateReadsCreate.Width := GBCreateReads.ClientWidth - (2 * BGBCreateReadsCreate.Left);
   MCreateReadsres.Width := GBCreateReads.ClientWidth - (2 * MCreateReadsres.Left);
+
+  BReconstructDNACreateReference.Left := GBReconstructDNA.ClientWidth - (BReconstructDNACreateReference.Width + MReconstructDNAReference.Left);
+  MReconstructDNAReference.Width := GBReconstructDNA.ClientWidth - (2 * MReconstructDNAReference.Left);
 end;
 
 procedure TFMain.FormShow(Sender: TObject);
@@ -192,12 +204,12 @@ begin
   if Length(dnastring) = 0 then
     begin
       if (Sender = nil) then
+        ShowMessage('No DNA string can be generated.')
+      else
         begin
-          ShowMessage('No DNA string can be generated.');
-          exit;
+          BCreateDNACreateClick(nil);
+          BGBCreateReadsCreateClick(nil);
         end;
-      BCreateDNACreateClick(nil);
-      BGBCreateReadsCreateClick(nil);
       exit;
     end;
   lengthstring := ECreateReadsLength.Text;
@@ -314,6 +326,30 @@ begin
   PythonPath := copy(PythonPath, 1, i) + '\';
 
   SaveDAB;
+end;
+
+procedure TFMain.BCreateDNACreateBasedOnRefClick(Sender: TObject);
+var reference: string;
+begin
+  reference := StringReplace(MReconstructDNAReference.Text, #13#10, '', [rfReplaceAll]);
+  if Length(reference) = 0 then
+    begin
+      if Sender = nil then
+        ShowMessage('No reference string can be created!')
+      else
+        begin
+          BReconstructDNACreateReferenceClick(nil);
+          BCreateDNACreateBasedOnRefClick(nil);
+        end;
+      exit;
+    end;
+
+  
+end;
+
+procedure TFMain.BReconstructDNACreateReferenceClick(Sender: TObject);
+begin
+  // dostuff
 end;
 
 end.

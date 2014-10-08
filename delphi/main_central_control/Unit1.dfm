@@ -1,8 +1,8 @@
 object FMain: TFMain
   Left = 275
-  Top = 137
+  Top = 125
   Width = 928
-  Height = 533
+  Height = 545
   Caption = 'Main Central Control'
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -21,7 +21,7 @@ object FMain: TFMain
     Top = 8
     Width = 777
     Height = 129
-    Caption = ' Create random DNA string '
+    Caption = ' Create random individual DNA string '
     TabOrder = 0
     object LCreateDNALength: TLabel
       Left = 8
@@ -55,14 +55,14 @@ object FMain: TFMain
     object BCreateDNACreate: TButton
       Left = 8
       Top = 48
-      Width = 273
+      Width = 193
       Height = 25
       Caption = 'Create'
       TabOrder = 1
       OnClick = BCreateDNACreateClick
     end
     object BCreateDNACopy: TButton
-      Left = 288
+      Left = 408
       Top = 48
       Width = 273
       Height = 25
@@ -92,6 +92,15 @@ object FMain: TFMain
       Height = 21
       TabOrder = 4
       Text = 'ACGT'
+    end
+    object BCreateDNACreateBasedOnRef: TButton
+      Left = 208
+      Top = 48
+      Width = 193
+      Height = 25
+      Caption = 'Create Based On Reference'
+      TabOrder = 5
+      OnClick = BCreateDNACreateBasedOnRefClick
     end
   end
   object BClose: TButton
@@ -201,6 +210,38 @@ object FMain: TFMain
     Height = 105
     Caption = ' Reconstruct DNA '
     TabOrder = 3
+    object CBReconstructDNAReference: TCheckBox
+      Left = 8
+      Top = 20
+      Width = 129
+      Height = 17
+      Caption = 'Use reference string:'
+      TabOrder = 0
+    end
+    object MReconstructDNAReference: TMemo
+      Left = 8
+      Top = 48
+      Width = 633
+      Height = 41
+      Font.Charset = ANSI_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -12
+      Font.Name = 'Courier New'
+      Font.Style = []
+      ParentFont = False
+      ScrollBars = ssHorizontal
+      TabOrder = 1
+      WordWrap = False
+    end
+    object BReconstructDNACreateReference: TButton
+      Left = 456
+      Top = 16
+      Width = 185
+      Height = 25
+      Caption = 'Create Reference'
+      TabOrder = 2
+      OnClick = BReconstructDNACreateReferenceClick
+    end
   end
   object BOptions: TButton
     Left = 8

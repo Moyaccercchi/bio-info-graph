@@ -1,8 +1,8 @@
 object FMain: TFMain
   Left = 275
-  Top = 125
+  Top = 69
   Width = 928
-  Height = 545
+  Height = 601
   Caption = 'Main Central Control'
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -16,246 +16,478 @@ object FMain: TFMain
   OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
-  object GBCreateDNA: TGroupBox
-    Left = 8
-    Top = 8
-    Width = 777
-    Height = 129
-    Caption = ' Create random individual DNA string '
+  object PHUDBtm: TPanel
+    Left = 0
+    Top = 520
+    Width = 920
+    Height = 54
+    Align = alBottom
+    BevelOuter = bvNone
     TabOrder = 0
-    object LCreateDNALength: TLabel
+    object LVersion: TLabel
       Left = 8
-      Top = 24
-      Width = 37
+      Top = 36
+      Width = 3
       Height = 13
-      Caption = 'Length:'
     end
-    object LCreateDNALengthBasepairs: TLabel
-      Left = 180
-      Top = 24
-      Width = 46
-      Height = 13
-      Caption = 'basepairs'
-    end
-    object LCreateDNAAlphabet: TLabel
-      Left = 288
-      Top = 24
-      Width = 47
-      Height = 13
-      Caption = 'Alphabet:'
-    end
-    object ECreateDNALength: TEdit
-      Left = 52
-      Top = 21
-      Width = 121
-      Height = 21
+    object BOptions: TButton
+      Left = 8
+      Top = 8
+      Width = 265
+      Height = 25
+      Caption = 'Options'
       TabOrder = 0
-      Text = '100'
+      OnClick = BOptionsClick
     end
-    object BCreateDNACreate: TButton
-      Left = 8
-      Top = 48
-      Width = 193
+    object BClose: TButton
+      Left = 480
+      Top = 8
+      Width = 265
       Height = 25
-      Caption = 'Create'
+      Caption = 'Close'
       TabOrder = 1
-      OnClick = BCreateDNACreateClick
-    end
-    object BCreateDNACopy: TButton
-      Left = 408
-      Top = 48
-      Width = 273
-      Height = 25
-      Caption = 'Copy to Clipboard'
-      TabOrder = 2
-      OnClick = BCreateDNACopyClick
-    end
-    object MCreateDNAres: TMemo
-      Left = 8
-      Top = 80
-      Width = 633
-      Height = 41
-      Font.Charset = ANSI_CHARSET
-      Font.Color = clWindowText
-      Font.Height = -12
-      Font.Name = 'Courier New'
-      Font.Style = []
-      ParentFont = False
-      ScrollBars = ssHorizontal
-      TabOrder = 3
-      WordWrap = False
-    end
-    object ECreateDNAAlphabet: TEdit
-      Left = 340
-      Top = 21
-      Width = 121
-      Height = 21
-      TabOrder = 4
-      Text = 'ACGT'
-    end
-    object BCreateDNACreateBasedOnRef: TButton
-      Left = 208
-      Top = 48
-      Width = 193
-      Height = 25
-      Caption = 'Create Based On Reference'
-      TabOrder = 5
-      OnClick = BCreateDNACreateBasedOnRefClick
+      OnClick = BCloseClick
     end
   end
-  object BClose: TButton
-    Left = 512
-    Top = 464
-    Width = 265
-    Height = 25
-    Caption = 'Close'
+  object SBMain: TScrollBox
+    Left = 0
+    Top = 0
+    Width = 920
+    Height = 520
+    VertScrollBar.Smooth = True
+    VertScrollBar.Tracking = True
+    Align = alClient
+    BorderStyle = bsNone
     TabOrder = 1
-    OnClick = BCloseClick
-  end
-  object GBCreateReads: TGroupBox
-    Left = 8
-    Top = 144
-    Width = 777
-    Height = 185
-    Caption = ' Create random reads '
-    TabOrder = 2
-    object ECreateReadsLengthBefore: TLabel
-      Left = 8
-      Top = 24
-      Width = 62
-      Height = 13
-      Caption = 'Read length:'
-    end
-    object ECreateReadsLengthAfter: TLabel
-      Left = 204
-      Top = 24
-      Width = 46
-      Height = 13
-      Caption = 'basepairs'
-    end
-    object ECreateReadsAmountBefore: TLabel
-      Left = 256
-      Top = 24
-      Width = 84
-      Height = 13
-      Caption = 'Amount of reads:'
-    end
-    object ECreateReadsMisProbBefore: TLabel
-      Left = 404
-      Top = 24
-      Width = 101
-      Height = 13
-      Caption = 'Mismatch probability:'
-    end
-    object ECreateReadsMisProbAfter: TLabel
-      Left = 640
-      Top = 24
-      Width = 11
-      Height = 13
-      Caption = '%'
-    end
-    object BGBCreateReadsCreate: TButton
-      Left = 8
-      Top = 48
-      Width = 273
-      Height = 25
-      Caption = 'Create'
+    object PMain: TPanel
+      Left = 0
+      Top = 0
+      Width = 833
+      Height = 802
+      BevelOuter = bvNone
       TabOrder = 0
-      OnClick = BGBCreateReadsCreateClick
+      object GBCreateDNA: TGroupBox
+        Left = 8
+        Top = 176
+        Width = 777
+        Height = 145
+        Caption = ' 3 :: Create or import individual DNA string '
+        TabOrder = 0
+        object LCreateDNALength: TLabel
+          Left = 8
+          Top = 24
+          Width = 37
+          Height = 13
+          Caption = 'Length:'
+        end
+        object LCreateDNALengthBasepairs: TLabel
+          Left = 180
+          Top = 24
+          Width = 46
+          Height = 13
+          Caption = 'basepairs'
+        end
+        object LCreateDNAAlphabet: TLabel
+          Left = 288
+          Top = 24
+          Width = 47
+          Height = 13
+          Caption = 'Alphabet:'
+        end
+        object LCreateDNAStats: TLabel
+          Left = 8
+          Top = 124
+          Width = 192
+          Height = 13
+          Caption = 'Status: No individual DNA string present'
+        end
+        object ECreateDNALength: TEdit
+          Left = 52
+          Top = 21
+          Width = 121
+          Height = 21
+          TabOrder = 0
+          Text = '100'
+        end
+        object BCreateDNACreate: TButton
+          Left = 8
+          Top = 48
+          Width = 193
+          Height = 25
+          Caption = 'Create'
+          TabOrder = 1
+          OnClick = BCreateDNACreateClick
+        end
+        object BCreateDNAExport: TButton
+          Left = 408
+          Top = 48
+          Width = 273
+          Height = 25
+          Caption = 'Export'
+          TabOrder = 2
+          OnClick = BCreateDNAExportClick
+        end
+        object MCreateDNAres: TMemo
+          Left = 8
+          Top = 80
+          Width = 633
+          Height = 41
+          Font.Charset = ANSI_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -12
+          Font.Name = 'Courier New'
+          Font.Style = []
+          ParentFont = False
+          PopupMenu = PMGeneral
+          ScrollBars = ssHorizontal
+          TabOrder = 3
+          WordWrap = False
+          OnChange = MCreateDNAresChange
+        end
+        object ECreateDNAAlphabet: TEdit
+          Left = 340
+          Top = 21
+          Width = 121
+          Height = 21
+          TabOrder = 4
+          Text = 'ACGT'
+        end
+        object BCreateDNAImport: TButton
+          Left = 208
+          Top = 48
+          Width = 193
+          Height = 25
+          Caption = 'Import'
+          TabOrder = 5
+          OnClick = BCreateDNAImportClick
+        end
+      end
+      object GBCreateReads: TGroupBox
+        Left = 8
+        Top = 328
+        Width = 777
+        Height = 185
+        Caption = ' 4 :: Create or import reads '
+        TabOrder = 1
+        object ECreateReadsLengthBefore: TLabel
+          Left = 8
+          Top = 24
+          Width = 62
+          Height = 13
+          Caption = 'Read length:'
+        end
+        object ECreateReadsLengthAfter: TLabel
+          Left = 204
+          Top = 24
+          Width = 46
+          Height = 13
+          Caption = 'basepairs'
+        end
+        object ECreateReadsAmountBefore: TLabel
+          Left = 256
+          Top = 24
+          Width = 84
+          Height = 13
+          Caption = 'Amount of reads:'
+        end
+        object ECreateReadsMisProbBefore: TLabel
+          Left = 404
+          Top = 24
+          Width = 101
+          Height = 13
+          Caption = 'Mismatch probability:'
+        end
+        object ECreateReadsMisProbAfter: TLabel
+          Left = 640
+          Top = 24
+          Width = 11
+          Height = 13
+          Caption = '%'
+        end
+        object BCreateReadsCreate: TButton
+          Left = 8
+          Top = 48
+          Width = 273
+          Height = 25
+          Caption = 'Create'
+          TabOrder = 0
+          OnClick = BCreateReadsCreateClick
+        end
+        object ECreateReadsAmount: TEdit
+          Left = 348
+          Top = 21
+          Width = 121
+          Height = 21
+          TabOrder = 1
+          Text = '20'
+        end
+        object ECreateReadsLength: TEdit
+          Left = 76
+          Top = 21
+          Width = 121
+          Height = 21
+          TabOrder = 2
+          Text = '20'
+        end
+        object ECreateReadsMisProb: TEdit
+          Left = 516
+          Top = 21
+          Width = 121
+          Height = 21
+          TabOrder = 3
+          Text = '0'
+        end
+        object MCreateReadsres: TMemo
+          Left = 8
+          Top = 80
+          Width = 633
+          Height = 97
+          Font.Charset = ANSI_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -12
+          Font.Name = 'Courier New'
+          Font.Style = []
+          ParentFont = False
+          PopupMenu = PMGeneral
+          ScrollBars = ssBoth
+          TabOrder = 4
+          WordWrap = False
+        end
+        object BCreateReadsImport: TButton
+          Left = 200
+          Top = 48
+          Width = 273
+          Height = 25
+          Caption = 'Import'
+          TabOrder = 5
+          OnClick = BCreateReadsImportClick
+        end
+        object BCreateReadsExport: TButton
+          Left = 408
+          Top = 48
+          Width = 273
+          Height = 25
+          Caption = 'Export'
+          TabOrder = 6
+          OnClick = BCreateReadsExportClick
+        end
+      end
+      object GBReferenceDNA: TGroupBox
+        Left = 8
+        Top = 8
+        Width = 777
+        Height = 105
+        Caption = ' 1 :: Create or import reference DNA string '
+        TabOrder = 2
+        object CBReferenceDNA: TCheckBox
+          Left = 8
+          Top = 20
+          Width = 129
+          Height = 17
+          Caption = 'Use reference string:'
+          Checked = True
+          State = cbChecked
+          TabOrder = 0
+        end
+        object MReferenceDNA: TMemo
+          Left = 8
+          Top = 48
+          Width = 633
+          Height = 41
+          Font.Charset = ANSI_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -12
+          Font.Name = 'Courier New'
+          Font.Style = []
+          ParentFont = False
+          PopupMenu = PMGeneral
+          ScrollBars = ssHorizontal
+          TabOrder = 1
+          WordWrap = False
+          OnChange = MReferenceDNAChange
+        end
+        object BReferenceDNACreate: TButton
+          Left = 184
+          Top = 16
+          Width = 185
+          Height = 25
+          Caption = 'Create'
+          TabOrder = 2
+          OnClick = BReferenceDNACreateClick
+        end
+        object BReferenceDNAImport: TButton
+          Left = 376
+          Top = 16
+          Width = 185
+          Height = 25
+          Caption = 'Import'
+          TabOrder = 3
+          OnClick = BReferenceDNAImportClick
+        end
+        object BReferenceDNAExport: TButton
+          Left = 568
+          Top = 16
+          Width = 185
+          Height = 25
+          Caption = 'Export'
+          TabOrder = 4
+          OnClick = BReferenceDNAExportClick
+        end
+      end
+      object GBPreProcessReference: TGroupBox
+        Left = 8
+        Top = 120
+        Width = 777
+        Height = 49
+        Caption = ' 2 :: Pre-process reference DNA '
+        TabOrder = 3
+        object BPreProcessReference: TButton
+          Left = 8
+          Top = 18
+          Width = 249
+          Height = 25
+          Caption = 'Pre-process'
+          TabOrder = 0
+          OnClick = BPreProcessReferenceClick
+        end
+      end
+      object GBAlignReads: TGroupBox
+        Left = 8
+        Top = 520
+        Width = 777
+        Height = 153
+        Caption = ' 5 :: Align reads to reference DNA '
+        TabOrder = 4
+        object MAlignReads: TMemo
+          Left = 8
+          Top = 48
+          Width = 633
+          Height = 97
+          Font.Charset = ANSI_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -12
+          Font.Name = 'Courier New'
+          Font.Style = []
+          ParentFont = False
+          PopupMenu = PMGeneral
+          ScrollBars = ssBoth
+          TabOrder = 0
+          WordWrap = False
+        end
+        object BAlignReads: TButton
+          Left = 8
+          Top = 18
+          Width = 249
+          Height = 25
+          Caption = 'Align'
+          TabOrder = 1
+          OnClick = BAlignReadsClick
+        end
+      end
+      object GBAssembleDNA: TGroupBox
+        Left = 8
+        Top = 680
+        Width = 777
+        Height = 113
+        Caption = ' 6 :: Assemble full individual DNA string '
+        TabOrder = 5
+        object Label1: TLabel
+          Left = 8
+          Top = 92
+          Width = 148
+          Height = 13
+          Caption = 'Status: Assembly not initialized'
+        end
+        object MAssembleDNA: TMemo
+          Left = 8
+          Top = 48
+          Width = 633
+          Height = 41
+          Font.Charset = ANSI_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -12
+          Font.Name = 'Courier New'
+          Font.Style = []
+          ParentFont = False
+          PopupMenu = PMGeneral
+          ScrollBars = ssHorizontal
+          TabOrder = 0
+          WordWrap = False
+          OnChange = MReferenceDNAChange
+        end
+        object BAssembleDNA: TButton
+          Left = 8
+          Top = 18
+          Width = 249
+          Height = 25
+          Caption = 'Assemble'
+          TabOrder = 1
+          OnClick = BAssembleDNAClick
+        end
+      end
     end
-    object ECreateReadsAmount: TEdit
-      Left = 348
-      Top = 21
-      Width = 121
-      Height = 21
-      TabOrder = 1
-      Text = '20'
-    end
-    object ECreateReadsLength: TEdit
-      Left = 76
-      Top = 21
-      Width = 121
-      Height = 21
-      TabOrder = 2
-      Text = '20'
-    end
-    object ECreateReadsMisProb: TEdit
-      Left = 516
-      Top = 21
-      Width = 121
-      Height = 21
-      TabOrder = 3
-      Text = '0'
-    end
-    object MCreateReadsres: TMemo
-      Left = 8
-      Top = 80
-      Width = 633
-      Height = 97
-      Font.Charset = ANSI_CHARSET
-      Font.Color = clWindowText
-      Font.Height = -12
-      Font.Name = 'Courier New'
-      Font.Style = []
-      ParentFont = False
-      ScrollBars = ssBoth
-      TabOrder = 4
-      WordWrap = False
-    end
-  end
-  object GBReconstructDNA: TGroupBox
-    Left = 8
-    Top = 336
-    Width = 777
-    Height = 105
-    Caption = ' Reconstruct DNA '
-    TabOrder = 3
-    object CBReconstructDNAReference: TCheckBox
-      Left = 8
-      Top = 20
-      Width = 129
-      Height = 17
-      Caption = 'Use reference string:'
-      TabOrder = 0
-    end
-    object MReconstructDNAReference: TMemo
-      Left = 8
-      Top = 48
-      Width = 633
-      Height = 41
-      Font.Charset = ANSI_CHARSET
-      Font.Color = clWindowText
-      Font.Height = -12
-      Font.Name = 'Courier New'
-      Font.Style = []
-      ParentFont = False
-      ScrollBars = ssHorizontal
-      TabOrder = 1
-      WordWrap = False
-    end
-    object BReconstructDNACreateReference: TButton
-      Left = 456
-      Top = 16
-      Width = 185
-      Height = 25
-      Caption = 'Create Reference'
-      TabOrder = 2
-      OnClick = BReconstructDNACreateReferenceClick
-    end
-  end
-  object BOptions: TButton
-    Left = 8
-    Top = 464
-    Width = 265
-    Height = 25
-    Caption = 'Options'
-    TabOrder = 4
-    OnClick = BOptionsClick
   end
   object TCheckExternals: TTimer
     Enabled = False
     OnTimer = TCheckExternalsTimer
     Left = 8
     Top = 8
+  end
+  object PMGeneral: TPopupMenu
+    Left = 8
+    Top = 40
+    object CopyAll1: TMenuItem
+      Caption = 'Copy All'
+      ShortCut = 16451
+      OnClick = CopyAll1Click
+    end
+    object CutAll1: TMenuItem
+      Caption = 'Cut All'
+      ShortCut = 16472
+      OnClick = CutAll1Click
+    end
+    object PasteAll1: TMenuItem
+      Caption = 'Paste All'
+      ShortCut = 16470
+      OnClick = PasteAll1Click
+    end
+    object N1: TMenuItem
+      Caption = '-'
+    end
+    object CopySelection1: TMenuItem
+      Caption = 'Copy Selection'
+      OnClick = CopySelection1Click
+    end
+    object CutSelection1: TMenuItem
+      Caption = 'Cut Selection'
+      OnClick = CutSelection1Click
+    end
+    object PasteSelection1: TMenuItem
+      Caption = 'Paste Selection'
+      OnClick = PasteSelection1Click
+    end
+    object SelectAll1: TMenuItem
+      Caption = 'Select All'
+      ShortCut = 16449
+      OnClick = SelectAll1Click
+    end
+    object N2: TMenuItem
+      Caption = '-'
+    end
+    object Undo1: TMenuItem
+      Caption = 'Undo'
+      ShortCut = 16474
+      OnClick = Undo1Click
+    end
+  end
+  object ODGeneral: TOpenDialog
+    Filter = 'All Files (*.*)|*.*'
+    Left = 8
+    Top = 72
+  end
+  object SDGeneral: TSaveDialog
+    Filter = 'All Files (*.*)|*.*'
+    Left = 8
+    Top = 104
   end
 end

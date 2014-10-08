@@ -4,60 +4,112 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ShellApi, ExtCtrls, registry;
+  Dialogs, StdCtrls, ShellApi, ExtCtrls, registry, Menus, MoyaUtils;
 
 type
   TFMain = class(TForm)
-    GBCreateDNA: TGroupBox;
-    BClose: TButton;
-    GBCreateReads: TGroupBox;
-    GBReconstructDNA: TGroupBox;
-    LCreateDNALength: TLabel;
-    ECreateDNALength: TEdit;
-    LCreateDNALengthBasepairs: TLabel;
-    BCreateDNACreate: TButton;
-    BCreateDNACopy: TButton;
-    MCreateDNAres: TMemo;
-    LCreateDNAAlphabet: TLabel;
-    ECreateDNAAlphabet: TEdit;
+    TCheckExternals: TTimer;
+    PHUDBtm: TPanel;
     BOptions: TButton;
-    BGBCreateReadsCreate: TButton;
+    BClose: TButton;
+    SBMain: TScrollBox;
+    PMain: TPanel;
+    GBCreateDNA: TGroupBox;
+    LCreateDNALength: TLabel;
+    LCreateDNALengthBasepairs: TLabel;
+    LCreateDNAAlphabet: TLabel;
+    ECreateDNALength: TEdit;
+    BCreateDNACreate: TButton;
+    BCreateDNAExport: TButton;
+    MCreateDNAres: TMemo;
+    ECreateDNAAlphabet: TEdit;
+    BCreateDNAImport: TButton;
+    GBCreateReads: TGroupBox;
     ECreateReadsLengthBefore: TLabel;
-    ECreateReadsAmount: TEdit;
     ECreateReadsLengthAfter: TLabel;
     ECreateReadsAmountBefore: TLabel;
-    ECreateReadsLength: TEdit;
     ECreateReadsMisProbBefore: TLabel;
-    ECreateReadsMisProb: TEdit;
     ECreateReadsMisProbAfter: TLabel;
-    TCheckExternals: TTimer;
+    BCreateReadsCreate: TButton;
+    ECreateReadsAmount: TEdit;
+    ECreateReadsLength: TEdit;
+    ECreateReadsMisProb: TEdit;
     MCreateReadsres: TMemo;
-    CBReconstructDNAReference: TCheckBox;
-    MReconstructDNAReference: TMemo;
-    BReconstructDNACreateReference: TButton;
-    BCreateDNACreateBasedOnRef: TButton;
+    GBReferenceDNA: TGroupBox;
+    CBReferenceDNA: TCheckBox;
+    MReferenceDNA: TMemo;
+    BReferenceDNACreate: TButton;
+    PMGeneral: TPopupMenu;
+    CopyAll1: TMenuItem;
+    PasteAll1: TMenuItem;
+    N1: TMenuItem;
+    CopySelection1: TMenuItem;
+    PasteSelection1: TMenuItem;
+    N2: TMenuItem;
+    Undo1: TMenuItem;
+    LVersion: TLabel;
+    BCreateReadsImport: TButton;
+    BCreateReadsExport: TButton;
+    BReferenceDNAImport: TButton;
+    BReferenceDNAExport: TButton;
+    ODGeneral: TOpenDialog;
+    SDGeneral: TSaveDialog;
+    LCreateDNAStats: TLabel;
+    GBPreProcessReference: TGroupBox;
+    GBAlignReads: TGroupBox;
+    GBAssembleDNA: TGroupBox;
+    BPreProcessReference: TButton;
+    MAlignReads: TMemo;
+    BAlignReads: TButton;
+    MAssembleDNA: TMemo;
+    BAssembleDNA: TButton;
+    Label1: TLabel;
+    SelectAll1: TMenuItem;
+    CutAll1: TMenuItem;
+    CutSelection1: TMenuItem;
     procedure FormResize(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure BCloseClick(Sender: TObject);
-    procedure BCreateDNACopyClick(Sender: TObject);
     procedure BCreateDNACreateClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
-    procedure BGBCreateReadsCreateClick(Sender: TObject);
+    procedure BCreateReadsCreateClick(Sender: TObject);
     procedure TCheckExternalsTimer(Sender: TObject);
     procedure BOptionsClick(Sender: TObject);
-    procedure BCreateDNACreateBasedOnRefClick(Sender: TObject);
-    procedure BReconstructDNACreateReferenceClick(Sender: TObject);
+    procedure BReferenceDNACreateClick(Sender: TObject);
+    procedure CopyAll1Click(Sender: TObject);
+    procedure PasteAll1Click(Sender: TObject);
+    procedure CopySelection1Click(Sender: TObject);
+    procedure PasteSelection1Click(Sender: TObject);
+    procedure Undo1Click(Sender: TObject);
+    procedure BReferenceDNAImportClick(Sender: TObject);
+    procedure BCreateDNAImportClick(Sender: TObject);
+    procedure BCreateReadsImportClick(Sender: TObject);
+    procedure BReferenceDNAExportClick(Sender: TObject);
+    procedure BCreateDNAExportClick(Sender: TObject);
+    procedure BCreateReadsExportClick(Sender: TObject);
+    procedure MCreateDNAresChange(Sender: TObject);
+    procedure MReferenceDNAChange(Sender: TObject);
+    procedure BPreProcessReferenceClick(Sender: TObject);
+    procedure BAlignReadsClick(Sender: TObject);
+    procedure BAssembleDNAClick(Sender: TObject);
+    procedure SelectAll1Click(Sender: TObject);
+    procedure CutAll1Click(Sender: TObject);
+    procedure CutSelection1Click(Sender: TObject);
   private
     function copyend(str, substr: string; depth: Integer): string;
+    function createRandomDNAString: string;
     procedure BGBCreateReadsCreated;
     procedure SaveDAB;
     procedure LoadDAB;
+    procedure RefreshCreateDNAStats;
+    procedure soznotreadyyet;
   public
     procedure SaveOptions;
   end;
 
 const
   version = '0001';
+  verdate = '8. 10. 2014';
 
 var
   FMain: TFMain;
@@ -72,16 +124,21 @@ uses Unit2;
 
 procedure TFMain.FormResize(Sender: TObject);
 begin
-  GBCreateDNA.Width := FMain.ClientWidth - (2 * GBCreateDNA.Left);
+  PMain.Width := SBMain.ClientWidth - 1;
+
+  GBCreateDNA.Width := PMain.ClientWidth - (2 * GBCreateDNA.Left);
   GBCreateReads.Width := GBCreateDNA.Width;
-  GBReconstructDNA.Width := GBCreateDNA.Width;
+  GBReferenceDNA.Width := GBCreateDNA.Width;
+  GBPreProcessReference.Width := GBCreateDNA.Width;
+  GBAlignReads.Width := GBCreateDNA.Width;
+  GBAssembleDNA.Width := GBCreateDNA.Width;
 
   MCreateDNAres.Width := GBCreateDNA.ClientWidth - (2 * MCreateDNAres.Left);
-  BCreateDNACreateBasedOnRef.Width := (GBCreateDNA.Width - (4 * BCreateDNACreate.Left)) div 3;
-  BCreateDNACreate.Width := BCreateDNACreateBasedOnRef.Width;
-  BCreateDNACopy.Width := BCreateDNACreateBasedOnRef.Width;
-  BCreateDNACreateBasedOnRef.Left := BCreateDNACreate.Width + (BCreateDNACreate.Left * 2);
-  BCreateDNACopy.Left := GBCreateDNA.ClientWidth - (BCreateDNACreate.Left + BCreateDNACopy.Width);
+  BCreateDNAImport.Width := (GBCreateDNA.Width - (4 * BCreateDNACreate.Left)) div 3;
+  BCreateDNACreate.Width := BCreateDNAImport.Width;
+  BCreateDNAExport.Width := BCreateDNAImport.Width;
+  BCreateDNAImport.Left := BCreateDNACreate.Width + (BCreateDNACreate.Left * 2);
+  BCreateDNAExport.Left := GBCreateDNA.ClientWidth - (BCreateDNACreate.Left + BCreateDNAExport.Width);
 
   LCreateDNAAlphabet.Left := (GBCreateDNA.Width - (3 * BCreateDNACreate.Left)) div 2;
   ECreateDNAAlphabet.Left := LCreateDNAAlphabet.Left + LCreateDNAAlphabet.Width + 4;
@@ -93,9 +150,7 @@ begin
   BOptions.Width := (FMain.ClientWidth - (3 * BOptions.Left)) div 2;
   BClose.Width := BOptions.Width;
 
-  BClose.Left := FMain.ClientWidth - (GBCreateDNA.Left + BClose.Width);
-  BClose.Top := FMain.ClientHeight - (GBCreateDNA.Top + BClose.Height);
-  BOptions.Top := BClose.Top;
+  BClose.Left := FMain.ClientWidth - (GBReferenceDNA.Left + BClose.Width);
 
   ECreateReadsAmountBefore.Left := (GBCreateReads.ClientWidth - (4 * ECreateReadsLengthBefore.Left)) div 3;
   ECreateReadsMisProbBefore.Left := (2 * (GBCreateReads.ClientWidth - (4 * ECreateReadsLengthBefore.Left))) div 3;
@@ -107,11 +162,30 @@ begin
   ECreateReadsLengthAfter.Left := ECreateReadsAmountBefore.Left - (ECreateReadsLengthAfter.Width + ECreateReadsLengthBefore.Left);
   ECreateReadsLength.Left := ECreateReadsLengthBefore.Left + ECreateReadsLengthBefore.Width + 4;
   ECreateReadsLength.Width := ECreateReadsLengthAfter.Left - (ECreateReadsLength.Left + 4);
-  BGBCreateReadsCreate.Width := GBCreateReads.ClientWidth - (2 * BGBCreateReadsCreate.Left);
   MCreateReadsres.Width := GBCreateReads.ClientWidth - (2 * MCreateReadsres.Left);
 
-  BReconstructDNACreateReference.Left := GBReconstructDNA.ClientWidth - (BReconstructDNACreateReference.Width + MReconstructDNAReference.Left);
-  MReconstructDNAReference.Width := GBReconstructDNA.ClientWidth - (2 * MReconstructDNAReference.Left);
+  BCreateReadsImport.Width := (GBCreateReads.Width - (4 * BCreateReadsCreate.Left)) div 3;
+  BCreateReadsCreate.Width := BCreateReadsImport.Width;
+  BCreateReadsExport.Width := BCreateReadsImport.Width;
+  BCreateReadsImport.Left := BCreateReadsCreate.Width + (BCreateReadsCreate.Left * 2);
+  BCreateReadsExport.Left := GBCreateReads.ClientWidth - (BCreateReadsCreate.Left + BCreateReadsExport.Width);
+
+  BReferenceDNAImport.Width := (GBReferenceDNA.ClientWidth - (5 * MReferenceDNA.Left)) div 4;
+  CBReferenceDNA.Width := BReferenceDNAImport.Width;
+  BReferenceDNACreate.Width := BReferenceDNAImport.Width;
+  BReferenceDNAExport.Width := BReferenceDNAImport.Width;
+  BReferenceDNAImport.Left := (GBReferenceDNA.ClientWidth + MReferenceDNA.Left) div 2;
+  BReferenceDNAExport.Left := GBReferenceDNA.ClientWidth - (BReferenceDNAExport.Width + MReferenceDNA.Left);
+  BReferenceDNACreate.Left := (CBReferenceDNA.Left * 2) + CBReferenceDNA.Width;
+  MReferenceDNA.Width := GBReferenceDNA.ClientWidth - (2 * MReferenceDNA.Left);
+
+  BPreProcessReference.Width := GBPreProcessReference.Width - (2 * BPreProcessReference.Left);
+
+  BAlignReads.Width := GBAlignReads.Width - (2 * BAlignReads.Left);
+  MAlignReads.Width := BAlignReads.Width;
+
+  BAssembleDNA.Width := GBAssembleDNA.Width - (2 * BAssembleDNA.Left);
+  MAssembleDNA.Width := BAssembleDNA.Width;
 end;
 
 procedure TFMain.FormShow(Sender: TObject);
@@ -125,36 +199,117 @@ begin
   FMain.Close;
 end;
 
-procedure TFMain.BCreateDNACopyClick(Sender: TObject);
+procedure TFMain.BCreateDNACreateClick(Sender: TObject);
+var reference, res, alphabet: string;
+    len, alen, i, edits, insertions, deletions: Integer;
 begin
-  MCreateDNAres.SelectAll;
-  MCreateDNAres.CopyToClipboard;
+  if CBReferenceDNA.Checked then
+    begin
+      res := '';
+      reference := StringReplace(MReferenceDNA.Text, #13#10, '', [rfReplaceAll]);
+      if Length(reference) = 0 then
+        begin
+          if Sender = nil then
+            ShowMessage('No reference string can be created!')
+          else
+            begin
+              BReferenceDNACreateClick(Sender);
+              BCreateDNACreateClick(nil);
+            end;
+          exit;
+        end;
+
+      len := Length(reference);
+      alphabet := ECreateDNAAlphabet.Text;
+      if (Length(alphabet) = 0) then
+        begin
+          ShowMessage('Please specify an alphabet first.');
+          exit;
+        end;
+      alen := Length(alphabet);
+
+      i := 0;
+      edits := 0;
+      insertions := 0;
+      deletions := 0;
+
+      while i < len do
+        begin
+          // deletions
+          if Random(1000) < 10 then
+            begin
+              while (Random(1000) < 500) and (i < len) do
+                begin
+                  Inc(i);
+                  Inc(deletions);
+                end;
+            end;
+
+          // insertions
+          if Random(1000) < 10 then
+            begin
+              while Random(1000) < 500 do
+                begin
+                  Inc(insertions);
+                  res := res + alphabet[Random(alen)+1];
+                end;
+            end;
+
+          // edits
+          if Random(1000) < 150 then
+            begin
+              while (Random(1000) < 500) and (i < len) do
+                begin
+                  Inc(i);
+                  Inc(edits);
+                  res := res + alphabet[Random(alen)+1];
+                end;
+            end
+          else
+            // no change
+            begin
+              Inc(i);
+              res := res + reference[i];
+            end;
+        end;
+
+      MCreateDNAres.Text := res;
+      LCreateDNAStats.Caption := 'Status: Individual DNA string with ' + InttoStr(edits * 100 div len) + '% changes, ' + InttoStr(insertions * 100 div len) + '% insertions and ' + InttoStr(deletions * 100 div len) + '% deletions with regards to reference string';
+    end
+  else
+    MCreateDNAres.Text := createRandomDNAString;
 end;
 
-procedure TFMain.BCreateDNACreateClick(Sender: TObject);
+function TFMain.createRandomDNAString: string;
 var i, len, alen: Integer;
-    alphabet, res: string;
+    alphabet: string;
 begin
+  result := '';
+
   Randomize;
 
   len := StrtoInt(ECreateDNALength.Text);
   alphabet := ECreateDNAAlphabet.Text;
+  if (Length(alphabet) = 0) then
+    begin
+      ShowMessage('Please specify an alphabet first.');
+      exit;
+    end;
   alen := Length(alphabet);
-  res := '';
 
   for i := 1 to len do
-    begin
-      res := res + alphabet[Random(alen)+1];
-    end;
-
-  MCreateDNAres.Text := res;
+    result := result + alphabet[Random(alen)+1];
 end;
 
 procedure TFMain.FormCreate(Sender: TObject);
 begin
   Path := copyend(Application.Exename, '\', 1) + '\';
   MainPath := copyend(Application.Exename, '\', 3) + '\';
+  ODGeneral.InitialDir := MainPath;
+  SDGeneral.InitialDir := MainPath;
   LoadDAB;
+
+  LVersion.Caption := 'Version: ' + version[1] + '.' + version[2] + '.' + version[3] + '.' + version[4] + ' by Moyaccercchi, 7. 10. 2014 .. ' + verdate;
 end;
 
 function TFMain.copyend(str, substr: string; depth: Integer): string;
@@ -192,10 +347,16 @@ begin
       end;
 end;
 
-procedure TFMain.BGBCreateReadsCreateClick(Sender: TObject);
+procedure TFMain.BCreateReadsCreateClick(Sender: TObject);
 var output: TStringList;
     dnastring, lengthstring, amountstring, misprobstring, alphabetstring, FilePath, InFilePath, OutFilePath: string;
 begin
+  if Length(PythonPath) = 0 then
+    begin
+      ShowMessage('Please first go to the options page and specify a valid path for python.');
+      exit;
+    end;
+
   MCreateReadsres.Text := '';
 
   output := TStringList.Create;
@@ -207,8 +368,8 @@ begin
         ShowMessage('No DNA string can be generated.')
       else
         begin
-          BCreateDNACreateClick(nil);
-          BGBCreateReadsCreateClick(nil);
+          BCreateDNACreateClick(Sender);
+          BCreateReadsCreateClick(nil);
         end;
       exit;
     end;
@@ -227,8 +388,8 @@ begin
   output.SaveToFile(InFilePath);
 
   output.Text := InFilePath[1] + ':' + #13#10 +
-                 'cd ' + copyend(InFilePath, '\', 1) + #13#10 +
-                 PythonPath + 'python.exe ' + FilePath + 'e.py';
+  'cd ' + copyend(InFilePath, '\', 1) + #13#10 +
+  PythonPath + 'python.exe ' + FilePath + 'e.py';
 
   output.SaveToFile(Path + 'batch.bat');
   output.Free;
@@ -282,7 +443,7 @@ begin
     if regist.ValueExists('paths.python') then
       PythonPath := regist.ReadString('paths.python')
     else
-      PythonPath := 'C:\Python33\';
+      PythonPath := '';
 
   finally
     regist.free;
@@ -319,6 +480,9 @@ begin
   if Length(FOptions.EPythonPath.Text) > 0 then
     PythonPath := FOptions.EPythonPath.Text;
 
+  if AnsiLowerCase(copy(PythonPath, Length(PythonPath) - 9, 10)) = 'python.exe' then
+    PythonPath := copy(PythonPath, 1, Length(PythonPath) - 10);
+
   i := Length(PythonPath);
   while (i > 0) and (PythonPath[i] = '\') do
     Dec(i);
@@ -328,28 +492,137 @@ begin
   SaveDAB;
 end;
 
-procedure TFMain.BCreateDNACreateBasedOnRefClick(Sender: TObject);
-var reference: string;
+procedure TFMain.BReferenceDNACreateClick(Sender: TObject);
 begin
-  reference := StringReplace(MReconstructDNAReference.Text, #13#10, '', [rfReplaceAll]);
-  if Length(reference) = 0 then
-    begin
-      if Sender = nil then
-        ShowMessage('No reference string can be created!')
-      else
-        begin
-          BReconstructDNACreateReferenceClick(nil);
-          BCreateDNACreateBasedOnRefClick(nil);
-        end;
-      exit;
-    end;
-
-  
+  MReferenceDNA.Text := createRandomDNAString;
+  CBReferenceDNA.Checked := true;
 end;
 
-procedure TFMain.BReconstructDNACreateReferenceClick(Sender: TObject);
+procedure TFMain.CopyAll1Click(Sender: TObject);
 begin
-  // dostuff
+  (Screen.ActiveControl as TMemo).SelectAll;
+  (Screen.ActiveControl as TMemo).CopyToClipboard;
+end;
+
+procedure TFMain.PasteAll1Click(Sender: TObject);
+begin
+  (Screen.ActiveControl as TMemo).SelectAll;
+  (Screen.ActiveControl as TMemo).PasteFromClipboard;
+end;
+
+procedure TFMain.CopySelection1Click(Sender: TObject);
+begin
+  (Screen.ActiveControl as TMemo).CopyToClipboard;
+end;
+
+procedure TFMain.PasteSelection1Click(Sender: TObject);
+begin
+  (Screen.ActiveControl as TMemo).PasteFromClipboard;
+end;
+
+procedure TFMain.Undo1Click(Sender: TObject);
+begin
+  (Screen.ActiveControl as TMemo).Undo;
+end;
+
+procedure TFMain.BReferenceDNAImportClick(Sender: TObject);
+begin
+  if ODGeneral.Execute then
+    begin
+      MReferenceDNA.Text := LoadHugeFile(ODGeneral.FileName);
+      CBReferenceDNA.Checked := true;
+    end;
+end;
+
+procedure TFMain.BCreateDNAImportClick(Sender: TObject);
+begin
+  if ODGeneral.Execute then
+    MCreateDNAres.Text := LoadHugeFile(ODGeneral.FileName);
+end;
+
+procedure TFMain.BCreateReadsImportClick(Sender: TObject);
+begin
+  if ODGeneral.Execute then
+    MCreateReadsres.Text := LoadHugeFile(ODGeneral.FileName);
+end;
+
+procedure TFMain.BReferenceDNAExportClick(Sender: TObject);
+begin
+  if SDGeneral.Execute then
+    MReferenceDNA.Lines.SaveToFile(SDGeneral.FileName);
+end;
+
+procedure TFMain.BCreateDNAExportClick(Sender: TObject);
+begin
+  if SDGeneral.Execute then
+    MCreateDNAres.Lines.SaveToFile(SDGeneral.FileName);
+end;
+
+procedure TFMain.BCreateReadsExportClick(Sender: TObject);
+begin
+  if SDGeneral.Execute then
+    MCreateReadsres.Lines.SaveToFile(SDGeneral.FileName);
+end;
+
+procedure TFMain.MCreateDNAresChange(Sender: TObject);
+begin
+  RefreshCreateDNAStats;
+end;
+
+procedure TFMain.MReferenceDNAChange(Sender: TObject);
+begin
+  RefreshCreateDNAStats;
+end;
+
+procedure TFMain.RefreshCreateDNAStats;
+var reference, individual: string;
+begin
+  reference := StringReplace(MReferenceDNA.Text, #13#10, '', [rfReplaceAll]);
+  individual := StringReplace(MCreateDNAres.Text, #13#10, '', [rfReplaceAll]);
+
+  if Length(individual) = 0 then
+    LCreateDNAStats.Caption := 'Status: No individual DNA string present'
+  else
+    if Length(reference) = 0 then
+      LCreateDNAStats.Caption := 'Status: Random individual DNA string, not based on any reference'
+    else
+      LCreateDNAStats.Caption := 'Status: Individual DNA string with ' + InttoStr(Length(individual) * 100 div Length(reference)) + '% length of DNA reference string';
+end;
+
+procedure TFMain.BPreProcessReferenceClick(Sender: TObject);
+begin
+  soznotreadyyet;
+end;
+
+procedure TFMain.soznotreadyyet;
+begin
+  ShowMessage('Sorry, I''m not ready yet.');
+end;
+
+procedure TFMain.BAlignReadsClick(Sender: TObject);
+begin
+  soznotreadyyet;
+end;
+
+procedure TFMain.BAssembleDNAClick(Sender: TObject);
+begin
+  soznotreadyyet;
+end;
+
+procedure TFMain.SelectAll1Click(Sender: TObject);
+begin
+  (Screen.ActiveControl as TMemo).SelectAll;
+end;
+
+procedure TFMain.CutAll1Click(Sender: TObject);
+begin
+  (Screen.ActiveControl as TMemo).SelectAll;
+  (Screen.ActiveControl as TMemo).CutToClipboard;
+end;
+
+procedure TFMain.CutSelection1Click(Sender: TObject);
+begin
+  (Screen.ActiveControl as TMemo).CutToClipboard;
 end;
 
 end.

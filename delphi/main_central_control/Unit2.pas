@@ -4,14 +4,15 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls;
+  Dialogs, StdCtrls, ExtCtrls;
 
 type
   TFOptions = class(TForm)
     Label1: TLabel;
+    EPythonPath: TEdit;
+    PHUDBtm: TPanel;
     Button1: TButton;
     Button2: TButton;
-    EPythonPath: TEdit;
     procedure Button2Click(Sender: TObject);
     procedure Button1Click(Sender: TObject);
   private

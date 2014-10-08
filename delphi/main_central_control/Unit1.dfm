@@ -63,37 +63,16 @@ object FMain: TFMain
       Left = 0
       Top = 0
       Width = 833
-      Height = 802
+      Height = 889
       BevelOuter = bvNone
       TabOrder = 0
       object GBCreateDNA: TGroupBox
         Left = 8
-        Top = 176
+        Top = 304
         Width = 777
-        Height = 145
+        Height = 105
         Caption = ' 3 :: Create or import individual DNA string '
         TabOrder = 0
-        object LCreateDNALength: TLabel
-          Left = 8
-          Top = 24
-          Width = 37
-          Height = 13
-          Caption = 'Length:'
-        end
-        object LCreateDNALengthBasepairs: TLabel
-          Left = 180
-          Top = 24
-          Width = 46
-          Height = 13
-          Caption = 'basepairs'
-        end
-        object LCreateDNAAlphabet: TLabel
-          Left = 288
-          Top = 24
-          Width = 47
-          Height = 13
-          Caption = 'Alphabet:'
-        end
         object LCreateDNAStats: TLabel
           Left = 8
           Top = 124
@@ -101,35 +80,27 @@ object FMain: TFMain
           Height = 13
           Caption = 'Status: No individual DNA string present'
         end
-        object ECreateDNALength: TEdit
-          Left = 52
-          Top = 21
-          Width = 121
-          Height = 21
-          TabOrder = 0
-          Text = '100'
-        end
         object BCreateDNACreate: TButton
           Left = 8
-          Top = 48
+          Top = 24
           Width = 193
           Height = 25
           Caption = 'Create'
-          TabOrder = 1
+          TabOrder = 0
           OnClick = BCreateDNACreateClick
         end
         object BCreateDNAExport: TButton
           Left = 408
-          Top = 48
+          Top = 24
           Width = 273
           Height = 25
           Caption = 'Export'
-          TabOrder = 2
+          TabOrder = 1
           OnClick = BCreateDNAExportClick
         end
         object MCreateDNAres: TMemo
           Left = 8
-          Top = 80
+          Top = 56
           Width = 633
           Height = 41
           Font.Charset = ANSI_CHARSET
@@ -140,64 +111,56 @@ object FMain: TFMain
           ParentFont = False
           PopupMenu = PMGeneral
           ScrollBars = ssHorizontal
-          TabOrder = 3
+          TabOrder = 2
           WordWrap = False
           OnChange = MCreateDNAresChange
         end
-        object ECreateDNAAlphabet: TEdit
-          Left = 340
-          Top = 21
-          Width = 121
-          Height = 21
-          TabOrder = 4
-          Text = 'ACGT'
-        end
         object BCreateDNAImport: TButton
           Left = 208
-          Top = 48
+          Top = 24
           Width = 193
           Height = 25
           Caption = 'Import'
-          TabOrder = 5
+          TabOrder = 3
           OnClick = BCreateDNAImportClick
         end
       end
       object GBCreateReads: TGroupBox
         Left = 8
-        Top = 328
+        Top = 416
         Width = 777
         Height = 185
         Caption = ' 4 :: Create or import reads '
         TabOrder = 1
-        object ECreateReadsLengthBefore: TLabel
+        object LCreateReadsLengthBefore: TLabel
           Left = 8
           Top = 24
           Width = 62
           Height = 13
           Caption = 'Read length:'
         end
-        object ECreateReadsLengthAfter: TLabel
+        object LCreateReadsLengthAfter: TLabel
           Left = 204
           Top = 24
           Width = 46
           Height = 13
           Caption = 'basepairs'
         end
-        object ECreateReadsAmountBefore: TLabel
+        object LCreateReadsAmountBefore: TLabel
           Left = 256
           Top = 24
           Width = 84
           Height = 13
           Caption = 'Amount of reads:'
         end
-        object ECreateReadsMisProbBefore: TLabel
+        object LCreateReadsMisProbBefore: TLabel
           Left = 404
           Top = 24
           Width = 101
           Height = 13
           Caption = 'Mismatch probability:'
         end
-        object ECreateReadsMisProbAfter: TLabel
+        object LCreateReadsMisProbAfter: TLabel
           Left = 640
           Top = 24
           Width = 11
@@ -276,22 +239,43 @@ object FMain: TFMain
         Left = 8
         Top = 8
         Width = 777
-        Height = 105
+        Height = 129
         Caption = ' 1 :: Create or import reference DNA string '
         TabOrder = 2
-        object CBReferenceDNA: TCheckBox
+        object LCreateDNALength: TLabel
           Left = 8
-          Top = 20
-          Width = 129
+          Top = 24
+          Width = 37
+          Height = 13
+          Caption = 'Length:'
+        end
+        object LCreateDNALengthBasepairs: TLabel
+          Left = 180
+          Top = 24
+          Width = 46
+          Height = 13
+          Caption = 'basepairs'
+        end
+        object LCreateDNAAlphabet: TLabel
+          Left = 288
+          Top = 24
+          Width = 47
+          Height = 13
+          Caption = 'Alphabet:'
+        end
+        object CBReferenceDNAGraph: TCheckBox
+          Left = 8
+          Top = 52
+          Width = 153
           Height = 17
-          Caption = 'Use reference string:'
+          Caption = 'Use graph, not string'
           Checked = True
           State = cbChecked
           TabOrder = 0
         end
         object MReferenceDNA: TMemo
           Left = 8
-          Top = 48
+          Top = 80
           Width = 633
           Height = 41
           Font.Charset = ANSI_CHARSET
@@ -308,7 +292,7 @@ object FMain: TFMain
         end
         object BReferenceDNACreate: TButton
           Left = 184
-          Top = 16
+          Top = 48
           Width = 185
           Height = 25
           Caption = 'Create'
@@ -317,7 +301,7 @@ object FMain: TFMain
         end
         object BReferenceDNAImport: TButton
           Left = 376
-          Top = 16
+          Top = 48
           Width = 185
           Height = 25
           Caption = 'Import'
@@ -326,19 +310,35 @@ object FMain: TFMain
         end
         object BReferenceDNAExport: TButton
           Left = 568
-          Top = 16
+          Top = 48
           Width = 185
           Height = 25
           Caption = 'Export'
           TabOrder = 4
           OnClick = BReferenceDNAExportClick
         end
+        object ECreateDNALength: TEdit
+          Left = 52
+          Top = 21
+          Width = 121
+          Height = 21
+          TabOrder = 5
+          Text = '100'
+        end
+        object ECreateDNAAlphabet: TEdit
+          Left = 340
+          Top = 21
+          Width = 121
+          Height = 21
+          TabOrder = 6
+          Text = 'ACGT'
+        end
       end
       object GBPreProcessReference: TGroupBox
         Left = 8
-        Top = 120
+        Top = 144
         Width = 777
-        Height = 49
+        Height = 153
         Caption = ' 2 :: Pre-process reference DNA '
         TabOrder = 3
         object BPreProcessReference: TButton
@@ -350,10 +350,44 @@ object FMain: TFMain
           TabOrder = 0
           OnClick = BPreProcessReferenceClick
         end
+        object MPreProcessReference: TMemo
+          Left = 8
+          Top = 48
+          Width = 633
+          Height = 97
+          Font.Charset = ANSI_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -12
+          Font.Name = 'Courier New'
+          Font.Style = []
+          ParentFont = False
+          PopupMenu = PMGeneral
+          ScrollBars = ssBoth
+          TabOrder = 1
+          WordWrap = False
+        end
+        object BPreProcessReferenceImport: TButton
+          Left = 200
+          Top = 18
+          Width = 273
+          Height = 25
+          Caption = 'Import'
+          TabOrder = 2
+          OnClick = BPreProcessReferenceImportClick
+        end
+        object BPreProcessReferenceExport: TButton
+          Left = 408
+          Top = 18
+          Width = 273
+          Height = 25
+          Caption = 'Export'
+          TabOrder = 3
+          OnClick = BPreProcessReferenceExportClick
+        end
       end
       object GBAlignReads: TGroupBox
         Left = 8
-        Top = 520
+        Top = 608
         Width = 777
         Height = 153
         Caption = ' 5 :: Align reads to reference DNA '
@@ -383,10 +417,19 @@ object FMain: TFMain
           TabOrder = 1
           OnClick = BAlignReadsClick
         end
+        object BAlignReadsExport: TButton
+          Left = 264
+          Top = 18
+          Width = 249
+          Height = 25
+          Caption = 'Export'
+          TabOrder = 2
+          OnClick = BAlignReadsExportClick
+        end
       end
       object GBAssembleDNA: TGroupBox
         Left = 8
-        Top = 680
+        Top = 768
         Width = 777
         Height = 113
         Caption = ' 6 :: Assemble full individual DNA string '
@@ -423,6 +466,15 @@ object FMain: TFMain
           Caption = 'Assemble'
           TabOrder = 1
           OnClick = BAssembleDNAClick
+        end
+        object BAssembleDNAExport: TButton
+          Left = 264
+          Top = 18
+          Width = 249
+          Height = 25
+          Caption = 'Export'
+          TabOrder = 2
+          OnClick = BAssembleDNAExportClick
         end
       end
     end

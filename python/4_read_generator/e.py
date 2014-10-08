@@ -12,6 +12,7 @@
 #        A mistake probability misprob for generating the reads
 #        A string alphabet that contains every character that can occur
 # Return: A list of generated reads
+# by Moyaccercchi
 
 import random
 

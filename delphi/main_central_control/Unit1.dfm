@@ -63,19 +63,19 @@ object FMain: TFMain
       Left = 0
       Top = 0
       Width = 833
-      Height = 889
+      Height = 906
       BevelOuter = bvNone
       TabOrder = 0
       object GBCreateDNA: TGroupBox
         Left = 8
         Top = 304
         Width = 777
-        Height = 105
+        Height = 121
         Caption = ' 3 :: Create or import individual DNA string '
         TabOrder = 0
         object LCreateDNAStats: TLabel
           Left = 8
-          Top = 124
+          Top = 100
           Width = 192
           Height = 13
           Caption = 'Status: No individual DNA string present'
@@ -127,7 +127,7 @@ object FMain: TFMain
       end
       object GBCreateReads: TGroupBox
         Left = 8
-        Top = 416
+        Top = 432
         Width = 777
         Height = 185
         Caption = ' 4 :: Create or import reads '
@@ -191,6 +191,7 @@ object FMain: TFMain
           Height = 21
           TabOrder = 2
           Text = '20'
+          OnChange = ECreateReadsLengthChange
         end
         object ECreateReadsMisProb: TEdit
           Left = 516
@@ -212,6 +213,7 @@ object FMain: TFMain
           Font.Style = []
           ParentFont = False
           PopupMenu = PMGeneral
+          ReadOnly = True
           ScrollBars = ssBoth
           TabOrder = 4
           WordWrap = False
@@ -341,10 +343,24 @@ object FMain: TFMain
         Height = 153
         Caption = ' 2 :: Pre-process reference DNA '
         TabOrder = 3
-        object BPreProcessReference: TButton
+        object LPreProcessReferenceHorizonBefore: TLabel
           Left = 8
+          Top = 24
+          Width = 40
+          Height = 13
+          Caption = 'Horizon:'
+        end
+        object LPreProcessReferenceHorizonAfter: TLabel
+          Left = 108
+          Top = 24
+          Width = 46
+          Height = 13
+          Caption = 'basepairs'
+        end
+        object BPreProcessReference: TButton
+          Left = 208
           Top = 18
-          Width = 249
+          Width = 145
           Height = 25
           Caption = 'Pre-process'
           TabOrder = 0
@@ -362,32 +378,42 @@ object FMain: TFMain
           Font.Style = []
           ParentFont = False
           PopupMenu = PMGeneral
+          ReadOnly = True
           ScrollBars = ssBoth
           TabOrder = 1
           WordWrap = False
         end
         object BPreProcessReferenceImport: TButton
-          Left = 200
+          Left = 360
           Top = 18
-          Width = 273
+          Width = 161
           Height = 25
           Caption = 'Import'
           TabOrder = 2
           OnClick = BPreProcessReferenceImportClick
         end
         object BPreProcessReferenceExport: TButton
-          Left = 408
+          Left = 528
           Top = 18
-          Width = 273
+          Width = 153
           Height = 25
           Caption = 'Export'
           TabOrder = 3
           OnClick = BPreProcessReferenceExportClick
         end
+        object EPreProcessReferenceHorizon: TEdit
+          Left = 52
+          Top = 21
+          Width = 53
+          Height = 21
+          TabOrder = 4
+          Text = '20'
+          OnChange = EPreProcessReferenceHorizonChange
+        end
       end
       object GBAlignReads: TGroupBox
         Left = 8
-        Top = 608
+        Top = 624
         Width = 777
         Height = 153
         Caption = ' 5 :: Align reads to reference DNA '
@@ -404,6 +430,7 @@ object FMain: TFMain
           Font.Style = []
           ParentFont = False
           PopupMenu = PMGeneral
+          ReadOnly = True
           ScrollBars = ssBoth
           TabOrder = 0
           WordWrap = False
@@ -429,12 +456,12 @@ object FMain: TFMain
       end
       object GBAssembleDNA: TGroupBox
         Left = 8
-        Top = 768
+        Top = 784
         Width = 777
         Height = 113
         Caption = ' 6 :: Assemble full individual DNA string '
         TabOrder = 5
-        object Label1: TLabel
+        object LAssembleDNAStatus: TLabel
           Left = 8
           Top = 92
           Width = 148
@@ -456,7 +483,7 @@ object FMain: TFMain
           ScrollBars = ssHorizontal
           TabOrder = 0
           WordWrap = False
-          OnChange = MReferenceDNAChange
+          OnChange = MAssembleDNAChange
         end
         object BAssembleDNA: TButton
           Left = 8

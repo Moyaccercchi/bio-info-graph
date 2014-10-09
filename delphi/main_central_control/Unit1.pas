@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ShellApi, ExtCtrls, registry, Menus, MoyaUtils;
+  Dialogs, StdCtrls, ShellApi, ExtCtrls, registry, Menus, MoyaUtils, Math;
 
 type
   TCallbackMethod = procedure of object;
@@ -60,7 +60,7 @@ type
     BAlignReads: TButton;
     MAssembleDNA: TMemo;
     BAssembleDNA: TButton;
-    Label1: TLabel;
+    LAssembleDNAStatus: TLabel;
     SelectAll1: TMenuItem;
     CutAll1: TMenuItem;
     CutSelection1: TMenuItem;
@@ -74,6 +74,9 @@ type
     MPreProcessReference: TMemo;
     BPreProcessReferenceImport: TButton;
     BPreProcessReferenceExport: TButton;
+    LPreProcessReferenceHorizonBefore: TLabel;
+    EPreProcessReferenceHorizon: TEdit;
+    LPreProcessReferenceHorizonAfter: TLabel;
     procedure FormResize(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure BCloseClick(Sender: TObject);
@@ -106,15 +109,23 @@ type
     procedure BAssembleDNAExportClick(Sender: TObject);
     procedure BPreProcessReferenceImportClick(Sender: TObject);
     procedure BPreProcessReferenceExportClick(Sender: TObject);
+    procedure MAssembleDNAChange(Sender: TObject);
+    procedure ECreateReadsLengthChange(Sender: TObject);
+    procedure EPreProcessReferenceHorizonChange(Sender: TObject);
   private
     function copyend(str, substr: string; depth: Integer): string;
     function createRandomDNAString: string;
+    function python_path_set: Boolean;
+    procedure prechange;
+    procedure postchange;
     procedure CallbackCreateReadsCreated;
     procedure CallbackPreProcessReference;
+    procedure CallbackAlignReads;
+    procedure CallbackAssembleDNA;
+    procedure RefreshLAssembleDNAStatus;
     procedure SaveDAB;
     procedure LoadDAB;
     procedure RefreshCreateDNAStats;
-    procedure soznotreadyyet;
     procedure runInPython(folder, input: string; callOnFinish: TCallbackMethod);
   public
     procedure SaveOptions;
@@ -189,14 +200,18 @@ begin
   BReferenceDNAExport.Width := BReferenceDNAImport.Width;
   BReferenceDNAImport.Left := (GBReferenceDNA.ClientWidth + MReferenceDNA.Left) div 2;
   BReferenceDNAExport.Left := GBReferenceDNA.ClientWidth - (BReferenceDNAExport.Width + MReferenceDNA.Left);
-  BReferenceDNACreate.Left := (CBReferenceDNAGraph.Left * 2) + CBReferenceDNAGraph.Width;
+  BReferenceDNACreate.Left := (MReferenceDNA.Left * 2) + CBReferenceDNAGraph.Width;
   MReferenceDNA.Width := GBReferenceDNA.ClientWidth - (2 * MReferenceDNA.Left);
 
-  BPreProcessReferenceImport.Width := (GBPreProcessReference.Width - (4 * BPreProcessReference.Left)) div 3;
+  BPreProcessReferenceImport.Width := (GBPreProcessReference.ClientWidth - (5 * MPreProcessReference.Left)) div 4;
   BPreProcessReference.Width := BPreProcessReferenceImport.Width;
   BPreProcessReferenceExport.Width := BPreProcessReferenceImport.Width;
-  BPreProcessReferenceImport.Left := BPreProcessReference.Width + (BPreProcessReference.Left * 2);
-  BPreProcessReferenceExport.Left := GBPreProcessReference.ClientWidth - (BPreProcessReference.Left + BPreProcessReferenceExport.Width);
+  BPreProcessReferenceImport.Left := (GBPreProcessReference.ClientWidth + MPreProcessReference.Left) div 2;
+  BPreProcessReferenceExport.Left := GBPreProcessReference.ClientWidth - (BPreProcessReferenceExport.Width + MPreProcessReference.Left);
+  BPreProcessReference.Left := (MPreProcessReference.Left * 2) + BPreProcessReference.Width;
+  LPreProcessReferenceHorizonAfter.Left := BPreProcessReference.Left - (LPreProcessReferenceHorizonAfter.Width + MPreProcessReference.Left);
+  EPreProcessReferenceHorizon.Left := LPreProcessReferenceHorizonBefore.Left + LPreProcessReferenceHorizonBefore.Width + 4;
+  EPreProcessReferenceHorizon.Width := LPreProcessReferenceHorizonAfter.Left - (4 + EPreProcessReferenceHorizon.Left);
   MPreProcessReference.Width := GBPreProcessReference.Width - (2 * MPreProcessReference.Left);
 
   BAlignReads.Width := (GBAlignReads.Width - (3 * BAlignReads.Left)) div 2;
@@ -367,32 +382,29 @@ end;
 procedure TFMain.BCreateReadsCreateClick(Sender: TObject);
 var dnastring, lengthstring, amountstring, misprobstring, alphabetstring: string;
 begin
-  if Length(PythonPath) = 0 then
+  if python_path_set then
     begin
-      ShowMessage('Please first go to the options page and specify a valid path for python.');
-      exit;
-    end;
+      MCreateReadsres.Text := '';
 
-  MCreateReadsres.Text := '';
-
-  dnastring := StringReplace(MCreateDNAres.Text, #13#10, '', [rfReplaceAll]);
-  if Length(dnastring) = 0 then
-    begin
-      if (Sender = nil) then
-        ShowMessage('No DNA string can be generated.')
-      else
+      dnastring := StringReplace(MCreateDNAres.Text, #13#10, '', [rfReplaceAll]);
+      if Length(dnastring) = 0 then
         begin
-          BCreateDNACreateClick(Sender);
-          BCreateReadsCreateClick(nil);
+          if (Sender = nil) then
+            ShowMessage('No individual DNA string can be generated.')
+          else
+            begin
+              BCreateDNACreateClick(Sender);
+              BCreateReadsCreateClick(nil);
+            end;
+          exit;
         end;
-      exit;
-    end;
-  lengthstring := ECreateReadsLength.Text;
-  amountstring := ECreateReadsAmount.Text;
-  misprobstring := ECreateReadsMisProb.Text;
-  alphabetstring := ECreateDNAAlphabet.Text;
+      lengthstring := ECreateReadsLength.Text;
+      amountstring := ECreateReadsAmount.Text;
+      misprobstring := ECreateReadsMisProb.Text;
+      alphabetstring := ECreateDNAAlphabet.Text;
 
-  runInPython('4_read_generator', dnastring + #13#10 + lengthstring + #13#10 + amountstring + #13#10 + misprobstring + #13#10 + alphabetstring, FMain.CallbackCreateReadsCreated);
+      runInPython('4_read_generator', dnastring + #13#10 + lengthstring + #13#10 + amountstring + #13#10 + misprobstring + #13#10 + alphabetstring, FMain.CallbackCreateReadsCreated);
+    end;
 end;
 
 procedure TFMain.CallbackCreateReadsCreated;
@@ -447,6 +459,24 @@ begin
     if regist.ValueExists('CBReferenceDNAGraph.checked') then
       CBReferenceDNAGraph.Checked := Boolean(StrToInt(regist.ReadString('CBReferenceDNAGraph.checked')));
 
+    if regist.ValueExists('ECreateDNALength.Text') then
+      ECreateDNALength.Text := regist.ReadString('ECreateDNALength.Text');
+
+    if regist.ValueExists('ECreateDNAAlphabet.Text') then
+      ECreateDNAAlphabet.Text := regist.ReadString('ECreateDNAAlphabet.Text');
+
+    if regist.ValueExists('EPreProcessReferenceHorizon.Text') then
+      EPreProcessReferenceHorizon.Text := regist.ReadString('EPreProcessReferenceHorizon.Text');
+
+    if regist.ValueExists('ECreateReadsLength.Text') then
+      ECreateReadsLength.Text := regist.ReadString('ECreateReadsLength.Text');
+
+    if regist.ValueExists('ECreateReadsAmount.Text') then
+      ECreateReadsAmount.Text := regist.ReadString('ECreateReadsAmount.Text');
+
+    if regist.ValueExists('ECreateReadsMisProb.Text') then
+      ECreateReadsMisProb.Text := regist.ReadString('ECreateReadsMisProb.Text');
+
   finally
     regist.free;
   end;
@@ -466,6 +496,12 @@ begin
     regist.WriteString('version', version);
     regist.WriteString('paths.python', PythonPath);
     regist.WriteString('CBReferenceDNAGraph.checked', InttoStr(Integer(CBReferenceDNAGraph.Checked)));
+    regist.WriteString('ECreateDNALength.Text', ECreateDNALength.Text);
+    regist.WriteString('ECreateDNAAlphabet.Text', ECreateDNAAlphabet.Text);
+    regist.WriteString('EPreProcessReferenceHorizon.Text', EPreProcessReferenceHorizon.Text);
+    regist.WriteString('ECreateReadsLength.Text', ECreateReadsLength.Text);
+    regist.WriteString('ECreateReadsAmount.Text', ECreateReadsAmount.Text);
+    regist.WriteString('ECreateReadsMisProb.Text', ECreateReadsMisProb.Text);
   finally
     regist.free;
   end;
@@ -508,8 +544,45 @@ end;
 
 procedure TFMain.PasteAll1Click(Sender: TObject);
 begin
+  prechange;
+
   (Screen.ActiveControl as TMemo).SelectAll;
   (Screen.ActiveControl as TMemo).PasteFromClipboard;
+
+  postchange;
+end;
+
+procedure TFMain.prechange;
+begin
+  if (Screen.ActiveControl = MPreProcessReference) then
+    MPreProcessReference.ReadOnly := false;
+
+  if (Screen.ActiveControl = MCreateReadsres) then
+    MCreateReadsres.ReadOnly := false;
+
+  if (Screen.ActiveControl = MAlignReads) then
+    MAlignReads.ReadOnly := false;
+end;
+
+procedure TFMain.postchange;
+begin
+  if (Screen.ActiveControl = MPreProcessReference) then
+    begin
+      MPreProcessReference.Lines.SaveToFile(MainPath + 'python\2_reference_preprocessor\out.txt');
+      MPreProcessReference.ReadOnly := true;
+    end;
+
+  if (Screen.ActiveControl = MCreateReadsres) then
+    begin
+      MCreateReadsres.Lines.SaveToFile(MainPath + 'python\4_read_generator\out.txt');
+      MCreateReadsres.ReadOnly := true;
+    end;
+
+  if (Screen.ActiveControl = MAlignReads) then
+    begin
+      MAlignReads.Lines.SaveToFile(MainPath + 'python\5_read_aligner\out.txt');
+      MAlignReads.ReadOnly := true;
+    end;
 end;
 
 procedure TFMain.CopySelection1Click(Sender: TObject);
@@ -519,7 +592,11 @@ end;
 
 procedure TFMain.PasteSelection1Click(Sender: TObject);
 begin
+  prechange;
+
   (Screen.ActiveControl as TMemo).PasteFromClipboard;
+
+  postchange;
 end;
 
 procedure TFMain.Undo1Click(Sender: TObject);
@@ -542,7 +619,10 @@ end;
 procedure TFMain.BCreateReadsImportClick(Sender: TObject);
 begin
   if ODGeneral.Execute then
-    MCreateReadsres.Text := LoadHugeFile(ODGeneral.FileName);
+    begin
+      MCreateReadsres.Text := LoadHugeFile(ODGeneral.FileName);
+      MCreateReadsres.Lines.SaveToFile(MainPath + 'python\4_read_generator\out.txt');
+    end;
 end;
 
 procedure TFMain.BReferenceDNAExportClick(Sender: TObject);
@@ -593,29 +673,26 @@ end;
 procedure TFMain.BPreProcessReferenceClick(Sender: TObject);
 var dnastring, lengthstring: string;
 begin
-  if Length(PythonPath) = 0 then
+  if python_path_set then
     begin
-      ShowMessage('Please first go to the options page and specify a valid path for python.');
-      exit;
-    end;
+      MPreProcessReference.Text := '';
 
-  MPreProcessReference.Text := '';
-
-  dnastring := StringReplace(MReferenceDNA.Text, #13#10, '', [rfReplaceAll]);
-  if Length(dnastring) = 0 then
-    begin
-      if (Sender = nil) then
-        ShowMessage('No DNA string can be generated.')
-      else
+      dnastring := StringReplace(MReferenceDNA.Text, #13#10, '', [rfReplaceAll]);
+      if Length(dnastring) = 0 then
         begin
-          BReferenceDNACreateClick(Sender);
-          BPreProcessReferenceClick(nil);
+          if (Sender = nil) then
+            ShowMessage('No reference DNA string can be generated.')
+          else
+            begin
+              BReferenceDNACreateClick(Sender);
+              BPreProcessReferenceClick(nil);
+            end;
+          exit;
         end;
-      exit;
-    end;
-  lengthstring := ECreateReadsLength.Text;
+      lengthstring := EPreProcessReferenceHorizon.Text;
 
-  runInPython('2_reference_preprocessor', dnastring + #13#10 + lengthstring, FMain.CallbackPreProcessReference);
+      runInPython('2_reference_preprocessor', dnastring + #13#10 + lengthstring, FMain.CallbackPreProcessReference);
+    end;
 end;
 
 procedure TFMain.runInPython(folder, input: string; callOnFinish: TCallbackMethod);
@@ -647,19 +724,68 @@ begin
   TCheckExternals.Enabled := true;
 end;
 
-procedure TFMain.soznotreadyyet;
+procedure TFMain.BAlignReadsClick(Sender: TObject);
+var reference: string;
 begin
-  ShowMessage('Sorry, I''m not ready yet.');
+  if python_path_set then
+    begin
+      MAlignReads.Text := '';
+
+      reference := StringReplace(MReferenceDNA.Text, #13#10, '', [rfReplaceAll]);
+      if Length(reference) = 0 then
+        begin
+          if (Sender = nil) then
+            ShowMessage('No reference DNA string can be generated.')
+          else
+            begin
+              BReferenceDNACreateClick(Sender);
+              BPreProcessReferenceClick(Sender);
+              BAlignReadsClick(nil);
+            end;
+          exit;
+        end;
+
+      runInPython('5_read_aligner', reference + #13#10 + MainPath + 'python\2_reference_preprocessor\out.txt' + #13#10 + MainPath + 'python\4_read_generator\out.txt', FMain.CallbackAlignReads);
+    end;
 end;
 
-procedure TFMain.BAlignReadsClick(Sender: TObject);
+procedure TFMain.CallbackAlignReads;
 begin
-  soznotreadyyet;
+  MAlignReads.Lines.LoadFromFile(MainPath + 'python\5_read_aligner\out.txt');
+end;
+
+function TFMain.python_path_set: Boolean;
+begin
+  result := Length(PythonPath) > 0;
+
+  if not result then
+    ShowMessage('Please first go to the options page and specify a valid path for python.');
 end;
 
 procedure TFMain.BAssembleDNAClick(Sender: TObject);
+var reference: string;
 begin
-  soznotreadyyet;
+  if python_path_set then
+    begin
+      MAssembleDNA.Text := '';
+
+      reference := StringReplace(MReferenceDNA.Text, #13#10, '', [rfReplaceAll]);
+      if Length(reference) = 0 then
+        begin
+          BAlignReadsClick(Sender);
+          ShowMessage('Please try again after the alignment is done.');
+          exit;
+        end;
+
+      runInPython('6_string_assembler', reference + #13#10 + MainPath + 'python\4_read_generator\out.txt' + #13#10 + MainPath + 'python\5_read_aligner\out.txt', FMain.CallbackAssembleDNA);
+    end;
+end;
+
+procedure TFMain.CallbackAssembleDNA;
+begin
+  MAssembleDNA.Lines.LoadFromFile(MainPath + 'python\6_string_assembler\out.txt');
+
+  RefreshLAssembleDNAStatus;
 end;
 
 procedure TFMain.SelectAll1Click(Sender: TObject);
@@ -669,13 +795,21 @@ end;
 
 procedure TFMain.CutAll1Click(Sender: TObject);
 begin
+  prechange;
+
   (Screen.ActiveControl as TMemo).SelectAll;
-  (Screen.ActiveControl as TMemo).CutToClipboard;
+  (Screen.ActiveControl as TMemo).CutToClipboard; 
+
+  postchange;
 end;
 
 procedure TFMain.CutSelection1Click(Sender: TObject);
-begin
+begin          
+  prechange;
+
   (Screen.ActiveControl as TMemo).CutToClipboard;
+
+  postchange;
 end;
 
 procedure TFMain.BAlignReadsExportClick(Sender: TObject);
@@ -693,7 +827,10 @@ end;
 procedure TFMain.BPreProcessReferenceImportClick(Sender: TObject);
 begin
   if ODGeneral.Execute then
-    MPreProcessReference.Text := LoadHugeFile(ODGeneral.FileName);
+    begin
+      MPreProcessReference.Text := LoadHugeFile(ODGeneral.FileName);
+      MPreProcessReference.Lines.SaveToFile(MainPath + 'python\2_reference_preprocessor\out.txt');
+    end;
 end;
 
 procedure TFMain.BPreProcessReferenceExportClick(Sender: TObject);
@@ -702,5 +839,56 @@ begin
     MPreProcessReference.Lines.SaveToFile(SDGeneral.FileName);
 end;
 
+procedure TFMain.MAssembleDNAChange(Sender: TObject);
+begin
+  RefreshLAssembleDNAStatus;
+end;
+
+procedure TFMain.RefreshLAssembleDNAStatus;
+var res, original, assembledDNA: string;
+    i, correct: Integer;
+begin
+  res := 'Status: ';
+
+  original := StringReplace(MCreateDNAres.Text, #13#10, '', [rfReplaceAll]);
+  assembledDNA := StringReplace(MAssembleDNA.Text, #13#10, '', [rfReplaceAll]);
+
+  if Length(assembledDNA) = 0 then
+    res := res + 'Assembly not initialized'
+  else
+    if Length(original) = 0 then
+      res := res + 'No individual DNA string present'
+    else
+      begin
+        correct := 0;
+        for i := 1 to min(Length(assembledDNA), Length(original)) do
+          if assembledDNA[i] = original[i] then
+            Inc(correct);
+        res := res + 'Individual DNA with ' + InttoStr((correct * 100) div min(Length(assembledDNA), Length(original))) + '% accuracy';
+      end;
+
+  LAssembleDNAStatus.Caption := res;
+end;
+
+procedure TFMain.ECreateReadsLengthChange(Sender: TObject);
+begin
+  if not (EPreProcessReferenceHorizon.Text = ECreateReadsLength.Text) then
+    EPreProcessReferenceHorizon.Text := ECreateReadsLength.Text;
+end;
+
+procedure TFMain.EPreProcessReferenceHorizonChange(Sender: TObject);
+begin                                                  
+  if not (EPreProcessReferenceHorizon.Text = ECreateReadsLength.Text) then
+    ECreateReadsLength.Text := EPreProcessReferenceHorizon.Text;
+end;
+
 end.
 
+{
+  === TODO ===
+  :: allow for mismatches when aligning (e.g. use pigeonhole principle), as there WILL be mismatches, as the original string is NOT identical to the reference, even if all the reads are good and well!
+  :: use an actual net, not just a string
+  :: when creating and aligning reads and so on, keep in mind that we should indeed look at the individual string plus its reverse opposite!
+  :: create reads from individual string even with indels, maybe? (check if the data actually has indels in the reads themselves, or if the data usually only comes with mismatches, but not with indels!)
+  :: find a good way to guesstime the size of the original string (currently the exact size of the reference string is assumed, but that won't fly once we are using a net...)
+}

@@ -77,6 +77,11 @@ type
     LPreProcessReferenceHorizonBefore: TLabel;
     EPreProcessReferenceHorizon: TEdit;
     LPreProcessReferenceHorizonAfter: TLabel;
+    MCreateReadspos: TMemo;
+    LCreateReadsStatus: TLabel;
+    LCreateReadsMres: TLabel;
+    LCreateReadsMpos: TLabel;
+    LAlignReadsStatus: TLabel;
     procedure FormResize(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure BCloseClick(Sender: TObject);
@@ -112,6 +117,9 @@ type
     procedure MAssembleDNAChange(Sender: TObject);
     procedure ECreateReadsLengthChange(Sender: TObject);
     procedure EPreProcessReferenceHorizonChange(Sender: TObject);
+    procedure MCreateReadsresChange(Sender: TObject);
+    procedure MCreateReadsposChange(Sender: TObject);
+    procedure MAlignReadsChange(Sender: TObject);
   private
     function copyend(str, substr: string; depth: Integer): string;
     function createRandomDNAString: string;
@@ -122,10 +130,12 @@ type
     procedure CallbackPreProcessReference;
     procedure CallbackAlignReads;
     procedure CallbackAssembleDNA;
-    procedure RefreshLAssembleDNAStatus;
+    procedure RefreshAssembleDNAStats;
+    procedure RefreshCreateDNAStats;
+    procedure RefreshCreateReadsStats;
+    procedure RefreshAlignReadsStats;
     procedure SaveDAB;
     procedure LoadDAB;
-    procedure RefreshCreateDNAStats;
     procedure runInPython(folder, input: string; callOnFinish: TCallbackMethod);
   public
     procedure SaveOptions;
@@ -171,10 +181,9 @@ begin
   ECreateDNALength.Left := LCreateDNALength.Width + LCreateDNALength.Left + 4;
   ECreateDNALength.Width := LCreateDNALengthBasepairs.Left - (ECreateDNALength.Left + 4);
 
-  BOptions.Width := (FMain.ClientWidth - (3 * BOptions.Left)) div 2;
+  BOptions.Width := (GBReferenceDNA.Width + (2 * GBReferenceDNA.Left) - (3 * BOptions.Left)) div 2;
   BClose.Width := BOptions.Width;
-
-  BClose.Left := FMain.ClientWidth - (GBReferenceDNA.Left + BClose.Width);
+  BClose.Left := GBReferenceDNA.Width + GBReferenceDNA.Left - BClose.Width;
 
   LCreateReadsAmountBefore.Left := (GBCreateReads.ClientWidth div 3) + (LCreateReadsLengthBefore.Left div 2);
   LCreateReadsMisProbBefore.Left := (2 * GBCreateReads.ClientWidth div 3) + (LCreateReadsLengthBefore.Left div 2);
@@ -186,7 +195,10 @@ begin
   LCreateReadsLengthAfter.Left := LCreateReadsAmountBefore.Left - (LCreateReadsLengthAfter.Width + LCreateReadsLengthBefore.Left);
   ECreateReadsLength.Left := LCreateReadsLengthBefore.Left + LCreateReadsLengthBefore.Width + 4;
   ECreateReadsLength.Width := LCreateReadsLengthAfter.Left - (ECreateReadsLength.Left + 4);
-  MCreateReadsres.Width := GBCreateReads.ClientWidth - (2 * MCreateReadsres.Left);
+  MCreateReadsres.Width := (GBCreateReads.ClientWidth - (3 * MCreateReadsres.Left)) div 2;
+  MCreateReadspos.Width := MCreateReadsres.Width;
+  MCreateReadspos.Left := GBCreateReads.ClientWidth - (MCreateReadsres.Left + MCreateReadspos.Width);
+  LCreateReadsMpos.Left := MCreateReadspos.Left;
 
   BCreateReadsImport.Width := (GBCreateReads.Width - (4 * BCreateReadsCreate.Left)) div 3;
   BCreateReadsCreate.Width := BCreateReadsImport.Width;
@@ -273,7 +285,7 @@ begin
       // deletions
       if Random(1000) < 10 then
         begin
-          while (Random(1000) < 500) and (i < len) do
+          while (Random(1000) < 200) and (i < len) do
             begin
               Inc(i);
               Inc(deletions);
@@ -283,7 +295,7 @@ begin
       // insertions
       if Random(1000) < 10 then
         begin
-          while Random(1000) < 500 do
+          while Random(1000) < 200 do
             begin
               Inc(insertions);
               res := res + alphabet[Random(alen)+1];
@@ -291,9 +303,9 @@ begin
         end;
 
       // edits
-      if Random(1000) < 150 then
+      if Random(1000) < 50 then
         begin
-          while (Random(1000) < 500) and (i < len) do
+          while (Random(1000) < 200) and (i < len) do
             begin
               Inc(i);
               Inc(edits);
@@ -385,6 +397,7 @@ begin
   if python_path_set then
     begin
       MCreateReadsres.Text := '';
+      MCreateReadspos.Text := '';
 
       dnastring := StringReplace(MCreateDNAres.Text, #13#10, '', [rfReplaceAll]);
       if Length(dnastring) = 0 then
@@ -410,6 +423,11 @@ end;
 procedure TFMain.CallbackCreateReadsCreated;
 begin
   MCreateReadsres.Lines.LoadFromFile(MainPath + 'python\4_read_generator\out.txt');
+
+  if FileExists(MainPath + 'python\4_read_generator\outpos.txt') then
+    MCreateReadspos.Lines.LoadFromFile(MainPath + 'python\4_read_generator\outpos.txt')
+  else
+    MCreateReadspos.Text := '';
 end;
 
 procedure TFMain.CallbackPreProcessReference;
@@ -785,7 +803,7 @@ procedure TFMain.CallbackAssembleDNA;
 begin
   MAssembleDNA.Lines.LoadFromFile(MainPath + 'python\6_string_assembler\out.txt');
 
-  RefreshLAssembleDNAStatus;
+  RefreshAssembleDNAStats;
 end;
 
 procedure TFMain.SelectAll1Click(Sender: TObject);
@@ -841,10 +859,10 @@ end;
 
 procedure TFMain.MAssembleDNAChange(Sender: TObject);
 begin
-  RefreshLAssembleDNAStatus;
+  RefreshAssembleDNAStats;
 end;
 
-procedure TFMain.RefreshLAssembleDNAStatus;
+procedure TFMain.RefreshAssembleDNAStats;
 var res, original, assembledDNA: string;
     i, correct: Integer;
 begin
@@ -882,6 +900,109 @@ begin
     ECreateReadsLength.Text := EPreProcessReferenceHorizon.Text;
 end;
 
+procedure TFMain.MCreateReadsresChange(Sender: TObject);
+begin
+  RefreshCreateReadsStats;
+end;
+
+procedure TFMain.MCreateReadsposChange(Sender: TObject);
+begin
+  RefreshCreateReadsStats;
+  RefreshAlignReadsStats;
+end;
+
+procedure TFMain.RefreshCreateReadsStats;
+var res, original: string;
+    overalllength, i, j, b, e: Integer;
+    Readsres, Readspos: TStringList;
+begin
+  res := 'Status: ';
+
+  Readsres := TStringList.Create;
+  Readsres.Assign(MCreateReadsres.Lines);
+  Readspos := TStringList.Create;
+  Readspos.Assign(MCreateReadspos.Lines);
+  original := StringReplace(MCreateDNAres.Text, #13#10, '', [rfReplaceAll]);
+
+  if Readsres.Count = 0 then
+    res := res + 'No reads created'
+  else
+    if Readspos.Count = 0 then
+      res := res + 'No location information available'
+    else
+      if Length(original) = 0 then
+        res := res + 'No individual DNA string created'
+      else
+        begin
+          overalllength := Length(original);
+          for i := 0 to Readsres.Count - 1 do
+            if i < Readspos.Count then
+              begin
+                b := StrToInt(Readspos[i]) + 1;
+                e := StrToInt(Readspos[i]) + Length(Readsres[i]);
+                for j := b to e do
+                  if j <= overalllength then
+                    original[j] := '_';
+              end
+            else
+              break;
+
+          FMain.Caption := original;
+
+          j := 0;
+          for i := 1 to overalllength do
+            if original[i] = '_' then
+              Inc(j);
+
+          res := InttoStr((j * 100) div overalllength) + '% coverage of individual DNA string by reads';
+        end;
+
+  LCreateReadsStatus.Caption := res;
+
+  Readsres.Free;
+  Readspos.Free;
+end;
+
+procedure TFMain.RefreshAlignReadsStats;
+var res: string;
+    Readspos, Alignedreads: TStringList;
+    fulllength, correctlyaligned, i: Integer;
+begin
+  res := 'Status: ';
+
+  Readspos := TStringList.Create;
+  Readspos.Assign(MCreateReadspos.Lines);
+  Alignedreads := TStringList.Create;
+  Alignedreads.Assign(MAlignReads.Lines);
+
+  if Alignedreads.Count = 0 then
+    res := res + 'Alignment not initialized'
+  else
+    if Readspos.Count = 0 then
+      res := res + 'No location information available'
+    else
+    begin
+      fulllength := min(Readspos.Count, Alignedreads.Count) - 1;
+      correctlyaligned := 0;
+
+      for i := 0 to fulllength do
+        if Readspos[i] = Alignedreads[i] then
+          Inc(correctlyaligned);
+
+      res := res + 'Alignment to ' + InttoStr((correctlyaligned * 100) div fulllength) + '% correct';
+    end;
+
+  Readspos.Free;
+  Alignedreads.Free;
+
+  LAlignReadsStatus.Caption := res;
+end;
+
+procedure TFMain.MAlignReadsChange(Sender: TObject);
+begin
+  RefreshAlignReadsStats;
+end;
+
 end.
 
 {
@@ -892,3 +1013,4 @@ end.
   :: create reads from individual string even with indels, maybe? (check if the data actually has indels in the reads themselves, or if the data usually only comes with mismatches, but not with indels!)
   :: find a good way to guesstime the size of the original string (currently the exact size of the reference string is assumed, but that won't fly once we are using a net...)
 }
+

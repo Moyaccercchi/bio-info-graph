@@ -54,6 +54,7 @@ object FMain: TFMain
     Top = 0
     Width = 920
     Height = 520
+    VertScrollBar.Position = 294
     VertScrollBar.Smooth = True
     VertScrollBar.Tracking = True
     Align = alClient
@@ -61,9 +62,9 @@ object FMain: TFMain
     TabOrder = 1
     object PMain: TPanel
       Left = 0
-      Top = 0
+      Top = -294
       Width = 833
-      Height = 906
+      Height = 957
       BevelOuter = bvNone
       TabOrder = 0
       object GBCreateDNA: TGroupBox
@@ -129,7 +130,7 @@ object FMain: TFMain
         Left = 8
         Top = 432
         Width = 777
-        Height = 185
+        Height = 217
         Caption = ' 4 :: Create or import reads '
         TabOrder = 1
         object LCreateReadsLengthBefore: TLabel
@@ -167,6 +168,27 @@ object FMain: TFMain
           Height = 13
           Caption = '%'
         end
+        object LCreateReadsStatus: TLabel
+          Left = 8
+          Top = 196
+          Width = 121
+          Height = 13
+          Caption = 'Status: No reads created'
+        end
+        object LCreateReadsMres: TLabel
+          Left = 8
+          Top = 76
+          Width = 34
+          Height = 13
+          Caption = 'Reads:'
+        end
+        object LCreateReadsMpos: TLabel
+          Left = 336
+          Top = 76
+          Width = 275
+          Height = 13
+          Caption = 'Original locations of reads (only known for artificial data):'
+        end
         object BCreateReadsCreate: TButton
           Left = 8
           Top = 48
@@ -203,8 +225,8 @@ object FMain: TFMain
         end
         object MCreateReadsres: TMemo
           Left = 8
-          Top = 80
-          Width = 633
+          Top = 94
+          Width = 321
           Height = 97
           Font.Charset = ANSI_CHARSET
           Font.Color = clWindowText
@@ -217,6 +239,7 @@ object FMain: TFMain
           ScrollBars = ssBoth
           TabOrder = 4
           WordWrap = False
+          OnChange = MCreateReadsresChange
         end
         object BCreateReadsImport: TButton
           Left = 200
@@ -235,6 +258,23 @@ object FMain: TFMain
           Caption = 'Export'
           TabOrder = 6
           OnClick = BCreateReadsExportClick
+        end
+        object MCreateReadspos: TMemo
+          Left = 336
+          Top = 94
+          Width = 321
+          Height = 97
+          Font.Charset = ANSI_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -12
+          Font.Name = 'Courier New'
+          Font.Style = []
+          ParentFont = False
+          PopupMenu = PMGeneral
+          ScrollBars = ssBoth
+          TabOrder = 7
+          WordWrap = False
+          OnChange = MCreateReadsposChange
         end
       end
       object GBReferenceDNA: TGroupBox
@@ -413,11 +453,18 @@ object FMain: TFMain
       end
       object GBAlignReads: TGroupBox
         Left = 8
-        Top = 624
+        Top = 656
         Width = 777
-        Height = 153
+        Height = 169
         Caption = ' 5 :: Align reads to reference DNA '
         TabOrder = 4
+        object LAlignReadsStatus: TLabel
+          Left = 8
+          Top = 148
+          Width = 150
+          Height = 13
+          Caption = 'Status: Alignment not initialized'
+        end
         object MAlignReads: TMemo
           Left = 8
           Top = 48
@@ -434,6 +481,7 @@ object FMain: TFMain
           ScrollBars = ssBoth
           TabOrder = 0
           WordWrap = False
+          OnChange = MAlignReadsChange
         end
         object BAlignReads: TButton
           Left = 8
@@ -456,7 +504,7 @@ object FMain: TFMain
       end
       object GBAssembleDNA: TGroupBox
         Left = 8
-        Top = 784
+        Top = 832
         Width = 777
         Height = 113
         Caption = ' 6 :: Assemble full individual DNA string '

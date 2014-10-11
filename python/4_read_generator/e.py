@@ -12,6 +12,7 @@
 #        A mistake probability misprob for generating the reads
 #        A string alphabet that contains every character that can occur
 # Return: A list of generated reads
+#         A second list of positions of these generated reads
 # by Moyaccercchi
 
 import random
@@ -32,6 +33,7 @@ fo.close()
 def generate_reads(text, k, amt, misprob, alphabet):
     
     ret = []
+    retpos = []
     
     maxoffset = len(text) - k
     alen = len(alphabet)
@@ -45,16 +47,21 @@ def generate_reads(text, k, amt, misprob, alphabet):
             else:
                 finalread += text[offset + j]
         ret.append(finalread)
+        retpos.append(str(offset))
     
-    return ret
-
-
-def strarraytostring(arr):
+    res = "\n".join(ret)
+    respos = "\n".join(retpos)
     
-    return "\n".join(arr)
+    return (res,respos)
 
 
-res = strarraytostring(generate_reads(text, k, amt, misprob, alphabet))
+res,respos = generate_reads(text, k, amt, misprob, alphabet)
+
+fo = open('outpos.txt', 'w')
+
+fo.write(respos)
+
+fo.close()
 
 fo = open('out.txt', 'w')
 

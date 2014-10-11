@@ -12,6 +12,8 @@
 # Return: A list of locations from where the reads originated
 # by Moyaccercchi
 
+import collections
+
 fo = open('in.txt', 'r')
 
 reference = fo.readline().strip()
@@ -21,45 +23,19 @@ readpath = fo.readline().strip()
 fo.close()
 
 
-suffix_array = []
+suffix_array = collections.defaultdict(lambda: '')
 
 fprepro = open(prepropath, 'r')
 lastline = fprepro.readline().strip()
 
 while (lastline != ""):
     lastline = lastline.split(" -> ")
-    someval = lastline[1]
-    somepos = someval.find(',')
-    if somepos > -1:
-        someval = someval[0:somepos-1]
-    suffix_array.append((lastline[0], someval))
+    suffix_array[lastline[0]] += lastline[1]
     lastline = fprepro.readline().strip()
 
 fprepro.close()
 
-suffix_array.sort(key=lambda pair: pair[0])
-
 freads = open(readpath, 'r')
-
-
-def findinarray(suffix_array, lastline):
-    
-    s = 0
-    e = len(suffix_array)
-    i = (s + e) // 2
-    j = 1
-    
-    while j > 0:
-        if suffix_array[i][0] < lastline:
-            s = i
-            i = (s + e) // 2
-            j = i - s
-        else:
-            e = i
-            i = (s + e) // 2
-            j = e - i
-    
-    return suffix_array[i][1]
 
 
 def align_reads(reference, suffix_array, freads):
@@ -69,7 +45,7 @@ def align_reads(reference, suffix_array, freads):
     lastline = freads.readline().strip()
     
     while (lastline != ""):
-        ret.append(findinarray(suffix_array, lastline))
+        ret.append(suffix_array[lastline])
         lastline = freads.readline().strip()
     
     return ret

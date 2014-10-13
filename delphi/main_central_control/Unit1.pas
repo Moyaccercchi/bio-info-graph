@@ -82,6 +82,13 @@ type
     LCreateReadsMres: TLabel;
     LCreateReadsMpos: TLabel;
     LAlignReadsStatus: TLabel;
+    LAlignReadsLengthBefore: TLabel;
+    EAlignReadsLength: TEdit;
+    LAlignReadsLengthAfter: TLabel;
+    LAlignReadsDBefore: TLabel;
+    EAlignReadsD: TEdit;
+    LAlignReadsDAfter: TLabel;
+    SBAllMemos: TScrollBar;
     procedure FormResize(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure BCloseClick(Sender: TObject);
@@ -115,11 +122,13 @@ type
     procedure BPreProcessReferenceImportClick(Sender: TObject);
     procedure BPreProcessReferenceExportClick(Sender: TObject);
     procedure MAssembleDNAChange(Sender: TObject);
-    procedure ECreateReadsLengthChange(Sender: TObject);
     procedure EPreProcessReferenceHorizonChange(Sender: TObject);
     procedure MCreateReadsresChange(Sender: TObject);
     procedure MCreateReadsposChange(Sender: TObject);
     procedure MAlignReadsChange(Sender: TObject);
+    procedure EAlignReadsLengthChange(Sender: TObject);
+    procedure SBAllMemosScroll(Sender: TObject; ScrollCode: TScrollCode;
+      var ScrollPos: Integer);
   private
     function copyend(str, substr: string; depth: Integer): string;
     function createRandomDNAString: string;
@@ -139,6 +148,7 @@ type
     procedure runInPython(folder, input: string; callOnFinish: TCallbackMethod);
   public
     procedure SaveOptions;
+    procedure ResetTo(difficulty: Integer);
   end;
 
 const
@@ -230,11 +240,21 @@ begin
   BAlignReadsExport.Width := BAlignReads.Width;
   BAlignReadsExport.Left := GBAlignReads.Width - (BAlignReads.Left + BAlignReadsExport.Width);
   MAlignReads.Width := GBAlignReads.Width - (2 * BAlignReads.Left);
+  LAlignReadsDBefore.Left := BAlignReadsExport.Left;
+  EAlignReadsD.Left := LAlignReadsDBefore.Left + LAlignReadsDBefore.Width + 4;
+  LAlignReadsDAfter.Left := GBAlignReads.Width - (BAlignReads.Left + LAlignReadsDAfter.Width);
+  EAlignReadsD.Width := LAlignReadsDAfter.Left - (4 + EAlignReadsD.Left);
+  EAlignReadsLength.Left := LAlignReadsLengthBefore.Left + LAlignReadsLengthBefore.Width + 4;
+  LAlignReadsLengthAfter.Left := BAlignReads.Width + BAlignReads.Left - LAlignReadsDAfter.Width;
+  EAlignReadsLength.Width := LAlignReadsLengthAfter.Left - (4 + EAlignReadsLength.Left);
 
   BAssembleDNA.Width := (GBAssembleDNA.Width - (3 * BAssembleDNA.Left)) div 2;
   BAssembleDNAExport.Width := BAssembleDNA.Width;
   BAssembleDNAExport.Left := GBAssembleDNA.Width - (BAssembleDNA.Left + BAssembleDNAExport.Width);
   MAssembleDNA.Width := GBAssembleDNA.Width - (2 * BAssembleDNA.Left);
+
+  SBAllMemos.Left := MAssembleDNA.Left + GBAssembleDNA.Left;
+  SBAllMemos.Width := MAssembleDNA.Width;
 end;
 
 procedure TFMain.FormShow(Sender: TObject);
@@ -281,30 +301,39 @@ begin
   deletions := 0;
 
   while i < len do
-    begin
+    begin            
+      // TODO :: make the whole alignment work even with deletions
+      {                                                         
       // deletions
       if Random(1000) < 10 then
-        begin
-          while (Random(1000) < 200) and (i < len) do
-            begin
-              Inc(i);
-              Inc(deletions);
-            end;
-        end;
+      begin
+      while (Random(1000) < 200) and (i < len) do
+      begin
+      Inc(i);
+      Inc(deletions);
+      end;
+      end;
+      }
 
+      // TODO :: make the whole alignment work even with insertions
+      {                                                    
       // insertions
       if Random(1000) < 10 then
-        begin
-          while Random(1000) < 200 do
-            begin
-              Inc(insertions);
-              res := res + alphabet[Random(alen)+1];
-            end;
-        end;
+      begin
+      while Random(1000) < 200 do
+      begin
+      Inc(insertions);
+      res := res + alphabet[Random(alen)+1];
+      end;
+      end;
+      }
 
       // edits
       if Random(1000) < 50 then
         begin
+          Inc(i);
+          Inc(edits);
+          res := res + alphabet[Random(alen)+1];
           while (Random(1000) < 200) and (i < len) do
             begin
               Inc(i);
@@ -495,6 +524,12 @@ begin
     if regist.ValueExists('ECreateReadsMisProb.Text') then
       ECreateReadsMisProb.Text := regist.ReadString('ECreateReadsMisProb.Text');
 
+    if regist.ValueExists('EAlignReadsLength.Text') then
+      EAlignReadsLength.Text := regist.ReadString('EAlignReadsLength.Text');
+
+    if regist.ValueExists('EAlignReadsD.Text') then
+      EAlignReadsD.Text := regist.ReadString('EAlignReadsD.Text');
+
   finally
     regist.free;
   end;
@@ -520,6 +555,8 @@ begin
     regist.WriteString('ECreateReadsLength.Text', ECreateReadsLength.Text);
     regist.WriteString('ECreateReadsAmount.Text', ECreateReadsAmount.Text);
     regist.WriteString('ECreateReadsMisProb.Text', ECreateReadsMisProb.Text);
+    regist.WriteString('EAlignReadsLength.Text', EAlignReadsLength.Text);
+    regist.WriteString('EAlignReadsD.Text', EAlignReadsD.Text);
   finally
     regist.free;
   end;
@@ -664,6 +701,8 @@ end;
 procedure TFMain.MCreateDNAresChange(Sender: TObject);
 begin
   RefreshCreateDNAStats;
+
+  SBAllMemos.Max := Length(MCreateDNAres.Text);
 end;
 
 procedure TFMain.MReferenceDNAChange(Sender: TObject);
@@ -671,6 +710,8 @@ begin
   RefreshCreateDNAStats;
 
   CBReferenceDNAGraph.Checked := pos('%', MReferenceDNA.Text) > 0;
+
+  SBAllMemos.Max := Length(MReferenceDNA.Text);
 end;
 
 procedure TFMain.RefreshCreateDNAStats;
@@ -763,7 +804,7 @@ begin
           exit;
         end;
 
-      runInPython('5_read_aligner', reference + #13#10 + MainPath + 'python\2_reference_preprocessor\out.txt' + #13#10 + MainPath + 'python\4_read_generator\out.txt', FMain.CallbackAlignReads);
+      runInPython('5_read_aligner', reference + #13#10 + MainPath + 'python\2_reference_preprocessor\out.txt' + #13#10 + MainPath + 'python\4_read_generator\out.txt' + #13#10 + EAlignReadsD.Text + #13#10 + EAlignReadsLength.Text, FMain.CallbackAlignReads);
     end;
 end;
 
@@ -860,11 +901,13 @@ end;
 procedure TFMain.MAssembleDNAChange(Sender: TObject);
 begin
   RefreshAssembleDNAStats;
+
+  SBAllMemos.Max := Length(MAssembleDNA.Text);
 end;
 
 procedure TFMain.RefreshAssembleDNAStats;
 var res, original, assembledDNA: string;
-    i, correct: Integer;
+    i, correct, noteventried, minlen: Integer;
 begin
   res := 'Status: ';
 
@@ -879,25 +922,24 @@ begin
     else
       begin
         correct := 0;
+        noteventried := 0;
         for i := 1 to min(Length(assembledDNA), Length(original)) do
           if assembledDNA[i] = original[i] then
-            Inc(correct);
-        res := res + 'Individual DNA with ' + InttoStr((correct * 100) div min(Length(assembledDNA), Length(original))) + '% accuracy';
+            Inc(correct)
+          else
+            if assembledDNA[i] = '_' then
+              Inc(noteventried);
+        minlen := min(Length(assembledDNA), Length(original));
+        res := res + 'Assembly to ' + InttoStr((correct * 100) div minlen) + '% correct, to ' + InttoStr((noteventried * 100) div minlen) + '% stated as unknown and to ' + InttoStr(100 - (((correct + noteventried) * 100) div minlen)) + '% stated wrongly.';
       end;
 
   LAssembleDNAStatus.Caption := res;
 end;
 
-procedure TFMain.ECreateReadsLengthChange(Sender: TObject);
-begin
-  if not (EPreProcessReferenceHorizon.Text = ECreateReadsLength.Text) then
-    EPreProcessReferenceHorizon.Text := ECreateReadsLength.Text;
-end;
-
 procedure TFMain.EPreProcessReferenceHorizonChange(Sender: TObject);
-begin                                                  
-  if not (EPreProcessReferenceHorizon.Text = ECreateReadsLength.Text) then
-    ECreateReadsLength.Text := EPreProcessReferenceHorizon.Text;
+begin
+  if not (EPreProcessReferenceHorizon.Text = EAlignReadsLength.Text) then
+    EAlignReadsLength.Text := EPreProcessReferenceHorizon.Text;
 end;
 
 procedure TFMain.MCreateReadsresChange(Sender: TObject);
@@ -947,8 +989,6 @@ begin
             else
               break;
 
-          FMain.Caption := original;
-
           j := 0;
           for i := 1 to overalllength do
             if original[i] = '_' then
@@ -966,7 +1006,7 @@ end;
 procedure TFMain.RefreshAlignReadsStats;
 var res: string;
     Readspos, Alignedreads: TStringList;
-    fulllength, correctlyaligned, i: Integer;
+    fulllength, correctlyaligned, noteventried, i: Integer;
 begin
   res := 'Status: ';
 
@@ -981,16 +1021,20 @@ begin
     if Readspos.Count = 0 then
       res := res + 'No location information available'
     else
-    begin
-      fulllength := min(Readspos.Count, Alignedreads.Count) - 1;
-      correctlyaligned := 0;
+      begin
+        fulllength := min(Readspos.Count, Alignedreads.Count) - 1;
+        correctlyaligned := 0;
+        noteventried := 0;
 
-      for i := 0 to fulllength do
-        if Readspos[i] = Alignedreads[i] then
-          Inc(correctlyaligned);
+        for i := 0 to fulllength do
+          if Readspos[i] = Alignedreads[i] then
+            Inc(correctlyaligned)
+          else
+            if Alignedreads[i] = '' then
+              Inc(noteventried);
 
-      res := res + 'Alignment to ' + InttoStr((correctlyaligned * 100) div fulllength) + '% correct';
-    end;
+        res := res + 'Alignment to ' + InttoStr((correctlyaligned * 100) div (fulllength + 1)) + '% correct, to ' + InttoStr((noteventried * 100) div (fulllength + 1)) + '% stated as unknown and to ' + InttoStr(100 - (((correctlyaligned + noteventried) * 100) div (fulllength + 1))) + '% stated wrongly.';
+      end;
 
   Readspos.Free;
   Alignedreads.Free;
@@ -1003,14 +1047,73 @@ begin
   RefreshAlignReadsStats;
 end;
 
+procedure TFMain.EAlignReadsLengthChange(Sender: TObject);
+begin
+  if not (EPreProcessReferenceHorizon.Text = EAlignReadsLength.Text) then
+    EPreProcessReferenceHorizon.Text := EAlignReadsLength.Text;
+end;
+
+procedure TFMain.SBAllMemosScroll(Sender: TObject; ScrollCode: TScrollCode;
+var ScrollPos: Integer);
+begin
+  MReferenceDNA.Lines.BeginUpdate;
+  MReferenceDNA.Perform(EM_LineScroll,-SBAllMemos.Max,0);
+  MReferenceDNA.Perform(EM_LineScroll,SBAllMemos.Position,0);
+  MReferenceDNA.Lines.EndUpdate;
+
+  MCreateDNAres.Lines.BeginUpdate;
+  MCreateDNAres.Perform(EM_LineScroll,-SBAllMemos.Max,0);
+  MCreateDNAres.Perform(EM_LineScroll,SBAllMemos.Position,0);
+  MCreateDNAres.Lines.EndUpdate;
+
+  MAssembleDNA.Lines.BeginUpdate;
+  MAssembleDNA.Perform(EM_LineScroll,-SBAllMemos.Max,0);
+  MAssembleDNA.Perform(EM_LineScroll,SBAllMemos.Position,0);
+  MAssembleDNA.Lines.EndUpdate;
+end;
+
+procedure TFMain.ResetTo(difficulty: Integer);
+begin
+  case difficulty of
+    0:
+    begin
+      ECreateDNALength.Text := '100';
+      ECreateDNAAlphabet.Text := 'ACGT';
+      EPreProcessReferenceHorizon.Text := '10';
+      ECreateReadsLength.Text := '20';
+      ECreateReadsAmount.Text := '20';
+      ECreateReadsMisProb.Text := '0';
+      EAlignReadsLength.Text := EPreProcessReferenceHorizon.Text;
+      EAlignReadsD.Text := '1';
+    end;
+    1:
+    begin
+      ECreateDNALength.Text := '1000';
+      ECreateDNAAlphabet.Text := 'ACGT';
+      EPreProcessReferenceHorizon.Text := '20';
+      ECreateReadsLength.Text := '60';
+      ECreateReadsAmount.Text := '100';
+      ECreateReadsMisProb.Text := '0';
+      EAlignReadsLength.Text := EPreProcessReferenceHorizon.Text;
+      EAlignReadsD.Text := '2';
+    end;
+  end;
+
+  SaveDAB;
+end;
+
 end.
 
 {
+  === DA IMMY ===
+  :: What about this: run a second cycle, completely after you are done, and try to align the reads that are left over not to the reference, but to the string that has been created so far! SERIOUSLY! INSTAWIN! =)
+
   === TODO ===
-  :: allow for mismatches when aligning (e.g. use pigeonhole principle), as there WILL be mismatches, as the original string is NOT identical to the reference, even if all the reads are good and well!
+  :: try out mismatch probability higher than 0 for reads themselves!
   :: use an actual net, not just a string
   :: when creating and aligning reads and so on, keep in mind that we should indeed look at the individual string plus its reverse opposite!
   :: create reads from individual string even with indels, maybe? (check if the data actually has indels in the reads themselves, or if the data usually only comes with mismatches, but not with indels!)
   :: find a good way to guesstime the size of the original string (currently the exact size of the reference string is assumed, but that won't fly once we are using a net...)
+  :: use indels on the individual string (the source code is there, just commented out right now because it was too hard for us to pull off...)
 }
 

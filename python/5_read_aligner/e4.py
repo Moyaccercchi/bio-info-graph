@@ -45,25 +45,23 @@ freads = open(readpath, 'r')
 
 
 # check if a Pattern is a match with at most d mismatches at a given position in the text
-# returns (1, score) if Pattern is a match, where score is d - the amount of mismatches found
-# returns (0, 0) otherwise
 def isamatch(Pattern, Text, d, position):
 
     # eliminate strings that start before the text
     if position < 0:
-        return [0, 0]
+        return 0
 
     # eliminate strings that don't fit into the text
     if position+len(Pattern) > len(Text):
-        return [0, 0]
+        return 0
 
     # eliminate strings that have too many mismatches
     for i in range(0, len(Pattern)):
         if (Text[position+i] != Pattern[i]):
             d -= 1
             if d < 0:
-                return [0, 0]
-    return [1, d]
+                return 0
+    return 1
 
 
 # call the pigeonhole algorithm
@@ -109,9 +107,8 @@ def pigeonhole(Pattern, Text, d, suffix_array, plen):
         # results (from 73% correct assembly up to 96% correct assembly)
         # while still being a lot less expensive than increasing the main d
         # even by just 1
-        ismatch,dofmatch = isamatch(Pattern, Text, d+3, possible_ret[i])
-        if ismatch:
-            ret.append([dofmatch, possible_ret[i]])
+        if isamatch(Pattern, Text, d+3, possible_ret[i]):
+            ret.append(possible_ret[i])
     
     return ret
 
@@ -125,8 +122,8 @@ def align_reads(reference, suffix_array, freads, d, plen):
     while (lastline != ""):
         pigeon = pigeonhole(lastline, reference, d, suffix_array, plen)
         if len(pigeon) > 0:
-            pigeon.sort()
-            ret.append(str(pigeon[len(pigeon)-1][1]))
+            # TODO :: do not just use the first one, but actually choose the best one
+            ret.append(str(pigeon[0]))
         else:
             ret.append("")
         lastline = freads.readline().strip()

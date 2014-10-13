@@ -2,7 +2,7 @@
 # The previous line (which must be the first one to work) makes the script self-executing,
 # assuming that the system has the Python interpreter at path /usr/local/bin/python.
 
-# This wants to be run in Python 2 or 3.
+# This wants to be run in Python 3.
 
 
 # Read Aligner

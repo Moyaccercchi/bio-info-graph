@@ -8,13 +8,19 @@ uses
 
 type
   TFOptions = class(TForm)
-    Label1: TLabel;
-    EPythonPath: TEdit;
     PHUDBtm: TPanel;
     Button1: TButton;
     Button2: TButton;
+    GBEnvironment: TGroupBox;
+    Label1: TLabel;
+    EPythonPath: TEdit;
+    GBReset: TGroupBox;
+    Button3: TButton;
+    Button4: TButton;
     procedure Button2Click(Sender: TObject);
     procedure Button1Click(Sender: TObject);
+    procedure Button3Click(Sender: TObject);
+    procedure Button4Click(Sender: TObject);
   private
     { Private declarations }
   public
@@ -38,6 +44,18 @@ end;
 
 procedure TFOptions.Button1Click(Sender: TObject);
 begin
+  Close;
+end;
+
+procedure TFOptions.Button3Click(Sender: TObject);
+begin
+  FMain.ResetTo(0);
+  Close;
+end;
+
+procedure TFOptions.Button4Click(Sender: TObject);
+begin
+  FMain.ResetTo(1);
   Close;
 end;
 

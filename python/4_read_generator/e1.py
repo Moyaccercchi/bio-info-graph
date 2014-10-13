@@ -37,17 +37,9 @@ def generate_reads(text, k, amt, misprob, alphabet):
     
     maxoffset = len(text) - k
     alen = len(alphabet)
-    # We want to give a fair chance that reads start at 0 or end at the very end;
-    # to do so, we add a read length before the beginning and a read length after the end
-    randlow = - k
-    randhigh = maxoffset + k
     
     for i in range(0, amt):
-        offset = random.randint(randlow, randhigh)
-        if offset < 0:
-            offset = 0
-        if offset > maxoffset:
-            offset = maxoffset
+        offset = random.randint(0, maxoffset)
         finalread = ''
         for j in range(0, k):
             if random.randint(0, 100) < misprob:

@@ -18,21 +18,21 @@ object FMain: TFMain
   TextHeight = 13
   object PHUDBtm: TPanel
     Left = 0
-    Top = 520
+    Top = 496
     Width = 920
-    Height = 54
+    Height = 78
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 0
     object LVersion: TLabel
       Left = 8
-      Top = 36
+      Top = 60
       Width = 3
       Height = 13
     end
     object BOptions: TButton
       Left = 8
-      Top = 8
+      Top = 32
       Width = 265
       Height = 25
       Caption = 'Options'
@@ -41,20 +41,28 @@ object FMain: TFMain
     end
     object BClose: TButton
       Left = 480
-      Top = 8
+      Top = 32
       Width = 265
       Height = 25
       Caption = 'Close'
       TabOrder = 1
       OnClick = BCloseClick
     end
+    object SBAllMemos: TScrollBar
+      Left = 16
+      Top = 8
+      Width = 633
+      Height = 16
+      PageSize = 0
+      TabOrder = 2
+      OnScroll = SBAllMemosScroll
+    end
   end
   object SBMain: TScrollBox
     Left = 0
     Top = 0
     Width = 920
-    Height = 520
-    VertScrollBar.Position = 294
+    Height = 496
     VertScrollBar.Smooth = True
     VertScrollBar.Tracking = True
     Align = alClient
@@ -62,10 +70,11 @@ object FMain: TFMain
     TabOrder = 1
     object PMain: TPanel
       Left = 0
-      Top = -294
+      Top = 0
       Width = 833
-      Height = 957
+      Height = 985
       BevelOuter = bvNone
+      Caption = 'a'
       TabOrder = 0
       object GBCreateDNA: TGroupBox
         Left = 8
@@ -213,7 +222,6 @@ object FMain: TFMain
           Height = 21
           TabOrder = 2
           Text = '20'
-          OnChange = ECreateReadsLengthChange
         end
         object ECreateReadsMisProb: TEdit
           Left = 516
@@ -447,7 +455,7 @@ object FMain: TFMain
           Width = 53
           Height = 21
           TabOrder = 4
-          Text = '20'
+          Text = '10'
           OnChange = EPreProcessReferenceHorizonChange
         end
       end
@@ -455,19 +463,47 @@ object FMain: TFMain
         Left = 8
         Top = 656
         Width = 777
-        Height = 169
+        Height = 201
         Caption = ' 5 :: Align reads to reference DNA '
         TabOrder = 4
         object LAlignReadsStatus: TLabel
           Left = 8
-          Top = 148
+          Top = 180
           Width = 150
           Height = 13
           Caption = 'Status: Alignment not initialized'
         end
+        object LAlignReadsLengthBefore: TLabel
+          Left = 8
+          Top = 24
+          Width = 75
+          Height = 13
+          Caption = 'Interval length:'
+        end
+        object LAlignReadsLengthAfter: TLabel
+          Left = 204
+          Top = 24
+          Width = 46
+          Height = 13
+          Caption = 'basepairs'
+        end
+        object LAlignReadsDBefore: TLabel
+          Left = 272
+          Top = 24
+          Width = 158
+          Height = 13
+          Caption = 'Maximum amount of mismatches:'
+        end
+        object LAlignReadsDAfter: TLabel
+          Left = 564
+          Top = 24
+          Width = 46
+          Height = 13
+          Caption = 'basepairs'
+        end
         object MAlignReads: TMemo
           Left = 8
-          Top = 48
+          Top = 80
           Width = 633
           Height = 97
           Font.Charset = ANSI_CHARSET
@@ -485,7 +521,7 @@ object FMain: TFMain
         end
         object BAlignReads: TButton
           Left = 8
-          Top = 18
+          Top = 50
           Width = 249
           Height = 25
           Caption = 'Align'
@@ -494,17 +530,34 @@ object FMain: TFMain
         end
         object BAlignReadsExport: TButton
           Left = 264
-          Top = 18
+          Top = 50
           Width = 249
           Height = 25
           Caption = 'Export'
           TabOrder = 2
           OnClick = BAlignReadsExportClick
         end
+        object EAlignReadsLength: TEdit
+          Left = 84
+          Top = 21
+          Width = 117
+          Height = 21
+          TabOrder = 3
+          Text = '10'
+          OnChange = EAlignReadsLengthChange
+        end
+        object EAlignReadsD: TEdit
+          Left = 436
+          Top = 21
+          Width = 121
+          Height = 21
+          TabOrder = 4
+          Text = '1'
+        end
       end
       object GBAssembleDNA: TGroupBox
         Left = 8
-        Top = 832
+        Top = 864
         Width = 777
         Height = 113
         Caption = ' 6 :: Assemble full individual DNA string '

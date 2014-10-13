@@ -72,7 +72,7 @@ object FMain: TFMain
       Left = 0
       Top = 0
       Width = 833
-      Height = 985
+      Height = 1121
       BevelOuter = bvNone
       Caption = 'a'
       TabOrder = 0
@@ -603,6 +603,65 @@ object FMain: TFMain
           Caption = 'Export'
           TabOrder = 2
           OnClick = BAssembleDNAExportClick
+        end
+      end
+      object GBFillGaps: TGroupBox
+        Left = 8
+        Top = 984
+        Width = 777
+        Height = 129
+        Caption = ' 7 :: Fill in the gaps using magic '
+        TabOrder = 6
+        object LFillGapsStatus: TLabel
+          Left = 8
+          Top = 108
+          Width = 148
+          Height = 13
+          Caption = 'Status: Assembly not initialized'
+        end
+        object LFillGapsTop: TLabel
+          Left = 8
+          Top = 16
+          Width = 527
+          Height = 13
+          Caption = 
+            'Actually, this step will DRASTICALLY DETERIORATE the outcome. If' +
+            ' at all possible, collect more reads instead.'
+        end
+        object MFillGaps: TMemo
+          Left = 8
+          Top = 64
+          Width = 633
+          Height = 41
+          Font.Charset = ANSI_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -12
+          Font.Name = 'Courier New'
+          Font.Style = []
+          ParentFont = False
+          PopupMenu = PMGeneral
+          ScrollBars = ssHorizontal
+          TabOrder = 0
+          WordWrap = False
+          OnChange = MFillGapsChange
+        end
+        object BFillGaps: TButton
+          Left = 8
+          Top = 34
+          Width = 249
+          Height = 25
+          Caption = 'Fill in the gaps'
+          TabOrder = 1
+          OnClick = BFillGapsClick
+        end
+        object BFillGapsExport: TButton
+          Left = 264
+          Top = 34
+          Width = 249
+          Height = 25
+          Caption = 'Export'
+          TabOrder = 2
+          OnClick = BFillGapsExportClick
         end
       end
     end

@@ -89,6 +89,12 @@ type
     EAlignReadsD: TEdit;
     LAlignReadsDAfter: TLabel;
     SBAllMemos: TScrollBar;
+    GBFillGaps: TGroupBox;
+    LFillGapsStatus: TLabel;
+    MFillGaps: TMemo;
+    BFillGaps: TButton;
+    BFillGapsExport: TButton;
+    LFillGapsTop: TLabel;
     procedure FormResize(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure BCloseClick(Sender: TObject);
@@ -129,6 +135,9 @@ type
     procedure EAlignReadsLengthChange(Sender: TObject);
     procedure SBAllMemosScroll(Sender: TObject; ScrollCode: TScrollCode;
       var ScrollPos: Integer);
+    procedure BFillGapsExportClick(Sender: TObject);
+    procedure MFillGapsChange(Sender: TObject);
+    procedure BFillGapsClick(Sender: TObject);
   private
     function copyend(str, substr: string; depth: Integer): string;
     function createRandomDNAString: string;
@@ -143,6 +152,7 @@ type
     procedure RefreshCreateDNAStats;
     procedure RefreshCreateReadsStats;
     procedure RefreshAlignReadsStats;
+    procedure RefreshFillGapsStats;
     procedure SaveDAB;
     procedure LoadDAB;
     procedure runInPython(folder, input: string; callOnFinish: TCallbackMethod);
@@ -176,6 +186,7 @@ begin
   GBPreProcessReference.Width := GBCreateDNA.Width;
   GBAlignReads.Width := GBCreateDNA.Width;
   GBAssembleDNA.Width := GBCreateDNA.Width;
+  GBFillGaps.Width := GBCreateDNA.Width;
 
   MCreateDNAres.Width := GBCreateDNA.ClientWidth - (2 * MCreateDNAres.Left);
   BCreateDNAImport.Width := (GBCreateDNA.Width - (4 * BCreateDNACreate.Left)) div 3;
@@ -252,6 +263,11 @@ begin
   BAssembleDNAExport.Width := BAssembleDNA.Width;
   BAssembleDNAExport.Left := GBAssembleDNA.Width - (BAssembleDNA.Left + BAssembleDNAExport.Width);
   MAssembleDNA.Width := GBAssembleDNA.Width - (2 * BAssembleDNA.Left);
+
+  BFillGaps.Width := (GBFillGaps.Width - (3 * BFillGaps.Left)) div 2;
+  BFillGapsExport.Width := BFillGaps.Width;
+  BFillGapsExport.Left := GBFillGaps.Width - (BFillGaps.Left + BFillGapsExport.Width);
+  MFillGaps.Width := GBFillGaps.Width - (2 * BFillGaps.Left);
 
   SBAllMemos.Left := MAssembleDNA.Left + GBAssembleDNA.Left;
   SBAllMemos.Width := MAssembleDNA.Width;
@@ -1070,6 +1086,11 @@ begin
   MAssembleDNA.Perform(EM_LineScroll,-SBAllMemos.Max,0);
   MAssembleDNA.Perform(EM_LineScroll,SBAllMemos.Position,0);
   MAssembleDNA.Lines.EndUpdate;
+
+  MFillGaps.Lines.BeginUpdate;
+  MFillGaps.Perform(EM_LineScroll,-SBAllMemos.Max,0);
+  MFillGaps.Perform(EM_LineScroll,SBAllMemos.Position,0);
+  MFillGaps.Lines.EndUpdate;
 end;
 
 procedure TFMain.ResetTo(difficulty: Integer);
@@ -1102,12 +1123,73 @@ begin
   SaveDAB;
 end;
 
+procedure TFMain.BFillGapsExportClick(Sender: TObject);
+begin
+  if SDGeneral.Execute then
+    MFillGaps.Lines.SaveToFile(SDGeneral.FileName);
+end;
+
+procedure TFMain.MFillGapsChange(Sender: TObject);
+begin
+  RefreshFillGapsStats;
+
+  SBAllMemos.Max := Length(MFillGaps.Text);
+end;
+
+procedure TFMain.RefreshFillGapsStats;
+var res, original, assembledDNA: string;
+    i, correct, noteventried, minlen: Integer;
+begin
+  res := 'Status: ';
+
+  original := StringReplace(MCreateDNAres.Text, #13#10, '', [rfReplaceAll]);
+  assembledDNA := StringReplace(MFillGaps.Text, #13#10, '', [rfReplaceAll]);
+
+  if Length(assembledDNA) = 0 then
+    res := res + 'Assembly not initialized'
+  else
+    if Length(original) = 0 then
+      res := res + 'No individual DNA string present'
+    else
+      begin
+        correct := 0;
+        noteventried := 0;
+        for i := 1 to min(Length(assembledDNA), Length(original)) do
+          if assembledDNA[i] = original[i] then
+            Inc(correct)
+          else
+            if assembledDNA[i] = '_' then
+              Inc(noteventried);
+        minlen := min(Length(assembledDNA), Length(original));
+        res := res + 'Assembly to ' + InttoStr((correct * 100) div minlen) + '% correct, to ' + InttoStr((noteventried * 100) div minlen) + '% stated as unknown and to ' + InttoStr(100 - (((correct + noteventried) * 100) div minlen)) + '% stated wrongly.';
+      end;
+
+  LFillGapsStatus.Caption := res;
+end;
+
+procedure TFMain.BFillGapsClick(Sender: TObject);
+var assembledDNA, reference: string;
+    i, minlen: Integer;
+begin
+  assembledDNA := StringReplace(MAssembleDNA.Text, #13#10, '', [rfReplaceAll]);
+  reference := StringReplace(MReferenceDNA.Text, #13#10, '', [rfReplaceAll]);
+
+  minlen := min(Length(assembledDNA), Length(reference));
+
+  for i := 1 to minlen do
+    if assembledDNA[i] = '_' then
+      assembledDNA[i] := reference[i];
+
+  MFillGaps.Text := assembledDNA;
+end;
+
 end.
 
 {
   === DA IMMY ===
   :: What about this: run a second cycle, completely after you are done, and try to align the reads that are left over not to the reference, but to the string that has been created so far! SERIOUSLY! INSTAWIN! =)
-
+     :: manually this can be done by putting the filled in string back as reference into step 1, and then going through steps 5 and 6 again. This should increase the overall rating in step 6, but most likely not most, sadly... ._.
+     
   === TODO ===
   :: try out mismatch probability higher than 0 for reads themselves!
   :: use an actual net, not just a string

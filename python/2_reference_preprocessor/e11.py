@@ -21,11 +21,6 @@ fo = open('in.txt', 'r')
 
 referencepath = fo.readline().strip()
 horizon = int(fo.readline().strip())
-
-# 0 .. use hashes with adjusted reference [new]
-# 1 .. use BWT [similar Siren2014]
-# 2 .. use hashes [similar to Schneeberger2009]
-# 4 .. use BWT [new]
 useBWT = int(fo.readline().strip())
 
 fo.close()
@@ -590,7 +585,7 @@ def getAllCyclicStrings(instr):
     return ret
 
 
-if (useBWT == 1) or (useBWT == 4):
+if (useBWT):
 
     reference, out_reference = loadTextFromFile(referencepath)
 

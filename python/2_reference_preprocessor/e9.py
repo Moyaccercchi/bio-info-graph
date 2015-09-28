@@ -8,12 +8,41 @@
 # Reference Pre-Processor
 # Given: A reference file
 #        An integer horizon, which tells us how far to look ahead if we do look ahead
-# Return: A suffix array (either with short strings, or with the BWT)
+# Return: A suffix array
 #
-# by Moyaccercchi, 17th of June 2015
+# by Moyaccercchi, 9th of May 2015
 #
-# version 11:
-# added hash support
+# version 9:
+#
+# allows same-length bubbles for nested or non-nested graphs, even for several bubbles for a virtual read
+#
+# also uses i_absolute to have an absolute counting mechanism for the later alignment
+# (however, this only really works with SNIPs in which each option has the exact same
+# size, so A(CG|GT|T(A|G))T should be the most complicated thing that still works with
+# this method, while A(C|)T should be the least complicated thing that requires a
+# completely different method - and by "works with" I mean being theoretically able
+# to use that method this this type of reference, not that the current source code
+# actually supports it)
+#
+# rewrites the reference for the following stages by transforming SNIPs
+# into taking the first choice (which again only really makes sense if the SNIP
+# options all have the same length), e.g. A(G|T)C becomes AGC, so that the numbering
+# with i_absolute actually corresponds to the reference that the other steps further
+# down the line will encounter
+#
+# further than that, also allows multi-SNIPs (SNIPs with more than two alternatives)
+# as well as general same-length SNIPs (instead of just length 1, all SNIP lengths
+# smaller than the horizon are supported - the "smaller than the horizon" part
+# might still be necessary, I actually have not tried it out yet!)
+#
+# also, we are here fixing a bug from the previous versions;
+# basically, what happens is that when the window is moved all the way to the SNIP
+# starting at the left-most position, then the window jumps ahead over the SNIP
+# (which makes sense, as it would be very hard to trace the SNIP when not having
+# its start within the current window)
+# this however means that virtual reads starting in a position within the SNIP different
+# than the first of each path were not created, which is now solved by explicitly creating
+# them (see position [1])
 
 import collections
 
@@ -22,14 +51,7 @@ fo = open('in.txt', 'r')
 referencepath = fo.readline().strip()
 horizon = int(fo.readline().strip())
 
-# 0 .. use hashes with adjusted reference [new]
-# 1 .. use BWT [similar Siren2014]
-# 2 .. use hashes [similar to Schneeberger2009]
-# 4 .. use BWT [new]
-useBWT = int(fo.readline().strip())
-
 fo.close()
-
 
 
 def loadTextFromFile(filepath):
@@ -580,63 +602,10 @@ def dicttoadjacency(ourdict):
     return '\n'.join(sorted(ret))
 
 
-def getAllCyclicStrings(instr):
+res = dicttoadjacency(generate_suffix_array(referencepath, horizon))
 
-    ret = []
+fo = open('out.txt', 'w')
 
-    for i in range(0, len(instr)):
-        ret.append(instr[i:len(instr)] + instr[0:i])
+fo.write(res)
 
-    return ret
-
-
-if (useBWT == 1) or (useBWT == 4):
-
-    reference, out_reference = loadTextFromFile(referencepath)
-
-    allCyclicStrings = getAllCyclicStrings(reference + '$')
-
-    allCyclicStringsandIndicies = []
-
-    for i in range(0, len(allCyclicStrings)):
-        allCyclicStringsandIndicies.append([allCyclicStrings[i], i])
-
-    allCyclicStringsandIndicies.sort()
-
-
-    # Burrows-Wheeler Transform
-
-    bwt = ''
-
-    for i in range(0, len(allCyclicStringsandIndicies)):
-        bwt += allCyclicStringsandIndicies[i][0][len(allCyclicStringsandIndicies[i][0]) - 1]
-
-    fo = open('out.txt', 'w')
-
-    fo.write(bwt)
-
-    fo.close()
-    
-
-    # Suffix Array
-
-    sa = ''
-
-    for i in range(0, len(allCyclicStringsandIndicies)):
-        sa += str(allCyclicStringsandIndicies[i][1]) + '\n'
-
-    fo = open('sa.txt', 'w')
-
-    fo.write(sa)
-
-    fo.close()
-    
-else:
-
-    res = dicttoadjacency(generate_suffix_array(referencepath, horizon))
-
-    fo = open('out.txt', 'w')
-
-    fo.write(res)
-
-    fo.close()
+fo.close()

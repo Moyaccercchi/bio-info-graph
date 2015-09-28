@@ -15,10 +15,10 @@
 #        suffix array more expensive, so we'll make it fixed-length instead - whoop whoop!)
 # Return: A list of locations from where the reads originated
 # 
-# by Moyaccercchi, 26th June 2015
+# by Moyaccercchi, 17th June 2015
 # 
-# version 15:
-# improving BWT support further
+# version 13:
+# added hash support
 # 
 # the string "# (analysis) " can be globally replaced with an empty string to obtain debug output
 
@@ -37,7 +37,6 @@ plen = int(fo.readline().strip())
 # 0 .. use hashes with adjusted reference [new]
 # 1 .. use BWT [similar Siren2014]
 # 2 .. use hashes [similar to Schneeberger2009]
-# 4 .. use BWT [new]
 useBWT = int(fo.readline().strip())
 
 usepigeonhole = int(fo.readline().strip())
@@ -374,7 +373,7 @@ def pigeonhole(Pattern, Text, d, k, suffix_array, plen):
 # firstCol .. the first column (sorted BWT)
 # numfirstCol .. the indices of the first column
 # plen .. length for parts of the pigeonhole algorithm, that is, roughly len(Pattern) / (d+1)
-def pigeonholeBWT(Pattern, Text, d, k, suffix_array, BWT, numBWT, firstCol, numfirstCol, plen, C, alphabetToNum, numToAlphabet, use_advanced_BWT):
+def pigeonholeBWT(Pattern, Text, d, k, suffix_array, BWT, numBWT, firstCol, numfirstCol, plen):
 
     # (analysis) print("\npigeonhole, plen = ", plen, ", plen should be = ", len(Pattern) / (d+1), ' pattern is ', Pattern, ' text is ', Text)
     
@@ -407,7 +406,7 @@ def pigeonholeBWT(Pattern, Text, d, k, suffix_array, BWT, numBWT, firstCol, numf
         # now Pattern[j:newj] is the part of the read that we want to align
         # correctly (that is, without any mismatches at all)
 
-        [firstRow, lastRow] = findBestRows(Pattern[j:newj], BWT, numBWT, firstCol, numfirstCol, C, alphabetToNum, numToAlphabet, use_advanced_BWT);
+        [firstRow, lastRow] = findBestRows(Pattern[j:newj], BWT, numBWT, firstCol, numfirstCol);
 
         # (analysis) print('first: ', firstRow, ' last: ', lastRow)
         # (analysis) print("j: " + str(j) + " newj: " + str(newj) + " pat: " + Pattern[j:newj])
@@ -475,7 +474,7 @@ def pigeonholeBWT(Pattern, Text, d, k, suffix_array, BWT, numBWT, firstCol, numf
 def last_to_first(i, BWT, numBWT, firstCol, numfirstCol):
 
     targetLetter = BWT[i]
-    targetNum = numBWT[i]
+    targetNum = numBWT[i]    
 
     for i in range(0, len(BWT)):
         if (firstCol[i] == targetLetter) and (numfirstCol[i] == targetNum):
@@ -502,75 +501,18 @@ def find_rows_with_letter(letter, BWT, startAt, endAt):
 
 
 
-# internally used for BWT with pigeonhole algorithm AND for BWT without pigeonhole algorithm
-def findBestRows(lastline, BWT, numBWT, firstCol, numfirstCol, C, alphabetToNum, numToAlphabet, use_advanced_BWT):
-
-    # as seen in Siren2014
-    if (use_advanced_BWT):
-
-        P = lastline
-        lenP = len(P)
-
-        [sp, ep] = [C[alphabetToNum[P[lenP-1]]], C[alphabetToNum[P[lenP-1]] + 1] - 1]
-        # in the Siren2014 paper, sp and ep would each be one higher
-
-        for i in range(lenP-2, -1, -1):
-            if ep >= sp-1:
-                # (analysis) print('adv: [' + str(sp) + ', ' + str(ep) + '] for ' + P[i] + ' with [' + str(sp) + ', ' + str(ep) + '] bringing (' + BWT[sp] + str(numBWT[sp]) + ', ' + BWT[ep] + str(numBWT[ep]) + ')')
-                sp = C[alphabetToNum[P[i]]] + rank(P[i], BWT, sp)
-                ep = C[alphabetToNum[P[i]]] + rank(P[i], BWT, ep + 1) - 1
-                # in the Siren2014 paper, sp and ep would each be one higher
-
-            else:
-                return [-1, -1]
-
-        # (analysis) print('adv res: [' + str(sp) + ', ' + str(ep) + ']')
-
-        return [sp, ep]
-
-
-
-        # the following source code is half-way between the normal BWT
-        # and the advanced BWT implementation, to help understanding their
-        # differences and how once translates into the other;
-        # notice especially how find_rows_with_letter is here still used,
-        # but becomes unnecessary in the advanced BWT version
-        # 
-        # P = lastline
-        # lenP = len(P)
-        #
-        # [sp, ep] = [0, len(BWT)-1]
-        # for i in range(lenP-1, -1, -1):
-        #     [sp, ep] = find_rows_with_letter(P[i], BWT, sp, ep)
-        #     if (ep > -1) and (ep >= sp-1):
-        #         sp = C[alphabetToNum[P[i]]] + rank(P[i], BWT, sp)
-        #         ep = C[alphabetToNum[P[i]]] + rank(P[i], BWT, ep)
-        #     else:
-        #         return [-1, -1]
-        #
-        # return [sp, ep]
-
-
+def findBestRows(lastline, BWT, numBWT, firstCol, numfirstCol):
 
     k = len(lastline)-1
 
-    [startRow, endRow] = [0, len(BWT)-1]
-
-    # (analysis) print(' ')
-    # (analysis) print(' ')
+    startRow = 0
+    endRow = len(BWT)-1
 
     while (endRow > -1) and (k > -1):
-        # (analysis) pr = 'old: [' + str(startRow) + ', ' + str(endRow) + '] for ' + lastline[k]
         [startRow, endRow] = find_rows_with_letter(lastline[k], BWT, startRow, endRow)
-        if (endRow > -1):
-            # (analysis) print(pr + ' with [' + str(startRow) + ', ' + str(endRow) + '] bringing (' + BWT[startRow] + str(numBWT[startRow]) + ', ' + BWT[endRow] + str(numBWT[endRow]) + ')')
-            startRow = last_to_first(startRow, BWT, numBWT, firstCol, numfirstCol)
-            endRow = last_to_first(endRow, BWT, numBWT, firstCol, numfirstCol)
-            k -= 1
-
-    # (analysis) print(' ')
-
-    # (analysis) print('old res: [' + str(startRow) + ', ' + str(endRow) + ']')
+        startRow = last_to_first(startRow, BWT, numBWT, firstCol, numfirstCol)
+        endRow = last_to_first(endRow, BWT, numBWT, firstCol, numfirstCol)
+        k -= 1
 
     # suffix_array[startRow .. endRow+1] are equally perfect matches,
     # so we give back all of startRow up to endRow
@@ -578,51 +520,12 @@ def findBestRows(lastline, BWT, numBWT, firstCol, numfirstCol, C, alphabetToNum,
 
 
 
-# only used for BWT without pigeonhole algorithm
-def findBestRow(lastline, BWT, numBWT, firstCol, numfirstCol, C, alphabetToNum, numToAlphabet, use_advanced_BWT):
-
-    # (analysis) print(lastline)
+def findBestRow(lastline, BWT, numBWT, firstCol, numfirstCol):
 
     # actually, the results are equally perfect matches...
     # however, in the end we will have to choose one anyway, so let's just randomly
     # choose the last of the eligible rows for now
-    # (we take [1], which is endRow, so the last row)
-    ret = findBestRows(lastline, BWT, numBWT, firstCol, numfirstCol, C, alphabetToNum, numToAlphabet, use_advanced_BWT)
-
-    # (analysis) print(ret)
-
-    return ret[1]
-
-
-
-# only used by advanced BWT (see Siren2014, but with or without pigeonhole algorithm)
-# rank(c, BWT, i) is the number of occurrences of character c in prefix BWT[1, i]
-def rank(c, BWT, i):
-    return BWT.count(c, 0, i)
-
-# only used by advanced BWT (see Siren2014, but with or without pigeonhole algorithm)
-# select(c, BWT, j) is the position in BWT at which the character c occurs for the jth time
-def select(c, BWT, j):
-    i = 0
-    k = 0
-    lenBWT = len(BWT)
-    while (k < j) and (i < lenBWT):
-        if (BWT[i] == c):
-            k += 1
-        else:
-            i += 1
-    return i
-
-# only used by advanced BWT (see Siren2014, but with or without pigeonhole algorithm)
-# psi(i) is select(ch, BWT, i - C[ch]) where ch is the highest value with C[ch] < i
-def psi(i, BWT, C):
-    
-    for ch in range(0, len(numToAlphabet)):
-        if C[ch] >= i:
-            ch -= 1
-            break
-
-    return select(ch, BWT, i - C[ch])
+    return findBestRows(lastline, BWT, numBWT, firstCol, numfirstCol)[1]
 
 
 
@@ -634,10 +537,7 @@ def align_reads(referencepath, prepropath, sapath, freads, d, k, plen, useBWT, u
     
     ret = []
     
-    if (useBWT == 1) or (useBWT == 4):
-
-        # advanced BWT as in Siren2014; otherwise more basic BWT is used
-        use_advanced_BWT = useBWT == 4
+    if (useBWT == 1):
 
         # load Burrows-Wheeler Transform
 
@@ -645,7 +545,7 @@ def align_reads(referencepath, prepropath, sapath, freads, d, k, plen, useBWT, u
         BWT = fprepro.readline().strip()
         fprepro.close()
 
-        # build numbering of the BWT (last column) for using the first-last property
+        # build numbering for using the first-last property
 
         numBWT = []
         arrBWT = collections.defaultdict(lambda: 0)
@@ -658,7 +558,7 @@ def align_reads(referencepath, prepropath, sapath, freads, d, k, plen, useBWT, u
 
         firstCol = ''.join(sorted(BWT))
 
-        # build numbering of the sorted BWT (first column) for using the first-last property
+        # build numbering for using the first-last property
 
         numfirstCol = []
         arrfirstCol = collections.defaultdict(lambda: 0)
@@ -669,50 +569,13 @@ def align_reads(referencepath, prepropath, sapath, freads, d, k, plen, useBWT, u
 
         # We now have:
         #
-        # smnpbnnaaaaa$a (BWT)
-        # 11111231234516 (numBWT)
+        # BWT:
+        # smnpbnnaaaaa$a
+        # 11111231234516
         #
-        # $aaaaaabmnnnps (firstCol)
-        # 11234561112311 (numfirstCol)
-
-
-        numToAlphabet = []
-        alphabetToNum = {}
-        C = [0]
-
-
-        if use_advanced_BWT:
-            # create the C-array
-            # where C[0, s°+1] be such that C[c] := # of characters from {$, 1, 2, ..., c-1} in the BWT,
-            # with C[0] = C[$] = 0 and C[s°+1] = n = |BWT|
-            # we here build it by simply going through numfirstCol / firstCol and assigning
-            # stuff to C - this is a very simple way of building it, albeit not the best way ^^
-            # (also, we build the alphabet that is used right here as well)
-            lastchar = ''
-            j = 0
-            for i in range(0, len(firstCol)):
-                if firstCol[i] != lastchar:
-                    lastchar = firstCol[i]
-                    alphabetToNum[lastchar] = len(numToAlphabet)
-                    numToAlphabet.append(lastchar)
-                    C.append(C[j])
-                    j = j+1
-                C[j] += 1
-
-            # we now have:
-            #                  0  1  2  3  4  5  6
-            # numToAlphabet = [$, a, b, m, n, p, s]
-            # alphabetToNum = [$: 0, a: 1, b: 2, m: 3, n: 4, p: 5, s: 6]
-            #
-            # C[0] = C[$] = 0
-            # C[1] = C[a] = 1
-            # C[2] = C[b] = 7
-            # C[3] = C[m] = 8
-            # C[4] = C[n] = 9
-            # C[5] = C[p] = 12
-            # C[6] = C[s] = 13
-            # C[7]        = 14
-
+        # firstCol:
+        # $aaaaaabmnnnps
+        # 11234561112311
 
 
         # load suffix array
@@ -739,7 +602,7 @@ def align_reads(referencepath, prepropath, sapath, freads, d, k, plen, useBWT, u
 
             while (lastline != ""):
 
-                pigeon = pigeonholeBWT(lastline, reference, d, k, suffix_array, BWT, numBWT, firstCol, numfirstCol, plen, C, alphabetToNum, numToAlphabet, use_advanced_BWT)
+                pigeon = pigeonholeBWT(lastline, reference, d, k, suffix_array, BWT, numBWT, firstCol, numfirstCol, plen)
                 lenP = len(pigeon)-1
 
                 if lenP >= 0:
@@ -761,7 +624,7 @@ def align_reads(referencepath, prepropath, sapath, freads, d, k, plen, useBWT, u
             # do not use pigeonhole approach and only find exact locations
             while (lastline != ""):
 
-                bestRow = findBestRow(lastline, BWT, numBWT, firstCol, numfirstCol, C, alphabetToNum, numToAlphabet, use_advanced_BWT)
+                bestRow = findBestRow(lastline, BWT, numBWT, firstCol, numfirstCol)
 
                 if (bestRow > -1):
                     ret.append("[" + str(suffix_array[bestRow]) + ", 0]")

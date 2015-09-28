@@ -15,10 +15,10 @@
 #        suffix array more expensive, so we'll make it fixed-length instead - whoop whoop!)
 # Return: A list of locations from where the reads originated
 # 
-# by Moyaccercchi, 26th June 2015
+# by Moyaccercchi, 25th June 2015
 # 
-# version 15:
-# improving BWT support further
+# version 14:
+# improving BWT support
 # 
 # the string "# (analysis) " can be globally replaced with an empty string to obtain debug output
 
@@ -37,7 +37,6 @@ plen = int(fo.readline().strip())
 # 0 .. use hashes with adjusted reference [new]
 # 1 .. use BWT [similar Siren2014]
 # 2 .. use hashes [similar to Schneeberger2009]
-# 4 .. use BWT [new]
 useBWT = int(fo.readline().strip())
 
 usepigeonhole = int(fo.readline().strip())
@@ -596,33 +595,8 @@ def findBestRow(lastline, BWT, numBWT, firstCol, numfirstCol, C, alphabetToNum, 
 
 
 # only used by advanced BWT (see Siren2014, but with or without pigeonhole algorithm)
-# rank(c, BWT, i) is the number of occurrences of character c in prefix BWT[1, i]
 def rank(c, BWT, i):
     return BWT.count(c, 0, i)
-
-# only used by advanced BWT (see Siren2014, but with or without pigeonhole algorithm)
-# select(c, BWT, j) is the position in BWT at which the character c occurs for the jth time
-def select(c, BWT, j):
-    i = 0
-    k = 0
-    lenBWT = len(BWT)
-    while (k < j) and (i < lenBWT):
-        if (BWT[i] == c):
-            k += 1
-        else:
-            i += 1
-    return i
-
-# only used by advanced BWT (see Siren2014, but with or without pigeonhole algorithm)
-# psi(i) is select(ch, BWT, i - C[ch]) where ch is the highest value with C[ch] < i
-def psi(i, BWT, C):
-    
-    for ch in range(0, len(numToAlphabet)):
-        if C[ch] >= i:
-            ch -= 1
-            break
-
-    return select(ch, BWT, i - C[ch])
 
 
 
@@ -634,10 +608,10 @@ def align_reads(referencepath, prepropath, sapath, freads, d, k, plen, useBWT, u
     
     ret = []
     
-    if (useBWT == 1) or (useBWT == 4):
+    if (useBWT == 1):
 
         # advanced BWT as in Siren2014; otherwise more basic BWT is used
-        use_advanced_BWT = useBWT == 4
+        use_advanced_BWT = True
 
         # load Burrows-Wheeler Transform
 

@@ -15,8 +15,10 @@ function create_DaTeX_BWT_merge(h1, h2) {
 	// EMRG - for now, this is just bruteforced and shoehorned in here, but it shall be better later on =)
 	if (h1.indexOf('(') >= 0) {
 
-		var alt_A = h1.slice(h1.indexOf('(') + 1, 1);
-		var alt_B = h1.slice(h1.indexOf('|') + 1, 1);
+		var i = h1.indexOf('(');
+		var alt_A = h1.slice(i + 1, i + 2);
+		var i = h1.indexOf('|');
+		var alt_B = h1.slice(i + 1, i + 2);
 
 		var h1_A = h1.replace('(', '');
 		h1_A = h1_A.slice(0, h1_A.indexOf('|')) + h1_A.slice(h1_A.indexOf(')') + 1);

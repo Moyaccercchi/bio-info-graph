@@ -11,9 +11,11 @@ function create_DaTeX_BWT_merge(h1, h2) {
 		initialization
 	\************************************/
 	
-	// Does h1 contain a graph? - e.g. A(A|C)CA
-	// EMRG - for now, this is just bruteforced and shoehorned in here, but it shall be better later on =)
-	if (h1.indexOf('(') >= 0) {
+	// Does h1 or h2 contain a graph? - e.g. A(A|C)CA
+	var h1_graph = h1.indexOf('(') >= 0;
+	var h2_graph = h2.indexOf('(') >= 0;
+
+	if (h1_graph) {
 
 		var i = h1.indexOf('(');
 		var alt_A = h1.slice(i + 1, i + 2);
@@ -32,21 +34,28 @@ function create_DaTeX_BWT_merge(h1, h2) {
 		var h1a_B = h1_B.split('');
 		var h2a = h2.split('');
 
-		// create full array based on both strings
-		var ha = h1a.concat(['$ \\$_1 $']).concat(h2a).concat(['$ \\$_2 $']);
 		var ha_A = h1a_A.concat(['$ \\$_1 $']).concat(h2a).concat(['$ \\$_2 $']);
 		var ha_B = h1a_B.concat(['$ \\$_1 $']).concat(h2a).concat(['$ \\$_2 $']);
 
+	} else {
+
+		// create array forms of the input strings
+		var h1a = h1.split('');
+		var h2a = h2.split('');
+	}
+
+	// create full array based on both strings
+	var ha = h1a.concat(['$ \\$_1 $']).concat(h2a).concat(['$ \\$_2 $']);
+
+	// append delimiter character to input arrays
+	h1a[h1a.length] = '$ \\$ $';
+	h2a[h2a.length] = '$ \\$ $';
+
+	if (h1_graph) {
+
 		// append delimiter character to input arrays
-		h1a[h1a.length] = '$ \\$ $';
 		h1a_A[h1a_A.length] = '$ \\$ $';
 		h1a_B[h1a_B.length] = '$ \\$ $';
-		h2a[h2a.length] = '$ \\$ $';
-
-		// create strings based on arrays with delimiters
-		var h = ha.join('');
-		h1 = h1a.join('');
-		h2 = h2a.join('');
 
 		// generate cyclic rotations
 		var h_cr_A = create_cyclic_rotations(ha_A, 0, alt_A);
@@ -55,35 +64,24 @@ function create_DaTeX_BWT_merge(h1, h2) {
 		var h1_cr_A = create_cyclic_rotations(h1a_A, 0, alt_A);
 		var h1_cr_B = create_cyclic_rotations(h1a_B, 0, alt_B);
 		var h1_cr = h1_cr_A.concat(h1_cr_B);
-		var h2_cr = create_cyclic_rotations(h2a, h1a.length, '');
 
-		// EMRG - we just changed how pos works internally, now being an array of integer and letter,
-		// rather than just an integer ^^
+		// we are here implicitly assuming that h1a_A has the same length as h1a_B!
+		var h1_len = h1a_A.length;
 
 	} else {
-
-		// create array forms of the input strings
-		var h1a = h1.split('');
-		var h2a = h2.split('');
-
-		// create full array based on both strings
-		var ha = h1a.concat(['$ \\$_1 $']).concat(h2a).concat(['$ \\$_2 $']);
-
-		// append delimiter character to input arrays
-		h1a[h1a.length] = '$ \\$ $';
-		h2a[h2a.length] = '$ \\$ $';
-
-		// create strings based on arrays with delimiters
-		var h = ha.join('');
-		h1 = h1a.join('');
-		h2 = h2a.join('');
 
 		// generate cyclic rotations
 		var h_cr = create_cyclic_rotations(ha, 0, '');
 		var h1_cr = create_cyclic_rotations(h1a, 0, '');
-		var h2_cr = create_cyclic_rotations(h2a, h1a.length, '');
-
+		var h1_len = h1a.length;
 	}
+
+	var h2_cr = create_cyclic_rotations(h2a, h1_len, '');
+
+	// create strings based on arrays with delimiters
+	var h = ha.join('');
+	h1 = h1a.join('');
+	h2 = h2a.join('');
 
 	// sort cyclic rotations
 	var h_scr = sort_cyclic_rotations(h_cr);
@@ -353,10 +351,10 @@ function create_DaTeX_BWT_merge(h1, h2) {
 							h12_cols);
 
 		sout += "\\tab{" + get_tabline_from_col(h12_cols) + " | l}\n";
-		sout += h12_pos.join(' & ') + " & Position \\\\\n";
 		sout += h12_bwt.join(' & ') + " & BWT \\\\\n";
+		sout += h12_pos.join(' & ') + " & Position \\\\\n";
 		sout += h12_itlv.join(' & ') + ' & Interleave \\\\\n';
-		sout += h12_col.join(' & ') + " & $ " + nth + " $ column \n";
+		sout += get_first_n_from_scr(h12_col, 0).join(' & ') + " & $ " + nth + " $ column \n";
 		sout += "\\endtab\n\n";
 
 		sout += "We now add the old interleave vector as indices:\n\n";

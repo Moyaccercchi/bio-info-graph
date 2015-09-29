@@ -124,11 +124,11 @@ function create_DaTeX_BWT_merge(h1, h2) {
 	sout += "To find the intended merging result, ";
 	sout += "we first create the cyclic rotations of $ H $:\n\n";
 
-	sout += print_arrofarr(h_cr);
+	sout += print_arrofarr(h_cr).join("\n\n");
 
 	sout += "\n\n\nAll of the cyclic rotations sorted together:\n\n";
 	
-	sout += print_arrofarr(h_scr);
+	sout += print_arrofarr(h_scr).join("\n\n");
 
 	sout += "\n\n\nSo overall we want to find the following positions ";
 	sout += "and BWT through merging $ H_1 $ and $ H_2 $:\n\n";
@@ -144,19 +144,19 @@ function create_DaTeX_BWT_merge(h1, h2) {
 
 	sout += "We again first write down the cyclic rotations for $ H_1 $:\n\n";
 
-	sout += print_arrofarr(h1_cr);
+	sout += print_arrofarr(h1_cr).join("\n\n");
 
 	sout += "\n\n\nAnd for $ H_2 $:\n\n";
 
-	sout += print_arrofarr(h2_cr);
+	sout += print_arrofarr(h2_cr).join("\n\n");
 
 	sout += "\n\n\nWe now have all of the cyclic rotations sorted together for $ H_1 $:\n\n";
 
-	sout += print_arrofarr(h1_scr);
+	sout += print_arrofarr(h1_scr).join("\n\n");
 
 	sout += "\n\n\nAnd for $ H_2 $:\n\n";
 
-	sout += print_arrofarr(h2_scr);
+	sout += print_arrofarr(h2_scr).join("\n\n");
 
 	sout += "\n\n\nWhich gives us the following positions ";
 	sout += "and BWT:\n\n";
@@ -309,16 +309,18 @@ function create_DaTeX_BWT_merge(h1, h2) {
 		sout += "\\tab{l l}\n";
 		sout += "For $ H_1 $:           & For $ H_2 $: \\\\\n";
 
-		var len1 = h1_cr.length;
-		var len2 = h2_cr.length;
+		var h1_cr_as = print_arrofarr(h1_cr);
+		var h2_cr_as = print_arrofarr(h2_cr);
+		var len1 = h1_cr_as.length;
+		var len2 = h2_cr_as.length;
 		var len = Math.max(len1, len2);
 		for (var i = 0; i < len; i++) {
 			if (i < len1) {
-				sout += h1_cr[i].join('');
+				sout += h1_cr_as[i];
 			}
 			sout += ' & ';
 			if (i < len2) {
-				sout += h2_cr[i].join('');
+				sout += h2_cr_as[i];
 			}
 			sout += ' \\\\\n';
 		}
@@ -468,16 +470,22 @@ function sort_cyclic_rotations(h_cr) {
 
 
 // takes in an array of arrays
-// gives out a string filled with \n\n separated strings that are the merged arrays in the array
+// gives out an array that contains strings which are the merged arrays in the original array
 function print_arrofarr(haa) {
 
 	var aout = [];
 
 	for (var i = 0; i < haa.length; i++) {
+		var len = haa[i].length - 1;
+		var oldpos = haa[i][len];
+		haa[i][len] = pos_to_str(haa[i][len]);
+		
 		aout.push(haa[i].join(''));
+
+		haa[i][len] = oldpos;
 	}
 
-	return aout.join("\n\n");
+	return aout;
 }
 
 
@@ -733,11 +741,34 @@ function get_last_n_from_scr(h_scr, n) {
 
 
 
+// takes in a position array (containing an integer and an identifier)
+// gives out a string that is the integer with the identifier as index
+//   in DaTeX
+function pos_to_str(pos) {
+
+	if (pos[1] == '') {
+		// instead of `$ "1"_"" $`, just use `1`
+		return pos[0];
+	}
+
+	// generate `$ "1"_"2" $`
+	return '$ "' + pos[0] + '"_"' + pos[1] + '" $';
+}
+
+
+
 // takes in a sorted cyclic rotation array
-// gives back an array containing the positions (the last column)
+// gives back an array containing the positions (the last column), in the format
+//   $ "1"_"2" $ where 1 is the first element of the last column and 2 is the second
 function get_pos_from_scr(h_scr) {
 
-	return get_last_n_from_scr(h_scr, 0);
+	aout = get_last_n_from_scr(h_scr, 0);
+
+	for (var i = 0; i < aout.length; i++) {
+		aout[i] = pos_to_str(aout[i]);
+	}
+
+	return aout;
 }
 
 

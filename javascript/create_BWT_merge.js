@@ -4,9 +4,9 @@ c = {
 
 		this.give_out_HTML = false;
 
-		this.nl = "\n"; // newline character
-		this.nlnl = "\n\n"; // newline character
-		this.nlnlnl = "\n\n\n"; // newline character
+		this.nl = "\n"; // newline character in code
+		this.nlnl = "\n\n"; // newline character in print
+		this.nlnlnl = "\n\n\n"; // double newline character in print
 		this.DS = "$ \\$ $"; // $
 		this.DS1 = '$ \\$_1 $'; // $_1
 		this.DS2 = '$ \\$_2 $'; // $_2
@@ -15,6 +15,10 @@ c = {
 		this.DH = '$ H $'; // H
 		this.DH1 = '$ H_1 $'; // H_1
 		this.DH2 = '$ H_2 $'; // H_2
+		this.tab = '\\tab'; // start table
+		this.tabnl = " \\\\" + this.nl; // newline in table
+		this.td = " & "; // table cell divider
+		this.endtab = '\\endtab' + this.nlnl; // end table
 		this.tabchar = '      '; // a tab (horizontal space)
 	},
 
@@ -22,18 +26,22 @@ c = {
 
 		this.give_out_HTML = true;
 
-		this.nl = '\n';
-		this.nlnl = '<br>\n';
-		this.nlnlnl = '<br><br>\n';
-		this.DS = '$';
-		this.DS1 = '$<span class="u">1</span>';
-		this.DS2 = '$<span class="u">2</span>';
-		this.H1 = 'H<span class="u">1</span>';
-		this.H2 = 'H<span class="u">2</span>';
-		this.DH = 'H';
-		this.DH1 = 'H<span class="u">1</span>';
-		this.DH2 = 'H<span class="u">2</span>';
-		this.tabchar = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+		this.nl = '\n'; // newline character in code
+		this.nlnl = '<br>\n'; // newline character in print
+		this.nlnlnl = '<br><br>\n'; // double newline character in print
+		this.DS = '$'; // $
+		this.DS1 = '$<span class="d">1</span>'; // $_1
+		this.DS2 = '$<span class="d">2</span>'; // $_2
+		this.H1 = 'H<span class="d">1</span>'; // H_1 while in mathmode
+		this.H2 = 'H<span class="d">2</span>'; // H_2 while in mathmode
+		this.DH = 'H'; // H
+		this.DH1 = 'H<span class="d">1</span>'; // H_1
+		this.DH2 = 'H<span class="d">2</span>'; // H_2
+		this.tab = '<div class="table_box"><table>'; // start table
+		this.tabnl = '</td></tr>' + this.nl + '<tr><td>'; // newline in table
+		this.td = '</td><td>'; // table cell divider
+		this.endtab = '</td></tr></tbody></table></div>' + this.nlnl; // end table
+		this.tabchar = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'; // a tab (horizontal space)
 	},
 
 
@@ -151,15 +159,15 @@ c = {
 			sout += "¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯" + this.nl
 		}
 
-		sout += "We are merging " + this.h1 + " and " + this.h2 + "." + this.nlnl;
+		sout += "We are merging " + h1 + " and " + h2 + "." + this.nlnl;
 		
 		sout += "That is, we have" + this.nlnl;
 		
 		if(this.give_out_HTML) {
-			sout += this.nlnl + 'H = ' + this.h + this.tabchar+this.tabchar + this.H1 + ' = ' + this.h1 +
+			sout += this.nlnl + 'H = ' + h + this.tabchar+this.tabchar + this.H1 + ' = ' + h1 +
 					this.tabchar+this.tabchar + this.H2 + ' = ' + h2 + this.nlnlnl;
 		} else {
-			sout += '$$ H = "' + this.h + '"' + this.tabchar+this.tabchar + this.H1 + ' = "' + this.h1 +
+			sout += '$$ H = "' + h + '"' + this.tabchar+this.tabchar + this.H1 + ' = "' + h1 +
 					'"' + this.tabchar+this.tabchar + this.H2 + ' = "' + h2 + '" $$' + this.nlnl;
 		}
 
@@ -209,16 +217,30 @@ c = {
 		sout += this.nlnlnl + "Which gives us the following positions ";
 		sout += "and BWT:" + this.nlnl;
 
-		sout += "\\tab{l l}" + this.nl;
-		sout += "For " + this.DH1 + ": & For " + this.DH2 + ": \\\\" + this.nl;
-		sout += h1_pos.join(', ') + " & " + h2_pos.join(', ') + " \\\\" + this.nl;
-		sout += h1_bwt.join(', ') + " & " + h2_bwt.join(', ') + this.nl;
-		sout += "\\endtab" + this.nlnl;
+		sout += this.tab;
+		if (this.give_out_HTML) {
+			sout += '<thead><tr>';
+			sout += "<th>For " + this.DH1 + ":</th><th>" + this.tabchar + "</th><th>For " + this.DH2 + ":</th>" + this.nl;
+			sout += '</tr></thead><tbody><tr><td>';
+		} else {
+			sout += "{l l l}" + this.nl;
+			sout += "For " + this.DH1 + ": & & For " + this.DH2 + ":" + this.tabnl;
+		}
+		sout += h1_pos.join(', ') + this.td+this.td + h2_pos.join(', ') + this.tabnl;
+		sout += h1_bwt.join(', ') + this.td+this.td + h2_bwt.join(', ') + this.nl;
+		sout += this.endtab;
 
 		sout += "Again, what we want to generate from this is" + this.nlnl;
-		sout += h_pos.join(', ') + this.nlnl;
-		sout += h_bwt.join(', ') + this.nlnlnl;
 
+		sout += this.tab;
+		if (this.give_out_HTML) {
+			sout += '<tbody><tr><td>';
+		} else {
+			sout += "{l}" + this.nl;
+		}
+		sout += h_pos.join(', ') + this.tabnl;
+		sout += h_bwt.join(', ') + this.nl;
+		sout += this.endtab;
 
 
 		// round 1
@@ -244,13 +266,18 @@ c = {
 		sout += "to fully writing out the information for " + this.DH1 + ", followed by "
 		sout += "fully writing out the information for " + this.DH2 + ":" + this.nlnl;
 
-		sout += "\\tab{" + this.repjoin(h1_pos.length, 'c', ' | ') + " | ";
-		sout += this.repjoin(h2_pos.length, 'c', ' | ') + " | l}" + this.nl;
-		sout += h1_pos.join(' & ') + ' & ' + h2_pos.join(' & ') + " & Position \\\\" + this.nl;
-		sout += h1_bwt.join(' & ') + ' & ' + h2_bwt.join(' & ') + " & BWT \\\\" + this.nl;
-		sout += this.repjoin(h1_pos.length, '1', ' & ') + " & ";
-		sout += this.repjoin(h2_pos.length, '2', ' & ') + " & Interleave" + this.nl;
-		sout += "\\endtab" + this.nlnl;
+		sout += this.tab;
+		if (this.give_out_HTML) {
+			sout += '<tbody class="vbars"><tr><td>';
+		} else {
+			sout += "{" + this.repjoin(h1_pos.length, 'c', ' | ') + " | ";
+			sout += this.repjoin(h2_pos.length, 'c', ' | ') + " | l}" + this.nl;
+		}
+		sout += h1_pos.join(this.td) + this.td + h2_pos.join(this.td) + this.td + "Position" + this.tabnl;
+		sout += h1_bwt.join(this.td) + this.td + h2_bwt.join(this.td) + this.td + "BWT" + this.tabnl;
+		sout += this.repjoin(h1_pos.length, '1', this.td) + this.td;
+		sout += this.repjoin(h2_pos.length, '2', this.td) + this.td + "Interleave" + this.nl;
+		sout += this.endtab;
 
 		sout += "The method that we will be using for the next steps is ";
 		sout += "to use the first column (sorted alphabetically) ";
@@ -264,52 +291,98 @@ c = {
 			this.repjoin(h1_pos.length, '1', '') + this.repjoin(h2_pos.length, '2', '') !==
 			h12_itlv.join('');
 
-		sout += "\\tab{" + this.repjoin(h1_col1.length, 'c', ' | ') + " | ";
-		sout += this.repjoin(h2_col1.length, 'c', ' | ') + " | l}" + this.nl;
-		sout += this.arr_to_str_wo_index(h1_col1, ' & ') + ' & ' +
-				this.arr_to_str_wo_index(h2_col1, ' & ') + ' & $ 1^"st" $ column \\\\' + this.nl;
-		sout += "\\endtab" + this.nlnl;
+		var nth;
+		if (this.give_out_HTML) {
+			nth = '1<span class="u">st</span>';
+		} else {
+			nth = '$ 1^"st" $';
+		}
+
+		sout += this.tab;
+		if (this.give_out_HTML) {
+			sout += '<tbody class="vbars"><tr><td>';
+		} else {
+			sout += "{" + this.repjoin(h1_col1.length, 'c', ' | ') + " | ";
+			sout += this.repjoin(h2_col1.length, 'c', ' | ') + " | l}" + this.nl;
+		}
+		sout += this.arr_to_str_wo_index(h1_col1, this.td) + this.td +
+				this.arr_to_str_wo_index(h2_col1, this.td) + this.td + nth + ' column' + this.nl;
+		sout += this.endtab;
 
 		sout += "Then to append an index to each letter that tells us its origin:" + this.nlnl;
 
-		sout += "\\tab{" + this.repjoin(h1_col1.length, 'c', ' | ') + " | ";
-		sout += this.repjoin(h2_col1.length, 'c', ' | ') + " | l}" + this.nl;
-		sout += this.arr_to_str_w_index(h1_col1, ' & ') + ' & ' + this.arr_to_str_w_index(h2_col1, ' & ') +
-				' & $ 1^"st" $ column with indices \\\\' + this.nl;
-		sout += "\\endtab" + this.nlnl;
+		sout += this.tab;
+		if (this.give_out_HTML) {
+			sout += '<tbody class="vbars"><tr><td>';
+		} else {
+			sout += "{" + this.repjoin(h1_col1.length, 'c', ' | ') + " | ";
+			sout += this.repjoin(h2_col1.length, 'c', ' | ') + " | l}" + this.nl;
+		}
+		sout += this.arr_to_str_w_index(h1_col1, this.td) + this.td + this.arr_to_str_w_index(h2_col1, this.td) +
+				this.td + nth + ' column with indices' + this.nl;
+		sout += this.endtab;
 
 		sout += "And to then sort the entire line alphabetically ";
 		sout += "(and to keep track of the character boundaries we introduce extra vertical lines):" + this.nlnl;
 
-		sout += "\\tab{" + this.get_tabline_from_col(h12_cols) + " | l}" + this.nl;
-		sout += this.arr_to_str_w_index(h12_cols, ' & ') + ' & Sorted $ 1^"st" $ column \\\\' + this.nl;
-		sout += "\\endtab" + this.nlnl;
+		sout += this.tab;
+		if (this.give_out_HTML) {
+			sout += '<tbody class="vbars"><tr><td>';
+			sout += this.get_tabline_from_col_HTML(this.arr_to_arr_w_index(h12_cols), h12_cols);
+		} else {
+			sout += "{" + this.get_tabline_from_col_DaTeX(h12_cols) + " | l}" + this.nl;
+			sout += this.arr_to_str_w_index(h12_cols, this.td) + this.td;
+		}
+		sout += 'Sorted ' + nth + ' column' + this.nl;
+		sout += this.endtab;
 
 		sout += "To finally arrive at the interleave vector by just looking at the indices:" + this.nlnl;
 
-		sout += "\\tab{" + this.get_tabline_from_col(h12_cols) + " | l}" + this.nl;
-		sout += this.arr_to_str_w_index(h12_cols, ' & ') + ' & Sorted $ 1^"st" $ column \\\\' + this.nl;
-		sout += h12_itlv.join(' & ') + ' & New Interleave \\\\' + this.nl;
-		sout += "\\endtab" + this.nlnl;
+		sout += this.tab;
+		if (this.give_out_HTML) {
+			sout += '<tbody class="vbars"><tr><td>';
+			sout += this.get_tabline_from_col_HTML(this.arr_to_arr_w_index(h12_cols), h12_cols);
+			sout += 'Sorted ' + nth + ' column' + this.tabnl;
+			sout += this.get_tabline_from_col_HTML(h12_itlv, h12_cols) + "New Interleave" + this.nl;
+		} else {
+			sout += "{" + this.get_tabline_from_col_DaTeX(h12_cols) + " | l}" + this.nl;
+			sout += this.arr_to_str_w_index(h12_cols, this.td) + this.td;
+			sout += 'Sorted ' + nth + ' column' + this.tabnl;
+			sout += h12_itlv.join(this.td) + this.td + "New Interleave" + this.nl;
+		}
+		sout += this.endtab;
 
 		sout += "Using this interleave vector to resort the position and BWT that we had before, we get:" + this.nlnl;
 
 		var h12_pos = this.merge_with_interleave(h1_pos, h2_pos, h12_itlv);
 		var h12_bwt = this.merge_with_interleave(h1_bwt, h2_bwt, h12_itlv);
 
-		sout += "\\tab{" + this.repjoin(h1_col1.length, 'c', ' | ') + " | ";
-		sout += this.repjoin(h2_col1.length, 'c', ' | ') + " | l}" + this.nl;
-		sout += h1_pos.join(' & ') + ' & ' + h2_pos.join(' & ') + " & Old Position \\\\" + this.nl;
-		sout += h1_bwt.join(' & ') + ' & ' + h2_bwt.join(' & ') + " & Old BWT \\\\" + this.nl;
-		sout += this.repjoin(h1_pos.length, '1', ' & ') + " & ";
-		sout += this.repjoin(h2_pos.length, '2', ' & ') + " & Old Interleave \\\\" + this.nl;
-		sout += "\\endtab" + this.nlnl;
+		sout += this.tab;
+		if (this.give_out_HTML) {
+			sout += '<tbody class="vbars"><tr><td>';
+		} else {
+			sout += "{" + this.repjoin(h1_col1.length, 'c', ' | ') + " | ";
+			sout += this.repjoin(h2_col1.length, 'c', ' | ') + " | l}" + this.nl;
+		}
+		sout += h1_pos.join(this.td) + this.td + h2_pos.join(this.td) + this.td + "Old Position" + this.tabnl;
+		sout += h1_bwt.join(this.td) + this.td + h2_bwt.join(this.td) + this.td + "Old BWT" + this.tabnl;
+		sout += this.repjoin(h1_pos.length, '1', this.td) + this.td;
+		sout += this.repjoin(h2_pos.length, '2', this.td) + this.td + "Old Interleave" + this.nl;
+		sout += this.endtab;
 
-		sout += "\\tab{" + this.get_tabline_from_col(h12_cols) + " | l}" + this.nl;
-		sout += h12_pos.join(' & ') + " & New Position \\\\" + this.nl;
-		sout += h12_bwt.join(' & ') + " & New BWT \\\\" + this.nl;
-		sout += h12_itlv.join(' & ') + ' & New Interleave \\\\' + this.nl;
-		sout += "\\endtab" + this.nlnl;
+		sout += this.tab;
+		if (this.give_out_HTML) {
+			sout += '<tbody class="vbars"><tr><td>';
+			sout += this.get_tabline_from_col_HTML(h12_pos, h12_cols) + "New Position" + this.tabnl;
+			sout += this.get_tabline_from_col_HTML(h12_bwt, h12_cols) + "New BWT" + this.tabnl;
+			sout += this.get_tabline_from_col_HTML(h12_itlv, h12_cols) + "New Interleave" + this.nl;
+		} else {
+			sout += "{" + this.get_tabline_from_col_DaTeX(h12_cols) + " | l}" + this.nl;
+			sout += h12_pos.join(this.td) + this.td + "New Position" + this.tabnl;
+			sout += h12_bwt.join(this.td) + this.td + "New BWT" + this.tabnl;
+			sout += h12_itlv.join(this.td) + this.td + "New Interleave" + this.nl;
+		}
+		sout += this.endtab;
 
 		sout += "We have now achieved" + this.nlnl;
 
@@ -356,8 +429,15 @@ c = {
 
 			sout += "To do so, let's have a quick look at the sorted cyclic rotations:" + this.nlnl;
 
-			sout += "\\tab{l l}" + this.nl;
-			sout += "For " + this.DH1 + ":           & For " + this.DH2 + ": \\\\" + this.nl;
+			sout += this.tab;
+			if (this.give_out_HTML) {
+				sout += '<thead><tr>';
+				sout += "<th>For " + this.DH1 + ":</th><th>" + this.tabchar + "</th><th>For " + this.DH2 + ":</th>" + this.nl;
+				sout += '</tr></thead><tbody><tr><td>';
+			} else {
+				sout += "{l l l}" + this.nl;
+				sout += "For " + this.DH1 + ": & & For " + this.DH2 + ":" + this.tabnl;
+			}
 
 			var h1_cr_as = this.print_arrofarr(h1_cr);
 			var h2_cr_as = this.print_arrofarr(h2_cr);
@@ -368,28 +448,44 @@ c = {
 				if (i < len1) {
 					sout += h1_cr_as[i];
 				}
-				sout += ' & ';
+				sout += this.td+this.td;
 				if (i < len2) {
 					sout += h2_cr_as[i];
 				}
-				sout += ' \\\\' + this.nl;
+				sout += this.tabnl;
 			}
-			sout += "\\endtab" + this.nlnl;
+			sout += this.endtab;
 
-			var nth = n + '^"th"';
-			switch (n) {
-				case 1:
-					nth = '1^"st"';
-					break;
-				case 2:
-					nth = '2^"nd"';
-					break;
-				case 3:
-					nth = '3^"rd"';
-					break;
+			if (this.give_out_HTML) {
+				nth = n + '<span class="u">th</span>';
+				switch (n) {
+					case 1:
+						nth = '1<span class="u">st</span>';
+						break;
+					case 2:
+						nth = '2<span class="u">nd</span>';
+						break;
+					case 3:
+						nth = '3<span class="u">rd</span>';
+						break;
+				}
+			} else {
+				nth = n + '^"th"';
+				switch (n) {
+					case 1:
+						nth = '1^"st"';
+						break;
+					case 2:
+						nth = '2^"nd"';
+						break;
+					case 3:
+						nth = '3^"rd"';
+						break;
+				}
+				nth = "$ " + nth + " $";
 			}
 
-			sout += "We find the $ " + nth + " $ column always as the letter following the ";
+			sout += "We find the " + nth + " column always as the letter following the ";
 			sout += "indicated BWT letter, that is, position ";
 			sout += "(althewhile keeping track of the character groups that ";
 			sout += "had been formed in the previous step, here represented with double lines):" + this.nlnl;
@@ -402,20 +498,38 @@ c = {
 								h12_itlv,
 								h12_cols);
 
-			sout += "\\tab{" + this.get_tabline_from_col(h12_cols) + " | l}" + this.nl;
-			sout += h12_bwt.join(' & ') + " & BWT \\\\" + this.nl;
-			sout += h12_pos.join(' & ') + " & Position \\\\" + this.nl;
-			sout += h12_itlv.join(' & ') + ' & Interleave \\\\' + this.nl;
-			sout += this.get_first_n_from_scr(h12_col, 0).join(' & ') + " & $ " + this.nth +
-					" $ column " + this.nl;
-			sout += "\\endtab" + this.nlnl;
+			sout += this.tab;
+			if (this.give_out_HTML) {
+				sout += '<tbody class="vbars"><tr><td>';
+				sout += this.get_tabline_from_col_HTML(h12_bwt, h12_cols) + "BWT" + this.tabnl;
+				sout += this.get_tabline_from_col_HTML(h12_pos, h12_cols) + "Position" + this.tabnl;
+				sout += this.get_tabline_from_col_HTML(h12_itlv, h12_cols) + "Interleave" + this.tabnl;
+				sout += this.get_tabline_from_col_HTML(this.get_first_n_from_scr(h12_col, 0), h12_cols);
+				sout += nth + " column " + this.nl;
+			} else {
+				sout += "{" + this.get_tabline_from_col_DaTeX(h12_cols) + " | l}" + this.nl;
+				sout += h12_bwt.join(this.td) + this.td + "BWT" + this.tabnl;
+				sout += h12_pos.join(this.td) + this.td + "Position" + this.tabnl;
+				sout += h12_itlv.join(this.td) + this.td + "Interleave" + this.tabnl;
+				sout += this.get_first_n_from_scr(h12_col, 0).join(this.td) + this.td;
+				sout += nth + " column " + this.nl;
+			}
+			sout += this.endtab;
 
 			sout += "We now add the old interleave vector as indices:" + this.nlnl;
 
-			sout += "\\tab{" + this.get_tabline_from_col(h12_cols) + " | l}" + this.nl;
-			sout += h12_itlv.join(' & ') + ' & Old Interleave \\\\' + this.nl;
-			sout += this.arr_to_str_w_index(h12_col, ' & ') + " & $ " + this.nth + " $ column \\\\" + this.nl;
-			sout += "\\endtab" + this.nlnl;
+			sout += this.tab;
+			if (this.give_out_HTML) {
+				sout += '<tbody class="vbars"><tr><td>';
+				sout += this.get_tabline_from_col_HTML(h12_itlv, h12_cols) + 'Old Interleave' + this.tabnl;
+				sout += this.get_tabline_from_col_HTML(this.arr_to_arr_w_index(h12_cols), h12_cols);
+				sout += nth + " column" + this.nl;
+			} else {
+				sout += "{" + this.get_tabline_from_col_DaTeX(h12_cols) + " | l}" + this.nl;
+				sout += h12_itlv.join(this.td) + this.td + 'Old Interleave' + this.tabnl;
+				sout += this.arr_to_str_w_index(h12_col, this.td) + this.td + nth + " column" + this.nl;
+			}
+			sout += this.endtab;
 
 			sout += "We now sort alphabetically WITHIN the character groups from the previous step:" + this.nlnl;
 
@@ -426,9 +540,16 @@ c = {
 			h12_pos = this.merge_with_interleave(h1_pos, h2_pos, h12_itlv);
 			h12_bwt = this.merge_with_interleave(h1_bwt, h2_bwt, h12_itlv);
 
-			sout += "\\tab{" + this.get_tabline_from_col(h12_cols) + " | l}" + this.nl;
-			sout += this.arr_to_str_w_index(h12_cols, ' & ') + " & Sorted $ " + nth + " $ column" + this.nl;
-			sout += "\\endtab" + this.nlnl;
+			sout += this.tab;
+			if (this.give_out_HTML) {
+				sout += '<tbody class="vbars"><tr><td>';
+				sout += this.get_tabline_from_col_HTML(this.arr_to_arr_w_index(h12_cols), h12_cols);
+			} else {
+				sout += "{" + this.get_tabline_from_col_DaTeX(h12_cols) + " | l}" + this.nl;
+				sout += this.arr_to_str_w_index(h12_cols, this.td) + this.td;
+			}
+			sout += "Sorted " + nth + " column" + this.nl;
+			sout += this.endtab;
 
 			sout += "We arrive at the following new interleave vector, ";
 			if (itlv_changed) {
@@ -439,18 +560,34 @@ c = {
 				sout += "the last step:" + this.nlnl;
 			}
 
-			sout += "\\tab{" + this.get_tabline_from_col(h12_cols) + " | l}" + this.nl;
-			sout += this.arr_to_str_w_index(h12_cols, ' & ') + " & Sorted $ " + nth + " $ column \\\\" + this.nl;
-			sout += h12_itlv.join(' & ') + ' & New Interleave \\\\' + this.nl;
-			sout += "\\endtab" + this.nlnl;
+			sout += this.tab;
+			if (this.give_out_HTML) {
+				sout += '<tbody class="vbars"><tr><td>';
+				sout += this.get_tabline_from_col_HTML(this.arr_to_arr_w_index(h12_cols), h12_cols);
+				sout += "Sorted " + nth + " column" + this.tabnl;
+				sout += this.get_tabline_from_col_HTML(h12_itlv, h12_cols) + 'New Interleave' + this.nl;
+			} else {
+				sout += "{" + this.get_tabline_from_col_DaTeX(h12_cols) + " | l}" + this.nl;
+				sout += this.arr_to_str_w_index(h12_cols, this.td) + this.td + "Sorted " + nth + " column" + this.tabnl;
+				sout += h12_itlv.join(this.td) + this.td + 'New Interleave' + this.nl;
+			}
+			sout += this.endtab;
 
 			sout += "We can now look at the BWT and the positions according to this interleave vector:" + this.nlnl;
 
-			sout += "\\tab{" + this.get_tabline_from_col(h12_cols) + " | l}" + this.nl;
-			sout += h12_pos.join(' & ') + " & New Position \\\\" + this.nl;
-			sout += h12_bwt.join(' & ') + " & New BWT \\\\" + this.nl;
-			sout += h12_itlv.join(' & ') + ' & New Interleave \\\\' + this.nl;
-			sout += "\\endtab" + this.nlnl;
+			sout += this.tab;
+			if (this.give_out_HTML) {
+				sout += '<tbody class="vbars"><tr><td>';
+				sout += this.get_tabline_from_col_HTML(h12_pos, h12_cols) + "New Position" + this.tabnl;
+				sout += this.get_tabline_from_col_HTML(h12_bwt, h12_cols) + "New BWT" + this.tabnl;
+				sout += this.get_tabline_from_col_HTML(h12_itlv, h12_cols) + 'New Interleave' + this.nl;
+			} else {
+				sout += "{" + this.get_tabline_from_col_DaTeX(h12_cols) + " | l}" + this.nl;
+				sout += h12_pos.join(this.td) + this.td + "New Position" + this.tabnl;
+				sout += h12_bwt.join(this.td) + this.td + "New BWT" + this.tabnl;
+				sout += h12_itlv.join(this.td) + this.td + 'New Interleave' + this.nl;
+			}
+			sout += this.endtab;
 
 			sout += "We have now achieved" + this.nlnl;
 
@@ -631,30 +768,33 @@ c = {
 	// gives out a string representing the column joined on the delimiter while showing the indexes
 	arr_to_str_w_index: function(h_col, delimiter) {
 
+		return this.arr_to_arr_w_index(h_col).join(delimiter);
+	},
+
+
+
+	// takes in an array containing a column with indexes
+	// gives out an array representing the column while showing the indexes
+	arr_to_arr_w_index: function(h_col) {
+
+		var aout = [];
 		var len = h_col.length;
 
-		if (len < 1) {
-			return '';
-		}
-
-		var sout;
-
-		if (h_col[0][0][0] == '$') {
-			sout = '$ \\$_' + h_col[0][1] + ' $';
+		if (this.give_out_HTML) {
+			for (var i = 0; i < len; i++) {
+				aout.push(h_col[i][0] + '<span class="d">' + h_col[i][1] + '</span>');
+			}
 		} else {
-			sout = '$ "' + h_col[0][0] + '"_' + h_col[0][1] + ' $';	
-		}
-
-		for (var i = 1; i < len; i++) {
-
-			if (h_col[i][0][0] == '$') {
-				sout += delimiter + '$ \\$_' + h_col[i][1] + ' $';
-			} else {
-				sout += delimiter + '$ "' + h_col[i][0] + '"_' + h_col[i][1] + ' $';	
+			for (var i = 0; i < len; i++) {
+				if (h_col[i][0][0] == '$') {
+					aout.push('$ \\$_' + h_col[i][1] + ' $');
+				} else {
+					aout.push('$ "' + h_col[i][0] + '"_' + h_col[i][1] + ' $');
+				}
 			}
 		}
 
-		return sout;
+		return aout;
 	},
 
 
@@ -734,7 +874,7 @@ c = {
 
 	// takes in a column array
 	// gives back the appropriate tabline for DaTeX
-	get_tabline_from_col: function(h_col) {
+	get_tabline_from_col_DaTeX: function(h_col) {
 
 		var len = h_col.length;
 
@@ -742,17 +882,43 @@ c = {
 			return '';
 		}
 
-		var sout = 'c';
+		var sout = 'c ';
 
 		for (var i = 0; i < len-1; i++) {
-			sout += ' |';
 			for (var j = 0; j < h_col[i][2]; j++) {
 				sout += '|';
 			}
-			sout += ' c';
+			sout += '|';
+			sout += ' c ';
 		}
 
 		return sout;
+	},
+
+
+
+	// takes in any array and a column array
+	// gives back the array interwoven with the tds necessary to produce
+	//   the correct about of vertical bars for HTML
+	get_tabline_from_col_HTML: function(arr, h_col) {
+
+		var len = h_col.length;
+
+		if (len < 1) {
+			return '';
+		}
+
+		var sout = arr[0];
+
+		for (var i = 0; i < len-1; i++) {
+			for (var j = 0; j < h_col[i][2]; j++) {
+				sout += '</td><td class="b">';
+			}
+			sout += '</td><td>';
+			sout += arr[i];
+		}
+
+		return sout + '</td><td>';
 	},
 
 
@@ -823,8 +989,8 @@ c = {
 		}
 
 		if (this.give_out_HTML) {
-			// generate `1<span class="u">2</span>`
-			return pos[0] + '<span class="u">' + pos[1] + '</span>';
+			// generate `1<span class="d">2</span>`
+			return pos[0] + '<span class="d">' + pos[1] + '</span>';
 		} else {
 			// generate `$ "1"_"2" $`
 			return '$ "' + pos[0] + '"_"' + pos[1] + '" $';
@@ -888,7 +1054,7 @@ c = {
 		if (this.give_out_HTML) {
 			for (var i = 0; i < pos.length; i++) {
 				if (pos[i][pos[i].length-1] == '>') {
-					var ind = pos[i].slice(pos[i].indexOf('<span class="u">')+16, -7);
+					var ind = pos[i].slice(pos[i].indexOf('<span class="d">')+16, -7);
 					if (expand_on.indexOf(ind) < 0) {
 						expand_on.push(ind);
 					}
@@ -923,7 +1089,7 @@ c = {
 					obwt.push(bwt[i]);
 				} else {
 					for (var j = 0; j < expand_on.length; j++) {
-						opos.push(pos[i] + '<span class="u">' + expand_on[j] + '</span>');
+						opos.push(pos[i] + '<span class="d">' + expand_on[j] + '</span>');
 						obwt.push(bwt[i]);
 					}
 				}

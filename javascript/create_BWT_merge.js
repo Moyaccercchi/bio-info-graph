@@ -1,4 +1,24 @@
+/*
+	Flow through the program:
+
+	The outside world calls "set_to_DaTeX" or "set_to_HTML" (if not, DaTeX is default.)
+	The outside world calls "merge_BWT_naively".
+		It calls "build_BWT_naively" which generates the BWT if necessary (if parameters since last execution changed.)
+			It calls "prepare_BWT_naively" if necessary.
+*/
+
 c = {
+
+	last_h1: '', // h1 that was used on last call
+	last_h2: '', // h2 that was used on last call
+	last_mode: 'none', // 'naive' or 'advanced', init to 'none'
+	last_give_out_HTML: -1, // true or false, init as -1
+
+	// A note about DaTeX:
+	// In DaTeX, we enclose maths expressions in dollarsigns, and to write an actual dollarsign, we write \S.
+	// Just sorting \$ would be a problem as lex(\) > lex(c) for a character c, but sorting $ \$ $ is fine,
+	// as that starts with the dollarsign anyway.
+	// (In HTML, we just use $ itself without backslash in front of it, so there none of this matters.)
 
 	set_to_DaTeX: function() {
 
@@ -8,13 +28,13 @@ c = {
 		this.nlnl = "\n\n"; // newline character in print
 		this.nlnlnl = "\n\n\n"; // double newline character in print
 		this.DS = "$ \\$ $"; // $
-		this.DS1 = '$ \\$_1 $'; // $_1
-		this.DS2 = '$ \\$_2 $'; // $_2
-		this.H1 = 'H_1'; // H_1 while in mathmode
-		this.H2 = 'H_2'; // H_2 while in mathmode
+		this.DS_1 = '$ \\$_1 $'; // $_1
+		this.DS_2 = '$ \\$_2 $'; // $_2
+		this.H_1 = 'H_1'; // H_1 while in mathmode
+		this.H_2 = 'H_2'; // H_2 while in mathmode
 		this.DH = '$ H $'; // H
-		this.DH1 = '$ H_1 $'; // H_1
-		this.DH2 = '$ H_2 $'; // H_2
+		this.DH_1 = '$ H_1 $'; // H_1
+		this.DH_2 = '$ H_2 $'; // H_2
 		this.tab = '\\tab'; // start table
 		this.tabnl = " \\\\" + this.nl; // newline in table
 		this.td = " & "; // table cell divider
@@ -30,13 +50,13 @@ c = {
 		this.nlnl = '<br>\n'; // newline character in print
 		this.nlnlnl = '<br><br>\n'; // double newline character in print
 		this.DS = '$'; // $
-		this.DS1 = '$<span class="d">1</span>'; // $_1
-		this.DS2 = '$<span class="d">2</span>'; // $_2
-		this.H1 = 'H<span class="d">1</span>'; // H_1 while in mathmode
-		this.H2 = 'H<span class="d">2</span>'; // H_2 while in mathmode
+		this.DS_1 = '$<span class="d">1</span>'; // $_1
+		this.DS_2 = '$<span class="d">2</span>'; // $_2
+		this.H_1 = 'H<span class="d">1</span>'; // H_1 while in mathmode
+		this.H_2 = 'H<span class="d">2</span>'; // H_2 while in mathmode
 		this.DH = 'H'; // H
-		this.DH1 = 'H<span class="d">1</span>'; // H_1
-		this.DH2 = 'H<span class="d">2</span>'; // H_2
+		this.DH_1 = 'H<span class="d">1</span>'; // H_1
+		this.DH_2 = 'H<span class="d">2</span>'; // H_2
 		this.tab = '<div class="table_box"><table>'; // start table
 		this.tabnl = '</td></tr>' + this.nl + '<tr><td>'; // newline in table
 		this.td = '</td><td>'; // table cell divider
@@ -46,24 +66,40 @@ c = {
 
 
 
-	// A note about DaTeX:
-	// In DaTeX, we enclose maths expressions in dollarsigns, and to write an actual dollarsign, we write \S.
-	// Just sorting \$ would be a problem as lex(\) > lex(c) for a character c, but sorting $ \$ $ is fine,
-	// as that starts with the dollarsign anyway.
+	/************************************\
+		initialization
+	\************************************/
 
-	// takes in two unterminated strings and a boolean (true for HTML output, false for DaTeX output)
-	// returns a section in DaTeX about their merging behavior
-	create_BWT_merge: function(h1, h2) {
+	// takes in two strings
+	// gives back nothing (but builds the bwts for the two strings separately and merged)
+	build_BWT_naively: function(h1, h2) {
 
-		/************************************\
-			initialization
-		\************************************/
-		
+		// Has someone already done our work for us?
+		if ((this.last_h1 == h1) && (this.last_h2 == h2) && (this.last_mode == 'naive')) {
+
+			// Yes, someone has! So we don't have to do any work at all. =)
+
+			if (this.last_give_out_HTML !== this.give_out_HTML) {
+				// Buuut the output form changed, so we need to work around that anyway...
+				this.prepare_BWT_naively();
+			}
+
+			return;
+		}
+
+
+
+		this.last_h1 = h1;
+		this.last_h2 = h2;
+		this.last_mode = 'naive';
+
+
+
 		// Does h1 or h2 contain a graph? - e.g. A(A|C)CA
-		var h1_graph = h1.indexOf('(') >= 0;
-		var h2_graph = h2.indexOf('(') >= 0;
+		this.h1_graph = h1.indexOf('(') >= 0;
+		this.h2_graph = h2.indexOf('(') >= 0;
 
-		if (h1_graph) {
+		if (this.h1_graph) {
 
 			var i = h1.indexOf('(');
 			var alt_A = h1.slice(i + 1, i + 2);
@@ -82,8 +118,8 @@ c = {
 			var h1a_B = h1_B.split('');
 			var h2a = h2.split('');
 
-			var ha_A = h1a_A.concat([this.DS1]).concat(h2a).concat([this.DS2]);
-			var ha_B = h1a_B.concat([this.DS1]).concat(h2a).concat([this.DS2]);
+			var ha_A = h1a_A.concat([this.DS_1]).concat(h2a).concat([this.DS_2]);
+			var ha_B = h1a_B.concat([this.DS_1]).concat(h2a).concat([this.DS_2]);
 
 		} else {
 
@@ -93,13 +129,13 @@ c = {
 		}
 
 		// create full array based on both strings
-		var ha = h1a.concat([this.DS1]).concat(h2a).concat([this.DS2]);
+		var ha = h1a.concat([this.DS_1]).concat(h2a).concat([this.DS_2]);
 
 		// append delimiter character to input arrays
 		h1a[h1a.length] = this.DS;
 		h2a[h2a.length] = this.DS;
 
-		if (h1_graph) {
+		if (this.h1_graph) {
 
 			// append delimiter character to input arrays
 			h1a_A[h1a_A.length] = this.DS;
@@ -108,10 +144,10 @@ c = {
 			// generate cyclic rotations
 			var h_cr_A = this.create_cyclic_rotations(ha_A, 0, alt_A);
 			var h_cr_B = this.create_cyclic_rotations(ha_B, 0, alt_B);
-			var h_cr = h_cr_A.concat(h_cr_B);
+			this.h_cr = h_cr_A.concat(h_cr_B);
 			var h1_cr_A = this.create_cyclic_rotations(h1a_A, 0, alt_A);
 			var h1_cr_B = this.create_cyclic_rotations(h1a_B, 0, alt_B);
-			var h1_cr = h1_cr_A.concat(h1_cr_B);
+			this.h1_cr = h1_cr_A.concat(h1_cr_B);
 
 			// we are here implicitly assuming that h1a_A has the same length as h1a_B!
 			var h1_len = h1a_A.length;
@@ -119,39 +155,181 @@ c = {
 		} else {
 
 			// generate cyclic rotations
-			var h_cr = this.create_cyclic_rotations(ha, 0, '');
-			var h1_cr = this.create_cyclic_rotations(h1a, 0, '');
+			this.h_cr = this.create_cyclic_rotations(ha, 0, '');
+			this.h1_cr = this.create_cyclic_rotations(h1a, 0, '');
 			var h1_len = h1a.length;
 		}
 
-		var h2_cr = this.create_cyclic_rotations(h2a, h1_len, '');
+		this.h2_cr = this.create_cyclic_rotations(h2a, h1_len, '');
 
 		// create strings based on arrays with delimiters
-		var h = ha.join('');
-		h1 = h1a.join('');
-		h2 = h2a.join('');
+		this.h = ha.join('');
+		this.h1 = h1a.join('');
+		this.h2 = h2a.join('');
 
 		// sort cyclic rotations
-		var h_scr = this.sort_cyclic_rotations(h_cr);
-		var h1_scr = this.sort_cyclic_rotations(h1_cr);
-		var h2_scr = this.sort_cyclic_rotations(h2_cr);
+		this.h_scr = this.sort_cyclic_rotations(this.h_cr);
+		this.h1_scr = this.sort_cyclic_rotations(this.h1_cr);
+		this.h2_scr = this.sort_cyclic_rotations(this.h2_cr);
 
 		// get the positions
-		var h_pos = this.get_pos_from_scr(h_scr);
-		var h1_pos = this.get_pos_from_scr(h1_scr);
-		var h2_pos = this.get_pos_from_scr(h2_scr);
+		this.h_pos = this.get_pos_from_scr(this.h_scr);
+		this.h1_pos = this.get_pos_from_scr(this.h1_scr);
+		this.h2_pos = this.get_pos_from_scr(this.h2_scr);
 
 		// get the BWT
-		var h_bwt = this.get_bwt_from_scr(h_scr);
-		var h1_bwt = this.get_bwt_from_scr(h1_scr);
-		var h2_bwt = this.get_bwt_from_scr(h2_scr);
+		this.h_bwt = this.get_bwt_from_scr(this.h_scr);
+		this.h1_bwt = this.get_bwt_from_scr(this.h1_scr);
+		this.h2_bwt = this.get_bwt_from_scr(this.h2_scr);
 
 
 
-		/************************************\
-			write out text for DaTeX
-		\************************************/
+		// recalculate the output strings
+		this.prepare_BWT_naively();
+	},
+
+
+
+	// takes in nothing (but assumes that build_BWT_naively() was executed just before)
+	// gives back nothing (but initializes several strings for the output)
+	prepare_BWT_naively: function() {
+
+		// a table head that we will print over and over again...
+		this.s_h_table_head = this.tab;
+		if (this.give_out_HTML) {
+			this.s_h_table_head += '<tbody class="lastbar"><tr><td>';
+		} else {
+			this.s_h_table_head += "{" + this.repjoin(this.h_pos.length, 'c', ' ') + " | l}" + this.nl;
+		}
+
+		// ... and a full table that we will also print several times =)
+		this.s_h_table = this.s_h_table_head;
+		this.s_h_table += this.h_pos.join(this.td) + this.td + 'Position' + this.tabnl;
+		this.s_h_table += this.h_bwt.join(this.td) + this.td + 'BWT' + this.nl;
+		this.s_h_table += this.endtab;
+
+		// the last line of the document (empty in HTML, filled with location / date in DaTeX)
+		this.s_end_document = '';
+		if (!this.give_out_HTML) {
+			var currentdate = new Date();
+			this.s_end_document = this.nlnl + "Reykjavík, " +
+				 currentdate.getDate() + ". " +
+				(currentdate.getMonth() + 1) + ". " +
+				 currentdate.getFullYear();
+		}
+	},
+
+
+
+	/************************************\
+		text output
+	\************************************/
+
+	// takes in two unterminated strings
+	// gives back a section in DaTeX or HTML about the generation of their BWTs
+	generate_BWT_naively: function(h1, h2) {
+
+		this.build_BWT_naively(h1, h2);
+
+
+
+		var sout = '';
 		
+		if(!this.give_out_HTML) {
+			sout += " Graph Alignment - BWT Generation" + this.nl;
+			sout += "¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯" + this.nl
+		}
+
+		sout += "We are looking at " + this.h1 + " and " + this.h2 + "." + this.nlnl;
+		
+		sout += "That is, we have" + this.nlnl;
+		
+		if(this.give_out_HTML) {
+			sout += this.nlnl + 'H = ' + this.h + this.tabchar+this.tabchar + this.H_1 + ' = ' + this.h1 +
+					this.tabchar+this.tabchar + this.H_2 + ' = ' + this.h2 + this.nlnlnl;
+		} else {
+			sout += '$$ H = "' + this.h + '"' + this.tabchar+this.tabchar + this.H_1 + ' = "' + this.h1 +
+					'"' + this.tabchar+this.tabchar + this.H_2 + ' = "' + this.h2 + '" $$' + this.nlnl;
+		}
+
+
+
+		// BWT and pos for H
+
+		sout += "To generate the full BWT of " + this.DH + ", ";
+		sout += "we first create its cyclic rotations:" + this.nlnl;
+
+		sout += this.print_arrofarr(this.h_cr).join(this.nlnl);
+
+		sout += this.nlnlnl + "All of the cyclic rotations sorted together:" + this.nlnl;
+		
+		sout += this.print_arrofarr(this.h_scr).join(this.nlnl);
+
+		sout += this.nlnlnl + "So overall we get the following positions ";
+		sout += "and BWT for " + this.DH + ":" + this.nlnl;
+
+		sout += this.s_h_table;
+
+
+
+		// BWT and pos for H_1 and H_2
+
+		sout += "We now generate the BWTs for " + this.DH_1 +
+				" and " + this.DH_2 + "." + this.nlnl;
+
+		sout += "We again first write down the cyclic rotations for " + this.DH_1 + ":" + this.nlnl;
+
+		sout += this.print_arrofarr(this.h1_cr).join(this.nlnl);
+
+		sout += this.nlnlnl + "And for " + this.DH_2 + ":" + this.nlnl;
+
+		sout += this.print_arrofarr(this.h2_cr).join(this.nlnl);
+
+		sout += this.nlnlnl + "We now have all of the cyclic rotations sorted together for " +
+				this.DH_1 + ":" + this.nlnl;
+
+		sout += this.print_arrofarr(this.h1_scr).join(this.nlnl);
+
+		sout += this.nlnlnl + "And for " + this.DH_2 + ":" + this.nlnl;
+
+		sout += this.print_arrofarr(this.h2_scr).join(this.nlnl);
+
+		sout += this.nlnlnl + "Which gives us the following positions ";
+		sout += "and BWT:" + this.nlnl;
+
+		sout += this.tab;
+		if (this.give_out_HTML) {
+			sout += '<thead><tr>';
+			sout += "<th>For " + this.DH_1 + ":</th><th>" + this.tabchar + "</th><th>For " + this.DH_2 + ":</th>" + this.nl;
+			sout += '</tr></thead><tbody><tr><td>';
+		} else {
+			sout += "{l l l}" + this.nl;
+			sout += "For " + this.DH_1 + ": & & For " + this.DH_2 + ":" + this.tabnl;
+		}
+
+		sout += this.h1_pos.join(', ') + this.td+this.td + this.h2_pos.join(', ') + this.tabnl;
+		sout += this.h1_bwt.join(', ') + this.td+this.td + this.h2_bwt.join(', ') + this.nl;
+		sout += this.endtab;
+
+		sout += "The full BWT for " + this.DH + " was:" + this.nlnl;
+
+		sout += this.s_h_table;
+
+
+
+		sout += this.s_end_document;
+
+		return sout;
+	},
+
+	// takes in two unterminated strings
+	// gives back a section in DaTeX or HTML about their merging behavior
+	merge_BWT_naively: function(h1, h2) {
+
+		this.build_BWT_naively(h1, h2);
+
+
+
 		var sout = '';
 		
 		if(!this.give_out_HTML) {
@@ -159,16 +337,16 @@ c = {
 			sout += "¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯" + this.nl
 		}
 
-		sout += "We are merging " + h1 + " and " + h2 + "." + this.nlnl;
+		sout += "We are merging " + this.h1 + " and " + this.h2 + "." + this.nlnl;
 		
 		sout += "That is, we have" + this.nlnl;
 		
 		if(this.give_out_HTML) {
-			sout += this.nlnl + 'H = ' + h + this.tabchar+this.tabchar + this.H1 + ' = ' + h1 +
-					this.tabchar+this.tabchar + this.H2 + ' = ' + h2 + this.nlnlnl;
+			sout += this.nlnl + 'H = ' + this.h + this.tabchar+this.tabchar + this.H_1 + ' = ' + this.h1 +
+					this.tabchar+this.tabchar + this.H_2 + ' = ' + this.h2 + this.nlnlnl;
 		} else {
-			sout += '$$ H = "' + h + '"' + this.tabchar+this.tabchar + this.H1 + ' = "' + h1 +
-					'"' + this.tabchar+this.tabchar + this.H2 + ' = "' + h2 + '" $$' + this.nlnl;
+			sout += '$$ H = "' + this.h + '"' + this.tabchar+this.tabchar + this.H_1 + ' = "' + this.h1 +
+					'"' + this.tabchar+this.tabchar + this.H_2 + ' = "' + this.h2 + '" $$' + this.nlnl;
 		}
 
 
@@ -178,41 +356,40 @@ c = {
 		sout += "To find the intended merging result, ";
 		sout += "we first create the cyclic rotations of " + this.DH + ":" + this.nlnl;
 
-		sout += this.print_arrofarr(h_cr).join(this.nlnl);
+		sout += this.print_arrofarr(this.h_cr).join(this.nlnl);
 
 		sout += this.nlnlnl + "All of the cyclic rotations sorted together:" + this.nlnl;
 		
-		sout += this.print_arrofarr(h_scr).join(this.nlnl);
+		sout += this.print_arrofarr(this.h_scr).join(this.nlnl);
 
 		sout += this.nlnlnl + "So overall we want to find the following positions ";
-		sout += "and BWT through merging " + this.DH1 + " and " + this.DH2 + ":" + this.nlnl;
+		sout += "and BWT through merging " + this.DH_1 + " and " + this.DH_2 + ":" + this.nlnl;
 
-		sout += h_pos.join(', ') + this.nlnl;
-		sout += h_bwt.join(', ') + this.nlnlnl;
+		sout += this.s_h_table;
 
 
 
 		// BWT and pos for H_1 and H_2
 
-		sout += "To achieve this with merging, we generate the BWTs for " + this.DH1 +
-				" and " + this.DH2 + "." + this.nlnl;
+		sout += "To achieve this with merging, we generate the BWTs for " + this.DH_1 +
+				" and " + this.DH_2 + "." + this.nlnl;
 
-		sout += "We again first write down the cyclic rotations for " + this.DH1 + ":" + this.nlnl;
+		sout += "We again first write down the cyclic rotations for " + this.DH_1 + ":" + this.nlnl;
 
-		sout += this.print_arrofarr(h1_cr).join(this.nlnl);
+		sout += this.print_arrofarr(this.h1_cr).join(this.nlnl);
 
-		sout += this.nlnlnl + "And for " + this.DH2 + ":" + this.nlnl;
+		sout += this.nlnlnl + "And for " + this.DH_2 + ":" + this.nlnl;
 
-		sout += this.print_arrofarr(h2_cr).join(this.nlnl);
+		sout += this.print_arrofarr(this.h2_cr).join(this.nlnl);
 
 		sout += this.nlnlnl + "We now have all of the cyclic rotations sorted together for " +
-				this.DH1 + ":" + this.nlnl;
+				this.DH_1 + ":" + this.nlnl;
 
-		sout += this.print_arrofarr(h1_scr).join(this.nlnl);
+		sout += this.print_arrofarr(this.h1_scr).join(this.nlnl);
 
-		sout += this.nlnlnl + "And for " + this.DH2 + ":" + this.nlnl;
+		sout += this.nlnlnl + "And for " + this.DH_2 + ":" + this.nlnl;
 
-		sout += this.print_arrofarr(h2_scr).join(this.nlnl);
+		sout += this.print_arrofarr(this.h2_scr).join(this.nlnl);
 
 		sout += this.nlnlnl + "Which gives us the following positions ";
 		sout += "and BWT:" + this.nlnl;
@@ -220,27 +397,20 @@ c = {
 		sout += this.tab;
 		if (this.give_out_HTML) {
 			sout += '<thead><tr>';
-			sout += "<th>For " + this.DH1 + ":</th><th>" + this.tabchar + "</th><th>For " + this.DH2 + ":</th>" + this.nl;
+			sout += "<th>For " + this.DH_1 + ":</th><th>" + this.tabchar + "</th><th>For " + this.DH_2 + ":</th>" + this.nl;
 			sout += '</tr></thead><tbody><tr><td>';
 		} else {
 			sout += "{l l l}" + this.nl;
-			sout += "For " + this.DH1 + ": & & For " + this.DH2 + ":" + this.tabnl;
+			sout += "For " + this.DH_1 + ": & & For " + this.DH_2 + ":" + this.tabnl;
 		}
-		sout += h1_pos.join(', ') + this.td+this.td + h2_pos.join(', ') + this.tabnl;
-		sout += h1_bwt.join(', ') + this.td+this.td + h2_bwt.join(', ') + this.nl;
+
+		sout += this.h1_pos.join(', ') + this.td+this.td + this.h2_pos.join(', ') + this.tabnl;
+		sout += this.h1_bwt.join(', ') + this.td+this.td + this.h2_bwt.join(', ') + this.nl;
 		sout += this.endtab;
 
 		sout += "Again, what we want to generate from this is" + this.nlnl;
 
-		sout += this.tab;
-		if (this.give_out_HTML) {
-			sout += '<tbody><tr><td>';
-		} else {
-			sout += "{l}" + this.nl;
-		}
-		sout += h_pos.join(', ') + this.tabnl;
-		sout += h_bwt.join(', ') + this.nl;
-		sout += this.endtab;
+		sout += this.s_h_table;
 
 
 		// round 1
@@ -252,43 +422,43 @@ c = {
 		sout += "the beginning!" + this.nlnl;
 
 		sout += "Instead, we can (and should!) take advantage of the fact that ";
-		sout += "the two cyclic rotation lists of " + this.DH1 + " and " + this.DH2 + " have ";
+		sout += "the two cyclic rotation lists of " + this.DH_1 + " and " + this.DH_2 + " have ";
 		sout += "already been sorted." + this.nlnl;
 
 		sout += "One method to achieve this sorting, according to Holt2014, is as follows:" + this.nlnl;
 
 		sout += "We create an interleave vector which is 1 in each position ";
-		sout += "in which we choose the next element from " + this.DH1 + " and ";
+		sout += "in which we choose the next element from " + this.DH_1 + " and ";
 		sout += "which is 2 in each position in which we choose the ";
-		sout += "next element from " + this.DH2 + " (originally it's 0 and 1, but the ";
+		sout += "next element from " + this.DH_2 + " (originally it's 0 and 1, but the ";
 		sout += "difference is purely notational.) ";
 		sout += "The first interleave vector that we create here simply corresponds "
-		sout += "to fully writing out the information for " + this.DH1 + ", followed by "
-		sout += "fully writing out the information for " + this.DH2 + ":" + this.nlnl;
+		sout += "to fully writing out the information for " + this.DH_1 + ", followed by "
+		sout += "fully writing out the information for " + this.DH_2 + ":" + this.nlnl;
 
 		sout += this.tab;
 		if (this.give_out_HTML) {
 			sout += '<tbody class="vbars"><tr><td>';
 		} else {
-			sout += "{" + this.repjoin(h1_pos.length, 'c', ' | ') + " | ";
-			sout += this.repjoin(h2_pos.length, 'c', ' | ') + " | l}" + this.nl;
+			sout += "{" + this.repjoin(this.h1_pos.length, 'c', ' | ') + " | ";
+			sout += this.repjoin(this.h2_pos.length, 'c', ' | ') + " | l}" + this.nl;
 		}
-		sout += h1_pos.join(this.td) + this.td + h2_pos.join(this.td) + this.td + "Position" + this.tabnl;
-		sout += h1_bwt.join(this.td) + this.td + h2_bwt.join(this.td) + this.td + "BWT" + this.tabnl;
-		sout += this.repjoin(h1_pos.length, '1', this.td) + this.td;
-		sout += this.repjoin(h2_pos.length, '2', this.td) + this.td + "Interleave" + this.nl;
+		sout += this.h1_pos.join(this.td) + this.td + this.h2_pos.join(this.td) + this.td + "Position" + this.tabnl;
+		sout += this.h1_bwt.join(this.td) + this.td + this.h2_bwt.join(this.td) + this.td + "BWT" + this.tabnl;
+		sout += this.repjoin(this.h1_pos.length, '1', this.td) + this.td;
+		sout += this.repjoin(this.h2_pos.length, '2', this.td) + this.td + "Interleave" + this.nl;
 		sout += this.endtab;
 
 		sout += "The method that we will be using for the next steps is ";
 		sout += "to use the first column (sorted alphabetically) ";
 		sout += "instead of focusing on the last column (the BWT):" + this.nlnl
 
-		var h1_col1 = this.add_index_to_col(this.get_first_n_from_scr(h1_scr, 0), '1');
-		var h2_col1 = this.add_index_to_col(this.get_first_n_from_scr(h2_scr, 0), '2');
+		var h1_col1 = this.add_index_to_col(this.get_first_n_from_scr(this.h1_scr, 0), '1');
+		var h2_col1 = this.add_index_to_col(this.get_first_n_from_scr(this.h2_scr, 0), '2');
 		var h12_cols = this.sort_indexed_col(h1_col1.concat(h2_col1));
 		var h12_itlv = this.get_index_from_col(h12_cols);
 		var itlv_changed =
-			this.repjoin(h1_pos.length, '1', '') + this.repjoin(h2_pos.length, '2', '') !==
+			this.repjoin(this.h1_pos.length, '1', '') + this.repjoin(this.h2_pos.length, '2', '') !==
 			h12_itlv.join('');
 
 		var nth;
@@ -354,8 +524,8 @@ c = {
 
 		sout += "Using this interleave vector to resort the position and BWT that we had before, we get:" + this.nlnl;
 
-		var h12_pos = this.merge_with_interleave(h1_pos, h2_pos, h12_itlv);
-		var h12_bwt = this.merge_with_interleave(h1_bwt, h2_bwt, h12_itlv);
+		var h12_pos = this.merge_with_interleave(this.h1_pos, this.h2_pos, h12_itlv);
+		var h12_bwt = this.merge_with_interleave(this.h1_bwt, this.h2_bwt, h12_itlv);
 
 		sout += this.tab;
 		if (this.give_out_HTML) {
@@ -364,10 +534,10 @@ c = {
 			sout += "{" + this.repjoin(h1_col1.length, 'c', ' | ') + " | ";
 			sout += this.repjoin(h2_col1.length, 'c', ' | ') + " | l}" + this.nl;
 		}
-		sout += h1_pos.join(this.td) + this.td + h2_pos.join(this.td) + this.td + "Old Position" + this.tabnl;
-		sout += h1_bwt.join(this.td) + this.td + h2_bwt.join(this.td) + this.td + "Old BWT" + this.tabnl;
-		sout += this.repjoin(h1_pos.length, '1', this.td) + this.td;
-		sout += this.repjoin(h2_pos.length, '2', this.td) + this.td + "Old Interleave" + this.nl;
+		sout += this.h1_pos.join(this.td) + this.td + this.h2_pos.join(this.td) + this.td + "Old Position" + this.tabnl;
+		sout += this.h1_bwt.join(this.td) + this.td + this.h2_bwt.join(this.td) + this.td + "Old BWT" + this.tabnl;
+		sout += this.repjoin(this.h1_pos.length, '1', this.td) + this.td;
+		sout += this.repjoin(this.h2_pos.length, '2', this.td) + this.td + "Old Interleave" + this.nl;
 		sout += this.endtab;
 
 		sout += this.tab;
@@ -386,16 +556,30 @@ c = {
 
 		sout += "We have now achieved" + this.nlnl;
 
-		sout += h12_pos.join(', ') + this.nlnl;
-		sout += h12_bwt.join(', ') + this.nlnlnl;
+		sout += this.s_h_table_head;
+		sout += h12_pos.join(this.td) + this.td + 'Position' + this.tabnl;
+		sout += h12_bwt.join(this.td) + this.td + 'BWT' + this.nl;
+		sout += this.endtab;
+
+		var expanded = this.expand_pos(h12_pos, h12_bwt);
+		if (expanded) {
+			sout += "When expanding the merged BWT and its positions, we get" + this.nlnl;
+
+			var h12_pos_ex = expanded[0];
+			var h12_bwt_ex = expanded[1];
+
+			sout += this.s_h_table_head;
+			sout += h12_pos_ex.join(this.td) + this.td + 'Position' + this.tabnl;
+			sout += h12_bwt_ex.join(this.td) + this.td + 'BWT' + this.nl;
+			sout += this.endtab;
+		}
 
 		if (itlv_changed) {
 			sout += "However, what we actually want is" + this.nlnl;
 		} else {
 			sout += "What we actually want is" + this.nlnl;
 		}
-		sout += h_pos.join(', ') + this.nlnl;
-		sout += h_bwt.join(', ') + this.nlnlnl;
+		sout += this.s_h_table;
 
 		sout += "In general, we can only be sure that we can stop when the interleave vector ";
 		sout += "did not change between runs ";
@@ -432,15 +616,15 @@ c = {
 			sout += this.tab;
 			if (this.give_out_HTML) {
 				sout += '<thead><tr>';
-				sout += "<th>For " + this.DH1 + ":</th><th>" + this.tabchar + "</th><th>For " + this.DH2 + ":</th>" + this.nl;
+				sout += "<th>For " + this.DH_1 + ":</th><th>" + this.tabchar + "</th><th>For " + this.DH_2 + ":</th>" + this.nl;
 				sout += '</tr></thead><tbody><tr><td>';
 			} else {
 				sout += "{l l l}" + this.nl;
-				sout += "For " + this.DH1 + ": & & For " + this.DH2 + ":" + this.tabnl;
+				sout += "For " + this.DH_1 + ": & & For " + this.DH_2 + ":" + this.tabnl;
 			}
 
-			var h1_cr_as = this.print_arrofarr(h1_cr);
-			var h2_cr_as = this.print_arrofarr(h2_cr);
+			var h1_cr_as = this.print_arrofarr(this.h1_cr);
+			var h2_cr_as = this.print_arrofarr(this.h2_cr);
 			var len1 = h1_cr_as.length;
 			var len2 = h2_cr_as.length;
 			var len = Math.max(len1, len2);
@@ -492,8 +676,8 @@ c = {
 
 			var h12_col = this.add_indices_to_col(
 								this.merge_with_interleave(
-									this.get_first_n_from_scr(h1_scr, n - 1),
-									this.get_first_n_from_scr(h2_scr, n - 1),
+									this.get_first_n_from_scr(this.h1_scr, n - 1),
+									this.get_first_n_from_scr(this.h2_scr, n - 1),
 									h12_itlv),
 								h12_itlv,
 								h12_cols);
@@ -537,8 +721,8 @@ c = {
 			h12_itlv_new = this.get_index_from_col(h12_cols);
 			itlv_changed = this.did_itlvs_change(h12_itlv, h12_itlv_new);
 			h12_itlv = h12_itlv_new;
-			h12_pos = this.merge_with_interleave(h1_pos, h2_pos, h12_itlv);
-			h12_bwt = this.merge_with_interleave(h1_bwt, h2_bwt, h12_itlv);
+			h12_pos = this.merge_with_interleave(this.h1_pos, this.h2_pos, h12_itlv);
+			h12_bwt = this.merge_with_interleave(this.h1_bwt, this.h2_bwt, h12_itlv);
 
 			sout += this.tab;
 			if (this.give_out_HTML) {
@@ -591,30 +775,37 @@ c = {
 
 			sout += "We have now achieved" + this.nlnl;
 
-			sout += h12_pos.join(', ') + this.nlnl;
-			sout += h12_bwt.join(', ') + this.nlnlnl;
+			sout += this.s_h_table_head;
+			sout += h12_pos.join(this.td) + this.td + 'Position' + this.tabnl;
+			sout += h12_bwt.join(this.td) + this.td + 'BWT' + this.nl;
+			sout += this.endtab;
+
+			expanded = this.expand_pos(h12_pos, h12_bwt);
+			if (expanded) {
+				sout += "When expanding the merged BWT and its positions, we get" + this.nlnl;
+
+				h12_pos_ex = expanded[0];
+				h12_bwt_ex = expanded[1];
+
+				sout += this.s_h_table_head;
+				sout += h12_pos_ex.join(this.td) + this.td + 'Position' + this.tabnl;
+				sout += h12_bwt_ex.join(this.td) + this.td + 'BWT' + this.nl;
+				sout += this.endtab;
+			}
 
 			if (itlv_changed) {
 				sout += "However, what we actually want is" + this.nlnl;
 			} else {
 				sout += "What we actually want is" + this.nlnl;
 			}
-			sout += h_pos.join(', ') + this.nlnl;
-			sout += h_bwt.join(', ') + this.nlnlnl;
+			sout += this.s_h_table;
 		}
 
-		var expanded = this.expand_pos(h12_pos, h12_bwt);
 		if (expanded) {
-			sout += "When expanding the merged BWT and its positions, we get" + this.nlnl;
-
-			h12_pos = expanded[0];
-			h12_bwt = expanded[1];
-
-			sout += h12_pos.join(', ') + this.nlnl;
-			sout += h12_bwt.join(', ') + this.nlnlnl;
+			h12_pos = h12_pos_ex;
 		}
 
-		if (this.pos_equals_pos(h12_pos, h_pos)) {
+		if (this.pos_equals_pos(h12_pos, this.h_pos)) {
 			sout += "We can see that we found exactly what we wanted to achieve, ";
 			sout += "and therefore we are happy.";
 		} else {
@@ -625,10 +816,7 @@ c = {
 
 
 
-		if (!this.give_out_HTML) {
-			var currentdate = new Date();
-			sout += this.nlnl+"Reykjavík, " + currentdate.getDate() + ". " + (currentdate.getMonth() + 1) + ". " + currentdate.getFullYear();
-		}
+		sout += this.s_end_document;
 
 		return sout;
 	},
@@ -1138,7 +1326,7 @@ c = {
 	// takes nothing in
 	// gives back an example run
 	example: function() {
-		return c.create_BWT_merge('A(A|C)CA', 'CAAA');
+		return this.merge_BWT_naively('A(A|C)CA', 'CAAA');
 	},
 
 }

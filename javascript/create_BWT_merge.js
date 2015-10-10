@@ -121,16 +121,46 @@ c = {
 			var h1a = h1.split('');
 			var h1a_A = h1_A.split('');
 			var h1a_B = h1_B.split('');
-			var h2a = h2.split('');
-
-			var ha_A = h1a_A.concat([this.DS_1]).concat(h2a).concat([this.DS_2]);
-			var ha_B = h1a_B.concat([this.DS_1]).concat(h2a).concat([this.DS_2]);
 
 		} else {
-
 			// create array forms of the input strings
 			var h1a = h1.split('');
+		}
+
+		if (this.h2_graph) {
+
+			var i = h2.indexOf('(');
+			var alt_C = h2.slice(i + 1, i + 2);
+			var i = h2.indexOf('|');
+			var alt_D = h2.slice(i + 1, i + 2);
+
+			var h2_C = h2.replace('(', '');
+			h2_C = h2_C.slice(0, h2_C.indexOf('|')) + h2_C.slice(h2_C.indexOf(')') + 1);
+
+			var h2_D = h2.replace(')', '');
+			h2_D = h2_D.slice(0, h2_D.indexOf('(')) + h2_D.slice(h2_D.indexOf('|') + 1);
+		
+			// create array forms of the input strings
 			var h2a = h2.split('');
+			var h2a_C = h2_C.split('');
+			var h2a_D = h2_D.split('');
+
+		} else {
+			// create array forms of the input strings
+			var h2a = h2.split('');
+		}
+
+		if (this.h1_graph && this.h2_graph) {
+			var ha_A = h1a_A.concat([this.DS_1]).concat(h2a_C).concat([this.DS_2]);
+			var ha_B = h1a_B.concat([this.DS_1]).concat(h2a_C).concat([this.DS_2]);
+			var ha_C = h1a_A.concat([this.DS_1]).concat(h2a_D).concat([this.DS_2]);
+			var ha_D = h1a_B.concat([this.DS_1]).concat(h2a_D).concat([this.DS_2]);
+		} else if (this.h1_graph) {
+			var ha_A = h1a_A.concat([this.DS_1]).concat(h2a).concat([this.DS_2]);
+			var ha_B = h1a_B.concat([this.DS_1]).concat(h2a).concat([this.DS_2]);
+		} else if (this.h2_graph) {
+			var ha_C = h1a.concat([this.DS_1]).concat(h2a_C).concat([this.DS_2]);
+			var ha_D = h1a.concat([this.DS_1]).concat(h2a_D).concat([this.DS_2]);
 		}
 
 		// create full array based on both strings
@@ -140,7 +170,33 @@ c = {
 		h1a[h1a.length] = this.DS;
 		h2a[h2a.length] = this.DS;
 
-		if (this.h1_graph) {
+		if (this.h1_graph && this.h2_graph) {
+
+			// append delimiter character to input arrays
+			h1a_A[h1a_A.length] = this.DS;
+			h1a_B[h1a_B.length] = this.DS;
+			h2a_C[h2a_C.length] = this.DS;
+			h2a_D[h2a_D.length] = this.DS;
+
+			// generate cyclic rotations
+			var h_cr_A = this.create_cyclic_rotations(ha_A, 0, alt_A);
+			var h_cr_B = this.create_cyclic_rotations(ha_B, 0, alt_B);
+			var h_cr_C = this.create_cyclic_rotations(ha_C, 0, alt_C);
+			var h_cr_D = this.create_cyclic_rotations(ha_D, 0, alt_D);
+			this.h_cr = h_cr_A.concat(h_cr_B).concat(h_cr_C).concat(h_cr_D);
+			var h1_cr_A = this.create_cyclic_rotations(h1a_A, 0, alt_A);
+			var h1_cr_B = this.create_cyclic_rotations(h1a_B, 0, alt_B);
+			this.h1_cr = h1_cr_A.concat(h1_cr_B);
+
+			// we are here implicitly assuming that h1a_A has the same length as h1a_B!
+			var h1_len = h1a_A.length;
+
+			// generate cyclic rotations
+			var h2_cr_C = this.create_cyclic_rotations(h2a_C, h1_len, alt_C);
+			var h2_cr_D = this.create_cyclic_rotations(h2a_D, h1_len, alt_D);
+			this.h2_cr = h2_cr_C.concat(h2_cr_D);
+
+		} else if (this.h1_graph) {
 
 			// append delimiter character to input arrays
 			h1a_A[h1a_A.length] = this.DS;
@@ -157,15 +213,34 @@ c = {
 			// we are here implicitly assuming that h1a_A has the same length as h1a_B!
 			var h1_len = h1a_A.length;
 
+			this.h2_cr = this.create_cyclic_rotations(h2a, h1_len, '');
+
+		} else if (this.h2_graph) {
+
+			this.h1_cr = this.create_cyclic_rotations(h1a, 0, '');
+
+			var h1_len = h1a.length;
+
+			// append delimiter character to input arrays
+			h2a_C[h2a_C.length] = this.DS;
+			h2a_D[h2a_D.length] = this.DS;
+
+			// generate cyclic rotations
+			var h_cr_C = this.create_cyclic_rotations(ha_C, 0, alt_C);
+			var h_cr_D = this.create_cyclic_rotations(ha_D, 0, alt_D);
+			this.h_cr = h_cr_C.concat(h_cr_D);
+			var h2_cr_C = this.create_cyclic_rotations(h2a_C, h1_len, alt_C);
+			var h2_cr_D = this.create_cyclic_rotations(h2a_D, h1_len, alt_D);
+			this.h2_cr = h2_cr_C.concat(h2_cr_D);
+
 		} else {
 
 			// generate cyclic rotations
 			this.h_cr = this.create_cyclic_rotations(ha, 0, '');
 			this.h1_cr = this.create_cyclic_rotations(h1a, 0, '');
 			var h1_len = h1a.length;
+			this.h2_cr = this.create_cyclic_rotations(h2a, h1_len, '');
 		}
-
-		this.h2_cr = this.create_cyclic_rotations(h2a, h1_len, '');
 
 		// create strings based on arrays with delimiters
 		this.h = ha.join('');
@@ -223,6 +298,133 @@ c = {
 	// takes in an unterminated string
 	// gives back a section in DaTeX or HTML about the generation of its BWT
 	generate_BWT_naively: function(h) {
+
+		// Does h1 or h2 contain a graph? - e.g. A(A|C)CA
+		var h_graph = h.indexOf('(') >= 0;
+
+		if (h_graph) {
+
+			var i = h.indexOf('(');
+			var alt_A = h.slice(i + 1, i + 2);
+			var i = h.indexOf('|');
+			var alt_B = h.slice(i + 1, i + 2);
+
+			var h_A = h.replace('(', '');
+			h_A = h_A.slice(0, h_A.indexOf('|')) + h_A.slice(h_A.indexOf(')') + 1);
+
+			var h_B = h.replace(')', '');
+			h_B = h_B.slice(0, h_B.indexOf('(')) + h_B.slice(h_B.indexOf('|') + 1);
+		
+			// create array forms of the input string
+			var ha = h.split('');
+			var ha_A = h_A.split('');
+			var ha_B = h_B.split('');
+
+		} else {
+
+			// create array form of the input string
+			var ha = h.split('');
+		}
+
+		// append delimiter character to input arrays
+		ha[ha.length] = this.DS;
+
+		if (h_graph) {
+
+			// append delimiter character to input arrays
+			ha_A[ha_A.length] = this.DS;
+			ha_B[ha_B.length] = this.DS;
+
+			// generate cyclic rotations
+			var h_cr_A = this.create_cyclic_rotations(ha_A, 0, alt_A);
+			var h_cr_B = this.create_cyclic_rotations(ha_B, 0, alt_B);
+			var h_cr = h_cr_A.concat(h_cr_B);
+
+			// we are here implicitly assuming that h1a_A has the same length as h1a_B!
+			var h_len = ha_A.length;
+
+		} else {
+
+			// generate cyclic rotations
+			var h_cr = this.create_cyclic_rotations(ha, 0, '');
+			var h_len = ha.length;
+		}
+
+		// create strings based on arrays with delimiters
+		var h = ha.join('');
+
+		// sort cyclic rotations
+		var h_scr = this.sort_cyclic_rotations(h_cr);
+
+		// get the positions
+		var h_pos = this.get_pos_from_scr(h_scr);
+
+		// get the BWT
+		var h_bwt = this.get_bwt_from_scr(h_scr);
+
+
+
+		// a table head that we will print over and over again...
+		var s_h_table_head = this.tab;
+		if (this.give_out_HTML) {
+			s_h_table_head += '<tbody class="lastbar"><tr><td>';
+		} else {
+			s_h_table_head += "{" + this.repjoin(h_pos.length, 'c', ' ') + " | l}" + this.nl;
+		}
+
+		// ... and a full table that we will also print several times =)
+		var s_h_table = s_h_table_head;
+		s_h_table += h_pos.join(this.td) + this.td + 'Position' + this.tabnl;
+		s_h_table += h_bwt.join(this.td) + this.td + 'BWT' + this.nl;
+		s_h_table += this.endtab;
+
+
+
+		var sout = '';
+		
+		if(!this.give_out_HTML) {
+			sout += " Graph Alignment - BWT Generation" + this.nl;
+			sout += "¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯" + this.nl
+		}
+
+		sout += "We are looking at " + this.nlnl;
+		
+		if(this.give_out_HTML) {
+			sout += this.nlnl + 'H = ' + h + this.nlnlnl;
+		} else {
+			sout += '$$ H = "' + h + '" $$' + this.nlnl;
+		}
+
+
+
+		// BWT and pos for H
+
+		sout += "To generate the full BWT of " + this.DH + ", ";
+		sout += "we first create its cyclic rotations:" + this.nlnl;
+
+		sout += this.print_arrofarr(h_cr).join(this.nlnl);
+
+		sout += this.nlnlnl + "All of the cyclic rotations sorted together:" + this.nlnl;
+		
+		sout += this.print_arrofarr(h_scr).join(this.nlnl);
+
+		sout += this.nlnlnl + "So overall we get the following positions ";
+		sout += "and BWT for " + this.DH + ":" + this.nlnl;
+
+		sout += s_h_table;
+
+
+
+		sout += this.s_end_document;
+
+		return sout;
+	},
+
+
+
+	// takes in an unterminated string
+	// gives back a section in DaTeX or HTML about the generation of its BWT
+	generate_BWT_advanced: function(h) {
 
 		// Does h1 or h2 contain a graph? - e.g. A(A|C)CA
 		var h_graph = h.indexOf('(') >= 0;
@@ -830,7 +1032,7 @@ c = {
 			if (this.give_out_HTML) {
 				sout += '<tbody class="vbars"><tr><td>';
 				sout += this.get_tabline_from_col_HTML(h12_itlv, h12_cols) + 'Old Interleave' + this.tabnl;
-				sout += this.get_tabline_from_col_HTML(this.arr_to_arr_w_index(h12_cols), h12_cols);
+				sout += this.get_tabline_from_col_HTML(this.arr_to_arr_w_index(h12_col), h12_cols);
 				sout += nth + " column" + this.nl;
 			} else {
 				sout += "{" + this.get_tabline_from_col_DaTeX(h12_cols) + " | l}" + this.nl;
@@ -1117,7 +1319,14 @@ c = {
 
 		var colout = [[]];
 		var colout_cur = 0;
+		var orig_vbars = [];
 
+		// store the original vertical bar count
+		for (var i = 0; i < h_col.length; i++) {
+			orig_vbars.push(h_col[i][2]);
+		}
+
+		// create array of arrays, with each internal array being a group
 		for (var i = 0; i < h_col.length; i++) {
 			colout[colout_cur].push(h_col[i]);
 			if (h_col[i][2] > 0) {
@@ -1155,6 +1364,11 @@ c = {
 
 		for (var i = 0; i < colout.length; i++) {
 			cout = cout.concat(colout[i]);
+		}
+
+		// restore the original vertical bar count
+		for (var i = 0; i < cout.length; i++) {
+			cout[i][2] = orig_vbars[i];
 		}
 
 		// update the vertical bar count
@@ -1222,8 +1436,8 @@ c = {
 
 		var sout = arr[0];
 
-		for (var i = 0; i < len-1; i++) {
-			for (var j = 0; j < h_col[i][2]; j++) {
+		for (var i = 1; i < len; i++) {
+			for (var j = 0; j < h_col[i-1][2]; j++) {
 				sout += '</td><td class="b">';
 			}
 			sout += '</td><td>';

@@ -273,7 +273,9 @@
 		}
 
 		function generateAdvancedBWT() {
-			alert('Sorry, this has not yet been implemented.');
+			var el = activateDivOut(0);
+			el.innerHTML = '<div>' + c.generate_BWT_advanced(
+				document.getElementById('in-string-0').value) + '</div>';
 		}
 
 

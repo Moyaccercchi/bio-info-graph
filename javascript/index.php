@@ -2,7 +2,7 @@
 <html lang="@constant(lang)">
 <head>
 	<meta charset="utf-8">
-	<title>BioInfoJS</title>
+	<title>BioInfo</title>
 	<style>
 		* {
 			color:#000;
@@ -13,6 +13,7 @@
 			font-weight:500;
 			box-sizing:border-box;
 			text-align:left;
+			text-rendering:optimizeLegibility;
 		}
 
 		body {
@@ -34,12 +35,29 @@
 			right:16px;
 		}
 
-		div.mainbox {
+		div.mainbox, div.tabbox > div {
 			border:1px solid #000;
 			border-radius:16px;
-			margin-bottom:32px;
 			box-shadow:0px 0px 5px 0px rgba(0, 0, 0, 0.8);
-			padding:16px 16px 0px;
+		}
+
+		div.tabbox {
+			padding:0px;
+			margin-top:-48px;
+			margin-bottom:84px;
+		}
+
+		div.tabbox > div {
+			display:inline-block;
+			padding:24px 12px 4px 12px;
+			margin-bottom:8px;
+			margin-right:8px;
+			float:left;
+		}
+
+		div.mainbox {
+			padding:16px 16px 0px 16px;
+			margin-bottom:32px;
 		}
 
 		div.mainbox > div, div.mainbox > input, div.mainbox > button {
@@ -65,17 +83,25 @@
 		}
 
 		button {
-			background: #EEE none repeat scroll 0% 0%;
-			cursor:pointer;
 			padding:2px 5px;
 		}
 
-		button:hover {
+		button, div.button {
+			background: #EEE none repeat scroll 0% 0%;
+			cursor:pointer;
+		}
+
+		button:hover, div.button:hover {
 			background: #DDD none repeat scroll 0% 0%;
 		}
 
-		button:active {
+		button:active, div.button:active {
 			background: #CCC none repeat scroll 0% 0%;
+		}
+
+		div.tabbox > div.active {
+			padding-top:40px;
+			font-weight:700;
 		}
 
 		/* subscript */
@@ -142,12 +168,38 @@
 
 	<script src="create_BWT_merge.js"></script>
 
-	<div id="div-in" class="mainbox">
-		<div>
-			Please enter the two strings that you want to consider:
+	<div class="tabbox">
+		<div class="button" id="tab-btn-0" onclick="showTab(0)">
+			Generate One BWT
 		</div>
-		<input id="in-string-1" type="text" value="A(A|C)CA"></input>
-		<input id="in-string-2" type="text" value="ACCC"></input>
+		<div class="button active" id="tab-btn-1" onclick="showTab(1)">
+			Merge Two BWTs
+		</div>
+	</div>
+
+
+
+	<div id="div-in-0" class="mainbox" style="display:none">
+		<div>
+			Please enter the string that you are interested in:
+		</div>
+		<input id="in-string-0" type="text" value="A(A|C)CA"></input>
+		<div>
+			<button type="button" onclick="generateNaiveBWT()">Generate na&iuml;ve BWT</button>
+			<button type="button" style="float:right;" onclick="generateAdvancedBWT()">Generate advanced BWT (see Siren 2014)</button>
+		</div>
+	</div>
+
+	<div id="div-out-0" class="mainbox" style="display:none">
+	</div>
+
+
+	<div id="div-in-1" class="mainbox">
+		<div>
+			Please enter the two strings that you are interested in:
+		</div>
+		<input id="in-string-1-1" type="text" value="A(A|C)CA"></input>
+		<input id="in-string-1-2" type="text" value="ACCC"></input>
 		<div>
 			<button type="button" onclick="generateNaiveBWTs()">Generate na&iuml;ve BWTs</button>
 			<button type="button" style="float:right;" onclick="mergeNaiveBWTs()">Merge na&iuml;ve BWTs (see Holt 2014)</button>
@@ -157,10 +209,11 @@
 			<button type="button" style="float:right;" onclick="mergeAdvancedBWTs()">Merge advanced BWTs (see Siren 2014, Holt 2014)</button>
 		</div>
 	</div>
-	
-	<div id="div-out" class="mainbox" style="display:none">
-		
+
+	<div id="div-out-1" class="mainbox" style="display:none">
 	</div>
+
+
 
 	<span class="creditline absleft">
 		Version: 0.0.0.1
@@ -172,28 +225,84 @@
 	<script>
 		c.set_to_HTML();
 
-		function generateNaiveBWTs() {
-			var el = document.getElementById('div-out');
-			el.innerHTML = '<div>' + c.generate_BWT_naively(
-				document.getElementById('in-string-1').value,
-				document.getElementById('in-string-2').value) + '</div>';
+		// stores the visibility of div-out so that we don't reset it when changing tabs
+		div_out_visibility = [false, false];
+
+
+
+		/*
+			Tab Control
+		*/
+
+		function unShowAllTabs() {
+			for (var i = 0; i < 2; i++) {
+				document.getElementById('tab-btn-' + i).className = 'button';
+				document.getElementById('div-in-' + i).style.display = 'none';
+				document.getElementById('div-out-' + i).style.display = 'none';
+			}
+		}
+
+		function showTab(nexttab) {
+			unShowAllTabs();
+
+			document.getElementById('tab-btn-' + nexttab).className = 'button active';
+			document.getElementById('div-in-' + nexttab).style.display = 'block';
+			if (div_out_visibility[nexttab]) {
+				document.getElementById('div-out-' + nexttab).style.display = 'block';
+			}
+		}
+
+		function activateDivOut(i) {
+			var el = document.getElementById('div-out-' + i);
+			el.innerHTML = '<div>... working on your request ...</div>';
 			el.style.display = 'block';
+			div_out_visibility[i] = true;
+			return el;
+		}
+
+
+
+		/*
+			Tab 1 - Generate One BWT
+		*/
+
+		function generateNaiveBWT() {
+			var el = activateDivOut(0);
+			el.innerHTML = '<div>' + c.generate_BWT_naively(
+				document.getElementById('in-string-0').value) + '</div>';
+		}
+
+		function generateAdvancedBWT() {
+			alert('Sorry, this has not yet been implemented.');
+		}
+
+
+
+
+		/*
+			Tab 2 - Merge Two BWTs
+		*/
+
+		function generateNaiveBWTs() {
+			var el = activateDivOut(1);
+			el.innerHTML = '<div>' + c.generate_BWTs_naively(
+				document.getElementById('in-string-1-1').value,
+				document.getElementById('in-string-1-2').value) + '</div>';
 		}
 
 		function mergeNaiveBWTs() {
-			var el = document.getElementById('div-out');
-			el.innerHTML = '<div>' + c.merge_BWT_naively(
-				document.getElementById('in-string-1').value,
-				document.getElementById('in-string-2').value) + '</div>';
-			el.style.display = 'block';
+			var el = activateDivOut(1);
+			el.innerHTML = '<div>' + c.merge_BWTs_naively(
+				document.getElementById('in-string-1-1').value,
+				document.getElementById('in-string-1-2').value) + '</div>';
 		}
 
 		function generateAdvancedBWTs() {
-			alert('Sorry, has not yet been implemented.');
+			alert('Sorry, this has not yet been implemented.');
 		}
 
 		function mergeAdvancedBWTs() {
-			alert('Sorry, has not yet been implemented.');
+			alert('Sorry, this has not yet been implemented.');
 		}
 	</script>
 

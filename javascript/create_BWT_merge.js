@@ -2,9 +2,9 @@
 	Flow through the program:
 
 	The outside world calls "set_to_DaTeX" or "set_to_HTML" (if not, DaTeX is default.)
-	The outside world calls "merge_BWT_naively".
-		It calls "build_BWT_naively" which generates the BWT if necessary (if parameters since last execution changed.)
-			It calls "prepare_BWT_naively" if necessary.
+	The outside world calls "merge_BWTs_naively".
+		It calls "build_BWTs_naively" which generates the BWT if necessary (if parameters since last execution changed.)
+			It calls "prepare_BWTs_naively" if necessary.
 */
 
 c = {
@@ -40,6 +40,10 @@ c = {
 		this.td = " & "; // table cell divider
 		this.endtab = '\\endtab' + this.nlnl; // end table
 		this.tabchar = '      '; // a tab (horizontal space)
+		var currentdate = new Date();
+		this.s_end_document = this.nlnl + // the last line of the document
+			"Reykjavík, " + currentdate.getDate() + ". " +
+			(currentdate.getMonth() + 1) + ". " + currentdate.getFullYear();
 	},
 
 	set_to_HTML: function() {
@@ -62,6 +66,7 @@ c = {
 		this.td = '</td><td>'; // table cell divider
 		this.endtab = '</td></tr></tbody></table></div>' + this.nlnl; // end table
 		this.tabchar = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'; // a tab (horizontal space)
+		this.s_end_document = ''; // the last line of the document
 	},
 
 
@@ -72,7 +77,7 @@ c = {
 
 	// takes in two strings
 	// gives back nothing (but builds the bwts for the two strings separately and merged)
-	build_BWT_naively: function(h1, h2) {
+	build_BWTs_naively: function(h1, h2) {
 
 		// Has someone already done our work for us?
 		if ((this.last_h1 == h1) && (this.last_h2 == h2) && (this.last_mode == 'naive')) {
@@ -81,7 +86,7 @@ c = {
 
 			if (this.last_give_out_HTML !== this.give_out_HTML) {
 				// Buuut the output form changed, so we need to work around that anyway...
-				this.prepare_BWT_naively();
+				this.prepare_BWTs_naively();
 			}
 
 			return;
@@ -185,14 +190,14 @@ c = {
 
 
 		// recalculate the output strings
-		this.prepare_BWT_naively();
+		this.prepare_BWTs_naively();
 	},
 
 
 
-	// takes in nothing (but assumes that build_BWT_naively() was executed just before)
+	// takes in nothing (but assumes that build_BWTs_naively() was executed just before)
 	// gives back nothing (but initializes several strings for the output)
-	prepare_BWT_naively: function() {
+	prepare_BWTs_naively: function() {
 
 		// a table head that we will print over and over again...
 		this.s_h_table_head = this.tab;
@@ -207,16 +212,6 @@ c = {
 		this.s_h_table += this.h_pos.join(this.td) + this.td + 'Position' + this.tabnl;
 		this.s_h_table += this.h_bwt.join(this.td) + this.td + 'BWT' + this.nl;
 		this.s_h_table += this.endtab;
-
-		// the last line of the document (empty in HTML, filled with location / date in DaTeX)
-		this.s_end_document = '';
-		if (!this.give_out_HTML) {
-			var currentdate = new Date();
-			this.s_end_document = this.nlnl + "Reykjavík, " +
-				 currentdate.getDate() + ". " +
-				(currentdate.getMonth() + 1) + ". " +
-				 currentdate.getFullYear();
-		}
 	},
 
 
@@ -225,11 +220,138 @@ c = {
 		text output
 	\************************************/
 
+	// takes in an unterminated string
+	// gives back a section in DaTeX or HTML about the generation of its BWT
+	generate_BWT_naively: function(h) {
+
+		// Does h1 or h2 contain a graph? - e.g. A(A|C)CA
+		var h_graph = h.indexOf('(') >= 0;
+
+		if (h_graph) {
+
+			var i = h.indexOf('(');
+			var alt_A = h.slice(i + 1, i + 2);
+			var i = h.indexOf('|');
+			var alt_B = h.slice(i + 1, i + 2);
+
+			var h_A = h.replace('(', '');
+			h_A = h_A.slice(0, h_A.indexOf('|')) + h_A.slice(h_A.indexOf(')') + 1);
+
+			var h_B = h.replace(')', '');
+			h_B = h_B.slice(0, h_B.indexOf('(')) + h_B.slice(h_B.indexOf('|') + 1);
+		
+			// create array forms of the input string
+			var ha = h.split('');
+			var ha_A = h_A.split('');
+			var ha_B = h_B.split('');
+
+		} else {
+
+			// create array form of the input string
+			var ha = h.split('');
+		}
+
+		// append delimiter character to input arrays
+		ha[ha.length] = this.DS;
+
+		if (h_graph) {
+
+			// append delimiter character to input arrays
+			ha_A[ha_A.length] = this.DS;
+			ha_B[ha_B.length] = this.DS;
+
+			// generate cyclic rotations
+			var h_cr_A = this.create_cyclic_rotations(ha_A, 0, alt_A);
+			var h_cr_B = this.create_cyclic_rotations(ha_B, 0, alt_B);
+			var h_cr = h_cr_A.concat(h_cr_B);
+
+			// we are here implicitly assuming that h1a_A has the same length as h1a_B!
+			var h_len = ha_A.length;
+
+		} else {
+
+			// generate cyclic rotations
+			var h_cr = this.create_cyclic_rotations(ha, 0, '');
+			var h_len = ha.length;
+		}
+
+		// create strings based on arrays with delimiters
+		var h = ha.join('');
+
+		// sort cyclic rotations
+		var h_scr = this.sort_cyclic_rotations(h_cr);
+
+		// get the positions
+		var h_pos = this.get_pos_from_scr(h_scr);
+
+		// get the BWT
+		var h_bwt = this.get_bwt_from_scr(h_scr);
+
+
+
+		// a table head that we will print over and over again...
+		var s_h_table_head = this.tab;
+		if (this.give_out_HTML) {
+			s_h_table_head += '<tbody class="lastbar"><tr><td>';
+		} else {
+			s_h_table_head += "{" + this.repjoin(h_pos.length, 'c', ' ') + " | l}" + this.nl;
+		}
+
+		// ... and a full table that we will also print several times =)
+		var s_h_table = s_h_table_head;
+		s_h_table += h_pos.join(this.td) + this.td + 'Position' + this.tabnl;
+		s_h_table += h_bwt.join(this.td) + this.td + 'BWT' + this.nl;
+		s_h_table += this.endtab;
+
+
+
+		var sout = '';
+		
+		if(!this.give_out_HTML) {
+			sout += " Graph Alignment - BWT Generation" + this.nl;
+			sout += "¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯" + this.nl
+		}
+
+		sout += "We are looking at " + this.nlnl;
+		
+		if(this.give_out_HTML) {
+			sout += this.nlnl + 'H = ' + h + this.nlnlnl;
+		} else {
+			sout += '$$ H = "' + h + '" $$' + this.nlnl;
+		}
+
+
+
+		// BWT and pos for H
+
+		sout += "To generate the full BWT of " + this.DH + ", ";
+		sout += "we first create its cyclic rotations:" + this.nlnl;
+
+		sout += this.print_arrofarr(h_cr).join(this.nlnl);
+
+		sout += this.nlnlnl + "All of the cyclic rotations sorted together:" + this.nlnl;
+		
+		sout += this.print_arrofarr(h_scr).join(this.nlnl);
+
+		sout += this.nlnlnl + "So overall we get the following positions ";
+		sout += "and BWT for " + this.DH + ":" + this.nlnl;
+
+		sout += s_h_table;
+
+
+
+		sout += this.s_end_document;
+
+		return sout;
+	},
+
+
+
 	// takes in two unterminated strings
 	// gives back a section in DaTeX or HTML about the generation of their BWTs
-	generate_BWT_naively: function(h1, h2) {
+	generate_BWTs_naively: function(h1, h2) {
 
-		this.build_BWT_naively(h1, h2);
+		this.build_BWTs_naively(h1, h2);
 
 
 
@@ -322,11 +444,13 @@ c = {
 		return sout;
 	},
 
+
+
 	// takes in two unterminated strings
 	// gives back a section in DaTeX or HTML about their merging behavior
-	merge_BWT_naively: function(h1, h2) {
+	merge_BWTs_naively: function(h1, h2) {
 
-		this.build_BWT_naively(h1, h2);
+		this.build_BWTs_naively(h1, h2);
 
 
 
@@ -1326,7 +1450,7 @@ c = {
 	// takes nothing in
 	// gives back an example run
 	example: function() {
-		return this.merge_BWT_naively('A(A|C)CA', 'CAAA');
+		return this.merge_BWTs_naively('A(A|C)CA', 'CAAA');
 	},
 
 }

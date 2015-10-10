@@ -28,8 +28,8 @@ c = {
 		this.nlnl = "\n\n"; // newline character in print
 		this.nlnlnl = "\n\n\n"; // double newline character in print
 		this.DS = "$ \\$ $"; // $
-		this.DS_1 = '$ \\$_1 $'; // $_1
-		this.DS_2 = '$ \\$_2 $'; // $_2
+		this.DS_1_o = '$ \\$_1 $'; // $_1
+		this.DS_2_o = '$ \\$_2 $'; // $_2
 		this.H_1 = 'H_1'; // H_1 while in mathmode
 		this.H_2 = 'H_2'; // H_2 while in mathmode
 		this.DH = '$ H $'; // H
@@ -54,8 +54,8 @@ c = {
 		this.nlnl = '<br>\n'; // newline character in print
 		this.nlnlnl = '<br><br>\n'; // double newline character in print
 		this.DS = '$'; // $
-		this.DS_1 = '$<span class="d">1</span>'; // $_1
-		this.DS_2 = '$<span class="d">2</span>'; // $_2
+		this.DS_1_o = '$<span class="d">1</span>'; // $_1
+		this.DS_2_o = '$<span class="d">2</span>'; // $_2
 		this.H_1 = 'H<span class="d">1</span>'; // H_1 while in mathmode
 		this.H_2 = 'H<span class="d">2</span>'; // H_2 while in mathmode
 		this.DH = 'H'; // H
@@ -148,6 +148,24 @@ c = {
 		} else {
 			// create array forms of the input strings
 			var h2a = h2.split('');
+		}
+
+		var h1_comp = h1;
+		if (this.h1_graph) {
+			h1_comp = h1_A;
+		}
+		var h2_comp = h2;
+		if (this.h2_graph) {
+			h2_comp = h2_C;
+		}
+		this.reorder1and2 = h2_comp < h1_comp;
+
+		if (this.reorder1and2) {
+			this.DS_1 = this.DS_2_o;
+			this.DS_2 = this.DS_1_o;
+		} else {
+			this.DS_1 = this.DS_1_o;
+			this.DS_2 = this.DS_2_o;
 		}
 
 		if (this.h1_graph && this.h2_graph) {
@@ -664,6 +682,14 @@ c = {
 		}
 
 		sout += "We are merging " + this.h1 + " and " + this.h2 + "." + this.nlnl;
+
+		if (this.reorder1and2) {
+			sout += "We see that " + this.h1 + " > " + this.h2;
+		} else {
+			sout += "We see that " + this.h1 + " < " + this.h2;
+		}
+		sout += ", so we concatenate them as " + h1 + this.DS_1 + h2 + this.DS_2 + this.nl;
+		sout += "(with " + this.DS_1 + " before " + this.DS_2 + ".)" + this.nlnl;
 		
 		sout += "That is, we have" + this.nlnl;
 		

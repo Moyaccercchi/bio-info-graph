@@ -533,12 +533,45 @@ c = {
 		}
 
 		sout += "We are looking at " + this.nlnl;
-		
+
 		if(this.give_out_HTML) {
 			sout += this.nlnl + 'H = ' + h + this.nlnlnl;
 		} else {
 			sout += '$$ H = "' + h + '" $$' + this.nlnl;
 		}
+
+		sout += "A visualization might make it easier to wrap our heads around this:" + this.nlnl;
+
+		// TODO :: make this work for DaTeX output as well (e.g. with TikZ)
+		sout += '<svg xmlns="http://www.w3.org/2000/svg" version="1.1"';
+			sout += 'viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"';
+			sout += 'style="width:100%; height:300px; z-index:-1;">';
+
+			sout += '<defs>';
+			sout += '<marker id="markerArrow" markerWidth="13" markerHeight="13" refX="4" refY="7" orient="auto">';
+			sout += '<path d="M2,4.5 L2,9.5 L5,7 L2,4.5" style="fill: #000000;" />';
+			sout += '</marker>';
+			sout += '</defs>';
+
+			sout += '<rect x="0" y="0" width="100" height="100" style="fill:#FFF" />';
+
+			var hlen = h.length;
+			for (var i = 0; i < hlen; i++) {
+				var xoff = 50+(100*(0.5+i - (hlen / 2))/hlen);
+				var xoffnext = 50+(100*(1.5+i - (hlen / 2))/hlen);
+
+				sout += '<circle cx="' + xoff + '" cy="50" r="2" style="fill:#000" />';
+				sout += '<circle cx="' + xoff + '" cy="50" r="1.8" style="fill:#FFF" />';
+				sout += '<text x="' + xoff + '" y="50.8" text-anchor="middle">' + h[i] + '</text>';
+
+				if (i < hlen-1) {
+					sout += '<path d="M' + (xoff + 2.5) + ',50 L' + (xoffnext - 2.5) + ',50" '
+					sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
+					sout += '/>';
+				}
+			}
+
+		sout += '</svg>';
 
 
 

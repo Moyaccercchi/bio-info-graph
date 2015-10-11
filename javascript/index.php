@@ -172,6 +172,11 @@
 		th, td {
 			padding:1px 3px 2px 3px;
 		}
+
+		/* SVG */
+		svg > text {
+			font-size:3px;
+		}
 	</style>
 </head>
 <body>
@@ -279,13 +284,13 @@
 		function generateNaiveBWT() {
 			var el = activateDivOut(0);
 			el.innerHTML = '<div>' + c.generate_BWT_naively(
-				document.getElementById('in-string-0').value) + '</div>';
+				document.getElementById('in-string-0').value.toUpperCase()) + '</div>';
 		}
 
 		function generateAdvancedBWT() {
 			var el = activateDivOut(0);
 			el.innerHTML = '<div>' + c.generate_BWT_advanced(
-				document.getElementById('in-string-0').value) + '</div>';
+				document.getElementById('in-string-0').value.toUpperCase()) + '</div>';
 		}
 
 
@@ -298,15 +303,15 @@
 		function generateNaiveBWTs() {
 			var el = activateDivOut(1);
 			el.innerHTML = '<div>' + c.generate_BWTs_naively(
-				document.getElementById('in-string-1-1').value,
-				document.getElementById('in-string-1-2').value) + '</div>';
+				document.getElementById('in-string-1-1').value.toUpperCase(),
+				document.getElementById('in-string-1-2').value.toUpperCase()) + '</div>';
 		}
 
 		function mergeNaiveBWTs() {
 			var el = activateDivOut(1);
 			el.innerHTML = '<div>' + c.merge_BWTs_naively(
-				document.getElementById('in-string-1-1').value,
-				document.getElementById('in-string-1-2').value) + '</div>';
+				document.getElementById('in-string-1-1').value.toUpperCase(),
+				document.getElementById('in-string-1-2').value.toUpperCase()) + '</div>';
 		}
 
 		function mergeNaiveBWTsInfo(e) {

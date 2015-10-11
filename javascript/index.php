@@ -60,18 +60,18 @@
 			margin-bottom:32px;
 		}
 
-		div.mainbox > div, div.mainbox > input, div.mainbox > button {
+		div.mainbox > div, div.mainbox > input, div.mainbox > div.button {
 			display:block;
 			margin-bottom:16px;
 			width:100%;
 		}
 
-		div.mainbox > div > button {
-			display:inline;
+		div.mainbox > div > div.button {
+			display:inline-block;
 			width:49%;
 		}
 
-		input, button {
+		input, div.button {
 			border:1px solid #000;
 			box-shadow:0px 0px 5px 0px rgba(0, 0, 0, 0.8);
 			border-radius:4px;
@@ -82,21 +82,31 @@
 			padding:2px 9px;
 		}
 
-		button {
+		div.button {
 			padding:2px 5px;
 		}
 
-		button, div.button {
+		div.button, div.tabbutton, span.infobtn {
 			background: #EEE none repeat scroll 0% 0%;
 			cursor:pointer;
 		}
 
-		button:hover, div.button:hover {
+		div.button:hover, div.tabbutton:hover, span.infobtn:hover {
 			background: #DDD none repeat scroll 0% 0%;
 		}
 
-		button:active, div.button:active {
+		div.button:active, div.tabbutton:active, span.infobtn:active {
 			background: #CCC none repeat scroll 0% 0%;
+		}
+
+		span.infobtn {
+			float:right;
+			border:1px solid #000;
+			box-shadow:0px 0px 5px 0px rgba(0, 0, 0, 0.8);
+			border-radius:4px;
+			line-height:20px;
+			padding:0px 4px;
+			display:block;
 		}
 
 		div.tabbox > div.active {
@@ -169,10 +179,10 @@
 	<script src="create_BWT_merge.js"></script>
 
 	<div class="tabbox">
-		<div class="button" id="tab-btn-0" onclick="showTab(0)">
+		<div class="tabbutton" id="tab-btn-0" onclick="showTab(0)">
 			Generate One BWT
 		</div>
-		<div class="button active" id="tab-btn-1" onclick="showTab(1)">
+		<div class="tabbutton active" id="tab-btn-1" onclick="showTab(1)">
 			Merge Two BWTs
 		</div>
 	</div>
@@ -185,8 +195,8 @@
 		</div>
 		<input id="in-string-0" type="text" value="A(A|C)CA"></input>
 		<div>
-			<button type="button" onclick="generateNaiveBWT()">Generate na&iuml;ve BWT</button>
-			<button type="button" style="float:right;" onclick="generateAdvancedBWT()">Generate advanced BWT (see Siren 2014)</button>
+			<div class="button" onclick="generateNaiveBWT()">Generate na&iuml;ve BWT</div>
+			<div class="button" style="float:right;" onclick="generateAdvancedBWT()">Generate advanced BWT (see Siren 2014)</div>
 		</div>
 	</div>
 
@@ -201,12 +211,12 @@
 		<input id="in-string-1-1" type="text" value="A(A|C)CA"></input>
 		<input id="in-string-1-2" type="text" value="ACCC"></input>
 		<div>
-			<button type="button" onclick="generateNaiveBWTs()">Generate na&iuml;ve BWTs</button>
-			<button type="button" style="float:right;" onclick="mergeNaiveBWTs()">Merge na&iuml;ve BWTs (see Holt 2014)</button>
+			<div class="button" onclick="generateNaiveBWTs()">Generate na&iuml;ve BWTs</div>
+			<div class="button" style="float:right;" onclick="mergeNaiveBWTs()">Merge na&iuml;ve BWTs (see Holt 2014)<span class="infobtn" onclick="mergeNaiveBWTsInfo(event)">Info</span></div>
 		</div>
 		<div>
-			<button type="button" onclick="generateAdvancedBWTs()">Generate advanced BWTs (see Siren 2014)</button>
-			<button type="button" style="float:right;" onclick="mergeAdvancedBWTs()">Merge advanced BWTs (see Siren 2014, Holt 2014)</button>
+			<div class="button" onclick="generateAdvancedBWTs()">Generate advanced BWTs (see Siren 2014)</div>
+			<div class="button" style="float:right;" onclick="mergeAdvancedBWTs()">Merge advanced BWTs (see Siren 2014, Holt 2014)</div>
 		</div>
 	</div>
 
@@ -236,7 +246,7 @@
 
 		function unShowAllTabs() {
 			for (var i = 0; i < 2; i++) {
-				document.getElementById('tab-btn-' + i).className = 'button';
+				document.getElementById('tab-btn-' + i).className = 'tabbutton';
 				document.getElementById('div-in-' + i).style.display = 'none';
 				document.getElementById('div-out-' + i).style.display = 'none';
 			}
@@ -245,7 +255,7 @@
 		function showTab(nexttab) {
 			unShowAllTabs();
 
-			document.getElementById('tab-btn-' + nexttab).className = 'button active';
+			document.getElementById('tab-btn-' + nexttab).className = 'tabbutton active';
 			document.getElementById('div-in-' + nexttab).style.display = 'block';
 			if (div_out_visibility[nexttab]) {
 				document.getElementById('div-out-' + nexttab).style.display = 'block';
@@ -297,6 +307,23 @@
 			el.innerHTML = '<div>' + c.merge_BWTs_naively(
 				document.getElementById('in-string-1-1').value,
 				document.getElementById('in-string-1-2').value) + '</div>';
+		}
+
+		function mergeNaiveBWTsInfo(e) {
+			var el = activateDivOut(1);
+			
+			var sout = '<div>';
+			sout += '<u>Naive BWT merging</u><br><br>';
+			sout += 'Limitations:<br>';
+			sout += '<ul>';
+			sout += '<li>only works with at most one bubble in ' + c.H_1 + ' and ' + c.H_2 + ' each (with each bubble having two alternatives, each being one character long)</li>';
+			sout += '<li>only sorts ' + c.H_1 + ' and ' + c.H_2 + ' by first bubble alternative (so if ' + c.H_1 + ' is sorted before ' + c.H_2 + ', then ' + c.H_1 + ' gets ' + c.DS_1_o + ', even if the alternative path in ' + c.H_1 + ' would be sorted after ' + c.H_2 + ' - it would be better to give ' + c.DS_1_o + ' up to $<span class="d">4</span> to both alternatives of both strings separately, instead of assigning the same $ to each alternative in the string)</li>';
+			sout += '</ul>';
+			sout += '</div>';
+
+			el.innerHTML = sout;
+
+			e.stopPropagation();
 		}
 
 		function generateAdvancedBWTs() {

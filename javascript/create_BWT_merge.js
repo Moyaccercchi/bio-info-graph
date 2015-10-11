@@ -473,12 +473,18 @@ c = {
 
 		// append delimiter character to input arrays
 		ha[ha.length] = this.DS;
+		// insert hashtag character at the beginning of input array
+		// (actually, we are using '^' internally instead of '#', as it has lexicographic
+		// value above all alphabetical characters)
+		ha.splice(0, 0, '^');
 
 		if (h_graph) {
 
 			// append delimiter character to input arrays
 			ha_A[ha_A.length] = this.DS;
 			ha_B[ha_B.length] = this.DS;
+			ha_A.splice(0, 0, '^');
+			ha_B.splice(0, 0, '^');
 
 			// generate cyclic rotations
 			var h_cr_A = this.create_cyclic_rotations(ha_A, 0, alt_A);
@@ -542,10 +548,45 @@ c = {
 
 		sout += "A visualization might make it easier to wrap our heads around this:" + this.nlnl;
 
+		sout += this.visualize(ha);
+
+
+
+		// BWT and pos for H
+
+		sout += "To generate the full BWT of " + this.DH + ", ";
+		sout += "we first create its cyclic rotations:" + this.nlnl;
+
+		sout += this.print_arrofarr(h_cr).join(this.nlnl);
+
+		sout += this.nlnlnl + "All of the cyclic rotations sorted together:" + this.nlnl;
+		
+		sout += this.print_arrofarr(h_scr).join(this.nlnl);
+
+		sout += this.nlnlnl + "So overall we get the following positions ";
+		sout += "and BWT for " + this.DH + ":" + this.nlnl;
+
+		sout += s_h_table;
+
+
+
+		sout += this.s_end_document;
+
+		// replace '^' with '#' before printout
+		sout = sout.replace(/\^/g, '#');
+
+		return sout;
+	},
+
+
+
+	// takes in a string or an array of characters
+	// gives back a string containing a graph visualization of the input
+	visualize: function(h) {
+
 		// TODO :: make this work for DaTeX output as well (e.g. with TikZ)
-		sout += '<svg xmlns="http://www.w3.org/2000/svg" version="1.1"';
-			sout += 'viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"';
-			sout += 'style="width:100%; height:300px; z-index:-1;">';
+		var sout = '<svg xmlns="http://www.w3.org/2000/svg" version="1.1"';
+			sout += 'viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">';
 
 			sout += '<defs>';
 			sout += '<marker id="markerArrow" markerWidth="13" markerHeight="13" refX="4" refY="7" orient="auto">';
@@ -572,28 +613,6 @@ c = {
 			}
 
 		sout += '</svg>';
-
-
-
-		// BWT and pos for H
-
-		sout += "To generate the full BWT of " + this.DH + ", ";
-		sout += "we first create its cyclic rotations:" + this.nlnl;
-
-		sout += this.print_arrofarr(h_cr).join(this.nlnl);
-
-		sout += this.nlnlnl + "All of the cyclic rotations sorted together:" + this.nlnl;
-		
-		sout += this.print_arrofarr(h_scr).join(this.nlnl);
-
-		sout += this.nlnlnl + "So overall we get the following positions ";
-		sout += "and BWT for " + this.DH + ":" + this.nlnl;
-
-		sout += s_h_table;
-
-
-
-		sout += this.s_end_document;
 
 		return sout;
 	},

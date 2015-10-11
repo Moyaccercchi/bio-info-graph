@@ -174,6 +174,11 @@
 		}
 
 		/* SVG */
+		svg {
+			width:100%;
+			height:300px;
+		}
+		
 		svg > text {
 			font-size:3px;
 		}

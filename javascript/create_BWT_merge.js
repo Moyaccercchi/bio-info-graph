@@ -566,10 +566,12 @@ c = {
 
 			sout += '<rect x="0" y="0" width="100" height="100" style="fill:#FFF" />';
 
+			var positions = {0: []};
 			var hlen = h.length;
 			for (var i = 0; i < hlen; i++) {
 				var xoff = 50+(100*(0.5+i - (hlen / 2))/hlen);
 				var xoffnext = 50+(100*(1.5+i - (hlen / 2))/hlen);
+				positions[0].push(xoff);
 
 				sout += '<circle cx="' + xoff + '" cy="50" r="2" style="fill:#000" />';
 				sout += '<circle cx="' + xoff + '" cy="50" r="1.8" style="fill:#FFF" />';
@@ -582,8 +584,57 @@ c = {
 				}
 			}
 
-			for (var g = 0; g < h_graph.length; g++) {
-				var path = h_graph[g].split(',');
+			// go through all the paths
+			var namedpaths = {};
+			var unnamedpaths = [];
+			var pathnames = [];
+
+			for (var i = 0; i < h_graph.length; i++) {
+				var path = h_graph[i].split(',');
+				if (path[0] == '') {
+					unnamedpaths.push(path);
+				} else {
+					pathnames.push(path[0]);
+					namedpaths[path[0]] = path;
+				}
+			}
+
+			// first of all, apply all named paths
+
+			// secondly, apply the unnamed paths
+			for (var n = 0; n < unnamedpaths.length; n++) {
+				var path = unnamedpaths[n];
+
+				var plen = path[2].length;
+				var xoff_start = positions[0][path[1]];
+				var xoff_end = positions[0][path[3]];
+				var xoff_mid = (xoff_end + xoff_start) / 2;
+				var xoff_width = xoff_end - xoff_start;
+
+				for (var i = 0; i < plen; i++) {
+					var xoff = xoff_mid+(xoff_width*(0.5+i - (plen / 2))/plen);
+					var xoffnext = xoff_mid+(xoff_width*(1.5+i - (plen / 2))/plen);
+
+					sout += '<circle cx="' + xoff + '" cy="57" r="2" style="fill:#000" />';
+					sout += '<circle cx="' + xoff + '" cy="57" r="1.8" style="fill:#FFF" />';
+					sout += '<text x="' + xoff + '" y="57.8" text-anchor="middle">' + path[2][i] + '</text>';
+
+					if (i < 1) {
+						sout += '<path d="M' + (xoff_start + 1) + ',52.5 L' + (xoff - 2.5) + ',57" '
+						sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
+						sout += '/>';
+					}
+
+					if (i < plen-1) {
+						sout += '<path d="M' + (xoff + 2.5) + ',57 L' + (xoffnext - 2.5) + ',57" '
+						sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
+						sout += '/>';
+					} else {
+						sout += '<path d="M' + (xoff + 2.5) + ',57 L' + (xoff_end - 1) + ',52.5" '
+						sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
+						sout += '/>';
+					}
+				}
 			}
 
 		sout += '</svg>';

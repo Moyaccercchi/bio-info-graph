@@ -444,32 +444,17 @@ c = {
 	// gives back a section in DaTeX or HTML about the generation of its BWT
 	generate_BWT_advanced: function(h) {
 
-		// Does h1 or h2 contain a graph? - e.g. A(A|C)CA
-		var h_graph = h.indexOf('(') >= 0;
-
-		if (h_graph) {
-
-			var i = h.indexOf('(');
-			var alt_A = h.slice(i + 1, i + 2);
-			var i = h.indexOf('|');
-			var alt_B = h.slice(i + 1, i + 2);
-
-			var h_A = h.replace('(', '');
-			h_A = h_A.slice(0, h_A.indexOf('|')) + h_A.slice(h_A.indexOf(')') + 1);
-
-			var h_B = h.replace(')', '');
-			h_B = h_B.slice(0, h_B.indexOf('(')) + h_B.slice(h_B.indexOf('|') + 1);
-		
-			// create array forms of the input string
-			var ha = h.split('');
-			var ha_A = h_A.split('');
-			var ha_B = h_B.split('');
-
+		var h_split = h.split('|');
+		h = h_split[0];
+		if (h_split.length > 1) {
+			// graph info appended to h, e.g. in TGA|1,T,2;1,3 the "|1,T,2;1,3" is the graph info
+			var h_graph = h_split[1].split(';');
 		} else {
-
-			// create array form of the input string
-			var ha = h.split('');
+			var h_graph = [];
 		}
+
+		// create array form of the input string
+		var ha = h.split('');
 
 		// append delimiter character to input arrays
 		ha[ha.length] = this.DS;
@@ -478,28 +463,9 @@ c = {
 		// value above all alphabetical characters)
 		ha.splice(0, 0, '^');
 
-		if (h_graph) {
-
-			// append delimiter character to input arrays
-			ha_A[ha_A.length] = this.DS;
-			ha_B[ha_B.length] = this.DS;
-			ha_A.splice(0, 0, '^');
-			ha_B.splice(0, 0, '^');
-
-			// generate cyclic rotations
-			var h_cr_A = this.create_cyclic_rotations(ha_A, 0, alt_A);
-			var h_cr_B = this.create_cyclic_rotations(ha_B, 0, alt_B);
-			var h_cr = h_cr_A.concat(h_cr_B);
-
-			// we are here implicitly assuming that h1a_A has the same length as h1a_B!
-			var h_len = ha_A.length;
-
-		} else {
-
-			// generate cyclic rotations
-			var h_cr = this.create_cyclic_rotations(ha, 0, '');
-			var h_len = ha.length;
-		}
+		// generate cyclic rotations
+		var h_cr = this.create_cyclic_rotations(ha, 0, '');
+		var h_len = ha.length;
 
 		// create strings based on arrays with delimiters
 		var h = ha.join('');

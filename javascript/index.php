@@ -190,10 +190,16 @@
 
 	<div class="tabbox">
 		<div class="tabbutton" id="tab-btn-0" onclick="showTab(0)">
-			Generate One BWT
+			Generate One Na&iuml;ve BWT
 		</div>
 		<div class="tabbutton active" id="tab-btn-1" onclick="showTab(1)">
-			Merge Two BWTs
+			Merge Two Na&iuml;ve BWTs
+		</div>
+		<div class="tabbutton" id="tab-btn-2" onclick="showTab(2)">
+			Generate One Advanced BWT
+		</div>
+		<div class="tabbutton" id="tab-btn-3" onclick="alert('Sorry, this has not yet been implemented.')">
+			Merge Two Advanced BWTs
 		</div>
 	</div>
 
@@ -203,11 +209,8 @@
 		<div>
 			Please enter the string that you are interested in:
 		</div>
-		<input id="in-string-0" type="text" value="A(A|C)CA"></input>
-		<div>
-			<div class="button" onclick="generateNaiveBWT()">Generate na&iuml;ve BWT</div>
-			<div class="button" style="float:right;" onclick="generateAdvancedBWT()">Generate advanced BWT (see Siren 2014)</div>
-		</div>
+		<input id="in-string-0" type="text" value="A(A|C)CAACCC"></input>
+		<div class="button" onclick="generateNaiveBWT()">Generate na&iuml;ve BWT</div>
 	</div>
 
 	<div id="div-out-0" class="mainbox" style="display:none">
@@ -224,19 +227,27 @@
 			<div class="button" onclick="generateNaiveBWTs()">Generate na&iuml;ve BWTs</div>
 			<div class="button" style="float:right;" onclick="mergeNaiveBWTs()">Merge na&iuml;ve BWTs (see Holt 2014)<span class="infobtn" onclick="mergeNaiveBWTsInfo(event)">Info</span></div>
 		</div>
-		<div>
-			<div class="button" onclick="generateAdvancedBWTs()">Generate advanced BWTs (see Siren 2014)</div>
-			<div class="button" style="float:right;" onclick="mergeAdvancedBWTs()">Merge advanced BWTs (see Siren 2014, Holt 2014)</div>
-		</div>
 	</div>
 
 	<div id="div-out-1" class="mainbox" style="display:none">
 	</div>
 
 
+	<div id="div-in-2" class="mainbox" style="display:none">
+		<div>
+			Please enter the string that you are interested in:
+		</div>
+		<input id="in-string-2" type="text" value="GACGTACCTG|2,T,4;3,,5;6,,8;6,,10"></input>
+		<div class="button" onclick="generateAdvancedBWT()">Generate advanced BWT (see Siren 2014)</div>
+	</div>
+
+	<div id="div-out-2" class="mainbox" style="display:none">
+	</div>
+
+
 
 	<span class="creditline absleft">
-		Version: 0.0.0.1
+		Version: 0.0.0.2
 	</span>
 	<span class="creditline absright">
 		Moyaccercchi (tws@hi.is), 2015
@@ -255,7 +266,7 @@
 		*/
 
 		function unShowAllTabs() {
-			for (var i = 0; i < 2; i++) {
+			for (var i = 0; i < 3; i++) {
 				document.getElementById('tab-btn-' + i).className = 'tabbutton';
 				document.getElementById('div-in-' + i).style.display = 'none';
 				document.getElementById('div-out-' + i).style.display = 'none';
@@ -293,9 +304,9 @@
 		}
 
 		function generateAdvancedBWT() {
-			var el = activateDivOut(0);
+			var el = activateDivOut(2);
 			el.innerHTML = '<div>' + c.generate_BWT_advanced(
-				document.getElementById('in-string-0').value.toUpperCase()) + '</div>';
+				document.getElementById('in-string-2').value.toUpperCase()) + '</div>';
 		}
 
 
@@ -334,14 +345,6 @@
 			el.innerHTML = sout;
 
 			e.stopPropagation();
-		}
-
-		function generateAdvancedBWTs() {
-			alert('Sorry, this has not yet been implemented.');
-		}
-
-		function mergeAdvancedBWTs() {
-			alert('Sorry, this has not yet been implemented.');
 		}
 	</script>
 

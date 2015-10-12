@@ -445,23 +445,23 @@ c = {
 	generate_BWT_advanced: function(h) {
 
 		var h_split = h.split('|');
-		h = h_split[0];
+
+		// insert hashtag character at the beginning of input string
+		// (actually, we are using '^' internally instead of '#', as it has lexicographic
+		// value above all alphabetical characters)
+		h = '^' + h_split[0];
+
+		// graph info appended to h, e.g. in TGA|1,T,2;1,3 the "|1,T,2;1,3" is the graph info
+		var h_graph = [];
 		if (h_split.length > 1) {
-			// graph info appended to h, e.g. in TGA|1,T,2;1,3 the "|1,T,2;1,3" is the graph info
-			var h_graph = h_split[1].split(';');
-		} else {
-			var h_graph = [];
+			h_graph = h_split[1].split(';');
 		}
 
 		// create array form of the input string
 		var ha = h.split('');
 
-		// append delimiter character to input arrays
+		// append delimiter character to input array
 		ha[ha.length] = this.DS;
-		// insert hashtag character at the beginning of input array
-		// (actually, we are using '^' internally instead of '#', as it has lexicographic
-		// value above all alphabetical characters)
-		ha.splice(0, 0, '^');
 
 		// generate cyclic rotations
 		var h_cr = this.create_cyclic_rotations(ha, 0, '');
@@ -514,7 +514,7 @@ c = {
 
 		sout += "A visualization might make it easier to wrap our heads around this:" + this.nlnl;
 
-		sout += this.visualize(ha);
+		sout += this.visualize(ha, h_graph);
 
 
 
@@ -546,9 +546,13 @@ c = {
 
 
 
-	// takes in a string or an array of characters
+	// takes in a string or an array of characters and optionally the graph information
 	// gives back a string containing a graph visualization of the input
-	visualize: function(h) {
+	visualize: function(h, h_graph) {
+
+		if (h_graph === undefined) {
+			h_graph = [];
+		}
 
 		// TODO :: make this work for DaTeX output as well (e.g. with TikZ)
 		var sout = '<svg xmlns="http://www.w3.org/2000/svg" version="1.1"';
@@ -576,6 +580,10 @@ c = {
 					sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
 					sout += '/>';
 				}
+			}
+
+			for (var g = 0; g < h_graph.length; g++) {
+				var path = h_graph[g].split(',');
 			}
 
 		sout += '</svg>';

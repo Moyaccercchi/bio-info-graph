@@ -66,6 +66,11 @@
 			width:100%;
 		}
 
+		div.mainbox > div > input {
+			display:block;
+			width:100%;
+		}
+
 		div.mainbox > div > div.button {
 			display:inline-block;
 			width:49%;
@@ -107,6 +112,16 @@
 			line-height:20px;
 			padding:0px 4px;
 			display:block;
+		}
+
+		div.input-info-container {
+			position:relative;
+		}
+
+		div.input-info-container > span.infobtn {
+			position:absolute;
+			right:6px;
+			top:3px;
 		}
 
 		div.tabbox > div.active {
@@ -209,7 +224,10 @@
 		<div>
 			Please enter the string that you are interested in:
 		</div>
-		<input id="in-string-0" type="text" value="A(A|C)CAACCC"></input>
+		<div class="input-info-container">
+			<input id="in-string-0" type="text" value="A(A|C)CAACCC"></input>
+			<span class="infobtn" onclick="generateNaiveBWTIn1Info(event)">Info</span>
+		</div>
 		<div class="button" onclick="generateNaiveBWT()">Generate na&iuml;ve BWT</div>
 	</div>
 
@@ -221,8 +239,14 @@
 		<div>
 			Please enter the two strings that you are interested in:
 		</div>
-		<input id="in-string-1-1" type="text" value="A(A|C)CA"></input>
-		<input id="in-string-1-2" type="text" value="ACCC"></input>
+		<div class="input-info-container">
+			<input id="in-string-1-1" type="text" value="A(A|C)CA"></input>
+			<span class="infobtn" onclick="mergeNaiveBWTsIn1Info(event)">Info</span>
+		</div>
+		<div class="input-info-container">
+			<input id="in-string-1-2" type="text" value="ACCC"></input>
+			<span class="infobtn" onclick="mergeNaiveBWTsIn2Info(event)">Info</span>
+		</div>
 		<div>
 			<div class="button" onclick="generateNaiveBWTs()">Generate na&iuml;ve BWTs</div>
 			<div class="button" style="float:right;" onclick="mergeNaiveBWTs()">Merge na&iuml;ve BWTs (see Holt 2014)<span class="infobtn" onclick="mergeNaiveBWTsInfo(event)">Info</span></div>
@@ -237,7 +261,10 @@
 		<div>
 			Please enter the string that you are interested in:
 		</div>
-		<input id="in-string-2" type="text" value="GACGTACCTG|2,T,4;3,,5;6,,8;6,,10"></input>
+		<div class="input-info-container">
+			<input id="in-string-2" type="text" value="GACGTACCTG|,2,T,4;,3,,5;,6,,8;,6,,10"></input>
+			<span class="infobtn" onclick="generateAdvancedBWTIn1Info(event)">Info</span>
+		</div>
 		<div class="button" onclick="generateAdvancedBWT()">Generate advanced BWT (see Siren 2014)</div>
 	</div>
 
@@ -294,7 +321,7 @@
 
 
 		/*
-			Tab 1 - Generate One BWT
+			Tab 1 - Generate One BWT (naively)
 		*/
 
 		function generateNaiveBWT() {
@@ -303,17 +330,11 @@
 				document.getElementById('in-string-0').value.toUpperCase()) + '</div>';
 		}
 
-		function generateAdvancedBWT() {
-			var el = activateDivOut(2);
-			el.innerHTML = '<div>' + c.generate_BWT_advanced(
-				document.getElementById('in-string-2').value.toUpperCase()) + '</div>';
-		}
-
 
 
 
 		/*
-			Tab 2 - Merge Two BWTs
+			Tab 2 - Merge Two BWTs (naively)
 		*/
 
 		function generateNaiveBWTs() {
@@ -330,11 +351,117 @@
 				document.getElementById('in-string-1-2').value.toUpperCase()) + '</div>';
 		}
 
+
+
+		/*
+			Tab 3 - Generate One BWT (advanced)
+		*/
+		function generateAdvancedBWT() {
+			var el = activateDivOut(2);
+			el.innerHTML = '<div>' + c.generate_BWT_advanced(
+				document.getElementById('in-string-2').value.toUpperCase()) + '</div>';
+		}
+
+
+
+		/*
+			Info fields
+		*/
+
+		var s_naiveInputFormat =
+			'Input format:<br>' +
+			'<ul>' +
+			'<li>in general, all characters are just entered as plain text string, e.g. "ACA"</li>' +
+			'<li>lower case characters will automatically be converted to upper case, ' +
+			'e.g. "aca" to "ACA"</li>' +
+			'<li>to encode a graph, use the bubble notation, ' +
+			'e.g. to encode both "AAA" and "ACA", use "A(A|C)A"</li>' +
+			'<li>do not add a dollar sign at the end of the input, as it will be added automagically</li>' +
+			'</ul>' +
+			'</div>';
+
+		var s_advancedInputFormat =
+			'Input format:<br>' +
+			'<ul>' +
+			'<li>in general, all characters of the main path (from # to $) ' +
+			'are just entered as plain text string, e.g. "ACA"</li>' +
+			'<li>lower case characters will automatically be converted to upper case, ' +
+			'e.g. "aca" to "ACA"</li>' +
+			'<li>to encode a graph, add a single pipe character after the main path, ' +
+			'followed by infoblocks for each path, separated by semicolons, ' +
+			'e.g. "mainpath|infoblock;infoblock;infoblock</li>' +
+			'<li>each infoblock contains exactly four parts, separated by commas, ' +
+			'e.g. "ACA|1,2,3,4;1,2,3,4;1,2,3,4"' +
+			'<ol>' +
+			'<li>the first part is the identifier of the path (it can be empty)</li>' +
+			'<li>the second part is the origin of the path, containing the identifier of the path on which this one originates followed by ":" and the position in that path on which it originates (counting starts at 1 for the first alphabetical character, as the hash tag symbol in the main path is symbol 0) - the identifier of the main path is "0", but in the special case of the main path the identifer and the ":" can be left out together, e.g. "path9:8" for the eigth position in a path with the identifer "path9"</li>' +
+			'<li>the third part is the content of the path (it can be empty), e.g. "TGC"</li>' +
+			'<li>the fourth part is the target of the path, containing the identifier of the path on which this one ends followed by ":" and the position in that path on which it ends (counting starts at 1 for the first alphabetical character, as the hash tag symbol in the main path is symbol 0) - the identifier of the main path is "0", but in the special case of the main path the identifer and the ":" can be left out together, e.g. "path9:8" for the eigth position in a path with the identifer "path9"</li>' +
+			'</ol>' +
+			'</li>' +
+			'<li>overall, a valid graph can look like "GACG|p1,1,TGG,3;,p1:1,C,3" - this ' +
+			'example could in bubble notation be rewritten as G(A|T(G|C)G)CG</li>' +
+			'<li>do neither add a hash tag symbole at the start ' +
+			'nor a dollar sign at the end of the input, as they will be added automagically</li>' +
+			'</ul>' +
+			'</div>';
+
+		var s_input =
+			'Use this field to specify the string ' + c.DH +
+			' for which the BWT will be generated.<br><br>';
+
+		var s_input1 =
+			'Use this field to specify the first string, ' + c.DH_1 +
+			', which will be merged with ' + c.DH_2 + '.<br><br>';
+
+		var s_input2 =
+			'Use this field to specify the second string, ' + c.DH_2 +
+			', which will be merged with ' + c.DH_1 + '.<br><br>';
+
+		function generateNaiveBWTIn1Info(e) {
+			var el = activateDivOut(0);
+			
+			var sout = '<div>';
+			sout += '<u>Na&iuml;ve BWT Generation - Input</u><br><br>';
+
+			sout += s_input;
+			sout += s_naiveInputFormat;
+
+			el.innerHTML = sout;
+			e.stopPropagation();
+		}
+
+		function mergeNaiveBWTsIn1Info(e) {
+			var el = activateDivOut(1);
+			
+			var sout = '<div>';
+			sout += '<u>Na&iuml;ve BWT Merging - Input 1</u><br><br>';
+
+			sout += s_input1;
+			sout += s_naiveInputFormat;
+
+			el.innerHTML = sout;
+			e.stopPropagation();
+		}
+
+		function mergeNaiveBWTsIn2Info(e) {
+			var el = activateDivOut(1);
+			
+			var sout = '<div>';
+			sout += '<u>Na&iuml;ve BWT Merging - Input 2</u><br><br>';
+
+			sout += s_input2;
+			sout += s_naiveInputFormat;
+
+			el.innerHTML = sout;
+			e.stopPropagation();
+		}
+
 		function mergeNaiveBWTsInfo(e) {
 			var el = activateDivOut(1);
 			
 			var sout = '<div>';
-			sout += '<u>Naive BWT merging</u><br><br>';
+			sout += '<u>Na&iuml;ve BWT Merging</u><br><br>';
 			sout += 'Limitations:<br>';
 			sout += '<ul>';
 			sout += '<li>only works with at most one bubble in ' + c.H_1 + ' and ' + c.H_2 + ' each (with each bubble having two alternatives, each being one character long)</li>';
@@ -344,6 +471,20 @@
 
 			el.innerHTML = sout;
 
+			e.stopPropagation();
+		}
+
+
+		function generateAdvancedBWTIn1Info(e) {
+			var el = activateDivOut(2);
+			
+			var sout = '<div>';
+			sout += '<u>Advanced BWT Generation - Input</u><br><br>';
+
+			sout += s_input;
+			sout += s_advancedInputFormat;
+
+			el.innerHTML = sout;
 			e.stopPropagation();
 		}
 	</script>

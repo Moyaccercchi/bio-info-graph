@@ -522,16 +522,40 @@ c = {
 
 		sout += this.visualize(ha, h_graph);
 
+		sout += this.nlnl;
+
 
 
 		sout += "We first need to convert this into a reverse deterministic automaton." + this.nlnl;
+
+		var auto = this.graphToAutomaton(ha, h_graph);
+
+		auto = this.makeAutomatonReverseDeterministic(auto);
+
+		var isRevDet = this.isAutomatonReverseDeterministic(auto);
+
+		if (isRevDet) {
+			sout += "We now have the following reverse deterministic automaton:" + this.nlnl;
+		} else {
+			sout += "Ooops! We do not have a reverse deterministic automaton:" + this.nlnl;
+		}
+
+		var ret = this.automatonToGraph(auto);
+		ha = ret[0];
+		h_graph = ret[1];
+
+		sout += this.visualize(ha, h_graph);
 
 		sout += this.nlnl;
 
 
 
+		// TODO :: prefix-sorting needs to occur!
+		
 		sout += "We now need to convert this reverse deterministic automaton " +
 				"into a prefix-sorted automaton." + this.nlnl;
+
+		sout += this.visualize(ha, h_graph);
 
 		sout += this.nlnl;
 
@@ -628,6 +652,7 @@ c = {
 			var yoffdl = 60; // offset for Bezier curve control points - doubly large distance from origin
 
 			// first of all, apply all named paths
+			// TODO :: make this work with named paths
 
 			// secondly, apply the unnamed paths
 			for (var n = 0; n < unnamedpaths.length; n++) {
@@ -681,6 +706,129 @@ c = {
 		sout += '</svg>';
 
 		return sout;
+	},
+
+
+
+	// takes in an array of characters and the corresponding graph information
+	// gives out an automaton (an array of objects which correspond to nodes,
+	//   with each node containing is caption c, an array of integers representing
+	//   the in-nodes p and an array of integers representing the out-nodes n)
+	graphToAutomaton: function(ha, h_graph) {
+
+		// array of nodes
+		var auto = [];
+
+		// first node: hashtag
+		auto.push({c: '^', p: [], n: [1]});
+
+		for (var i = 1; i < ha.length - 2; i++) {
+			// add a node for each element of the main row
+			auto.push({
+				c: ha[i], // caption
+				p: [i-1], // previous nodes
+				n: [i+1], // next nodes
+			});
+		}
+
+		// last node: dollarsign
+		auto.push({c: this.DS, p: [ha.length-1], n: []});
+
+		// add paths of the graph
+		for (var i = 0; i < h_graph.length; i++) {
+			var path = h_graph[i].split(',');
+
+			// TODO :: make this work for named paths too
+			// (currently, the name in p0 and before : in p1 and p3 is just ignored
+			// and everything is applied to the main row)
+
+			var p1 = path[1];
+			var p2 = path[2];
+			var p3 = path[3];
+
+			if (p1.indexOf(':') < 0) {
+				p1 = '0:' + p1;
+			}
+			p1 = p1.split(':');
+			var p11 = parseInt(p1[1], 10);
+
+			if (p3.indexOf(':') < 0) {
+				p3 = '0:' + p3;
+			}
+			p3 = p3.split(':');
+			var p31 = parseInt(p3[1], 10);
+
+			if (path[2].length == 0) {
+				auto[p11].n.push(p31);
+				auto[p31].p.push(p11);
+			} else {
+				var firstNew = auto.length;
+
+				for (var j = 0; j < p2.length; j++) {
+					auto.push({
+						c: ha[i], // caption
+						p: [auto.length-1], // previous nodes
+						n: [auto.length+1], // next nodes
+					});
+				}
+
+				var lastNew = auto.length - 1;
+
+				// update prev and new info for first and last node of path
+				auto[firstNew].p = [p11];
+				auto[lastNew].n = [p31];
+
+				// update prev and new info for nodes on main row
+				auto[p11].n.push(firstNew);
+				auto[p31].p.push(lastNew);
+			}
+		}
+
+		return auto;
+	},
+
+
+
+	// takes in an automaton
+	// gives back the h-array for the main row and the h-graph information
+	automatonToGraph: function(auto) {
+
+		var ha = [];
+		var h_graph = [];
+
+		for (var i = 0; i < auto.length; i++) {
+			ha.push(auto[i].c);
+			if (auto[i].c == this.DS) {
+				break;
+			}
+		}
+
+		// TODO NEXT :: this here does not make use of the graph information yet!
+		// ... that should change!
+
+		return [ha, h_graph];
+	},
+
+
+
+	// takes in an automaton
+	// gives back a reverse deterministic automaton realizing the same language
+	makeAutomatonReverseDeterministic: function(auto) {
+
+		// TODO :: actual work should occur ;)
+
+		return auto;
+	},
+
+
+
+	// takes in an automaton
+	// gives back true if the automaton is reverse deterministic, false otherwise
+	isAutomatonReverseDeterministic: function(auto) {
+
+		// TODO NEXT :: actual checking should occur ;)
+
+		return true;
 	},
 
 

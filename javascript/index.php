@@ -22,6 +22,10 @@
 			position:relative;
 		}
 
+		i, i > span {
+			font-style:italic;
+		}
+
 		span.creditline {
 			position:absolute;
 			bottom:8px;
@@ -207,7 +211,7 @@
 		<div class="tabbutton" id="tab-btn-0" onclick="showTab(0)">
 			Generate One Na&iuml;ve BWT
 		</div>
-		<div class="tabbutton active" id="tab-btn-1" onclick="showTab(1)">
+		<div class="tabbutton" id="tab-btn-1" onclick="showTab(1)">
 			Merge Two Na&iuml;ve BWTs
 		</div>
 		<div class="tabbutton" id="tab-btn-2" onclick="showTab(2)">
@@ -235,7 +239,7 @@
 	</div>
 
 
-	<div id="div-in-1" class="mainbox">
+	<div id="div-in-1" class="mainbox" style="display:none">
 		<div>
 			Please enter the two strings that you are interested in:
 		</div>
@@ -487,6 +491,9 @@
 			el.innerHTML = sout;
 			e.stopPropagation();
 		}
+
+		// default to tab 2
+		showTab(2);
 	</script>
 
 </body>

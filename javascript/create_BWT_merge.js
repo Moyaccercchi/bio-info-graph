@@ -30,11 +30,14 @@ c = {
 		this.DS = "$ \\$ $"; // $
 		this.DS_1_o = '$ \\$_1 $'; // $_1
 		this.DS_2_o = '$ \\$_2 $'; // $_2
-		this.H_1 = 'H_1'; // H_1 while in mathmode
-		this.H_2 = 'H_2'; // H_2 while in mathmode
-		this.DH = '$ H $'; // H
-		this.DH_1 = '$ H_1 $'; // H_1
-		this.DH_2 = '$ H_2 $'; // H_2
+		this.H_1 = 'H_1'; // string H_1 while in mathmode
+		this.H_2 = 'H_2'; // string H_2 while in mathmode
+		this.DH = '$ H $'; // string H
+		this.DH_1 = '$ H_1 $'; // string H_1
+		this.DH_2 = '$ H_2 $'; // string H_2
+		this.DM = '$ M $'; // vector M
+		this.DF = '$ F $'; // vector F
+
 		this.tab = '\\tab'; // start table
 		this.tabnl = " \\\\" + this.nl; // newline in table
 		this.td = " & "; // table cell divider
@@ -56,11 +59,14 @@ c = {
 		this.DS = '$'; // $
 		this.DS_1_o = '$<span class="d">1</span>'; // $_1
 		this.DS_2_o = '$<span class="d">2</span>'; // $_2
-		this.H_1 = 'H<span class="d">1</span>'; // H_1 while in mathmode
-		this.H_2 = 'H<span class="d">2</span>'; // H_2 while in mathmode
-		this.DH = 'H'; // H
-		this.DH_1 = 'H<span class="d">1</span>'; // H_1
-		this.DH_2 = 'H<span class="d">2</span>'; // H_2
+		this.H_1 = 'H<span class="d">1</span>'; // string H_1 while in mathmode
+		this.H_2 = 'H<span class="d">2</span>'; // string H_2 while in mathmode
+		this.DH = '<i>H</i>'; // string H
+		this.DH_1 = '<i>H<span class="d">1</span></i>'; // string H_1
+		this.DH_2 = '<i>H<span class="d">2</span></i>'; // string H_2
+		this.DM = '<i>M</i>'; // vector M
+		this.DF = '<i>F</i>'; // vector F
+
 		this.tab = '<div class="table_box"><table>'; // start table
 		this.tabnl = '</td></tr>' + this.nl + '<tr><td>'; // newline in table
 		this.td = '</td><td>'; // table cell divider
@@ -408,7 +414,7 @@ c = {
 		sout += "We are looking at " + this.nlnl;
 		
 		if(this.give_out_HTML) {
-			sout += this.nlnl + 'H = ' + h + this.nlnlnl;
+			sout += this.nlnl + this.DH + ' = ' + h + this.nlnlnl;
 		} else {
 			sout += '$$ H = "' + h + '" $$' + this.nlnl;
 		}
@@ -507,7 +513,7 @@ c = {
 		sout += "We are looking at " + this.nlnl;
 
 		if(this.give_out_HTML) {
-			sout += this.nlnl + 'H = ' + h + this.nlnlnl;
+			sout += this.nlnl + this.DH + ' = ' + h + this.nlnlnl;
 		} else {
 			sout += '$$ H = "' + h + '" $$' + this.nlnl;
 		}
@@ -518,11 +524,25 @@ c = {
 
 
 
+		sout += "We first need to convert this into a reverse deterministic automaton." + this.nlnl;
+
+		sout += this.nlnl;
+
+
+
+		sout += "We now need to convert this reverse deterministic automaton " +
+				"into a prefix-sorted automaton." + this.nlnl;
+
+		sout += this.nlnl;
+
+
+
 		// BWT and pos for H
 
-		sout += "To generate the full BWT of " + this.DH + ", ";
-		sout += "we first create its cyclic rotations:" + this.nlnl;
+		sout += "We can now generate the BWT of " + this.DH + ", ";
+		sout += "together with the vectors " + this.DM + " and " + this.DF + "." + this.nlnl;
 
+		/*
 		sout += this.print_arrofarr(h_cr).join(this.nlnl);
 
 		sout += this.nlnlnl + "All of the cyclic rotations sorted together:" + this.nlnl;
@@ -533,6 +553,7 @@ c = {
 		sout += "and BWT for " + this.DH + ":" + this.nlnl;
 
 		sout += s_h_table;
+		*/
 
 
 
@@ -599,6 +620,13 @@ c = {
 				}
 			}
 
+			// alternate yoff between 52.5 and 47.5 (around 50), so that adjacent paths
+			// get put on opposite sides of the main path
+			// TODO :: improve this with an actual space-aware visualization solution
+			var yoff = 52.5; // offset for path starts and ends - small distance from origin
+			var yoffl = 57;  // offset for nodes - large distance from origin
+			var yoffdl = 60; // offset for Bezier curve control points - doubly large distance from origin
+
 			// first of all, apply all named paths
 
 			// secondly, apply the unnamed paths
@@ -611,30 +639,43 @@ c = {
 				var xoff_mid = (xoff_end + xoff_start) / 2;
 				var xoff_width = xoff_end - xoff_start;
 
-				for (var i = 0; i < plen; i++) {
-					var xoff = xoff_mid+(xoff_width*(0.5+i - (plen / 2))/plen);
-					var xoffnext = xoff_mid+(xoff_width*(1.5+i - (plen / 2))/plen);
+				if (plen < 1) {
 
-					sout += '<circle cx="' + xoff + '" cy="57" r="2" style="fill:#000" />';
-					sout += '<circle cx="' + xoff + '" cy="57" r="1.8" style="fill:#FFF" />';
-					sout += '<text x="' + xoff + '" y="57.8" text-anchor="middle">' + path[2][i] + '</text>';
+					sout += '<path d="M' + (xoff_start + 1) + ',' + yoff + ' Q' + xoff_mid + ',' + yoffdl + ' ' + (xoff_end - 1) + ',' + yoff + '" '
+					sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
+					sout += '/>';
 
-					if (i < 1) {
-						sout += '<path d="M' + (xoff_start + 1) + ',52.5 L' + (xoff - 2.5) + ',57" '
-						sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
-						sout += '/>';
-					}
+				} else {
+					for (var i = 0; i < plen; i++) {
+						var xoff = xoff_mid+(xoff_width*(0.5+i - (plen / 2))/plen);
+						var xoffnext = xoff_mid+(xoff_width*(1.5+i - (plen / 2))/plen);
 
-					if (i < plen-1) {
-						sout += '<path d="M' + (xoff + 2.5) + ',57 L' + (xoffnext - 2.5) + ',57" '
-						sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
-						sout += '/>';
-					} else {
-						sout += '<path d="M' + (xoff + 2.5) + ',57 L' + (xoff_end - 1) + ',52.5" '
-						sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
-						sout += '/>';
+						sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="2" style="fill:#000" />';
+						sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="1.8" style="fill:#FFF" />';
+						sout += '<text x="' + xoff + '" y="' + (yoffl+0.8) + '" text-anchor="middle">' + path[2][i] + '</text>';
+
+						if (i < 1) {
+							sout += '<path d="M' + xoff_start + ',' + yoff + ' Q' + xoff_start + ',' + yoffl + ' ' + (xoff - 2.5) + ',' + yoffl + '" '
+							sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
+							sout += '/>';
+						}
+
+						if (i < plen-1) {
+							sout += '<path d="M' + (xoff + 2.5) + ',' + yoffl + ' L' + (xoffnext - 2.5) + ',' + yoffl + '" '
+							sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
+							sout += '/>';
+						} else {
+							sout += '<path d="M' + (xoff + 2.5) + ',' + yoffl + ' Q' + xoff_end + ',' + yoffl + ' ' + xoff_end + ',' + yoff + '" '
+							sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
+							sout += '/>';
+						}
 					}
 				}
+
+				// alternate!
+				yoff = 100 - yoff;
+				yoffl = 100 - yoffl;
+				yoffdl = 100 - yoffdl;
 			}
 
 		sout += '</svg>';
@@ -664,8 +705,8 @@ c = {
 		sout += "That is, we have" + this.nlnl;
 		
 		if(this.give_out_HTML) {
-			sout += this.nlnl + 'H = ' + this.h + this.tabchar+this.tabchar + this.H_1 + ' = ' + this.h1 +
-					this.tabchar+this.tabchar + this.H_2 + ' = ' + this.h2 + this.nlnlnl;
+			sout += this.nlnl + this.DH + ' = ' + this.h + this.tabchar+this.tabchar + this.DH_1 + ' = ' + this.h1 +
+					this.tabchar+this.tabchar + this.DH_2 + ' = ' + this.h2 + this.nlnlnl;
 		} else {
 			sout += '$$ H = "' + this.h + '"' + this.tabchar+this.tabchar + this.H_1 + ' = "' + this.h1 +
 					'"' + this.tabchar+this.tabchar + this.H_2 + ' = "' + this.h2 + '" $$' + this.nlnl;
@@ -771,8 +812,8 @@ c = {
 		sout += "That is, we have" + this.nlnl;
 		
 		if(this.give_out_HTML) {
-			sout += this.nlnl + 'H = ' + this.h + this.tabchar+this.tabchar + this.H_1 + ' = ' + this.h1 +
-					this.tabchar+this.tabchar + this.H_2 + ' = ' + this.h2 + this.nlnlnl;
+			sout += this.nlnl + this.DH + ' = ' + this.h + this.tabchar+this.tabchar + this.DH_1 + ' = ' + this.h1 +
+					this.tabchar+this.tabchar + this.DH_2 + ' = ' + this.h2 + this.nlnlnl;
 		} else {
 			sout += '$$ H = "' + this.h + '"' + this.tabchar+this.tabchar + this.H_1 + ' = "' + this.h1 +
 					'"' + this.tabchar+this.tabchar + this.H_2 + ' = "' + this.h2 + '" $$' + this.nlnl;

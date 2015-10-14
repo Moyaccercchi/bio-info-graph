@@ -503,6 +503,11 @@ c = {
 
 
 
+		// generate the automaton
+		var auto = this.graphToAutomaton(ha, h_graph);
+
+
+
 		var sout = '';
 		
 		if(!this.give_out_HTML) {
@@ -520,7 +525,7 @@ c = {
 
 		sout += "A visualization might make it easier to wrap our heads around this:" + this.nlnl;
 
-		sout += this.visualize(ha, h_graph);
+		sout += this.visualize(auto, false);
 
 		sout += this.nlnl;
 
@@ -528,36 +533,70 @@ c = {
 
 		sout += "We first need to convert this into a reverse deterministic automaton." + this.nlnl;
 
-		var auto = this.graphToAutomaton(ha, h_graph);
-
-		auto = this.makeAutomatonReverseDeterministic(auto);
-
 		var isRevDet = this.isAutomatonReverseDeterministic(auto);
 
 		if (isRevDet) {
-			sout += "We now have the following reverse deterministic automaton:" + this.nlnl;
+
+			sout += "Luckily, the given automaton is already reverse deterministic." + this.nlnl;
+		
 		} else {
-			sout += "Ooops! We do not have a reverse deterministic automaton:" + this.nlnl;
+
+			sout += "To do so, we consider the string alignment that a problematic region in the " +
+					"automaton represents and slide the predecessor characters as far to the right " +
+					"as possible (effectively sliding the gaps to the left.)" + this.nl;
+			sout += "We then reconstruct the automaton, and it will be guaranteed to be reverse " +
+					"deterministic (see Siren 2014.)" + this.nlnl;
+
+			auto = this.makeAutomatonReverseDeterministic(auto);
+
+			isRevDet = this.isAutomatonReverseDeterministic(auto);
+
+			if (isRevDet) {
+				sout += "We now have the following reverse deterministic automaton:" + this.nlnl;
+			} else {
+				sout += "Ooops! We do not have a reverse deterministic automaton:" + this.nlnl;
+			}
+
+			sout += this.visualize(auto, false);
+
+			sout += this.nlnl;
 		}
-
-		var ret = this.automatonToGraph(auto);
-		ha = ret[0];
-		h_graph = ret[1];
-
-		sout += this.visualize(ha, h_graph);
-
-		sout += this.nlnl;
-
 
 
 		// TODO :: prefix-sorting needs to occur!
 		
 		sout += "We now need to convert this reverse deterministic automaton " +
-				"into a prefix-sorted automaton." + this.nlnl;
+				"into a prefix-sorted automaton. Let's have a look at the prefixes:" + this.nlnl;
 
-		sout += this.visualize(ha, h_graph);
+		auto = this.computePrefixes(auto);
 
-		sout += this.nlnl;
+		sout += this.visualize(auto, true);
+
+		var isPrefSort = this.isAutomatonPrefixSorted(auto);
+
+		if (isPrefSort) {
+
+			sout += "Luckily, the given automaton is already prefix sorted." + this.nlnl;
+		
+		} else {
+
+			sout += "To do so, we split all nodes that prohibit this automaton from being prefix-sorted." +
+					this.nlnl;
+
+			auto = this.makeAutomatonPrefixSorted(auto);
+
+			isPrefSort = this.isAutomatonPrefixSorted(auto);
+
+			if (isPrefSort) {
+				sout += "We now have the following prefix-sorted automaton:" + this.nlnl;
+			} else {
+				sout += "Ooops! We do not have a prefix-sorted automaton:" + this.nlnl;
+			}
+
+			sout += this.visualize(auto, true);
+
+			sout += this.nlnl;
+		}
 
 
 
@@ -591,117 +630,141 @@ c = {
 
 
 
-	// takes in a string or an array of characters and optionally the graph information
+	// takes in an automaton
 	// gives back a string containing a graph visualization of the input
-	visualize: function(h, h_graph) {
-
-		if (h_graph === undefined) {
-			h_graph = [];
-		}
+	visualize: function(auto, showPrefixes) {
 
 		// TODO :: make this work for DaTeX output as well (e.g. with TikZ)
 		var sout = '<svg xmlns="http://www.w3.org/2000/svg" version="1.1"';
-			sout += 'viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">';
 
-			sout += '<defs>';
-			sout += '<marker id="markerArrow" markerWidth="13" markerHeight="13" refX="4" refY="7" orient="auto">';
-			sout += '<path d="M2,4.5 L2,9.5 L5,7 L2,4.5" style="fill: #000000;" />';
-			sout += '</marker>';
-			sout += '</defs>';
+		sout += 'viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">';
 
-			sout += '<rect x="0" y="0" width="100" height="100" style="fill:#FFF" />';
+		sout += '<defs>';
+		sout += '<marker id="markerArrow" markerWidth="13" markerHeight="13" refX="4" refY="7" orient="auto">';
+		sout += '<path d="M2,4.5 L2,9.5 L5,7 L2,4.5" style="fill: #000000;" />';
+		sout += '</marker>';
+		sout += '</defs>';
 
-			var positions = {0: []};
-			var hlen = h.length;
-			for (var i = 0; i < hlen; i++) {
-				var xoff = 50+(100*(0.5+i - (hlen / 2))/hlen);
-				var xoffnext = 50+(100*(1.5+i - (hlen / 2))/hlen);
-				positions[0].push(xoff);
+		sout += '<rect x="0" y="0" width="100" height="100" style="fill:#FFF" />';
 
-				sout += '<circle cx="' + xoff + '" cy="50" r="2" style="fill:#000" />';
-				sout += '<circle cx="' + xoff + '" cy="50" r="1.8" style="fill:#FFF" />';
-				sout += '<text x="' + xoff + '" y="50.8" text-anchor="middle">' + h[i] + '</text>';
+		var positions = {0: []};
+		var hlen = auto.length;
+		for (var i = 0; i < hlen; i++) {
+			if (auto[i].c == this.DS) {
+				hlen = i+1;
+				break;
+			}
+		}
+		for (var i = 0; i < hlen; i++) {
+			var xoff = 50+(100*(0.5+i - (hlen / 2))/hlen);
+			var xoffnext = 50+(100*(1.5+i - (hlen / 2))/hlen);
+			positions[0].push(xoff);
 
-				if (i < hlen-1) {
-					sout += '<path d="M' + (xoff + 2.5) + ',50 L' + (xoffnext - 2.5) + ',50" '
+			sout += '<circle cx="' + xoff + '" cy="50" r="2" style="fill:#000" />';
+			sout += '<circle cx="' + xoff + '" cy="50" r="1.8" style="fill:#FFF" />';
+			sout += '<text x="' + xoff + '" y="51" text-anchor="middle">' + auto[i].c + '</text>';
+
+			if (showPrefixes) {
+				sout += '<text style="font-size:1.5px" x="' + xoff + '" y="47.8" text-anchor="middle">' + auto[i].f + '</text>';
+			}
+
+			if (i < hlen-1) {
+				sout += '<path d="M' + (xoff + 2.5) + ',50 L' + (xoffnext - 2.5) + ',50" '
+				sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
+				sout += '/>';
+			}
+		}
+
+		// alternate yoff between 52.5 and 47.5 (around 50), so that adjacent paths
+		// get put on opposite sides of the main path
+		// TODO :: improve this with an actual space-aware visualization solution
+		var yoff = 52.5; // offset for path starts and ends - small distance from origin
+		var yoffl = 57;  // offset for nodes - large distance from origin
+		var yoffdl = 60; // offset for Bezier curve control points - doubly large distance from origin
+
+		// first of all, apply all paths containing characters (so paths containing nodes after '$' in auto)
+		for (var n = hlen; n < auto.length; ) {
+			var path = [];
+
+			if (auto[n].n[0] < hlen) {
+				while ((n < auto.length) && (auto[n].n[0] < hlen)) {
+					path.push(auto[n]);
+					n++;
+				}
+			} else {
+				path = [auto[n]];
+				n++;
+			}
+
+			var plen = path.length;
+			var xoff_start = positions[0][path[0].p[0]];
+			var xoff_end = positions[0][path[plen-1].n[0]];
+			var xoff_mid = (xoff_end + xoff_start) / 2;
+			var xoff_width = xoff_end - xoff_start;
+
+			for (var i = 0; i < plen; i++) {
+				var xoff = xoff_mid+(xoff_width*(0.5+i - (plen / 2))/plen);
+				var xoffnext = xoff_mid+(xoff_width*(1.5+i - (plen / 2))/plen);
+
+				sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="2" style="fill:#000" />';
+				sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="1.8" style="fill:#FFF" />';
+				sout += '<text x="' + xoff + '" y="' + (yoffl+1) + '" text-anchor="middle">' + path[i].c + '</text>';
+
+				if (showPrefixes) {
+					sout += '<text style="font-size:1.5px" x="' + xoff + '" y="' + (yoffl-2.2) + '" text-anchor="middle">' + path[i].f + '</text>';
+				}
+
+				if (i < 1) {
+					sout += '<path d="M' + xoff_start + ',' + yoff + ' Q' + xoff_start + ',' + yoffl + ' ' + (xoff - 2.5) + ',' + yoffl + '" '
+					sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
+					sout += '/>';
+				}
+
+				if (i < plen-1) {
+					sout += '<path d="M' + (xoff + 2.5) + ',' + yoffl + ' L' + (xoffnext - 2.5) + ',' + yoffl + '" '
+					sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
+					sout += '/>';
+				} else {
+					sout += '<path d="M' + (xoff + 2.5) + ',' + yoffl + ' Q' + xoff_end + ',' + yoffl + ' ' + xoff_end + ',' + yoff + '" '
 					sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
 					sout += '/>';
 				}
 			}
 
-			// go through all the paths
-			var namedpaths = {};
-			var unnamedpaths = [];
-			var pathnames = [];
+			// alternate!
+			yoff = 100 - yoff;
+			yoffl = 100 - yoffl;
+			yoffdl = 100 - yoffdl;
+		}
 
-			for (var i = 0; i < h_graph.length; i++) {
-				var path = h_graph[i].split(',');
-				if (path[0] == '') {
-					unnamedpaths.push(path);
-				} else {
-					pathnames.push(path[0]);
-					namedpaths[path[0]] = path;
-				}
-			}
+		// secondly, apply the paths that contain no nodes
+		for (var n = 0; n < auto.length; n++) {
+			var paths = [];
 
-			// alternate yoff between 52.5 and 47.5 (around 50), so that adjacent paths
-			// get put on opposite sides of the main path
-			// TODO :: improve this with an actual space-aware visualization solution
-			var yoff = 52.5; // offset for path starts and ends - small distance from origin
-			var yoffl = 57;  // offset for nodes - large distance from origin
-			var yoffdl = 60; // offset for Bezier curve control points - doubly large distance from origin
+			for (var j = 1; j < auto[n].n.length; j++) {
+				var from = n;
+				var to = auto[n].n[j];
 
-			// first of all, apply all named paths
-			// TODO :: make this work with named paths
+				// ignore labelled paths here
+				// TODO :: make this more robust - right now we just ignore all paths here
+				// that point to nodes outside of the main row!
+				if (to < hlen) {
 
-			// secondly, apply the unnamed paths
-			for (var n = 0; n < unnamedpaths.length; n++) {
-				var path = unnamedpaths[n];
-
-				var plen = path[2].length;
-				var xoff_start = positions[0][path[1]];
-				var xoff_end = positions[0][path[3]];
-				var xoff_mid = (xoff_end + xoff_start) / 2;
-				var xoff_width = xoff_end - xoff_start;
-
-				if (plen < 1) {
+					var xoff_start = positions[0][from];
+					var xoff_end = positions[0][to];
+					var xoff_mid = (xoff_end + xoff_start) / 2;
 
 					sout += '<path d="M' + (xoff_start + 1) + ',' + yoff + ' Q' + xoff_mid + ',' + yoffdl + ' ' + (xoff_end - 1) + ',' + yoff + '" '
 					sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
 					sout += '/>';
 
-				} else {
-					for (var i = 0; i < plen; i++) {
-						var xoff = xoff_mid+(xoff_width*(0.5+i - (plen / 2))/plen);
-						var xoffnext = xoff_mid+(xoff_width*(1.5+i - (plen / 2))/plen);
-
-						sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="2" style="fill:#000" />';
-						sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="1.8" style="fill:#FFF" />';
-						sout += '<text x="' + xoff + '" y="' + (yoffl+0.8) + '" text-anchor="middle">' + path[2][i] + '</text>';
-
-						if (i < 1) {
-							sout += '<path d="M' + xoff_start + ',' + yoff + ' Q' + xoff_start + ',' + yoffl + ' ' + (xoff - 2.5) + ',' + yoffl + '" '
-							sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
-							sout += '/>';
-						}
-
-						if (i < plen-1) {
-							sout += '<path d="M' + (xoff + 2.5) + ',' + yoffl + ' L' + (xoffnext - 2.5) + ',' + yoffl + '" '
-							sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
-							sout += '/>';
-						} else {
-							sout += '<path d="M' + (xoff + 2.5) + ',' + yoffl + ' Q' + xoff_end + ',' + yoffl + ' ' + xoff_end + ',' + yoff + '" '
-							sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
-							sout += '/>';
-						}
-					}
+					// alternate!
+					yoff = 100 - yoff;
+					yoffl = 100 - yoffl;
+					yoffdl = 100 - yoffdl;
 				}
-
-				// alternate!
-				yoff = 100 - yoff;
-				yoffl = 100 - yoffl;
-				yoffdl = 100 - yoffdl;
 			}
+		}
 
 		sout += '</svg>';
 
@@ -766,7 +829,7 @@ c = {
 
 				for (var j = 0; j < p2.length; j++) {
 					auto.push({
-						c: ha[i], // caption
+						c: p2[j], // caption
 						p: [auto.length-1], // previous nodes
 						n: [auto.length+1], // next nodes
 					});
@@ -790,32 +853,34 @@ c = {
 
 
 	// takes in an automaton
-	// gives back the h-array for the main row and the h-graph information
-	automatonToGraph: function(auto) {
-
-		var ha = [];
-		var h_graph = [];
-
-		for (var i = 0; i < auto.length; i++) {
-			ha.push(auto[i].c);
-			if (auto[i].c == this.DS) {
-				break;
-			}
-		}
-
-		// TODO NEXT :: this here does not make use of the graph information yet!
-		// ... that should change!
-
-		return [ha, h_graph];
-	},
-
-
-
-	// takes in an automaton
 	// gives back a reverse deterministic automaton realizing the same language
 	makeAutomatonReverseDeterministic: function(auto) {
 
 		// TODO :: actual work should occur ;)
+
+		/*
+		We here take in an automaton that realizes an alignment graph
+		and want to make it reverse deterministic.
+
+		Consider the input
+		GAGGTA|,2,T,4;,3,,5
+
+		Here we have two 'G' nodes leading both to the same 'T' node; as alignment, this is:
+
+		GAGGTA
+		GAG-TA
+		GATGTA
+
+		To make this reverse deterministic, we move the predecessors of the 'T' node as far to
+		the right as possible:
+
+		GAGGTA
+		GA-GTA
+		GATGTA
+
+		So that we achieve the following path
+		GAGGTA|,2,T,4;,2,,4
+		*/
 
 		return auto;
 	},
@@ -826,9 +891,62 @@ c = {
 	// gives back true if the automaton is reverse deterministic, false otherwise
 	isAutomatonReverseDeterministic: function(auto) {
 
-		// TODO NEXT :: actual checking should occur ;)
+		for (var i=0; i < auto.length; i++) {
+			var prev = auto[i].p;
+			var plen = prev.length;
+
+			// we want to check if some nodes have several predecessors that have
+			// the same label - so if the node has 0 or 1 predecessors, then we
+			// do not need to check anything ^^
+			if (plen > 1) {
+				var prevchars = [];
+				for (var j=0; j < plen; j++) {
+					var newchar = auto[prev[j]].c;
+					if (prevchars.indexOf(newchar) < 0) {
+						// all is good, the new character has not been seen before
+						prevchars.push(newchar);
+					} else {
+						// oh noooo, all is ruined! - the character has been seen before
+						return false;
+					}
+				}
+			}
+		}
 
 		return true;
+	},
+
+
+
+	// takes in an automaton
+	// gives back the automaton with prefixes calculated for each node
+	computePrefixes: function(auto) {
+		
+		// TODO :: do actual work (so far, we are just adding the node itself as prefix, which is not enough)
+
+		for (var i=0; i < auto.length; i++) {
+			auto[i].f = auto[i].c;
+		}
+		
+		return auto;
+	},
+
+
+
+	// takes in an automaton with prefixes
+	// gives back true if it is prefix sorted or false otherwise
+	isAutomatonPrefixSorted: function(auto) {
+		// TODO :: do actual work
+		return true;
+	},
+
+
+
+	// takes in an automaton with prefixes
+	// gives back a prefix sorted automaton recognizing the same language
+	makeAutomatonPrefixSorted: function(auto) {
+		// TODO :: do actual work
+		return auto;
 	},
 
 

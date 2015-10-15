@@ -95,16 +95,16 @@
 			padding:2px 5px;
 		}
 
-		div.button, div.tabbutton, span.infobtn {
+		div.button, div.tabbutton, span.infobtn, div.svg_btn {
 			background: #EEE none repeat scroll 0% 0%;
 			cursor:pointer;
 		}
 
-		div.button:hover, div.tabbutton:hover, span.infobtn:hover {
+		div.button:hover, div.tabbutton:hover, span.infobtn:hover, div.svg_btn:hover {
 			background: #DDD none repeat scroll 0% 0%;
 		}
 
-		div.button:active, div.tabbutton:active, span.infobtn:active {
+		div.button:active, div.tabbutton:active, span.infobtn:active, div.svg_btn:active {
 			background: #CCC none repeat scroll 0% 0%;
 		}
 
@@ -192,14 +192,53 @@
 			padding:1px 3px 2px 3px;
 		}
 
+
+
 		/* SVG */
+
+		div.svg_container {
+			position:relative;
+			min-height:10px;
+		}
+
+		div.svg_btn {
+			position:absolute;
+			right:0px;
+			top:-10px;
+			border:1px solid #000;
+			box-shadow:0px 0px 5px 0px rgba(0, 0, 0, 0.8);
+			border-radius:4px;
+			line-height:20px;
+			padding:0px 4px;
+		}
+
 		svg {
 			width:100%;
 			height:300px;
 		}
 		
-		svg > text {
+		svg > text, svg > text > tspan {
 			font-size:3px;
+		}
+
+		svg > text.prefix, svg > text.prefix > tspan {
+			font-size:1.5px;
+		}
+
+		/* subscript */
+		svg > text > tspan.d {
+			font-size:2px;
+		}
+		svg > text.prefix > tspan.d {
+			font-size:1px;
+		}
+
+		/* superscript */
+		svg > text > tspan.u {
+			font-size:2px;
+		}
+		svg > text.prefix > tspan.u {
+			font-size:1px;
 		}
 	</style>
 </head>
@@ -300,7 +339,7 @@
 
 
 	<span class="creditline absleft">
-		Version: 0.0.0.4
+		Version: 0.0.0.5
 	</span>
 	<span class="creditline absright">
 		Moyaccercchi (tws@hi.is), 2015
@@ -560,6 +599,21 @@
 
 			el.innerHTML = sout;
 			e.stopPropagation();
+		}
+
+
+		function hideSVG(whichOne) {
+			
+			var svg_el = document.getElementById('svg-' + whichOne);
+			var svg_hide_el = document.getElementById('svg-hide-' + whichOne);
+
+			if (svg_el.style.display == 'none') {
+				svg_el.style.display = 'block';
+				svg_hide_el.innerHTML = 'Hide';
+			} else {
+				svg_el.style.display = 'none';
+				svg_hide_el.innerHTML = 'Show';
+			}
 		}
 
 

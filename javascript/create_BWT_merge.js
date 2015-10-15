@@ -29,7 +29,10 @@ window.c = {
 		this.nlnlnl = "\n\n\n"; // double newline character in print
 		this.DS = "$ \\$ $"; // $
 		this.DS_1_o = '$ \\$_1 $'; // $_1
+		this.DS_1_t = '$ \\$_1 $'; // $_1 in SVG
 		this.DS_2_o = '$ \\$_2 $'; // $_2
+		this.DK_1_o = '$ #_1 $'; // #_1
+		this.DK_1_t = '$ #_1 $'; // #_1 in SVG
 		this.H_1 = 'H_1'; // string H_1 while in mathmode
 		this.H_2 = 'H_2'; // string H_2 while in mathmode
 		this.DH = '$ H $'; // string H
@@ -58,7 +61,10 @@ window.c = {
 		this.nlnlnl = '<br><br>\n'; // double newline character in print
 		this.DS = '$'; // $
 		this.DS_1_o = '$<span class="d">1</span>'; // $_1
+		this.DS_1_t = '<tspan>$</tspan><tspan class="d" dy="0.2">1</tspan>'; // $_1 in SVG
 		this.DS_2_o = '$<span class="d">2</span>'; // $_2
+		this.DK_1_o = '^<span class="d">1</span>'; // #_1
+		this.DK_1_t = '<tspan>^</tspan><tspan class="d" dy="0.2">1</tspan>'; // #_1 in SVG
 		this.H_1 = 'H<span class="d">1</span>'; // string H_1 while in mathmode
 		this.H_2 = 'H<span class="d">2</span>'; // string H_2 while in mathmode
 		this.DH = '<i>H</i>'; // string H
@@ -668,6 +674,7 @@ window.c = {
 		// generate the automaton
 		var auto1 = this.graphToAutomaton(h1a, h1_graph);
 		var auto2 = this.graphToAutomaton(h2a, h2_graph);
+		var auto = this.mergeAutomata(auto1, auto2);
 
 
 
@@ -688,16 +695,33 @@ window.c = {
 
 		sout += this.nlnl;
 
+		sout += "We are also interested in the intended merging result " + this.DH + ":" + this.nlnl;
+
+		sout += this.visualize(auto, false);
 
 
+
+		var isRevDet = this.isAutomatonReverseDeterministic(auto);
 		var isRevDet1 = this.isAutomatonReverseDeterministic(auto1);
 		var isRevDet2 = this.isAutomatonReverseDeterministic(auto2);
 		var abortDueToRevDet = false;
+
+		if (!isRevDet) {
+			auto = this.makeAutomatonReverseDeterministic(auto, false);
+			isRevDet = this.isAutomatonReverseDeterministic(auto);
+			if (!isRevDet) {
+				sout += "As we failed to generate a reverse deterministic automaton for " + this.DH +
+						", we stop here." + this.nlnl;
+				abortDueToRevDet = true;
+			}
+		}
 
 		if (!isRevDet1) {
 			auto1 = this.makeAutomatonReverseDeterministic(auto1, false);
 			isRevDet1 = this.isAutomatonReverseDeterministic(auto1);
 			if (!isRevDet1) {
+				sout += "As we failed to generate a reverse deterministic automaton for " + this.DH_1 +
+						", we stop here." + this.nlnl;
 				abortDueToRevDet = true;
 			}
 		}
@@ -706,25 +730,33 @@ window.c = {
 			auto2 = this.makeAutomatonReverseDeterministic(auto2, false);
 			isRevDet2 = this.isAutomatonReverseDeterministic(auto2);
 			if (!isRevDet2) {
+				sout += "As we failed to generate a reverse deterministic automaton for " + this.DH_2 +
+						", we stop here." + this.nlnl;
 				abortDueToRevDet = true;
 			}
 		}
 
 
-		if (abortDueToRevDet) {
-
-			sout += "As we failed to generate a reverse deterministic automaton, we stop here." + this.nlnl;
-
-		} else {
+		if (!abortDueToRevDet) {
 
 			sout += "We need to convert these into reverse deterministic and then " +
-					"into prefix-sorted automata. This gives us:" + this.nlnl;
+					"into prefix-sorted automata. This gives us for " + this.DH_1 + ":" + this.nlnl;
 
+			auto = this.computePrefixes(auto);
 			auto1 = this.computePrefixes(auto1);
 			auto2 = this.computePrefixes(auto2);
 
+			var isPrefSort = this.isAutomatonPrefixSorted(auto);
 			var isPrefSort1 = this.isAutomatonPrefixSorted(auto1);
 			var isPrefSort2 = this.isAutomatonPrefixSorted(auto2);
+
+			if (!isPrefSort) {
+				auto = this.makeAutomatonPrefixSorted(auto, false);
+				isPrefSort = this.isAutomatonPrefixSorted(auto);
+				if (!isPrefSort) {
+					sout += "Ooops! We do not have a prefix-sorted automaton for " + this.DH + "!" + this.nlnl;
+				}
+			}
 
 			if (!isPrefSort1) {
 				auto1 = this.makeAutomatonPrefixSorted(auto1, false);
@@ -743,8 +775,10 @@ window.c = {
 			}
 
 			sout += this.visualize(auto1, true);
-			sout += "and:" + this.nl;
+			sout += "and for " + this.DH_2 + ":" + this.nl;
 			sout += this.visualize(auto2, true);
+			sout += "as well as for " + this.DH + ":" + this.nl;
+			sout += this.visualize(auto, true);
 			sout += this.nlnl;
 
 
@@ -788,6 +822,24 @@ window.c = {
 			sout += BWT.join(this.td) + this.td + 'BWT' + this.tabnl;
 			sout += M.join(this.td) + this.td + this.DM + this.nl;
 			sout += this.endtab;
+
+			sout += "As well as for " + this.DH + ":" + this.nlnl;
+
+			var findex = this.getFindexFromAutomaton(auto);
+			var prefixes = findex[0];
+			var BWT = findex[1];
+			var M = findex[2];
+
+			sout += this.tab;
+			if (this.give_out_HTML) {
+				sout += '<tbody class="vbars"><tr><td>';
+			} else {
+				sout += "{" + this.repjoin(BWT.length, 'c', ' | ') + " | l}" + this.nl;
+			}
+			sout += prefixes.join(this.td) + this.td + 'Prefix' + this.tabnl;
+			sout += BWT.join(this.td) + this.td + 'BWT' + this.tabnl;
+			sout += M.join(this.td) + this.td + this.DM + this.nl;
+			sout += this.endtab;
 		}
 
 
@@ -814,13 +866,25 @@ window.c = {
 	},
 
 
+	
+	svg_counter: 0, // keeps track of how many SVGs we are showing on the page
+
+
 
 	// takes in an automaton
 	// gives back a string containing a graph visualization of the input
 	visualize: function(auto, showPrefixes) {
 
 		// TODO :: make this work for DaTeX output as well (e.g. with TikZ)
-		var sout = '<svg xmlns="http://www.w3.org/2000/svg" version="1.1"';
+		var sout = '';
+
+		this.svg_counter++;
+
+		sout += '<div class="svg_container">';
+		sout += '<div class="svg_btn" onclick="hideSVG(' + this.svg_counter + ')" ' +
+				'id="svg-hide-' + this.svg_counter + '">Hide</div>';
+
+		sout += '<svg id="svg-' + this.svg_counter + '" xmlns="http://www.w3.org/2000/svg" version="1.1"';
 
 		sout += 'viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">';
 
@@ -853,8 +917,8 @@ window.c = {
 		// iterate over main row
 		for (var j = 0; j < hlen; j++) {
 			var i = mainrow[j];
-			xoff = 50+(100*(0.5+i - (hlen / 2))/hlen);
-			xoffnext = 50+(100*(1.5+i - (hlen / 2))/hlen);
+			xoff = 50+(100*(0.5+j - (hlen / 2))/hlen);
+			xoffnext = 50+(100*(1.5+j - (hlen / 2))/hlen);
 			positions[i] = xoff;
 
 			sout += '<circle cx="' + xoff + '" cy="50" r="2" style="fill:#000" />';
@@ -862,7 +926,7 @@ window.c = {
 			sout += '<text x="' + xoff + '" y="51" text-anchor="middle">' + auto[i].c + '</text>';
 
 			if (showPrefixes) {
-				sout += '<text style="font-size:1.5px" x="' + xoff + '" y="47.8" text-anchor="middle">' + auto[i].f + '</text>';
+				sout += '<text class="prefix" x="' + xoff + '" y="47.8" text-anchor="middle">' + auto[i].f + '</text>';
 			}
 
 			if (auto[i].c !== this.DS) {
@@ -954,7 +1018,7 @@ window.c = {
 						sout += '<text x="' + xoff + '" y="' + (yoffl+1) + '" text-anchor="middle">' + auto[path[i]].c + '</text>';
 
 						if (showPrefixes) {
-							sout += '<text style="font-size:1.5px" x="' + xoff + '" y="' + (yoffl-2.2) + '" text-anchor="middle">' + auto[path[i]].f + '</text>';
+							sout += '<text class="prefix" x="' + xoff + '" y="' + (yoffl-2.2) + '" text-anchor="middle">' + auto[path[i]].f + '</text>';
 						}
 
 						if (i < 1) {
@@ -1004,6 +1068,15 @@ window.c = {
 
 
 		sout += '</svg>';
+		sout += '</div>';
+
+
+		while (sout.indexOf(this.DS_1_o) > -1) {
+			sout = sout.replace(this.DS_1_o, this.DS_1_t);
+		}
+		while (sout.indexOf(this.DK_1_o) > -1) {
+			sout = sout.replace(this.DK_1_o, this.DK_1_t);
+		}
 
 		return sout;
 	},
@@ -1083,6 +1156,50 @@ window.c = {
 				auto[p31].p.push(lastNew);
 			}
 		}
+
+		return auto;
+	},
+
+
+
+	// takes in two automata
+	// gives back the automaton formed by merging the one automaton with the other one
+	mergeAutomata: function(auto1, auto2) {
+
+		var auto = [];
+
+		var outOf1 = 0; // position of $_1 in auto
+
+		var offset = auto1.length; // offset added to all positions within auto2
+
+		// start building auto as copy of auto1
+		for (var i=0; i < auto1.length; i++) {
+			var newNode = this.deep_copy_node(auto1[i]);
+			if (newNode.c == this.DS) {
+				outOf1 = i;
+			}
+			auto.push(newNode);
+		}
+
+		var into2 = auto.length;  // position of #_1 in auto
+
+		// add all nodes from auto2
+		for (var i=0; i < auto2.length; i++) {
+			var newNode = this.deep_copy_node(auto2[i]);
+			for (var k=0; k < newNode.p.length; k++) {
+				newNode.p[k] += offset;
+			}
+			for (var k=0; k < newNode.n.length; k++) {
+				newNode.n[k] += offset;
+			}
+			auto.push(newNode);
+		}
+
+		// fuse them together - that is, set outOf1.n = [into2] and into2.p = [outOf1]
+		auto[outOf1].n = [into2];
+		auto[into2].p = [outOf1];
+		auto[outOf1].c = this.DS_1_o;
+		auto[into2].c = this.DK_1_o;
 
 		return auto;
 	},

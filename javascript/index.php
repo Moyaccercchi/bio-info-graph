@@ -217,7 +217,7 @@
 		<div class="tabbutton" id="tab-btn-2" onclick="showTab(2)">
 			Generate One Advanced BWT
 		</div>
-		<div class="tabbutton" id="tab-btn-3" onclick="alert('Sorry, this has not yet been implemented.')">
+		<div class="tabbutton" id="tab-btn-3" onclick="showTab(3)">
 			Merge Two Advanced BWTs
 		</div>
 	</div>
@@ -266,7 +266,7 @@
 			Please enter the string that you are interested in:
 		</div>
 		<div class="input-info-container">
-			<input id="in-string-2" type="text" value="GACGTACCTG|,2,T,4;,3,,5;,6,,8;,6,,10"></input>
+			<input id="in-string-2" type="text" value="GACGTACCTG|,2,T,4;,3,,5;,6,,10;,6,,8"></input>
 			<span class="infobtn" onclick="generateAdvancedBWTIn1Info(event)">Info</span>
 		</div>
 		<div class="button" onclick="generateAdvancedBWT()">Generate advanced BWT (see Siren 2014)</div>
@@ -276,9 +276,31 @@
 	</div>
 
 
+	<div id="div-in-3" class="mainbox" style="display:none">
+		<div>
+			Please enter the two strings that you are interested in:
+		</div>
+		<div class="input-info-container">
+			<input id="in-string-3-1" type="text" value="GACGT|,2,T,4;,3,,5"></input>
+			<span class="infobtn" onclick="mergeAdvancedBWTsIn1Info(event)">Info</span>
+		</div>
+		<div class="input-info-container">
+			<input id="in-string-3-2" type="text" value="ACCTG|,1,,5;,1,,3"></input>
+			<span class="infobtn" onclick="mergeAdvancedBWTsIn2Info(event)">Info</span>
+		</div>
+		<div>
+			<div class="button" onclick="generateAdvancedBWTs()">Generate advanced BWTs (see Siren 2014)</div>
+			<div class="button" style="float:right;" onclick="mergeAdvancedBWTs()">Merge advanced BWTs (see Holt 2014 and Siren 2014)</div>
+		</div>
+	</div>
+
+	<div id="div-out-3" class="mainbox" style="display:none">
+	</div>
+
+
 
 	<span class="creditline absleft">
-		Version: 0.0.0.3
+		Version: 0.0.0.4
 	</span>
 	<span class="creditline absright">
 		Moyaccercchi (tws@hi.is), 2015
@@ -288,7 +310,7 @@
 		c.set_to_HTML();
 
 		// stores the visibility of div-out so that we don't reset it when changing tabs
-		div_out_visibility = [false, false];
+		div_out_visibility = [false, false, false, false];
 
 
 
@@ -297,7 +319,7 @@
 		*/
 
 		function unShowAllTabs() {
-			for (var i = 0; i < 3; i++) {
+			for (var i = 0; i < 4; i++) {
 				document.getElementById('tab-btn-' + i).className = 'tabbutton';
 				document.getElementById('div-in-' + i).style.display = 'none';
 				document.getElementById('div-out-' + i).style.display = 'none';
@@ -364,6 +386,27 @@
 			var el = activateDivOut(2);
 			el.innerHTML = '<div>' + c.generate_BWT_advanced(
 				document.getElementById('in-string-2').value.toUpperCase()) + '</div>';
+		}
+
+
+
+
+		/*
+			Tab 4 - Merge Two BWTs (advanced)
+		*/
+
+		function generateAdvancedBWTs() {
+			var el = activateDivOut(3);
+			el.innerHTML = '<div>' + c.generate_BWTs_advanced(
+				document.getElementById('in-string-3-1').value.toUpperCase(),
+				document.getElementById('in-string-3-2').value.toUpperCase()) + '</div>';
+		}
+
+		function mergeAdvancedBWTs() {
+			var el = activateDivOut(3);
+			el.innerHTML = '<div>' + c.merge_BWTs_advanced(
+				document.getElementById('in-string-3-1').value.toUpperCase(),
+				document.getElementById('in-string-3-2').value.toUpperCase()) + '</div>';
 		}
 
 
@@ -492,8 +535,36 @@
 			e.stopPropagation();
 		}
 
-		// default to tab 2
-		showTab(2);
+
+		function mergeAdvancedBWTsIn1Info(e) {
+			var el = activateDivOut(3);
+			
+			var sout = '<div>';
+			sout += '<u>Advanced BWT Merging - Input 1</u><br><br>';
+
+			sout += s_input1;
+			sout += s_advancedInputFormat;
+
+			el.innerHTML = sout;
+			e.stopPropagation();
+		}
+
+		function mergeAdvancedBWTsIn2Info(e) {
+			var el = activateDivOut(3);
+			
+			var sout = '<div>';
+			sout += '<u>Advanced BWT Merging - Input 2</u><br><br>';
+
+			sout += s_input2;
+			sout += s_advancedInputFormat;
+
+			el.innerHTML = sout;
+			e.stopPropagation();
+		}
+
+
+		// default to tab 3
+		showTab(3);
 	</script>
 
 </body>

@@ -7,7 +7,7 @@
 			It calls "prepare_BWTs_naively" if necessary.
 */
 
-c = {
+window.c = {
 
 	last_h1: '', // h1 that was used on last call
 	last_h2: '', // h2 that was used on last call
@@ -110,50 +110,53 @@ c = {
 		this.h1_graph = h1.indexOf('(') >= 0;
 		this.h2_graph = h2.indexOf('(') >= 0;
 
+		var i, h1_A, h1_B, h2_C, h2_D, h1a, h1a_A, h1a_B, h2a, h2a_C, h2a_D, alt_A, alt_B, alt_C, alt_D,
+			ha_A, ha_B, ha_C, ha_D;
+
 		if (this.h1_graph) {
 
-			var i = h1.indexOf('(');
-			var alt_A = h1.slice(i + 1, i + 2);
-			var i = h1.indexOf('|');
-			var alt_B = h1.slice(i + 1, i + 2);
+			i = h1.indexOf('(');
+			alt_A = h1.slice(i + 1, i + 2);
+			i = h1.indexOf('|');
+			alt_B = h1.slice(i + 1, i + 2);
 
-			var h1_A = h1.replace('(', '');
+			h1_A = h1.replace('(', '');
 			h1_A = h1_A.slice(0, h1_A.indexOf('|')) + h1_A.slice(h1_A.indexOf(')') + 1);
 
-			var h1_B = h1.replace(')', '');
+			h1_B = h1.replace(')', '');
 			h1_B = h1_B.slice(0, h1_B.indexOf('(')) + h1_B.slice(h1_B.indexOf('|') + 1);
 		
 			// create array forms of the input strings
-			var h1a = h1.split('');
-			var h1a_A = h1_A.split('');
-			var h1a_B = h1_B.split('');
+			h1a = h1.split('');
+			h1a_A = h1_A.split('');
+			h1a_B = h1_B.split('');
 
 		} else {
 			// create array forms of the input strings
-			var h1a = h1.split('');
+			h1a = h1.split('');
 		}
 
 		if (this.h2_graph) {
 
-			var i = h2.indexOf('(');
-			var alt_C = h2.slice(i + 1, i + 2);
-			var i = h2.indexOf('|');
-			var alt_D = h2.slice(i + 1, i + 2);
+			i = h2.indexOf('(');
+			alt_C = h2.slice(i + 1, i + 2);
+			i = h2.indexOf('|');
+			alt_D = h2.slice(i + 1, i + 2);
 
-			var h2_C = h2.replace('(', '');
+			h2_C = h2.replace('(', '');
 			h2_C = h2_C.slice(0, h2_C.indexOf('|')) + h2_C.slice(h2_C.indexOf(')') + 1);
 
-			var h2_D = h2.replace(')', '');
+			h2_D = h2.replace(')', '');
 			h2_D = h2_D.slice(0, h2_D.indexOf('(')) + h2_D.slice(h2_D.indexOf('|') + 1);
 		
 			// create array forms of the input strings
-			var h2a = h2.split('');
-			var h2a_C = h2_C.split('');
-			var h2a_D = h2_D.split('');
+			h2a = h2.split('');
+			h2a_C = h2_C.split('');
+			h2a_D = h2_D.split('');
 
 		} else {
 			// create array forms of the input strings
-			var h2a = h2.split('');
+			h2a = h2.split('');
 		}
 
 		var h1_comp = h1;
@@ -175,16 +178,16 @@ c = {
 		}
 
 		if (this.h1_graph && this.h2_graph) {
-			var ha_A = h1a_A.concat([this.DS_1]).concat(h2a_C).concat([this.DS_2]);
-			var ha_B = h1a_B.concat([this.DS_1]).concat(h2a_C).concat([this.DS_2]);
-			var ha_C = h1a_A.concat([this.DS_1]).concat(h2a_D).concat([this.DS_2]);
-			var ha_D = h1a_B.concat([this.DS_1]).concat(h2a_D).concat([this.DS_2]);
+			ha_A = h1a_A.concat([this.DS_1]).concat(h2a_C).concat([this.DS_2]);
+			ha_B = h1a_B.concat([this.DS_1]).concat(h2a_C).concat([this.DS_2]);
+			ha_C = h1a_A.concat([this.DS_1]).concat(h2a_D).concat([this.DS_2]);
+			ha_D = h1a_B.concat([this.DS_1]).concat(h2a_D).concat([this.DS_2]);
 		} else if (this.h1_graph) {
-			var ha_A = h1a_A.concat([this.DS_1]).concat(h2a).concat([this.DS_2]);
-			var ha_B = h1a_B.concat([this.DS_1]).concat(h2a).concat([this.DS_2]);
+			ha_A = h1a_A.concat([this.DS_1]).concat(h2a).concat([this.DS_2]);
+			ha_B = h1a_B.concat([this.DS_1]).concat(h2a).concat([this.DS_2]);
 		} else if (this.h2_graph) {
-			var ha_C = h1a.concat([this.DS_1]).concat(h2a_C).concat([this.DS_2]);
-			var ha_D = h1a.concat([this.DS_1]).concat(h2a_D).concat([this.DS_2]);
+			ha_C = h1a.concat([this.DS_1]).concat(h2a_C).concat([this.DS_2]);
+			ha_D = h1a.concat([this.DS_1]).concat(h2a_D).concat([this.DS_2]);
 		}
 
 		// create full array based on both strings
@@ -193,6 +196,8 @@ c = {
 		// append delimiter character to input arrays
 		h1a[h1a.length] = this.DS;
 		h2a[h2a.length] = this.DS;
+
+		var h_cr_A, h_cr_B, h_cr_C, h_cr_D, h1_cr_A, h1_cr_B, h2_cr_C, h2_cr_D, h1_len;
 
 		if (this.h1_graph && this.h2_graph) {
 
@@ -203,21 +208,21 @@ c = {
 			h2a_D[h2a_D.length] = this.DS;
 
 			// generate cyclic rotations
-			var h_cr_A = this.create_cyclic_rotations(ha_A, 0, alt_A);
-			var h_cr_B = this.create_cyclic_rotations(ha_B, 0, alt_B);
-			var h_cr_C = this.create_cyclic_rotations(ha_C, 0, alt_C);
-			var h_cr_D = this.create_cyclic_rotations(ha_D, 0, alt_D);
+			h_cr_A = this.create_cyclic_rotations(ha_A, 0, alt_A);
+			h_cr_B = this.create_cyclic_rotations(ha_B, 0, alt_B);
+			h_cr_C = this.create_cyclic_rotations(ha_C, 0, alt_C);
+			h_cr_D = this.create_cyclic_rotations(ha_D, 0, alt_D);
 			this.h_cr = h_cr_A.concat(h_cr_B).concat(h_cr_C).concat(h_cr_D);
-			var h1_cr_A = this.create_cyclic_rotations(h1a_A, 0, alt_A);
-			var h1_cr_B = this.create_cyclic_rotations(h1a_B, 0, alt_B);
+			h1_cr_A = this.create_cyclic_rotations(h1a_A, 0, alt_A);
+			h1_cr_B = this.create_cyclic_rotations(h1a_B, 0, alt_B);
 			this.h1_cr = h1_cr_A.concat(h1_cr_B);
 
 			// we are here implicitly assuming that h1a_A has the same length as h1a_B!
-			var h1_len = h1a_A.length;
+			h1_len = h1a_A.length;
 
 			// generate cyclic rotations
-			var h2_cr_C = this.create_cyclic_rotations(h2a_C, h1_len, alt_C);
-			var h2_cr_D = this.create_cyclic_rotations(h2a_D, h1_len, alt_D);
+			h2_cr_C = this.create_cyclic_rotations(h2a_C, h1_len, alt_C);
+			h2_cr_D = this.create_cyclic_rotations(h2a_D, h1_len, alt_D);
 			this.h2_cr = h2_cr_C.concat(h2_cr_D);
 
 		} else if (this.h1_graph) {
@@ -227,15 +232,15 @@ c = {
 			h1a_B[h1a_B.length] = this.DS;
 
 			// generate cyclic rotations
-			var h_cr_A = this.create_cyclic_rotations(ha_A, 0, alt_A);
-			var h_cr_B = this.create_cyclic_rotations(ha_B, 0, alt_B);
+			h_cr_A = this.create_cyclic_rotations(ha_A, 0, alt_A);
+			h_cr_B = this.create_cyclic_rotations(ha_B, 0, alt_B);
 			this.h_cr = h_cr_A.concat(h_cr_B);
-			var h1_cr_A = this.create_cyclic_rotations(h1a_A, 0, alt_A);
-			var h1_cr_B = this.create_cyclic_rotations(h1a_B, 0, alt_B);
+			h1_cr_A = this.create_cyclic_rotations(h1a_A, 0, alt_A);
+			h1_cr_B = this.create_cyclic_rotations(h1a_B, 0, alt_B);
 			this.h1_cr = h1_cr_A.concat(h1_cr_B);
 
 			// we are here implicitly assuming that h1a_A has the same length as h1a_B!
-			var h1_len = h1a_A.length;
+			h1_len = h1a_A.length;
 
 			this.h2_cr = this.create_cyclic_rotations(h2a, h1_len, '');
 
@@ -243,18 +248,18 @@ c = {
 
 			this.h1_cr = this.create_cyclic_rotations(h1a, 0, '');
 
-			var h1_len = h1a.length;
+			h1_len = h1a.length;
 
 			// append delimiter character to input arrays
 			h2a_C[h2a_C.length] = this.DS;
 			h2a_D[h2a_D.length] = this.DS;
 
 			// generate cyclic rotations
-			var h_cr_C = this.create_cyclic_rotations(ha_C, 0, alt_C);
-			var h_cr_D = this.create_cyclic_rotations(ha_D, 0, alt_D);
+			h_cr_C = this.create_cyclic_rotations(ha_C, 0, alt_C);
+			h_cr_D = this.create_cyclic_rotations(ha_D, 0, alt_D);
 			this.h_cr = h_cr_C.concat(h_cr_D);
-			var h2_cr_C = this.create_cyclic_rotations(h2a_C, h1_len, alt_C);
-			var h2_cr_D = this.create_cyclic_rotations(h2a_D, h1_len, alt_D);
+			h2_cr_C = this.create_cyclic_rotations(h2a_C, h1_len, alt_C);
+			h2_cr_D = this.create_cyclic_rotations(h2a_D, h1_len, alt_D);
 			this.h2_cr = h2_cr_C.concat(h2_cr_D);
 
 		} else {
@@ -262,7 +267,7 @@ c = {
 			// generate cyclic rotations
 			this.h_cr = this.create_cyclic_rotations(ha, 0, '');
 			this.h1_cr = this.create_cyclic_rotations(h1a, 0, '');
-			var h1_len = h1a.length;
+			h1_len = h1a.length;
 			this.h2_cr = this.create_cyclic_rotations(h2a, h1_len, '');
 		}
 
@@ -326,12 +331,14 @@ c = {
 		// Does h1 or h2 contain a graph? - e.g. A(A|C)CA
 		var h_graph = h.indexOf('(') >= 0;
 
+		var ha, ha_A, ha_B, alt_A, alt_B, h_len, h_cr, i;
+
 		if (h_graph) {
 
-			var i = h.indexOf('(');
-			var alt_A = h.slice(i + 1, i + 2);
-			var i = h.indexOf('|');
-			var alt_B = h.slice(i + 1, i + 2);
+			i = h.indexOf('(');
+			alt_A = h.slice(i + 1, i + 2);
+			i = h.indexOf('|');
+			alt_B = h.slice(i + 1, i + 2);
 
 			var h_A = h.replace('(', '');
 			h_A = h_A.slice(0, h_A.indexOf('|')) + h_A.slice(h_A.indexOf(')') + 1);
@@ -340,14 +347,14 @@ c = {
 			h_B = h_B.slice(0, h_B.indexOf('(')) + h_B.slice(h_B.indexOf('|') + 1);
 		
 			// create array forms of the input string
-			var ha = h.split('');
-			var ha_A = h_A.split('');
-			var ha_B = h_B.split('');
+			ha = h.split('');
+			ha_A = h_A.split('');
+			ha_B = h_B.split('');
 
 		} else {
 
 			// create array form of the input string
-			var ha = h.split('');
+			ha = h.split('');
 		}
 
 		// append delimiter character to input arrays
@@ -362,16 +369,16 @@ c = {
 			// generate cyclic rotations
 			var h_cr_A = this.create_cyclic_rotations(ha_A, 0, alt_A);
 			var h_cr_B = this.create_cyclic_rotations(ha_B, 0, alt_B);
-			var h_cr = h_cr_A.concat(h_cr_B);
+			h_cr = h_cr_A.concat(h_cr_B);
 
 			// we are here implicitly assuming that h1a_A has the same length as h1a_B!
-			var h_len = ha_A.length;
+			h_len = ha_A.length;
 
 		} else {
 
 			// generate cyclic rotations
-			var h_cr = this.create_cyclic_rotations(ha, 0, '');
-			var h_len = ha.length;
+			h_cr = this.create_cyclic_rotations(ha, 0, '');
+			h_len = ha.length;
 		}
 
 		// create strings based on arrays with delimiters
@@ -408,7 +415,7 @@ c = {
 		
 		if(!this.give_out_HTML) {
 			sout += " Graph Alignment - BWT Generation" + this.nl;
-			sout += "¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯" + this.nl
+			sout += "¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯" + this.nl;
 		}
 
 		sout += "We are looking at " + this.nlnl;
@@ -469,38 +476,6 @@ c = {
 		// append delimiter character to input array
 		ha[ha.length] = this.DS;
 
-		// generate cyclic rotations
-		var h_cr = this.create_cyclic_rotations(ha, 0, '');
-		var h_len = ha.length;
-
-		// create strings based on arrays with delimiters
-		var h = ha.join('');
-
-		// sort cyclic rotations
-		var h_scr = this.sort_cyclic_rotations(h_cr);
-
-		// get the positions
-		var h_pos = this.get_pos_from_scr(h_scr);
-
-		// get the BWT
-		var h_bwt = this.get_bwt_from_scr(h_scr);
-
-
-
-		// a table head that we will print over and over again...
-		var s_h_table_head = this.tab;
-		if (this.give_out_HTML) {
-			s_h_table_head += '<tbody class="lastbar"><tr><td>';
-		} else {
-			s_h_table_head += "{" + this.repjoin(h_pos.length, 'c', ' ') + " | l}" + this.nl;
-		}
-
-		// ... and a full table that we will also print several times =)
-		var s_h_table = s_h_table_head;
-		s_h_table += h_pos.join(this.td) + this.td + 'Position' + this.tabnl;
-		s_h_table += h_bwt.join(this.td) + this.td + 'BWT' + this.nl;
-		s_h_table += this.endtab;
-
 
 
 		// generate the automaton
@@ -512,18 +487,10 @@ c = {
 		
 		if(!this.give_out_HTML) {
 			sout += " Graph Alignment - BWT Generation" + this.nl;
-			sout += "¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯" + this.nl
+			sout += "¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯" + this.nl;
 		}
 
-		sout += "We are looking at " + this.nlnl;
-
-		if(this.give_out_HTML) {
-			sout += this.nlnl + this.DH + ' = ' + h + this.nlnlnl;
-		} else {
-			sout += '$$ H = "' + h + '" $$' + this.nlnl;
-		}
-
-		sout += "A visualization might make it easier to wrap our heads around this:" + this.nlnl;
+		sout += "We are looking at" + this.nlnl;
 
 		sout += this.visualize(auto, false);
 
@@ -534,6 +501,7 @@ c = {
 		sout += "We first need to convert this into a reverse deterministic automaton." + this.nlnl;
 
 		var isRevDet = this.isAutomatonReverseDeterministic(auto);
+		var abortDueToRevDet = false;
 
 		if (isRevDet) {
 
@@ -541,13 +509,16 @@ c = {
 		
 		} else {
 
-			sout += "To do so, we consider the string alignment that a problematic region in the " +
+			sout += "To achieve a reverse deterministic automaton, " +
+					"we consider the string alignment that a problematic region in the " +
 					"automaton represents and slide the predecessor characters as far to the right " +
 					"as possible (effectively sliding the gaps to the left.)" + this.nl;
 			sout += "We then reconstruct the automaton, and it will be guaranteed to be reverse " +
-					"deterministic (see Siren 2014.)" + this.nlnl;
+					"deterministic (see Siren 2014.)" + this.nlnlnl;
 
-			auto = this.makeAutomatonReverseDeterministic(auto);
+			this.sout = '';
+			auto = this.makeAutomatonReverseDeterministic(auto, true);
+			sout += this.sout;
 
 			isRevDet = this.isAutomatonReverseDeterministic(auto);
 
@@ -555,6 +526,7 @@ c = {
 				sout += "We now have the following reverse deterministic automaton:" + this.nlnl;
 			} else {
 				sout += "Ooops! We do not have a reverse deterministic automaton:" + this.nlnl;
+				abortDueToRevDet = true;
 			}
 
 			sout += this.visualize(auto, false);
@@ -563,60 +535,90 @@ c = {
 		}
 
 
-		// TODO :: prefix-sorting needs to occur!
-		
-		sout += "We now need to convert this reverse deterministic automaton " +
-				"into a prefix-sorted automaton. Let's have a look at the prefixes:" + this.nlnl;
+		if (abortDueToRevDet) {
 
-		auto = this.computePrefixes(auto);
+			sout += "As we failed to generate a reverse deterministic automaton, we stop here." + this.nlnl;
 
-		sout += this.visualize(auto, true);
-
-		var isPrefSort = this.isAutomatonPrefixSorted(auto);
-
-		if (isPrefSort) {
-
-			sout += "Luckily, the given automaton is already prefix sorted." + this.nlnl;
-		
 		} else {
 
-			sout += "To do so, we split all nodes that prohibit this automaton from being prefix-sorted." +
-					this.nlnl;
+			sout += "We now need to convert this reverse deterministic automaton " +
+					"into a prefix-sorted automaton. Let's have a look at the prefixes:" + this.nlnl;
 
-			auto = this.makeAutomatonPrefixSorted(auto);
-
-			isPrefSort = this.isAutomatonPrefixSorted(auto);
-
-			if (isPrefSort) {
-				sout += "We now have the following prefix-sorted automaton:" + this.nlnl;
-			} else {
-				sout += "Ooops! We do not have a prefix-sorted automaton:" + this.nlnl;
-			}
+			auto = this.computePrefixes(auto);
 
 			sout += this.visualize(auto, true);
 
-			sout += this.nlnl;
+			var isPrefSort = this.isAutomatonPrefixSorted(auto);
+
+			if (isPrefSort) {
+
+				sout += "Luckily, the given automaton is already prefix sorted." + this.nlnl;
+			
+			} else {
+
+				sout += "To achieve a prefix sorted automaton, " + 
+						"we split all nodes that prohibit this automaton from being prefix sorted " +
+						"into several parts and repeat this process until no more nodes have " +
+						"problematic prefixes (as indicated by the " + this.prefixErrorChar + 
+						" signs within the shown prefixes.)" +
+						this.nlnlnl;
+
+				this.sout = '';
+				auto = this.makeAutomatonPrefixSorted(auto, true);
+				sout += this.sout;
+
+				isPrefSort = this.isAutomatonPrefixSorted(auto);
+
+				if (isPrefSort) {
+					sout += "We now have the following prefix-sorted automaton:" + this.nlnl;
+				} else {
+					sout += "Ooops! We do not have a prefix-sorted automaton:" + this.nlnl;
+				}
+
+				sout += this.visualize(auto, true);
+
+				sout += this.nlnl;
+			}
+
+
+
+			// BWT and pos for H
+
+			sout += "We can now generate the BWT of the graph, ";
+			sout += "together with the vector " + this.DM + "." + this.nlnl;
+			sout += "To do so, we first sort the prefixes alphabetically ";
+			sout += "(being assured that each prefix is unique and therefore the sorting will not ";
+			sout += "be ambiguous).";
+
+			var findex = this.getFindexFromAutomaton(auto);
+			var prefixes = findex[0];
+			var BWT = findex[1];
+			var M = findex[2];
+
+			sout += this.tab;
+			if (this.give_out_HTML) {
+				sout += '<tbody class="vbars"><tr><td>';
+			} else {
+				sout += "{" + this.repjoin(BWT.length, 'c', ' | ') + " | l}" + this.nl;
+			}
+			sout += prefixes.join(this.td) + this.td + 'Prefix' + this.nl;
+			sout += this.endtab;
+
+			sout += "We can now add the labels of the preceding nodes as BWT and the ";
+			sout += "encoded out-degree of each node as vector " + this.DM + ":" + this.nlnl;
+
+			sout += this.tab;
+			if (this.give_out_HTML) {
+				sout += '<tbody class="vbars"><tr><td>';
+			} else {
+				sout += "{" + this.repjoin(BWT.length, 'c', ' | ') + " | l}" + this.nl;
+			}
+			sout += prefixes.join(this.td) + this.td + 'Prefix' + this.tabnl;
+			sout += BWT.join(this.td) + this.td + 'BWT' + this.tabnl;
+			sout += M.join(this.td) + this.td + this.DM + this.nl;
+			sout += this.endtab;
+
 		}
-
-
-
-		// BWT and pos for H
-
-		sout += "We can now generate the BWT of " + this.DH + ", ";
-		sout += "together with the vectors " + this.DM + " and " + this.DF + "." + this.nlnl;
-
-		/*
-		sout += this.print_arrofarr(h_cr).join(this.nlnl);
-
-		sout += this.nlnlnl + "All of the cyclic rotations sorted together:" + this.nlnl;
-		
-		sout += this.print_arrofarr(h_scr).join(this.nlnl);
-
-		sout += this.nlnlnl + "So overall we get the following positions ";
-		sout += "and BWT for " + this.DH + ":" + this.nlnl;
-
-		sout += s_h_table;
-		*/
 
 
 
@@ -624,6 +626,189 @@ c = {
 
 		// replace '^' with '#' before printout
 		sout = sout.replace(/\^/g, '#');
+
+		return sout;
+	},
+
+
+
+	// takes in two graph strings
+	// gives back a string contain info about the BWT generation for both
+	generate_BWTs_advanced: function(h1, h2) {
+
+		var h1_split = h1.split('|');
+		var h2_split = h2.split('|');
+
+		// insert hashtag character at the beginning of input string
+		// (actually, we are using '^' internally instead of '#', as it has lexicographic
+		// value above all alphabetical characters)
+		h1 = '^' + h1_split[0];
+		h2 = '^' + h2_split[0];
+
+		// graph info appended to h, e.g. in TGA|1,T,2;1,3 the "|1,T,2;1,3" is the graph info
+		var h1_graph = [];
+		var h2_graph = [];
+		if (h1_split.length > 1) {
+			h1_graph = h1_split[1].split(';');
+		}
+		if (h2_split.length > 1) {
+			h2_graph = h2_split[1].split(';');
+		}
+
+		// create array form of the input string
+		var h1a = h1.split('');
+		var h2a = h2.split('');
+
+		// append delimiter character to input array
+		h1a[h1a.length] = this.DS;
+		h2a[h2a.length] = this.DS;
+
+
+
+		// generate the automaton
+		var auto1 = this.graphToAutomaton(h1a, h1_graph);
+		var auto2 = this.graphToAutomaton(h2a, h2_graph);
+
+
+
+		var sout = '';
+		
+		if(!this.give_out_HTML) {
+			sout += " Graph Alignment - BWT Generation" + this.nl;
+			sout += "¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯" + this.nl;
+		}
+
+		sout += "We are looking at " + this.DH_1 + ":" + this.nlnl;
+
+		sout += this.visualize(auto1, false);
+
+		sout += this.nlnl + "and " + this.DH_2 + ":" + this.nlnl;
+
+		sout += this.visualize(auto2, false);
+
+		sout += this.nlnl;
+
+
+
+		var isRevDet1 = this.isAutomatonReverseDeterministic(auto1);
+		var isRevDet2 = this.isAutomatonReverseDeterministic(auto2);
+		var abortDueToRevDet = false;
+
+		if (!isRevDet1) {
+			auto1 = this.makeAutomatonReverseDeterministic(auto1, false);
+			isRevDet1 = this.isAutomatonReverseDeterministic(auto1);
+			if (!isRevDet1) {
+				abortDueToRevDet = true;
+			}
+		}
+
+		if (!isRevDet2) {
+			auto2 = this.makeAutomatonReverseDeterministic(auto2, false);
+			isRevDet2 = this.isAutomatonReverseDeterministic(auto2);
+			if (!isRevDet2) {
+				abortDueToRevDet = true;
+			}
+		}
+
+
+		if (abortDueToRevDet) {
+
+			sout += "As we failed to generate a reverse deterministic automaton, we stop here." + this.nlnl;
+
+		} else {
+
+			sout += "We need to convert these into reverse deterministic and then " +
+					"into prefix-sorted automata. This gives us:" + this.nlnl;
+
+			auto1 = this.computePrefixes(auto1);
+			auto2 = this.computePrefixes(auto2);
+
+			var isPrefSort1 = this.isAutomatonPrefixSorted(auto1);
+			var isPrefSort2 = this.isAutomatonPrefixSorted(auto2);
+
+			if (!isPrefSort1) {
+				auto1 = this.makeAutomatonPrefixSorted(auto1, false);
+				isPrefSort1 = this.isAutomatonPrefixSorted(auto1);
+				if (!isPrefSort1) {
+					sout += "Ooops! We do not have a prefix-sorted automaton for " + this.DH_1 + "!" + this.nlnl;
+				}
+			}
+
+			if (!isPrefSort2) {
+				auto2 = this.makeAutomatonPrefixSorted(auto2, false);
+				isPrefSort2 = this.isAutomatonPrefixSorted(auto2);
+				if (!isPrefSort2) {
+					sout += "Ooops! We do not have a prefix-sorted automaton for " + this.DH_2 + "!" + this.nlnl;
+				}
+			}
+
+			sout += this.visualize(auto1, true);
+			sout += "and:" + this.nl;
+			sout += this.visualize(auto2, true);
+			sout += this.nlnl;
+
+
+
+			// BWT and pos for H
+
+			sout += "We can now generate the BWT of the graph, ";
+			sout += "together with the vector " + this.DM + "." + this.nlnl;
+			sout += "For " + this.DH_1 + " we get:" + this.nlnl;
+
+			var findex = this.getFindexFromAutomaton(auto1);
+			var prefixes = findex[0];
+			var BWT = findex[1];
+			var M = findex[2];
+
+			sout += this.tab;
+			if (this.give_out_HTML) {
+				sout += '<tbody class="vbars"><tr><td>';
+			} else {
+				sout += "{" + this.repjoin(BWT.length, 'c', ' | ') + " | l}" + this.nl;
+			}
+			sout += prefixes.join(this.td) + this.td + 'Prefix' + this.tabnl;
+			sout += BWT.join(this.td) + this.td + 'BWT' + this.tabnl;
+			sout += M.join(this.td) + this.td + this.DM + this.nl;
+			sout += this.endtab;
+
+			sout += "And for " + this.DH_2 + " we have:" + this.nlnl;
+
+			var findex = this.getFindexFromAutomaton(auto2);
+			var prefixes = findex[0];
+			var BWT = findex[1];
+			var M = findex[2];
+
+			sout += this.tab;
+			if (this.give_out_HTML) {
+				sout += '<tbody class="vbars"><tr><td>';
+			} else {
+				sout += "{" + this.repjoin(BWT.length, 'c', ' | ') + " | l}" + this.nl;
+			}
+			sout += prefixes.join(this.td) + this.td + 'Prefix' + this.tabnl;
+			sout += BWT.join(this.td) + this.td + 'BWT' + this.tabnl;
+			sout += M.join(this.td) + this.td + this.DM + this.nl;
+			sout += this.endtab;
+		}
+
+
+
+		sout += this.s_end_document;
+
+		// replace '^' with '#' before printout
+		sout = sout.replace(/\^/g, '#');
+
+		return sout;
+	},
+
+
+
+	// takes in two graph strings
+	// gives back a string contain info about the BWT merging for both
+	merge_BWTs_advanced: function(h1, h2) {
+
+		var sout = '';
+
+		sout += generate_BWTs_advanced(h1, h2);
 
 		return sout;
 	},
@@ -647,18 +832,30 @@ c = {
 
 		sout += '<rect x="0" y="0" width="100" height="100" style="fill:#FFF" />';
 
-		var positions = {0: []};
-		var hlen = auto.length;
-		for (var i = 0; i < hlen; i++) {
-			if (auto[i].c == this.DS) {
-				hlen = i+1;
-				break;
-			}
+		var positions = [];
+
+		// keep track of paths we have not visualized yet
+		// (for each path, the location of the first node in auto is saved)
+		var more_paths = [];
+		var done_paths = [];
+
+		// find main row by following from # always the first alternative, until we arrive at $
+		var mainrow = [0];
+		var i = 0;
+		while (auto[i].c !== this.DS) {
+			i = auto[i].n[0];
+			mainrow.push(i);
 		}
-		for (var i = 0; i < hlen; i++) {
-			var xoff = 50+(100*(0.5+i - (hlen / 2))/hlen);
-			var xoffnext = 50+(100*(1.5+i - (hlen / 2))/hlen);
-			positions[0].push(xoff);
+		var hlen = mainrow.length;
+
+		var xoff, xoffnext;
+
+		// iterate over main row
+		for (var j = 0; j < hlen; j++) {
+			var i = mainrow[j];
+			xoff = 50+(100*(0.5+i - (hlen / 2))/hlen);
+			xoffnext = 50+(100*(1.5+i - (hlen / 2))/hlen);
+			positions[i] = xoff;
 
 			sout += '<circle cx="' + xoff + '" cy="50" r="2" style="fill:#000" />';
 			sout += '<circle cx="' + xoff + '" cy="50" r="1.8" style="fill:#FFF" />';
@@ -668,12 +865,20 @@ c = {
 				sout += '<text style="font-size:1.5px" x="' + xoff + '" y="47.8" text-anchor="middle">' + auto[i].f + '</text>';
 			}
 
-			if (i < hlen-1) {
-				sout += '<path d="M' + (xoff + 2.5) + ',50 L' + (xoffnext - 2.5) + ',50" '
+			if (auto[i].c !== this.DS) {
+				sout += '<path d="M' + (xoff + 2.5) + ',50 L' + (xoffnext - 2.5) + ',50" ';
 				sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
 				sout += '/>';
 			}
+
+			for (var k = 1; k < auto[i].n.length; k++) {
+				var addPath = auto[i].n[k];
+				if ((done_paths.indexOf(addPath) < 0) && (more_paths.indexOf(addPath) < 0)) {
+					more_paths.push(addPath);
+				}
+			}
 		}
+
 
 		// alternate yoff between 52.5 and 47.5 (around 50), so that adjacent paths
 		// get put on opposite sides of the main path
@@ -682,89 +887,121 @@ c = {
 		var yoffl = 57;  // offset for nodes - large distance from origin
 		var yoffdl = 60; // offset for Bezier curve control points - doubly large distance from origin
 
-		// first of all, apply all paths containing characters (so paths containing nodes after '$' in auto)
-		for (var n = hlen; n < auto.length; ) {
-			var path = [];
 
-			if (auto[n].n[0] < hlen) {
-				while ((n < auto.length) && (auto[n].n[0] < hlen)) {
-					path.push(auto[n]);
-					n++;
-				}
-			} else {
-				path = [auto[n]];
-				n++;
+		while (more_paths.length > 0) {
+
+			var curNode_i = more_paths[0];
+			var curNode = auto[curNode_i];
+			done_paths.push(curNode_i);
+			more_paths.splice(0, 1);
+			var j_init = 1;
+			if (mainrow.indexOf(curNode_i) < 0) {
+				j_init = 0;
 			}
 
-			var plen = path.length;
-			var xoff_start = positions[0][path[0].p[0]];
-			var xoff_end = positions[0][path[plen-1].n[0]];
-			var xoff_mid = (xoff_end + xoff_start) / 2;
-			var xoff_width = xoff_end - xoff_start;
+			for (j=j_init; j < curNode.p.length; j++) {
 
-			for (var i = 0; i < plen; i++) {
-				var xoff = xoff_mid+(xoff_width*(0.5+i - (plen / 2))/plen);
-				var xoffnext = xoff_mid+(xoff_width*(1.5+i - (plen / 2))/plen);
+				var from = curNode.p[j];
+				var to = curNode_i;
 
-				sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="2" style="fill:#000" />';
-				sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="1.8" style="fill:#FFF" />';
-				sout += '<text x="' + xoff + '" y="' + (yoffl+1) + '" text-anchor="middle">' + path[i].c + '</text>';
-
-				if (showPrefixes) {
-					sout += '<text style="font-size:1.5px" x="' + xoff + '" y="' + (yoffl-2.2) + '" text-anchor="middle">' + path[i].f + '</text>';
+				// if we are on the mainrow, and we get an incoming edge not from the
+				// mainrow, then we ignore it (as the node outside of the mainrow
+				// will draw its own outgoing edge)
+				if ((j_init == 1) && (mainrow.indexOf(from) < 0)) {
+					continue;
 				}
 
-				if (i < 1) {
-					sout += '<path d="M' + xoff_start + ',' + yoff + ' Q' + xoff_start + ',' + yoffl + ' ' + (xoff - 2.5) + ',' + yoffl + '" '
-					sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
-					sout += '/>';
+				for (var k=1; k < auto[from].n.length; k++) {
+					var addPath = auto[from].n[k];
+					if ((done_paths.indexOf(addPath) < 0) && (more_paths.indexOf(addPath) < 0)) {
+						more_paths.push(addPath);
+					}
 				}
 
-				if (i < plen-1) {
-					sout += '<path d="M' + (xoff + 2.5) + ',' + yoffl + ' L' + (xoffnext - 2.5) + ',' + yoffl + '" '
-					sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
-					sout += '/>';
+				var xoff_start, xoff_end, xoff_mid;
+
+				if (positions[to] === undefined) {
+
+					// add (at least one) new node
+
+					var path = [curNode_i];
+					var nextNode_i = curNode.n[0];
+
+					while (positions[nextNode_i] === undefined) {
+						path.push(nextNode_i);
+						for (var k=1; k < auto[nextNode_i].n.length; k++) {
+							var addPath = auto[nextNode_i].n[k];
+							if ((done_paths.indexOf(addPath) < 0) && (more_paths.indexOf(addPath) < 0)) {
+								more_paths.push(addPath);
+							}
+						}
+						nextNode_i = auto[nextNode_i].n[0];
+					}
+
+					var plen = path.length;
+					xoff_start = positions[auto[path[0]].p[0]];
+					xoff_end = positions[auto[path[plen-1]].n[0]];
+					xoff_mid = (xoff_end + xoff_start) / 2;
+					var xoff_width = xoff_end - xoff_start;
+
+					for (var i = 0; i < plen; i++) {
+						xoff = xoff_mid+(xoff_width*(0.5+i - (plen / 2))/plen);
+						xoffnext = xoff_mid+(xoff_width*(1.5+i - (plen / 2))/plen);
+						positions[path[i]] = xoff;
+
+						sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="2" style="fill:#000" />';
+						sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="1.8" style="fill:#FFF" />';
+						sout += '<text x="' + xoff + '" y="' + (yoffl+1) + '" text-anchor="middle">' + auto[path[i]].c + '</text>';
+
+						if (showPrefixes) {
+							sout += '<text style="font-size:1.5px" x="' + xoff + '" y="' + (yoffl-2.2) + '" text-anchor="middle">' + auto[path[i]].f + '</text>';
+						}
+
+						if (i < 1) {
+							sout += '<path d="M' + (xoff_start + 0.3) + ',' + yoff + ' Q' + (xoff_start + 1) + ',' + yoffl + ' ' + (xoff - 2.5) + ',' + yoffl + '" ';
+							sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
+							sout += '/>';
+						}
+
+						if (i < plen-1) {
+							sout += '<path d="M' + (xoff + 2.5) + ',' + yoffl + ' L' + (xoffnext - 2.5) + ',' + yoffl + '" ';
+							sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
+							sout += '/>';
+						} else {
+							sout += '<path d="M' + (xoff + 2.5) + ',' + yoffl + ' Q' + (xoff_end - 1) + ',' + yoffl + ' ' + (xoff_end - 0.3) + ',' + yoff + '" ';
+							sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
+							sout += '/>';
+						}
+					}
+
 				} else {
-					sout += '<path d="M' + (xoff + 2.5) + ',' + yoffl + ' Q' + xoff_end + ',' + yoffl + ' ' + xoff_end + ',' + yoff + '" '
+
+					// just add an edge, but do not add a new node
+
+					xoff_start = positions[from];
+					xoff_end = positions[to];
+					xoff_mid = (xoff_end + xoff_start) / 2;
+
+					sout += '<path d="M' + (xoff_start + 1) + ',' + yoff + ' Q' + xoff_mid + ',' + yoffdl + ' ' + (xoff_end - 1) + ',' + yoff + '" ';
 					sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
 					sout += '/>';
 				}
-			}
 
-			// alternate!
-			yoff = 100 - yoff;
-			yoffl = 100 - yoffl;
-			yoffdl = 100 - yoffdl;
-		}
-
-		// secondly, apply the paths that contain no nodes
-		for (var n = 0; n < auto.length; n++) {
-			var paths = [];
-
-			for (var j = 1; j < auto[n].n.length; j++) {
-				var from = n;
-				var to = auto[n].n[j];
-
-				// ignore labelled paths here
-				// TODO :: make this more robust - right now we just ignore all paths here
-				// that point to nodes outside of the main row!
-				if (to < hlen) {
-
-					var xoff_start = positions[0][from];
-					var xoff_end = positions[0][to];
-					var xoff_mid = (xoff_end + xoff_start) / 2;
-
-					sout += '<path d="M' + (xoff_start + 1) + ',' + yoff + ' Q' + xoff_mid + ',' + yoffdl + ' ' + (xoff_end - 1) + ',' + yoff + '" '
-					sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
-					sout += '/>';
-
-					// alternate!
+				// alternate!
+				if (showPrefixes) {
+					if (yoff < 50) {
+						yoff = 52.5;
+					} else {
+						yoff = 46.25;
+					}
+				} else {
 					yoff = 100 - yoff;
-					yoffl = 100 - yoffl;
-					yoffdl = 100 - yoffdl;
 				}
+				yoffl = 100 - yoffl;
+				yoffdl = 100 - yoffdl;
 			}
 		}
+
 
 		sout += '</svg>';
 
@@ -785,7 +1022,7 @@ c = {
 		// first node: hashtag
 		auto.push({c: '^', p: [], n: [1]});
 
-		for (var i = 1; i < ha.length - 2; i++) {
+		for (var i = 1; i < ha.length - 1; i++) {
 			// add a node for each element of the main row
 			auto.push({
 				c: ha[i], // caption
@@ -795,7 +1032,7 @@ c = {
 		}
 
 		// last node: dollarsign
-		auto.push({c: this.DS, p: [ha.length-1], n: []});
+		auto.push({c: this.DS, p: [ha.length-2], n: []});
 
 		// add paths of the graph
 		for (var i = 0; i < h_graph.length; i++) {
@@ -821,7 +1058,7 @@ c = {
 			p3 = p3.split(':');
 			var p31 = parseInt(p3[1], 10);
 
-			if (path[2].length == 0) {
+			if (path[2].length === 0) {
 				auto[p11].n.push(p31);
 				auto[p31].p.push(p11);
 			} else {
@@ -852,11 +1089,9 @@ c = {
 
 
 
-	// takes in an automaton
+	// takes in an automaton and a boolean parameter stating whether we should be verbose or not
 	// gives back a reverse deterministic automaton realizing the same language
-	makeAutomatonReverseDeterministic: function(auto) {
-
-		// TODO :: actual work should occur ;)
+	makeAutomatonReverseDeterministic: function(auto, addToSOut) {
 
 		/*
 		We here take in an automaton that realizes an alignment graph
@@ -882,7 +1117,123 @@ c = {
 		GAGGTA|,2,T,4;,2,,4
 		*/
 
+
+		// TODO :: Right now, we here just do a very simplified version:
+		//         We check to find something like
+		//           A B B C, graph from 2 to 4
+		//         and then we convert it into something like
+		//           A B B C, graph from 1 to 3
+
+		while (this.makeAutomatonReverseDeterministic_int(auto, addToSOut)) {
+			if (addToSOut) {
+				this.sout += this.visualize(auto);
+			}
+		}
+
 		return auto;
+	},
+
+
+
+	// takes in an automaton
+	// gives back true if more work could help to make it reverse deterministic,
+	//   or false otherwise
+	makeAutomatonReverseDeterministic_int: function(auto, addToSOut) {
+
+		for (var i=0; i < auto.length; i++) {
+			var prev = auto[i].p;
+			var plen = prev.length;
+
+			// if the node has less than 2 predecessors, all is fine anyway
+			if (plen > 1) {
+				var prevchars = [];
+				for (var j=0; j < plen; j++) {
+					var newchar = auto[prev[j]].c;
+					if (prevchars.indexOf(newchar) < 0) {
+						// all is good, the new character has not been seen before
+						prevchars.push(newchar);
+					} else {
+						// the character has been seen before, check if we have a
+						// special case and can do something about it
+						
+						// (only return true to continue if this here is successful,
+						// otherwise return false anyway to not hang in an infinite loop)
+						return this.rebaseGraphForRevDet(i, newchar, auto, addToSOut);
+					}
+				}
+			}
+		}
+
+		return false;
+	},
+
+
+
+	// takes in a position i, a label newchar and an automaton auto
+	// gives back true if it manages to improve reverse determinicism,
+	//   false otherwise
+	rebaseGraphForRevDet: function(i, newchar, auto, addToSOut) {
+
+		var nodesWithSameLabel = [];
+		var cur_p = auto[i].p;
+
+		// find all nodes for which newchar is .c
+		for (var k=0; k < cur_p.length; k++) {
+			if (auto[cur_p[k]].c == newchar) {
+				nodesWithSameLabel.push(cur_p[k]);
+			}
+		}
+
+		// check if these are exactly two nodes
+		if (nodesWithSameLabel.length == 2) {
+
+			// check if either of these nodes is predecessor of each other
+			var nodeL = null;
+			var nodeR = null;
+			var nodesP = [];
+			if (auto[nodesWithSameLabel[0]].n.indexOf(nodesWithSameLabel[1]) > -1) {
+				nodeL = nodesWithSameLabel[0];
+				nodeR = nodesWithSameLabel[1];
+			}
+			if (auto[nodesWithSameLabel[1]].n.indexOf(nodesWithSameLabel[0]) > -1) {
+				nodeL = nodesWithSameLabel[1];
+				nodeR = nodesWithSameLabel[0];
+			}
+
+			if (nodeL) {
+
+				nodesP = auto[nodeL].p;
+
+				// move path to the left, where we have
+				// nodesP => nodeL => nodeR => i
+				// originally, we have a path from nodeL to i on top of that,
+				// and we want to move it so that it now points from nodesP to nodeR
+
+				if (addToSOut) {
+					this.sout += 'We take the path from ' + auto[nodeL].c + ' around ' + auto[nodeR].c +
+								' to ' + auto[i].c + ' and move it to the left, ' + 
+								'thereby moving the gap to the left:' + this.nl;
+				}
+
+				// remove i from nodeL.n
+				auto[nodeL].n.splice(auto[nodeL].n.indexOf(i), 1);
+
+				// remove nodeL from i.p
+				auto[i].p.splice(auto[i].p.indexOf(nodeL), 1);
+
+				for (var i=0; i < nodesP.length; i++) {
+					// add nodeR to nodeP.n
+					auto[nodesP[i]].n.push(nodeR);
+
+					// add nodeP to nodeR.p
+					auto[nodeR].p.push(nodesP[i]);
+				}
+
+				return true;
+			}
+		}
+
+		return false;
 	},
 
 
@@ -921,14 +1272,228 @@ c = {
 	// takes in an automaton
 	// gives back the automaton with prefixes calculated for each node
 	computePrefixes: function(auto) {
-		
-		// TODO :: do actual work (so far, we are just adding the node itself as prefix, which is not enough)
+		return this.workOnAutomatonPrefixes(auto, false, false);
+	},
 
+
+
+	// one character that indicates a problem in a prefix
+	// needs to be different from any input characters, from ^ and from $
+	prefixErrorChar: '!',
+
+
+
+	// takes in an automaton and a boolean parameter as well as a boolean parameter
+	//   stating whether we should be verbose or not
+	// gives back the automaton with prefixes calculated for each node,
+	//   and converted into a prefix sorted automaton if makePrefixSorted is true
+	workOnAutomatonPrefixes: function(auto, makePrefixSorted, addToSOut) {
+
+		// while more work is required, do more work
+		while (this.workOnAutomatonPrefixes_int(auto, makePrefixSorted, addToSOut)) {
+			if (addToSOut) {
+				this.sout += this.visualize(this.computePrefixes(auto), true);
+			}
+		}
+
+		return auto;
+	},
+
+
+	// takes in an automaton and a boolean parameter
+	// gives back true if more work on the automaton is required,
+	//   or false if the automaton has been successfully equipped with
+	//   prefixes / has been converted to a prefix sorted one (depending
+	//   on the makePrefixSorted parameter)
+	workOnAutomatonPrefixes_int: function(auto, makePrefixSorted, addToSOut) {
+
+		// start by setting all prefixes just to the labels themselves
 		for (var i=0; i < auto.length; i++) {
 			auto[i].f = auto[i].c;
 		}
-		
-		return auto;
+
+		var changed_something = true;
+
+		// perform several rounds
+		// each time: go over all nodes, check if other nodes have the same prefix,
+		// if so: elongate prefixes and do another round,
+		// otherwise: no further rounds are needed
+		while (changed_something) {
+			changed_something = false;
+
+			var alen = auto.length;
+
+			for (var i=0; i < alen; i++) {
+
+				var cur_auto_f = auto[i].f;
+
+				// if we are already in a nonsensical position, then going further down the
+				// rabbit hole is not going to achieve anything ;)
+				if (cur_auto_f[cur_auto_f.length - 1] !== this.prefixErrorChar) {
+
+					var same_as = [i];
+
+					for (var j=0; j < alen; j++) {
+						if (i !== j) {
+							if (cur_auto_f == auto[j].f) {
+								same_as.push(j);
+								changed_something = 1;
+							}
+						}
+					}
+
+					// alright, so we found other nodes with the same prefix...
+					if (same_as.length > 1) {
+						// we know that auto[i].f == auto[j].f for all j in same_as,
+						// so the rec_depth is the same for all, so we can compute it
+						// outside the for loop
+						var rec_depth = auto[i].f.length - 1;
+						for (var j=0; j < same_as.length; j++) {
+
+							// ... so now for each node, we follow along the graph
+							// until rec_depth is reached, and append that node's label
+							// (and if that is impossible as the graph splits into several
+							// nodes with different labels, then we append an exclamation
+							// point, indicating that this is why the automaton is currently
+							// NOT prefix sorted!)
+
+							// we actually keep track of several nodes, as a path could split
+							// and still be acceptable, e.g.
+							//     C -> G
+							//   /
+							// A            <= here, the prefix of A can be ACG without problem
+							//   \
+							//     C -> G
+
+							var curNodes = [same_as[j]];
+							// for each letter K in the prefix...
+							for (var k=0; k < rec_depth; k++) {
+								var nextNodes = [];
+								// ... we look at each node L on the current node list ...
+								for (var l=0; l < curNodes.length; l++) {
+									var curNode = auto[curNodes[l]];
+									// ... and look at each node M following that node L
+									for (var m=0; m < curNode.n.length; m++) {
+										nextNodes.push(curNode.n[m]);
+									}
+								}
+								curNodes = nextNodes;
+							}
+
+							var nextNode_confusing = false;
+
+							var firstNodeLabel = auto[auto[curNodes[0]].n[0]].c;
+
+							// check if any nodes on the list have any successors that have labels
+							// different than firstNodeLabel
+							for (var l=0; l < curNodes.length; l++) {
+								var curNode = auto[curNodes[l]];
+								for (var m=0; m < curNode.n.length; m++) {
+									if (firstNodeLabel !== auto[curNode.n[m]].c) {
+										nextNode_confusing = true;
+										break;
+									}
+								}
+								if (nextNode_confusing) {
+									break;
+								}
+							}
+
+							if (nextNode_confusing) {
+								if (makePrefixSorted) {
+									
+									// we need to actually make it prefix sorted, so we need
+									// to split the current node into n.length nodes
+
+									// we actually need deep copies, so that we can later
+									// do work on this without getting REALLY confusing problems
+									var orig_node = this.deep_copy_node(auto[same_as[j]]);
+
+									// update the current node: leave p and c, but only keep the
+									// first of the out-nodes and add their label to the prefix
+									auto[same_as[j]] = {
+										p: orig_node.p,
+										c: orig_node.c,
+										n: [orig_node.n[0]],
+										f: orig_node.f + auto[orig_node.n[0]].c,
+									};
+
+									if (addToSOut) {
+										this.sout += 'We split the node with label ' + orig_node.c +
+													' and prefix ' + orig_node.f + '!' +
+													' into ' + orig_node.n.length + ' nodes:' + this.nl;
+									}
+
+									// add new nodes to the automaton
+									for (var k=1; k < orig_node.n.length; k++) {
+										orig_node = this.deep_copy_node(orig_node);
+										// add the new node as outnode to its predecessor
+										for (var l=0; l < orig_node.p.length; l++) {
+											auto[orig_node.p[l]].n.push(auto.length);
+										}
+										// update the outgoing node and set its predecessor
+										// to this new node (we update instead of add, as the
+										// node is being split and the other node is not a
+										// predecessor anymore)
+										for (var l=0; l < auto[orig_node.n[k]].p.length; l++) {
+											if (auto[orig_node.n[k]].p[l] == same_as[j]) {
+												auto[orig_node.n[k]].p[l] = auto.length;
+											}
+										}
+										auto.push({
+											p: orig_node.p,
+											c: orig_node.c,
+											n: [orig_node.n[k]],
+											f: orig_node.f + auto[orig_node.n[k]].c,
+										});
+									}
+
+									// ask the calling function to recompute everything - as adding a
+									// node is messy, and it is much simpler to just recaluclate all
+									// prefixes than to keep track of which prefixes where need to be
+									// updated how
+									return true;
+
+								} else {
+									// don't worry about anything, just indicate that an error
+									// occurred
+									auto[same_as[j]].f += this.prefixErrorChar;
+								}
+							} else {
+								// don't worry about anything - as actually nothing is wrong
+								auto[same_as[j]].f += auto[auto[curNodes[0]].n[0]].c;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		return false;
+	},
+
+
+
+	// takes in a node
+	// gives back a deep copy of the exact same node, with no pointers attaching it to the old one
+	deep_copy_node: function(node) {
+
+		var onode = {
+			p: [],
+			c: node.c,
+			n: [],
+			f: node.f
+		};
+
+		for (var i=0; i < node.p.length; i++) {
+			onode.p.push(node.p[i]);
+		}
+
+		for (var i=0; i < node.n.length; i++) {
+			onode.n.push(node.n[i]);
+		}
+
+		return onode;
 	},
 
 
@@ -936,17 +1501,74 @@ c = {
 	// takes in an automaton with prefixes
 	// gives back true if it is prefix sorted or false otherwise
 	isAutomatonPrefixSorted: function(auto) {
-		// TODO :: do actual work
+
+		for (var i=0; i < auto.length; i++) {
+
+			var cur_auto_f = auto[i].f;
+
+			// aha! there is at least one node that does not have a useful prefix!
+			if (cur_auto_f[cur_auto_f.length - 1] == this.prefixErrorChar) {
+				return false;
+			}
+		}
+
 		return true;
 	},
 
 
 
-	// takes in an automaton with prefixes
+	// takes in an automaton with prefixes and a boolean parameter stating whether we
+	//   should be verbose or not
 	// gives back a prefix sorted automaton recognizing the same language
-	makeAutomatonPrefixSorted: function(auto) {
-		// TODO :: do actual work
-		return auto;
+	makeAutomatonPrefixSorted: function(auto, addToSOut) {
+		return this.workOnAutomatonPrefixes(auto, true, addToSOut);
+	},
+
+
+
+	// takes in an automaton
+	// gives back the BWT and M vector
+	getFindexFromAutomaton: function(auto) {
+
+		var prefixes = [];
+
+		for (var i=0; i < auto.length; i++) {
+			prefixes.push([auto[i].f, i]);
+		}
+
+		prefixes.sort();
+
+		var BWT = [];
+		var M = [];
+
+		for (var i=0; i < prefixes.length; i++) {
+
+			var BWTstr = '';
+			var p = auto[prefixes[i][1]].p;
+			var klen = p.length;
+			for (var k=0; k < klen; k++) {
+				// we do not need to worry about characters appearing multiple times,
+				// as reverse determinism assures us that each one will only appear once
+				BWTstr += auto[p[k]].c + '|';
+			}
+			if (BWTstr === '') {
+				BWTstr = this.DS;
+			} else {
+				BWTstr = BWTstr.slice(0, BWTstr.length - 1);
+			}
+			BWT.push(BWTstr);
+
+			var Mstr = '1';
+			var klen = auto[prefixes[i][1]].n.length;
+			for (var k=1; k < klen; k++) {
+				Mstr += '0';
+			}
+			M.push(Mstr);
+
+			prefixes[i] = prefixes[i][0];
+		}
+
+		return [prefixes, BWT, M];
 	},
 
 
@@ -963,7 +1585,7 @@ c = {
 		
 		if(!this.give_out_HTML) {
 			sout += " Graph Alignment - BWT Generation" + this.nl;
-			sout += "¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯" + this.nl
+			sout += "¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯" + this.nl;
 		}
 
 		sout += "We are looking at " + this.h1 + " and " + this.h2 + "." + this.nlnl;
@@ -1062,7 +1684,7 @@ c = {
 		
 		if(!this.give_out_HTML) {
 			sout += " Graph Alignment - BWT Merging" + this.nl;
-			sout += "¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯" + this.nl
+			sout += "¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯" + this.nl;
 		}
 
 		sout += "We are merging " + this.h1 + " and " + this.h2 + "." + this.nlnl;
@@ -1168,8 +1790,8 @@ c = {
 		sout += "which is 2 in each position in which we choose the ";
 		sout += "next element from " + this.DH_2 + " (originally it's 0 and 1, but the ";
 		sout += "difference is purely notational.) ";
-		sout += "The first interleave vector that we create here simply corresponds "
-		sout += "to fully writing out the information for " + this.DH_1 + ", followed by "
+		sout += "The first interleave vector that we create here simply corresponds ";
+		sout += "to fully writing out the information for " + this.DH_1 + ", followed by ";
 		sout += "fully writing out the information for " + this.DH_2 + ":" + this.nlnl;
 
 		sout += this.tab;
@@ -1187,7 +1809,7 @@ c = {
 
 		sout += "The method that we will be using for the next steps is ";
 		sout += "to use the first column (sorted alphabetically) ";
-		sout += "instead of focusing on the last column (the BWT):" + this.nlnl
+		sout += "instead of focusing on the last column (the BWT):" + this.nlnl;
 
 		var h1_col1 = this.add_index_to_col(this.get_first_n_from_scr(this.h1_scr, 0), '1');
 		var h2_col1 = this.add_index_to_col(this.get_first_n_from_scr(this.h2_scr, 0), '2');
@@ -1320,7 +1942,7 @@ c = {
 		sout += "In general, we can only be sure that we can stop when the interleave vector ";
 		sout += "did not change between runs ";
 		if (!itlv_changed) {
-			sout += "(as it did now) "
+			sout += "(as it did now) ";
 		}
 		sout += "or when we see that each letter is in its own group, ";
 		sout += "as then no further changes can occur." + this.nlnlnl;
@@ -1919,7 +2541,7 @@ c = {
 	//   in DaTeX
 	pos_to_str: function(pos) {
 
-		if (pos[1] == '') {
+		if (pos[1] === '') {
 			// instead of `$ "1"_"" $`, just use `1`
 			return pos[0];
 		}
@@ -1940,7 +2562,7 @@ c = {
 	//   $ "1"_"2" $ where 1 is the first element of the last column and 2 is the second
 	get_pos_from_scr: function(h_scr) {
 
-		aout = this.get_last_n_from_scr(h_scr, 0);
+		var aout = this.get_last_n_from_scr(h_scr, 0);
 
 		for (var i = 0; i < aout.length; i++) {
 			aout[i] = this.pos_to_str(aout[i]);
@@ -2053,7 +2675,7 @@ c = {
 	// gives back true if they have the same contents and false if not
 	pos_equals_pos: function(pos1, pos2) {
 
-		len = pos1.length;
+		var len = pos1.length;
 
 		if (len != pos2.length) {
 			return false;
@@ -2077,6 +2699,6 @@ c = {
 		return this.merge_BWTs_naively('A(A|C)CA', 'CAAA');
 	},
 
-}
+};
 
-c.set_to_DaTeX();
+window.c.set_to_DaTeX();

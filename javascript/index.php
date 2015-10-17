@@ -153,6 +153,12 @@
 			background-color:#F00;
 		}
 
+		/* extra highlight */
+		td.x {
+			color:#FFA;
+			background-color:#A0A;
+		}
+
 		div.table_box {
 			width:100%;
 			text-align:center;
@@ -350,7 +356,7 @@
 
 
 	<span class="creditline absleft">
-		Version: 0.0.0.6
+		Version: 0.0.0.7
 	</span>
 	<span class="creditline absright">
 		Moyaccercchi (tws@hi.is), 2015

@@ -840,15 +840,15 @@ window.c = {
 		var p12_itlv = this.get_index_from_col(p12);
 
 
-		var s_table_head = this.tab;
+		this.s_table_head = this.tab;
 		if (this.give_out_HTML) {
-			s_table_head += '<tbody class="vbars"><tr><td>';
+			this.s_table_head += '<tbody class="vbars"><tr><td>';
 		} else {
-			s_table_head += "{" + this.repjoin(p12.length, 'c', ' | ') + " | l}" + this.nl;
+			this.s_table_head += "{" + this.repjoin(p12.length, 'c', ' | ') + " | l}" + this.nl;
 		}
 
 
-		var stab = s_table_head;
+		var stab = this.s_table_head;
 		stab += this.arr_to_str_wo_index(p12, this.td) + this.td + 'Prefix' + this.tabnl;
 		stab += p12_itlv.join(this.td) + this.td + 'Origin' + this.nl;
 		stab += this.endtab;
@@ -878,7 +878,7 @@ window.c = {
 		}
 		p12 = p1.concat(p2);
 
-		var stab = s_table_head;
+		var stab = this.s_table_head;
 		stab += this.arr_to_str_wo_index(p12, this.td) + this.td + 'Prefix' + this.tabnl;
 		stab += p12_itlv.join(this.td) + this.td + 'Origin' + this.nl;
 		stab += this.endtab;
@@ -901,13 +901,207 @@ window.c = {
 			];
 		}
 
+		var thereAreProblems = this.sortp12andFindProblems(p12);
+		p12_itlv = this.get_index_from_col(p12);
+		var bwt = this.merge_with_interleave(bwt1, bwt2, p12_itlv);
+		var m = this.merge_with_interleave(m1, m2, p12_itlv);
+
+
+		var stab = this.s_table_head;
+		stab += this.arr_to_highlighted_str(p12, 2) + this.td + 'Prefix' + this.tabnl;
+		stab += p12_itlv.join(this.td) + this.td + 'Origin' + this.nl;
+		stab += this.endtab;
+		sout += this.hideWrap(stab, 'Table');
+
+
+		sout += 'We should also take a look at the BWT and ' + this.DM + ' vector associated ' +
+				'with this preliminary ordering:';
+
+		var stab = this.s_table_head;
+		stab += this.arr_to_highlighted_str(p12, 2) + this.td + 'Prefix' + this.tabnl;
+		stab += p12_itlv.join(this.td) + this.td + 'Origin' + this.tabnl;
+		stab += bwt.join(this.td) + this.td + 'BWT' + this.tabnl;
+		stab += m.join(this.td) + this.td + this.DM + this.nl;
+		stab += this.endtab;
+		sout += this.hideWrap(stab, 'Table');
+
+
+		sout += 'However, we need to exchange ' + this.DS + ' and ' + this.DS_1_o +
+				' in the BWT.' + this.nlnl + 'The reason for this is that the predecessor ' +
+				'overflow now occurs across both ' + this.DH_1 + ' and ' + this.DH_2 +
+				', instead of separately for both of them:' + this.nlnl;
+
+		for (i=0; i < p1.length; i++) {
+			bwt1[i] = bwt1[i].replace(this.DS_1_o, this.DS);
+		}
+		for (i=0; i < p2.length; i++) {
+			bwt2[i] = bwt2[i].replace(this.DS, this.DS_1_o);
+		}
+		var bwt = this.merge_with_interleave(bwt1, bwt2, p12_itlv);
+
+		sout += this.fe_p12ToTableWithHighlights(p12, p12_itlv, bwt, m, []);
+
+
+
+		if (thereAreProblems) {
+
+			// prevent endlessly hanging script if something doesn't work out and
+			// we accidentally produced and infinite loop
+
+			var patience = 0;
+
+			while ((patience < 100) && (thereAreProblems)) {
+
+				for (i=0; i < p12.length; i++) {
+					if (p12[i][2]) {
+						firstRedi = i;
+						break;
+					}
+				}
+
+				var firstRedPrefix = p12[firstRedi][0];
+				var curOrigin = p12[firstRedi][1];
+				var curLetter = firstRedPrefix[firstRedPrefix.length-1];
+
+				var shide = '<div>';
+
+
+				// 1 - look at last letter of first red prefix
+				shide += "We now want to consider the first red prefix." + this.nlnl +
+						"It is " + firstRedPrefix + " and we consider in particular " +
+						"its last letter - that is, " + curLetter + '.' + this.nlnl;
+
+				shide += this.fe_p12ToTableWithHighlights(p12, p12_itlv, bwt, m, [[firstRedi]]);
+
+
+				// 2 - check BWT containing the letter with origin being the same the one of the letter
+				shide += "We now look through the BWT that has the same origin and search for this letter." +
+						this.nlnl +
+						"In this case, the origin is ";
+				if (curOrigin == '2') {
+					shide += this.DH_2;
+				} else {
+					shide += this.DH_1;
+				}
+				// TODO IMPORTANT :: use first to last property to not go through ALLLLL the things!
+				// (which would take way too much time (many many orders of magnitude) AND be wrong!)
+				shide += " and we are searching for the letter " + curLetter + '.' + this.nlnl;
+
+				var cur_bwt_pos = [];
+				for (i=0; i < bwt.length; i++) {
+					if (p12_itlv[i] === curOrigin) {
+						if (bwt[i].indexOf(curLetter) >= 0) {
+							cur_bwt_pos.push(i);
+						}
+					}
+				}
+
+				shide += this.fe_p12ToTableWithHighlights(p12, p12_itlv, bwt, m, [[], [], cur_bwt_pos]);
+
+
+				// 3 - look at corresponding prefixes, and append them to the letter
+				shide += 'We now take the corresponding prefixes.' + this.nlnl;
+
+				shide += this.fe_p12ToTableWithHighlights(p12, p12_itlv, bwt, m, [cur_bwt_pos]);
+
+				shide += 'These prefixes get added to the original prefix ' + firstRedPrefix +
+						' that we were looking at:' + this.nlnl;
+
+				var replacement_prefixes = [];
+
+				for (i=0; i < cur_bwt_pos.length; i++) {
+					var pref = firstRedPrefix + p12[cur_bwt_pos[i]][0];
+					replacement_prefixes.push(pref);
+					shide += pref + this.nlnl;
+				}
+
+				// 4 - insert these new prefixes instead of the original column
+				shide += 'Finally, we insert these new prefixes instead of the original column.' +
+						this.nlnl;
+
+				p12[firstRedi][0] = replacement_prefixes[0];
+				ins_arr = [firstRedi];
+				for (i=1; i < replacement_prefixes.length; i++) {
+					p12.splice(firstRedi+i, 0, [replacement_prefixes[i], p12[firstRedi][1], false]);
+					p12_itlv.splice(firstRedi+i, 0, p12_itlv[firstRedi]);
+					bwt.splice(firstRedi+i, 0, bwt[firstRedi]);
+					m.splice(firstRedi+i, 0, m[firstRedi]);
+					ins_arr.push(firstRedi + i);
+				}
+				shide += this.fe_p12ToTableWithHighlights(p12, p12_itlv, bwt, m, [ins_arr, ins_arr, ins_arr, ins_arr]);
+
+
+				// 5&6 - resort prefixes and recheck problems
+				shide += 'We can now sort the prefixes again alphabetically and ' +
+						'check for further problems.' + this.nlnl;
+
+				// keep track of the BWT and M vector while sorting
+				// (we cannot just merge afterwards with the interleave vector,
+				// as we have inserted columns and therefore one original
+				// column can lead to several merged columns)
+				for (i=0; i < p12.length; i++) {
+					p12[i][3] = bwt[i];
+					p12[i][4] = m[i];
+				}
+
+				thereAreProblems = this.sortp12andFindProblems(p12);
+
+				p12_itlv = this.get_index_from_col(p12);
+				bwt = this.get_first_n_from_scr(p12, 3);
+				m = this.get_first_n_from_scr(p12, 4);
+
+				shide += this.fe_p12ToTableWithHighlights(p12, p12_itlv, bwt, m, []);
+
+
+				// 7 - repeat approach until no more problems (or run out of patience)
+				patience++;
+
+				sout += this.hideWrap(shide + '</div>', 'Step ' + patience) + this.nlnl;
+			}
+
+			if (thereAreProblems) {
+				sout += 'Sadly, the merging was not successful.' + this.nlnl;
+			} else {
+				// TODO :: what about the M vector?
+				sout += 'We have now achieved the fully merged BWT.' + this.nlnl;
+			}
+		} else {
+			// TODO :: what about the M vector?
+			sout += 'We are very lucky, as there are no problems, and we have therefore already ' +
+					'found the fully merged BWT.' + this.nlnl;
+		}
+
+
+
+		// CURRENTLY WORKING HERE
+
+
+		sout += this.s_end_document;
+
+		// replace '^' with '#' before printout
+		sout = sout.replace(/\^/g, '#');
+
+		return sout;
+	},
+
+
+
+	// takes in a p12 array
+	// gives out the sorted array with refreshed problem highlighting
+	sortp12andFindProblems: function(p12) {
+
+		// reset all to false
+		for (i=0; i < p12.length; i++) {
+			p12[i][2] = false;
+		}
+
 		// do the sorting!
 		p12.sort(function(a, b) {
 
 			var ac = a[0];
 			var bc = b[0];
 
-			// slice most prefixes, so when we compare 'C' and 'CC',
+			// slice / crop most prefixes, so when we compare 'C' and 'CC',
 			// actually compare 'C' and 'C' (and throw error),
 			// BUT do not slice if there is '<' present, as that is
 			// only true for #_1 and $_1, and they are never problematic
@@ -919,11 +1113,27 @@ window.c = {
 				bc = bc.slice(0, ac.length);
 			}
 
+			// the cropped ones are the same...
 			if (ac == bc) {
+				// ... which means that we have a problem! ...
 				a[2] = true;
 				b[2] = true;
-				return 0;
+
+				// ... but let's compare the non-cropped ones anyway,
+				// so that the shortest ones get sorted first
+				if (a[0] > b[0]) {
+					return 1;
+				} else {
+					if (a[0] < b[0]) {
+						return -1;
+					} else {
+						return 0;
+					}
+				}
 			}
+
+			// here, actually all is good - we can compare and find a clear winner
+			// even within the cropped ones!
 			if (ac > bc) {
 				return 1;
 			}
@@ -967,131 +1177,8 @@ window.c = {
 			}
 		}
 
-		p12_itlv = this.get_index_from_col(p12);
-
-
-		var stab = s_table_head;
-		stab += this.arr_to_highlighted_str(p12, 2) + this.td + 'Prefix' + this.tabnl;
-		stab += p12_itlv.join(this.td) + this.td + 'Origin' + this.nl;
-		stab += this.endtab;
-		sout += this.hideWrap(stab, 'Table');
-
-
-		sout += 'We should also take a look at the BWT and ' + this.DM + ' vector associated ' +
-				'with this preliminary ordering:';
-
-
-		var bwt = this.merge_with_interleave(bwt1, bwt2, p12_itlv);
-		var m = this.merge_with_interleave(m1, m2, p12_itlv);
-
-		var stab = s_table_head;
-		stab += this.arr_to_highlighted_str(p12, 2) + this.td + 'Prefix' + this.tabnl;
-		stab += p12_itlv.join(this.td) + this.td + 'Origin' + this.tabnl;
-		stab += bwt.join(this.td) + this.td + 'BWT' + this.tabnl;
-		stab += m.join(this.td) + this.td + this.DM + this.nl;
-		stab += this.endtab;
-		sout += this.hideWrap(stab, 'Table');
-
-
-		sout += 'However, we need to exchange ' + this.DS + ' and ' + this.DS_1_o +
-				' in the BWT.' + this.nlnl + 'The reason for this is that the predecessor ' +
-				'overflow now occurs across both ' + this.DH_1 + ' and ' + this.DH_2 +
-				', instead of separately for both of them:' + this.nlnl;
-
-		for (i=0; i < p1.length; i++) {
-			bwt1[i] = bwt1[i].replace(this.DS_1_o, this.DS);
-		}
-		for (i=0; i < p2.length; i++) {
-			bwt2[i] = bwt2[i].replace(this.DS, this.DS_1_o);
-		}
-		var bwt = this.merge_with_interleave(bwt1, bwt2, p12_itlv);
-
-		var stab = s_table_head;
-		stab += this.arr_to_highlighted_str(p12, 2) + this.td + 'Prefix' + this.tabnl;
-		stab += p12_itlv.join(this.td) + this.td + 'Origin' + this.tabnl;
-		stab += bwt.join(this.td) + this.td + 'BWT' + this.tabnl;
-		stab += m.join(this.td) + this.td + this.DM + this.nl;
-		stab += this.endtab;
-		sout += this.hideWrap(stab, 'Table');
-
-
-
-		if (thereAreProblems) {
-
-			// prevent endlessly hanging script if something doesn't work out and
-			// we accidentally produced and infinite loop
-
-			var patience = 0;
-
-			while ((patience < 1000) && (thereAreProblems)) {
-			
-				var firstRedPrefix;
-				var curOrigin;
-
-				for (i=0; i < p12.length; i++) {
-					if (p12[i][2]) {
-						firstRedPrefix = p12[i][0];
-						curOrigin = p12[i][2];
-						break;
-					}
-				}
-
-				var curLetter = firstRedPrefix[firstRedPrefix.length-1];
-
-				// 1 - look at last letter of first red prefix
-				sout += "We now want to consider the first red prefix, which is " + firstRedPrefix +
-						" and in particular at its last letter - that is, " + curLetter + '.' + this.nlnl;
-
-				// 2 - check BWT containing the letter with origin being the same the one of the letter
-				sout += "We now look through the BWT that has the same origin and search for this letter." +
-						this.nlnl +
-						"In this case, the origin is ";
-				if (curOrigin == '2') {
-					sout += this.DH_2;
-				} else {
-					sout += this.DH_1;
-				}
-				// TODO IMPORTANT :: use first to last property to not go through ALLLLL the things!
-				// (which would take way too much time (many many orders of magnitude) AND be wrong!)
-				sout += " and we are searching for the letter " + curLetter + '.' + this.nlnl;
-
-				// 3 - look at corresponding prefixes, and append them to the letter
-
-				// 4 - insert these new prefixes instead of the original column
-
-				// 5 - resort prefixes
-
-				// 6 - recheck problems
-
-				// 7 - repeat approach until no more problems (or run out of patience)
-				patience++;
-			}
-
-			if (thereAreProblems) {
-				sout += 'Sadly, the merging was not successful.' + this.nlnl;
-			} else {
-				// TODO :: what about the M vector?
-				sout += 'We have now achieved the fully merged BWT.' + this.nlnl;
-			}
-		} else {
-			// TODO :: what about the M vector?
-			sout += 'We are very lucky, as there are no problems, and we have therefore already ' +
-					'found the fully merged BWT.' + this.nlnl;
-		}
-
-
-
-		// CURRENTLY WORKING HERE
-
-
-		sout += this.s_end_document;
-
-		// replace '^' with '#' before printout
-		sout = sout.replace(/\^/g, '#');
-
-		return sout;
+		return thereAreProblems;
 	},
-
 
 
 
@@ -1127,6 +1214,26 @@ window.c = {
 		sout += this.endtab;
 
 		return this.hideWrap(sout, 'Table');
+	},
+
+
+
+	// takes in a p12 array, p12 interleave vector, BWT, M vector and highlight array
+	//   (which contains the coordinates of cells in the table that should be specially
+	//   highlighted, so e.g. highlight_arr = [[3,4,5], [0,2], [1,5]] to highlight cells
+	//   3, 4 and 5 in row 0 (prefix), 0 and 2 in row 1 (origin) and 1 and 5 in row 2 (BWT))
+	// gives out a string containing a table with all the information and with the extra
+	//   highlighting
+	fe_p12ToTableWithHighlights: function(p12, p12_itlv, bwt, m, highlight_arr) {
+
+		var stab = this.s_table_head;
+		stab += this.arr_to_highlighted_str(p12, 2, highlight_arr[0]) + this.td + 'Prefix' + this.tabnl;
+		stab += this.arr_to_extra_high_str(p12_itlv, highlight_arr[1]) + this.td + 'Origin' + this.tabnl;
+		stab += this.arr_to_extra_high_str(bwt, highlight_arr[2]) + this.td + 'BWT' + this.tabnl;
+		stab += this.arr_to_extra_high_str(m, highlight_arr[3]) + this.td + this.DM + this.nl;
+		stab += this.endtab;
+
+		return this.hideWrap(stab, 'Table');
 	},
 
 
@@ -2694,28 +2801,77 @@ window.c = {
 
 
 
-	// takes in an array of arrays and a position integer
+	// takes in an array of arrays, a position integer and an extra highlight array
 	// gives out a string representing each first element joined on the standard
 	//   delimiter with each element being highlighted that has a truthy value in
-	//   hl_pos
-	arr_to_highlighted_str: function(arr, hl_pos) {
+	//   hl_pos, and with each entry of extra_hl_arr being extra highlighted
+	arr_to_highlighted_str: function(arr, hl_pos, extra_hl_arr) {
 
 		var sout = '';
 		var delimiter;
 
+		// also allow this to be undefined
+		if (!extra_hl_arr) {
+			extra_hl_arr = [];
+		}
+
 		if (this.give_out_HTML) {
 			delimiter = '</td><td>';
 			for (var i=0; i < arr.length; i++) {
-				if (arr[i][hl_pos]) {
-					sout += '</td><td class="h">' + arr[i][0];
+				if (extra_hl_arr.indexOf(i) >= 0) {
+					sout += '</td><td class="x">' + arr[i][0];
 				} else {
-					sout += delimiter + arr[i][0];
+					if (arr[i][hl_pos]) {
+						sout += '</td><td class="h">' + arr[i][0];
+					} else {
+						sout += delimiter + arr[i][0];
+					}
 				}
 			}
 		} else {
 			delimiter = ' & ';
 			for (var i=0; i < arr.length; i++) {
 				sout += delimiter + arr[i][0];
+			}
+		}
+
+		// take out the first delimiter - which also means that we cannot highlight
+		// the first element, because we would (a) fail the takeout (as the string then)
+		// has a different length) and (b) would have to take out the first one anyway
+		// - luckily, the first column never needs to be highlighted =)
+		sout = sout.slice(delimiter.length);
+
+		return sout;
+	},
+
+
+
+	// takes in an array and an extra highlight array
+	// gives out a string representing each element joined on the standard
+	//   delimiter with each entry of extra_hl_arr being extra highlighted
+	arr_to_extra_high_str: function(arr, extra_hl_arr) {
+
+		var sout = '';
+		var delimiter;
+
+		// also allow this to be undefined
+		if (!extra_hl_arr) {
+			extra_hl_arr = [];
+		}
+
+		if (this.give_out_HTML) {
+			delimiter = '</td><td>';
+			for (var i=0; i < arr.length; i++) {
+				if (extra_hl_arr.indexOf(i) >= 0) {
+					sout += '</td><td class="x">' + arr[i];
+				} else {
+					sout += delimiter + arr[i];
+				}
+			}
+		} else {
+			delimiter = ' & ';
+			for (var i=0; i < arr.length; i++) {
+				sout += delimiter + arr[i];
 			}
 		}
 
@@ -2848,13 +3004,7 @@ window.c = {
 	// gives out an array containing just the indices
 	get_index_from_col: function(h_col) {
 
-		var aout = [];
-
-		for (var i = 0; i < h_col.length; i++) {
-			aout.push(h_col[i][1]);
-		}
-
-		return aout;
+		return this.get_first_n_from_scr(h_col, 1);
 	},
 
 

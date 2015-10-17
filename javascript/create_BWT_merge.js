@@ -941,6 +941,9 @@ window.c = {
 		var lastProblem = '%';
 		var lastProblemLen = 0;
 
+		// are there actually any problems?
+		var thereAreProblems = false;
+
 		// go through each position (going forwards is important here - we are
 		// making use of the fact that the first definitely flagged mention of
 		// a problem is always the shortest string, and therefore sorted first)
@@ -955,6 +958,7 @@ window.c = {
 					// ... then we want this to be known as the new problem
 					lastProblem = p12[i][0];
 					lastProblemLen = lastProblem.length;
+					thereAreProblems = true;
 				} else {
 					// if we don't even have a problem, then let's just default to no problem, all good
 					lastProblem = '%';
@@ -1009,6 +1013,72 @@ window.c = {
 		stab += m.join(this.td) + this.td + this.DM + this.nl;
 		stab += this.endtab;
 		sout += this.hideWrap(stab, 'Table');
+
+
+
+		if (thereAreProblems) {
+
+			// prevent endlessly hanging script if something doesn't work out and
+			// we accidentally produced and infinite loop
+
+			var patience = 0;
+
+			while ((patience < 1000) && (thereAreProblems)) {
+			
+				var firstRedPrefix;
+				var curOrigin;
+
+				for (i=0; i < p12.length; i++) {
+					if (p12[i][2]) {
+						firstRedPrefix = p12[i][0];
+						curOrigin = p12[i][2];
+						break;
+					}
+				}
+
+				var curLetter = firstRedPrefix[firstRedPrefix.length-1];
+
+				// 1 - look at last letter of first red prefix
+				sout += "We now want to consider the first red prefix, which is " + firstRedPrefix +
+						" and in particular at its last letter - that is, " + curLetter + '.' + this.nlnl;
+
+				// 2 - check BWT containing the letter with origin being the same the one of the letter
+				sout += "We now look through the BWT that has the same origin and search for this letter." +
+						this.nlnl +
+						"In this case, the origin is ";
+				if (curOrigin == '2') {
+					sout += this.DH_2;
+				} else {
+					sout += this.DH_1;
+				}
+				// TODO IMPORTANT :: use first to last property to not go through ALLLLL the things!
+				// (which would take way too much time (many many orders of magnitude) AND be wrong!)
+				sout += " and we are searching for the letter " + curLetter + '.' + this.nlnl;
+
+				// 3 - look at corresponding prefixes, and append them to the letter
+
+				// 4 - insert these new prefixes instead of the original column
+
+				// 5 - resort prefixes
+
+				// 6 - recheck problems
+
+				// 7 - repeat approach until no more problems (or run out of patience)
+				patience++;
+			}
+
+			if (thereAreProblems) {
+				sout += 'Sadly, the merging was not successful.' + this.nlnl;
+			} else {
+				// TODO :: what about the M vector?
+				sout += 'We have now achieved the fully merged BWT.' + this.nlnl;
+			}
+		} else {
+			// TODO :: what about the M vector?
+			sout += 'We are very lucky, as there are no problems, and we have therefore already ' +
+					'found the fully merged BWT.' + this.nlnl;
+		}
+
 
 
 		// CURRENTLY WORKING HERE

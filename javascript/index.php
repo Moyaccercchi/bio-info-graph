@@ -147,6 +147,12 @@
 			position:relative;
 		}
 
+		/* highlight */
+		td.h {
+			color:#FFF;
+			background-color:#F00;
+		}
+
 		div.table_box {
 			width:100%;
 			text-align:center;
@@ -159,6 +165,11 @@
 			border: 1px solid rgb(0, 0, 0);
 			box-shadow:0px 0px 5px 0px rgba(0, 0, 0, 0.8);
 			margin-top:16px;
+		}
+
+		/* position texts with indices just like other texts */
+		td {
+			vertical-align:super;
 		}
 
 		tbody.vbars > tr > td, tbody.lastbar > tr > td {
@@ -339,7 +350,7 @@
 
 
 	<span class="creditline absleft">
-		Version: 0.0.0.5
+		Version: 0.0.0.6
 	</span>
 	<span class="creditline absright">
 		Moyaccercchi (tws@hi.is), 2015
@@ -602,10 +613,11 @@
 		}
 
 
-		function hideSVG(whichOne) {
+		function hideObject(whichOne) {
 			
-			var svg_el = document.getElementById('svg-' + whichOne);
-			var svg_hide_el = document.getElementById('svg-hide-' + whichOne);
+			var svg_el = document.getElementById('hide-cont-' + whichOne);
+			var svg_hide_el = document.getElementById('hide-btn-' + whichOne);
+			svg_el = svg_el.childNodes[1];
 
 			if (svg_el.style.display == 'none') {
 				svg_el.style.display = 'block';

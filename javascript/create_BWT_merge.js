@@ -22,6 +22,18 @@ window.c = {
 
 	set_to_DaTeX: function() {
 
+		/*
+			Attention!
+			Currently, the DaTeX output is NOT FUNCTIONAL!
+			Here are the known issues:
+			1) DaTeX output uses SVG directly instead of TikZ or a similar TeX-based alternative
+			2) # sign in DaTeX may not actually work (does '$ # $' work?)
+			3) # sign in DaTeX-mode is not sorted correctly (as '$ # $' internally, it is sorted to front!)
+			4) arr_to_highlighted_str() does not highlight anything in DaTeX mode
+			5) in a line like "if (ac.indexOf('<') < 0) {" we will never have truth in DaTeX mode, where
+			   checking for indexOf '_' might make more sense
+		*/
+
 		this.give_out_HTML = false;
 
 		this.nl = "\n"; // newline character in code
@@ -31,6 +43,7 @@ window.c = {
 		this.DS_1_o = '$ \\$_1 $'; // $_1
 		this.DS_1_t = '$ \\$_1 $'; // $_1 in SVG
 		this.DS_2_o = '$ \\$_2 $'; // $_2
+		this.DK = '$ # $'; // #
 		this.DK_1_o = '$ #_1 $'; // #_1
 		this.DK_1_t = '$ #_1 $'; // #_1 in SVG
 		this.H_1 = 'H_1'; // string H_1 while in mathmode
@@ -63,6 +76,7 @@ window.c = {
 		this.DS_1_o = '$<span class="d">1</span>'; // $_1
 		this.DS_1_t = '<tspan>$</tspan><tspan class="d" dy="0.2">1</tspan>'; // $_1 in SVG
 		this.DS_2_o = '$<span class="d">2</span>'; // $_2
+		this.DK = '^'; // #
 		this.DK_1_o = '^<span class="d">1</span>'; // #_1
 		this.DK_1_t = '<tspan>^</tspan><tspan class="d" dy="0.2">1</tspan>'; // #_1 in SVG
 		this.H_1 = 'H<span class="d">1</span>'; // string H_1 while in mathmode
@@ -88,7 +102,7 @@ window.c = {
 	\************************************/
 
 	// takes in two strings
-	// gives back nothing (but builds the bwts for the two strings separately and merged)
+	// gives out nothing (but builds the bwts for the two strings separately and merged)
 	build_BWTs_naively: function(h1, h2) {
 
 		// Has someone already done our work for us?
@@ -306,7 +320,7 @@ window.c = {
 
 
 	// takes in nothing (but assumes that build_BWTs_naively() was executed just before)
-	// gives back nothing (but initializes several strings for the output)
+	// gives out nothing (but initializes several strings for the output)
 	prepare_BWTs_naively: function() {
 
 		// a table head that we will print over and over again...
@@ -331,7 +345,7 @@ window.c = {
 	\************************************/
 
 	// takes in an unterminated string
-	// gives back a section in DaTeX or HTML about the generation of its BWT
+	// gives out a section in DaTeX or HTML about the generation of its BWT
 	generate_BWT_naively: function(h) {
 
 		// Does h1 or h2 contain a graph? - e.g. A(A|C)CA
@@ -460,7 +474,7 @@ window.c = {
 
 
 	// takes in an unterminated string
-	// gives back a section in DaTeX or HTML about the generation of its BWT
+	// gives out a section in DaTeX or HTML about the generation of its BWT
 	generate_BWT_advanced: function(h) {
 
 		var h_split = h.split('|');
@@ -500,8 +514,6 @@ window.c = {
 
 		sout += this.visualize(auto, false);
 
-		sout += this.nlnl;
-
 
 
 		sout += "We first need to convert this into a reverse deterministic automaton." + this.nlnl;
@@ -536,8 +548,6 @@ window.c = {
 			}
 
 			sout += this.visualize(auto, false);
-
-			sout += this.nlnl;
 		}
 
 
@@ -582,8 +592,6 @@ window.c = {
 				}
 
 				sout += this.visualize(auto, true);
-
-				sout += this.nlnl;
 			}
 
 
@@ -597,33 +605,12 @@ window.c = {
 			sout += "be ambiguous).";
 
 			var findex = this.getFindexFromAutomaton(auto);
-			var prefixes = findex[0];
-			var BWT = findex[1];
-			var M = findex[2];
-
-			sout += this.tab;
-			if (this.give_out_HTML) {
-				sout += '<tbody class="vbars"><tr><td>';
-			} else {
-				sout += "{" + this.repjoin(BWT.length, 'c', ' | ') + " | l}" + this.nl;
-			}
-			sout += prefixes.join(this.td) + this.td + 'Prefix' + this.nl;
-			sout += this.endtab;
+			sout += this.fe_findexToTable(findex, false);
 
 			sout += "We can now add the labels of the preceding nodes as BWT and the ";
 			sout += "encoded out-degree of each node as vector " + this.DM + ":" + this.nlnl;
 
-			sout += this.tab;
-			if (this.give_out_HTML) {
-				sout += '<tbody class="vbars"><tr><td>';
-			} else {
-				sout += "{" + this.repjoin(BWT.length, 'c', ' | ') + " | l}" + this.nl;
-			}
-			sout += prefixes.join(this.td) + this.td + 'Prefix' + this.tabnl;
-			sout += BWT.join(this.td) + this.td + 'BWT' + this.tabnl;
-			sout += M.join(this.td) + this.td + this.DM + this.nl;
-			sout += this.endtab;
-
+			sout += this.fe_findexToTable(findex, true);
 		}
 
 
@@ -639,8 +626,25 @@ window.c = {
 
 
 	// takes in two graph strings
-	// gives back a string contain info about the BWT generation for both
+	// gives out a string containing info about the BWT generation for both
 	generate_BWTs_advanced: function(h1, h2) {
+
+		var sout = this.generate_BWTs_advanced_int(h1, h2)[0];
+
+		sout += this.s_end_document;
+
+		// replace '^' with '#' before printout
+		sout = sout.replace(/\^/g, '#');
+
+		return sout;
+	},
+
+
+
+	// takes in two graph strings
+	// gives out a string containing info about the BWT generation for both,
+	//   as well as the findexes for the merged H, for H_1 and for H_2
+	generate_BWTs_advanced_int: function(h1, h2) {
 
 		var h1_split = h1.split('|');
 		var h2_split = h2.split('|');
@@ -689,11 +693,9 @@ window.c = {
 
 		sout += this.visualize(auto1, false);
 
-		sout += this.nlnl + "and " + this.DH_2 + ":" + this.nlnl;
+		sout += "and " + this.DH_2 + ":" + this.nlnl;
 
 		sout += this.visualize(auto2, false);
-
-		sout += this.nlnl;
 
 		sout += "We are also interested in the intended merging result " + this.DH + ":" + this.nlnl;
 
@@ -779,7 +781,6 @@ window.c = {
 			sout += this.visualize(auto2, true);
 			sout += "as well as for " + this.DH + ":" + this.nl;
 			sout += this.visualize(auto, true);
-			sout += this.nlnl;
 
 
 
@@ -789,59 +790,228 @@ window.c = {
 			sout += "together with the vector " + this.DM + "." + this.nlnl;
 			sout += "For " + this.DH_1 + " we get:" + this.nlnl;
 
-			var findex = this.getFindexFromAutomaton(auto1);
-			var prefixes = findex[0];
-			var BWT = findex[1];
-			var M = findex[2];
-
-			sout += this.tab;
-			if (this.give_out_HTML) {
-				sout += '<tbody class="vbars"><tr><td>';
-			} else {
-				sout += "{" + this.repjoin(BWT.length, 'c', ' | ') + " | l}" + this.nl;
-			}
-			sout += prefixes.join(this.td) + this.td + 'Prefix' + this.tabnl;
-			sout += BWT.join(this.td) + this.td + 'BWT' + this.tabnl;
-			sout += M.join(this.td) + this.td + this.DM + this.nl;
-			sout += this.endtab;
+			var findex1 = this.getFindexFromAutomaton(auto1);
+			sout += this.fe_findexToTable(findex1, true);
 
 			sout += "And for " + this.DH_2 + " we have:" + this.nlnl;
 
-			var findex = this.getFindexFromAutomaton(auto2);
-			var prefixes = findex[0];
-			var BWT = findex[1];
-			var M = findex[2];
-
-			sout += this.tab;
-			if (this.give_out_HTML) {
-				sout += '<tbody class="vbars"><tr><td>';
-			} else {
-				sout += "{" + this.repjoin(BWT.length, 'c', ' | ') + " | l}" + this.nl;
-			}
-			sout += prefixes.join(this.td) + this.td + 'Prefix' + this.tabnl;
-			sout += BWT.join(this.td) + this.td + 'BWT' + this.tabnl;
-			sout += M.join(this.td) + this.td + this.DM + this.nl;
-			sout += this.endtab;
+			var findex2 = this.getFindexFromAutomaton(auto2);
+			sout += this.fe_findexToTable(findex2, true);
 
 			sout += "As well as for " + this.DH + ":" + this.nlnl;
 
 			var findex = this.getFindexFromAutomaton(auto);
-			var prefixes = findex[0];
-			var BWT = findex[1];
-			var M = findex[2];
-
-			sout += this.tab;
-			if (this.give_out_HTML) {
-				sout += '<tbody class="vbars"><tr><td>';
-			} else {
-				sout += "{" + this.repjoin(BWT.length, 'c', ' | ') + " | l}" + this.nl;
-			}
-			sout += prefixes.join(this.td) + this.td + 'Prefix' + this.tabnl;
-			sout += BWT.join(this.td) + this.td + 'BWT' + this.tabnl;
-			sout += M.join(this.td) + this.td + this.DM + this.nl;
-			sout += this.endtab;
+			sout += this.fe_findexToTable(findex, true);
 		}
 
+		return [sout, findex, findex1, findex2];
+	},
+
+
+
+	// takes in two graph strings
+	// gives out a string contain info about the BWT merging for both
+	merge_BWTs_advanced: function(h1, h2) {
+
+		var ret = this.generate_BWTs_advanced_int(h1, h2);
+
+		var sout = ret[0];
+
+		var findex = ret[1];
+		var findex1 = ret[2];
+		var findex2 = ret[3];
+
+		var bwt1 = findex1[1];
+		var bwt2 = findex2[1];
+		var m1 = findex1[2];
+		var m2 = findex2[2];
+
+
+		sout += 'We now want to find this BWT and ' + this.DM + ' vector just based on the ' +
+				'data we have for ' + this.DH_1 + ' and ' + this.DH_2 + '.' + this.nlnl;
+
+		sout += "So let's start by looking at all the prefixes, while keeping track of where " +
+				'they are coming from:' + this.nlnl;
+
+
+		var p1 = this.add_index_to_col(findex1[0], '1');
+		var p2 = this.add_index_to_col(findex2[0], '2');
+		var p12 = p1.concat(p2);
+		var p12_itlv = this.get_index_from_col(p12);
+
+
+		var s_table_head = this.tab;
+		if (this.give_out_HTML) {
+			s_table_head += '<tbody class="vbars"><tr><td>';
+		} else {
+			s_table_head += "{" + this.repjoin(p12.length, 'c', ' | ') + " | l}" + this.nl;
+		}
+
+
+		var stab = s_table_head;
+		stab += this.arr_to_str_wo_index(p12, this.td) + this.td + 'Prefix' + this.tabnl;
+		stab += p12_itlv.join(this.td) + this.td + 'Origin' + this.nl;
+		stab += this.endtab;
+		sout += this.hideWrap(stab, 'Table');
+
+
+		sout += 'We actually want to more closely keep track of the ' + this.DK +
+				' and ' + this.DS + ' characters in use.' + this.nlnl +
+				'That is, from now on we will let ' + this.DH_1 + ' start with ' +
+				this.DK + ' and end with ' + this.DS_1_o + ', while ' + this.DH_2 +
+				' will start with ' + this.DK_1_o + ' and end with ' + this.DS + ':' +
+				this.nlnl;
+
+
+		var i;
+		for (i=0; i < p1.length; i++) {
+			if (p1[i][0] === this.DS) {
+				p1[i][0] = this.DS_1_o;
+			}
+			bwt1[i] = bwt1[i].replace(this.DS, this.DS_1_o);
+		}
+		for (i=0; i < p2.length; i++) {
+			if (p2[i][0] === this.DK) {
+				p2[i][0] = this.DK_1_o;
+			}
+			bwt2[i] = bwt2[i].replace(this.DK, this.DK_1_o);
+		}
+		p12 = p1.concat(p2);
+
+		var stab = s_table_head;
+		stab += this.arr_to_str_wo_index(p12, this.td) + this.td + 'Prefix' + this.tabnl;
+		stab += p12_itlv.join(this.td) + this.td + 'Origin' + this.nl;
+		stab += this.endtab;
+		sout += this.hideWrap(stab, 'Table');
+
+
+		sout += 'We now need to sort these prefixes together. If we are really lucky, ' +
+				'all the prefixes are different, we can sort them together, and be done.' +
+				this.nlnl +
+				'If this does not work in a certain position, then this position will be ' +
+				'highlighted.';
+
+
+		// add flags to the prefixes for future highlighting
+		for (i=0; i < p12.length; i++) {
+			p12[i] = [
+				p12[i][0], // prefix - string
+				p12[i][1], // origin - 1 or 2
+				false,     // problem here - true or false
+			];
+		}
+
+		// do the sorting!
+		p12.sort(function(a, b) {
+
+			var ac = a[0];
+			var bc = b[0];
+
+			// slice most prefixes, so when we compare 'C' and 'CC',
+			// actually compare 'C' and 'C' (and throw error),
+			// BUT do not slice if there is '<' present, as that is
+			// only true for #_1 and $_1, and they are never problematic
+
+			if (ac.indexOf('<') < 0) {
+				ac = ac.slice(0, bc.length);
+			}
+			if (bc.indexOf('<') < 0) {
+				bc = bc.slice(0, ac.length);
+			}
+
+			if (ac == bc) {
+				a[2] = true;
+				b[2] = true;
+				return 0;
+			}
+			if (ac > bc) {
+				return 1;
+			}
+			return -1;
+		});
+
+		// go through the sorting results and decide where we need to highlight additional
+		// problems...
+		// (this could not be done directly during sorting, as some comparisons work out fine,
+		// and only later are understood to be problematic; e.g. having C, CC and CT - if we
+		// first compare CC and CT, both are deemed fine and sorted, and then sort C into them,
+		// then C and CC are marked, but CT is not touched again and cannot be marked directly
+		// during the sorting!)
+
+		var lastProblem = '%';
+		var lastProblemLen = 0;
+
+		// go through each position (going forwards is important here - we are
+		// making use of the fact that the first definitely flagged mention of
+		// a problem is always the shortest string, and therefore sorted first)
+		for (i=0; i < p12.length; i++) {
+			// if this prefix starts like the last problem did (e.g. 'CT' starts like 'C'),
+			// then this here is also a problem
+			if (p12[i][0].slice(0, lastProblemLen) === lastProblem) {
+				p12[i][2] = true;
+			} else {
+				// otherwise, if we currently have a problem...
+				if (p12[i][2]) {
+					// ... then we want this to be known as the new problem
+					lastProblem = p12[i][0];
+					lastProblemLen = lastProblem.length;
+				} else {
+					// if we don't even have a problem, then let's just default to no problem, all good
+					lastProblem = '%';
+					lastProblemLen = 0;
+				}
+			}
+		}
+
+		p12_itlv = this.get_index_from_col(p12);
+
+
+		var stab = s_table_head;
+		stab += this.arr_to_highlighted_str(p12, 2) + this.td + 'Prefix' + this.tabnl;
+		stab += p12_itlv.join(this.td) + this.td + 'Origin' + this.nl;
+		stab += this.endtab;
+		sout += this.hideWrap(stab, 'Table');
+
+
+		sout += 'We should also take a look at the BWT and ' + this.DM + ' vector associated ' +
+				'with this preliminary ordering:';
+
+
+		var bwt = this.merge_with_interleave(bwt1, bwt2, p12_itlv);
+		var m = this.merge_with_interleave(m1, m2, p12_itlv);
+
+		var stab = s_table_head;
+		stab += this.arr_to_highlighted_str(p12, 2) + this.td + 'Prefix' + this.tabnl;
+		stab += p12_itlv.join(this.td) + this.td + 'Origin' + this.tabnl;
+		stab += bwt.join(this.td) + this.td + 'BWT' + this.tabnl;
+		stab += m.join(this.td) + this.td + this.DM + this.nl;
+		stab += this.endtab;
+		sout += this.hideWrap(stab, 'Table');
+
+
+		sout += 'However, we need to exchange ' + this.DS + ' and ' + this.DS_1_o +
+				' in the BWT.' + this.nlnl + 'The reason for this is that the predecessor ' +
+				'overflow now occurs across both ' + this.DH_1 + ' and ' + this.DH_2 +
+				', instead of separately for both of them:' + this.nlnl;
+
+		for (i=0; i < p1.length; i++) {
+			bwt1[i] = bwt1[i].replace(this.DS_1_o, this.DS);
+		}
+		for (i=0; i < p2.length; i++) {
+			bwt2[i] = bwt2[i].replace(this.DS, this.DS_1_o);
+		}
+		var bwt = this.merge_with_interleave(bwt1, bwt2, p12_itlv);
+
+		var stab = s_table_head;
+		stab += this.arr_to_highlighted_str(p12, 2) + this.td + 'Prefix' + this.tabnl;
+		stab += p12_itlv.join(this.td) + this.td + 'Origin' + this.tabnl;
+		stab += bwt.join(this.td) + this.td + 'BWT' + this.tabnl;
+		stab += m.join(this.td) + this.td + this.DM + this.nl;
+		stab += this.endtab;
+		sout += this.hideWrap(stab, 'Table');
+
+
+		// CURRENTLY WORKING HERE
 
 
 		sout += this.s_end_document;
@@ -854,37 +1024,51 @@ window.c = {
 
 
 
-	// takes in two graph strings
-	// gives back a string contain info about the BWT merging for both
-	merge_BWTs_advanced: function(h1, h2) {
+
+	/*
+		fe (frontend) functions - helping building the output faster
+	*/
+
+	// takes in an findex (an array consisting of prefixes, BWT and M) and a boolean parameter
+	// gives out a table either with just the prefixes, or all of findex, depending of the parameter
+	fe_findexToTable: function(findex, showBWTandM) {
+
+		var prefixes = findex[0];
+		var BWT = findex[1];
+		var M = findex[2];
 
 		var sout = '';
 
-		sout += generate_BWTs_advanced(h1, h2);
+		sout += this.tab;
+		if (this.give_out_HTML) {
+			sout += '<tbody class="vbars"><tr><td>';
+		} else {
+			sout += "{" + this.repjoin(BWT.length, 'c', ' | ') + " | l}" + this.nl;
+		}
+		sout += prefixes.join(this.td) + this.td + 'Prefix';
 
-		return sout;
+		if (showBWTandM) {
+			sout += this.tabnl;
+			sout += BWT.join(this.td) + this.td + 'BWT' + this.tabnl;
+			sout += M.join(this.td) + this.td + this.DM;
+		}
+
+		sout += this.nl;
+		sout += this.endtab;
+
+		return this.hideWrap(sout, 'Table');
 	},
-
-
-	
-	svg_counter: 0, // keeps track of how many SVGs we are showing on the page
 
 
 
 	// takes in an automaton
-	// gives back a string containing a graph visualization of the input
+	// gives out a string containing a graph visualization of the input
 	visualize: function(auto, showPrefixes) {
 
 		// TODO :: make this work for DaTeX output as well (e.g. with TikZ)
 		var sout = '';
 
-		this.svg_counter++;
-
-		sout += '<div class="svg_container">';
-		sout += '<div class="svg_btn" onclick="hideSVG(' + this.svg_counter + ')" ' +
-				'id="svg-hide-' + this.svg_counter + '">Hide</div>';
-
-		sout += '<svg id="svg-' + this.svg_counter + '" xmlns="http://www.w3.org/2000/svg" version="1.1"';
+		sout += '<svg xmlns="http://www.w3.org/2000/svg" version="1.1"';
 
 		sout += 'viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">';
 
@@ -1068,7 +1252,6 @@ window.c = {
 
 
 		sout += '</svg>';
-		sout += '</div>';
 
 
 		while (sout.indexOf(this.DS_1_o) > -1) {
@@ -1078,7 +1261,30 @@ window.c = {
 			sout = sout.replace(this.DK_1_o, this.DK_1_t);
 		}
 
+		sout = this.hideWrap(sout, 'Graph');
+
+		sout += this.nlnl;
+
 		return sout;
+	},
+
+
+
+	hide_counter: 0, // keeps track of how many hideable objects we are showing on the page
+
+
+
+	// takes in a string containing HTML and a string kind
+	// gives out the first string wrapped in a hide-box labelled with the kind string
+	hideWrap: function(sout, kind) {
+
+		this.hide_counter++;
+
+		return '<div id="hide-cont-' + this.hide_counter + '" class="svg_container">' +
+			   '<div class="svg_btn" onclick="hideObject(' + this.hide_counter + ')">' +
+			   '<span id="hide-btn-' + this.hide_counter + '">Hide</span> ' + kind + '</div>' +
+			   sout +
+			   '</div>';
 	},
 
 
@@ -1163,7 +1369,7 @@ window.c = {
 
 
 	// takes in two automata
-	// gives back the automaton formed by merging the one automaton with the other one
+	// gives out the automaton formed by merging the one automaton with the other one
 	mergeAutomata: function(auto1, auto2) {
 
 		var auto = [];
@@ -1207,7 +1413,7 @@ window.c = {
 
 
 	// takes in an automaton and a boolean parameter stating whether we should be verbose or not
-	// gives back a reverse deterministic automaton realizing the same language
+	// gives out a reverse deterministic automaton realizing the same language
 	makeAutomatonReverseDeterministic: function(auto, addToSOut) {
 
 		/*
@@ -1253,7 +1459,7 @@ window.c = {
 
 
 	// takes in an automaton
-	// gives back true if more work could help to make it reverse deterministic,
+	// gives out true if more work could help to make it reverse deterministic,
 	//   or false otherwise
 	makeAutomatonReverseDeterministic_int: function(auto, addToSOut) {
 
@@ -1287,7 +1493,7 @@ window.c = {
 
 
 	// takes in a position i, a label newchar and an automaton auto
-	// gives back true if it manages to improve reverse determinicism,
+	// gives out true if it manages to improve reverse determinicism,
 	//   false otherwise
 	rebaseGraphForRevDet: function(i, newchar, auto, addToSOut) {
 
@@ -1356,7 +1562,7 @@ window.c = {
 
 
 	// takes in an automaton
-	// gives back true if the automaton is reverse deterministic, false otherwise
+	// gives out true if the automaton is reverse deterministic, false otherwise
 	isAutomatonReverseDeterministic: function(auto) {
 
 		for (var i=0; i < auto.length; i++) {
@@ -1387,7 +1593,7 @@ window.c = {
 
 
 	// takes in an automaton
-	// gives back the automaton with prefixes calculated for each node
+	// gives out the automaton with prefixes calculated for each node
 	computePrefixes: function(auto) {
 		return this.workOnAutomatonPrefixes(auto, false, false);
 	},
@@ -1402,7 +1608,7 @@ window.c = {
 
 	// takes in an automaton and a boolean parameter as well as a boolean parameter
 	//   stating whether we should be verbose or not
-	// gives back the automaton with prefixes calculated for each node,
+	// gives out the automaton with prefixes calculated for each node,
 	//   and converted into a prefix sorted automaton if makePrefixSorted is true
 	workOnAutomatonPrefixes: function(auto, makePrefixSorted, addToSOut) {
 
@@ -1418,7 +1624,7 @@ window.c = {
 
 
 	// takes in an automaton and a boolean parameter
-	// gives back true if more work on the automaton is required,
+	// gives out true if more work on the automaton is required,
 	//   or false if the automaton has been successfully equipped with
 	//   prefixes / has been converted to a prefix sorted one (depending
 	//   on the makePrefixSorted parameter)
@@ -1592,7 +1798,7 @@ window.c = {
 
 
 	// takes in a node
-	// gives back a deep copy of the exact same node, with no pointers attaching it to the old one
+	// gives out a deep copy of the exact same node, with no pointers attaching it to the old one
 	deep_copy_node: function(node) {
 
 		var onode = {
@@ -1616,7 +1822,7 @@ window.c = {
 
 
 	// takes in an automaton with prefixes
-	// gives back true if it is prefix sorted or false otherwise
+	// gives out true if it is prefix sorted or false otherwise
 	isAutomatonPrefixSorted: function(auto) {
 
 		for (var i=0; i < auto.length; i++) {
@@ -1636,7 +1842,7 @@ window.c = {
 
 	// takes in an automaton with prefixes and a boolean parameter stating whether we
 	//   should be verbose or not
-	// gives back a prefix sorted automaton recognizing the same language
+	// gives out a prefix sorted automaton recognizing the same language
 	makeAutomatonPrefixSorted: function(auto, addToSOut) {
 		return this.workOnAutomatonPrefixes(auto, true, addToSOut);
 	},
@@ -1644,7 +1850,7 @@ window.c = {
 
 
 	// takes in an automaton
-	// gives back the BWT and M vector
+	// gives out the BWT and M vector
 	getFindexFromAutomaton: function(auto) {
 
 		var prefixes = [];
@@ -1691,7 +1897,7 @@ window.c = {
 
 
 	// takes in two unterminated strings
-	// gives back a section in DaTeX or HTML about the generation of their BWTs
+	// gives out a section in DaTeX or HTML about the generation of their BWTs
 	generate_BWTs_naively: function(h1, h2) {
 
 		this.build_BWTs_naively(h1, h2);
@@ -1790,7 +1996,7 @@ window.c = {
 
 
 	// takes in two unterminated strings
-	// gives back a section in DaTeX or HTML about their merging behavior
+	// gives out a section in DaTeX or HTML about their merging behavior
 	merge_BWTs_naively: function(h1, h2) {
 
 		this.build_BWTs_naively(h1, h2);
@@ -2362,7 +2568,7 @@ window.c = {
 
 
 	// takes in the length of an array arr, a replacement letter and a delimiter
-	// gives back arr.join(delimiter) after replacing every element of arr with the replacement letter
+	// gives out arr.join(delimiter) after replacing every element of arr with the replacement letter
 	repjoin: function(len, letter, delimiter) {
 
 		len--;
@@ -2414,6 +2620,42 @@ window.c = {
 		}
 
 		return aout;
+	},
+
+
+
+	// takes in an array of arrays and a position integer
+	// gives out a string representing each first element joined on the standard
+	//   delimiter with each element being highlighted that has a truthy value in
+	//   hl_pos
+	arr_to_highlighted_str: function(arr, hl_pos) {
+
+		var sout = '';
+		var delimiter;
+
+		if (this.give_out_HTML) {
+			delimiter = '</td><td>';
+			for (var i=0; i < arr.length; i++) {
+				if (arr[i][hl_pos]) {
+					sout += '</td><td class="h">' + arr[i][0];
+				} else {
+					sout += delimiter + arr[i][0];
+				}
+			}
+		} else {
+			delimiter = ' & ';
+			for (var i=0; i < arr.length; i++) {
+				sout += delimiter + arr[i][0];
+			}
+		}
+
+		// take out the first delimiter - which also means that we cannot highlight
+		// the first element, because we would (a) fail the takeout (as the string then)
+		// has a different length) and (b) would have to take out the first one anyway
+		// - luckily, the first column never needs to be highlighted =)
+		sout = sout.slice(delimiter.length);
+
+		return sout;
 	},
 
 
@@ -2533,7 +2775,7 @@ window.c = {
 
 
 	// takes in a column array
-	// gives back an array containing just the indices
+	// gives out an array containing just the indices
 	get_index_from_col: function(h_col) {
 
 		var aout = [];
@@ -2548,7 +2790,7 @@ window.c = {
 
 
 	// takes in a column array
-	// gives back the appropriate tabline for DaTeX
+	// gives out the appropriate tabline for DaTeX
 	get_tabline_from_col_DaTeX: function(h_col) {
 
 		var len = h_col.length;
@@ -2573,7 +2815,7 @@ window.c = {
 
 
 	// takes in any array and a column array
-	// gives back the array interwoven with the tds necessary to produce
+	// gives out the array interwoven with the tds necessary to produce
 	//   the correct about of vertical bars for HTML
 	get_tabline_from_col_HTML: function(arr, h_col) {
 
@@ -2599,7 +2841,7 @@ window.c = {
 
 
 	// takes in two arrays h1 and h2 and an interleave vector
-	// gives back the merged arrays as one array according to the interleave vector
+	// gives out the merged arrays as one array according to the interleave vector
 	merge_with_interleave: function(h1, h2, h12_itlv) {
 
 		var aout = [];
@@ -2622,7 +2864,7 @@ window.c = {
 
 
 	// takes in a sorted cyclic rotation array and an integer n
-	// gives back an array containing the elements of the nth column
+	// gives out an array containing the elements of the nth column
 	get_first_n_from_scr: function(h_scr, n) {
 
 		var aout = [];
@@ -2637,7 +2879,7 @@ window.c = {
 
 
 	// takes in a sorted cyclic rotation array and an integer n
-	// gives back an array containing the elements of the last - nth column
+	// gives out an array containing the elements of the last - nth column
 	get_last_n_from_scr: function(h_scr, n) {
 
 		var aout = [];
@@ -2675,7 +2917,7 @@ window.c = {
 
 
 	// takes in a sorted cyclic rotation array
-	// gives back an array containing the positions (the last column), in the format
+	// gives out an array containing the positions (the last column), in the format
 	//   $ "1"_"2" $ where 1 is the first element of the last column and 2 is the second
 	get_pos_from_scr: function(h_scr) {
 
@@ -2691,7 +2933,7 @@ window.c = {
 
 
 	// takes in a sorted cyclic rotation array
-	// gives back an array containing the BWT (the third-last column)
+	// gives out an array containing the BWT (the third-last column)
 	get_bwt_from_scr: function(h_scr) {
 
 		return this.get_last_n_from_scr(h_scr, 2);
@@ -2700,7 +2942,7 @@ window.c = {
 
 
 	// takes in two interleave vectors
-	// gives back true if they are different (so if they changed),
+	// gives out true if they are different (so if they changed),
 	//   and false if they are the same
 	did_itlvs_change: function(itlv1, itlv2) {
 
@@ -2717,7 +2959,7 @@ window.c = {
 
 	// takes in a pos array that contains both graph-y and flat entries,
 	//   e.g. ['$ "9"_"A" $', '$ "9"_"C" $', 10], and a bwt array
-	// gives back the expanded pos and bwt arrays, in which every flat entry
+	// gives out the expanded pos and bwt arrays, in which every flat entry
 	//   has been replaced by several graph-y entries,
 	//   e.g. ['$ "9"_"A" $', '$ "9"_"C" $', '$ "10"_"A" $', '$ "10"_"C" $'],
 	//   OR gives back false in case of no expanding happening at all!
@@ -2789,7 +3031,7 @@ window.c = {
 
 
 	// takes in two pos arrays
-	// gives back true if they have the same contents and false if not
+	// gives out true if they have the same contents and false if not
 	pos_equals_pos: function(pos1, pos2) {
 
 		var len = pos1.length;
@@ -2811,7 +3053,7 @@ window.c = {
 
 
 	// takes nothing in
-	// gives back an example run
+	// gives out an example run
 	example: function() {
 		return this.merge_BWTs_naively('A(A|C)CA', 'CAAA');
 	},

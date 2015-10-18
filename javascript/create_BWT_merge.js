@@ -14,6 +14,11 @@ window.c = {
 	last_mode: 'none', // 'naive' or 'advanced', init to 'none'
 	last_give_out_HTML: -1, // true or false, init as -1
 
+	merge_directly: true, // true: take out $1 and #1 - they should not actually be in the merged graph,
+						  //       and we should jump over them in the individual ones while merging them
+						  //       too =)
+						  // false: actually insert $1 and #1 nodes in between
+
 	// A note about DaTeX:
 	// In DaTeX, we enclose maths expressions in dollarsigns, and to write an actual dollarsign, we write \S.
 	// Just sorting \$ would be a problem as lex(\) > lex(c) for a character c, but sorting $ \$ $ is fine,
@@ -1073,6 +1078,43 @@ window.c = {
 
 
 
+		sout += 'As we are done with the prefix-doubling, we can now prune the prefixes back down ' +
+				'to the shortest possible lengths that still leave the prefixes unique:' + this.nlnl;
+
+		for (i=1; i < p12.length-1; i++) {
+			while ((p12[i][0].slice(0, p12[i][0].length-1).slice(0, p12[i-1][0].length) !== p12[i-1][0].slice(0, p12[i][0].length-1)) &&
+				   (p12[i][0].slice(0, p12[i][0].length-1).slice(0, p12[i+1][0].length) !== p12[i+1][0].slice(0, p12[i][0].length-1)) &&
+				   (p12[i][0] != '')) {
+				p12[i][0] = p12[i][0].slice(0, p12[i][0].length-1);
+			}
+		}
+
+		sout += this.fe_p12ToTableWithHighlights(p12, p12_itlv, bwt, m, []);
+
+
+		if (this.merge_directly) {
+			sout += 'We can also take out the help nodes ' + this.DS_1_o + ' and ' + this.DK_1_o +
+					':' + this.nlnl;
+
+			for (i=0; i < p12.length; i++) {
+				if ((p12[i][0] == this.DS_1_o) || (p12[i][0] == this.DK_1_o)) {
+					p12.splice(i, 1);
+					p12_itlv.splice(i, 1);
+					bwt.splice(i, 1);
+					m.splice(i, 1);
+				}
+			}
+
+			sout += this.fe_p12ToTableWithHighlights(p12, p12_itlv, bwt, m, []);
+		}
+
+
+		sout += 'To make the comparison simpler, here are the BWT and ' + this.DM + ' vector ' +
+				'again, which we obtained from the merged graph directly:' + this.nlnl;
+
+		sout += this.fe_findexToTable(findex, true);
+
+
 		// CURRENTLY WORKING HERE
 
 
@@ -1554,20 +1596,56 @@ window.c = {
 		var outOf1 = 0; // position of $_1 in auto
 
 		var offset = auto1.length; // offset added to all positions within auto2
+		var del_i = -1; // keep track of the i of the deleted node
 
 		// start building auto as copy of auto1
 		for (var i=0; i < auto1.length; i++) {
 			var newNode = this.deep_copy_node(auto1[i]);
 			if (newNode.c == this.DS) {
+				if (this.merge_directly) {
+
+					del_i = i;
+					offset -= 2;
+
+					// we are here assuming that only one edge goes into $ in H_1
+					outOf1 = newNode.p[0];
+
+					continue;
+				}
 				outOf1 = i;
 			}
 			auto.push(newNode);
 		}
 
+		// update counts of other nodes due to deletion of $ at the end of H_1
+		if (this.merge_directly) {
+			for (i=0; i < auto.length; i++) {
+				for (var j=0; j < auto[i].p.length; j++) {
+					if (auto[i].p[j] >= del_i) {
+						auto[i].p[j] -= 1;
+					}
+				}
+				for (var j=0; j < auto[i].n.length; j++) {
+					if (auto[i].n[j] >= del_i) {
+						auto[i].n[j] -= 1;
+					}
+				}
+			}
+		}
+
 		var into2 = auto.length;  // position of #_1 in auto
+		var i_start = 0;
+
+		if (this.merge_directly) {
+			
+			i_start = 1;
+
+			// we are here assuming that only one edge goes out of # in H_2
+			into2 = auto2[0].n[0] + offset;
+		}
 
 		// add all nodes from auto2
-		for (var i=0; i < auto2.length; i++) {
+		for (var i=i_start; i < auto2.length; i++) {
 			var newNode = this.deep_copy_node(auto2[i]);
 			for (var k=0; k < newNode.p.length; k++) {
 				newNode.p[k] += offset;
@@ -1578,11 +1656,16 @@ window.c = {
 			auto.push(newNode);
 		}
 
-		// fuse them together - that is, set outOf1.n = [into2] and into2.p = [outOf1]
+		// fuse them together
+
+		// set outOf1.n = [into2] and into2.p = [outOf1]
 		auto[outOf1].n = [into2];
 		auto[into2].p = [outOf1];
-		auto[outOf1].c = this.DS_1_o;
-		auto[into2].c = this.DK_1_o;
+
+		if (!this.merge_directly) {
+			auto[outOf1].c = this.DS_1_o;
+			auto[into2].c = this.DK_1_o;
+		}
 
 		return auto;
 	},

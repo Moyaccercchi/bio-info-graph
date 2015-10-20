@@ -870,15 +870,11 @@ window.c = {
 
 		var i;
 		for (i=0; i < p1.length; i++) {
-			if (p1[i][0] === this.DS) {
-				p1[i][0] = this.DS_1_o;
-			}
+			p1[i][0] = p1[i][0].replace(this.DS, this.DS_1_o);
 			bwt1[i] = bwt1[i].replace(this.DS, this.DS_1_o);
 		}
 		for (i=0; i < p2.length; i++) {
-			if (p2[i][0] === this.DK) {
-				p2[i][0] = this.DK_1_o;
-			}
+			p2[i][0] = p2[i][0].replace(this.DK, this.DK_1_o);
 			bwt2[i] = bwt2[i].replace(this.DK, this.DK_1_o);
 		}
 		p12 = p1.concat(p2);
@@ -1010,7 +1006,7 @@ window.c = {
 				shide += this.fe_p12ToTableWithHighlights(p12, p12_itlv, bwt, m, [cur_bwt_pos]);
 
 				shide += 'These prefixes get added to the original prefix ' + firstRedPrefix +
-						' that we were looking at:' + this.nlnl;
+						' that we were looking at, producing the following new prefixes:' + this.nlnl;
 
 				var replacement_prefixes = [];
 
@@ -1019,6 +1015,7 @@ window.c = {
 					replacement_prefixes.push(pref);
 					shide += pref + this.nlnl;
 				}
+				shide += this.nlnl;
 
 				// 4 - insert these new prefixes instead of the original column
 				shide += 'Finally, we insert these new prefixes instead of the original column.' +
@@ -1093,7 +1090,7 @@ window.c = {
 
 
 		if (this.merge_directly) {
-			sout += 'We can also take out the help nodes ' + this.DS_1_o + ' and ' + this.DK_1_o +
+			sout += 'We can also take out the helper nodes ' + this.DS_1_o + ' and ' + this.DK_1_o +
 					':' + this.nlnl;
 
 			for (i=0; i < p12.length; i++) {
@@ -1706,6 +1703,9 @@ window.c = {
 		//           A B B C, graph from 2 to 4
 		//         and then we convert it into something like
 		//           A B B C, graph from 1 to 3
+		//         Even this simplified version may be WRONG / BUGGY in some cases,
+		//         let along not working / not being enough for many many cases.
+		//         => improve that!
 
 		while (this.makeAutomatonReverseDeterministic_int(auto, addToSOut)) {
 			if (addToSOut) {

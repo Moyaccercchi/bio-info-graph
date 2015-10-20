@@ -148,13 +148,13 @@
 		}
 
 		/* highlight */
-		td.h {
+		td.h, td.h > span {
 			color:#FFF;
 			background-color:#F00;
 		}
 
 		/* extra highlight */
-		td.x {
+		td.x, td.x > span {
 			color:#FFA;
 			background-color:#A0A;
 		}
@@ -356,7 +356,7 @@
 
 
 	<span class="creditline absleft">
-		Version: 0.0.0.7
+		Version: 0.0.0.8
 	</span>
 	<span class="creditline absright">
 		Moyaccercchi (tws@hi.is), 2015

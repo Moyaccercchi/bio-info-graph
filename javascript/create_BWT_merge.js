@@ -5,6 +5,21 @@
 	The outside world calls "merge_BWTs_naively".
 		It calls "build_BWTs_naively" which generates the BWT if necessary (if parameters since last execution changed.)
 			It calls "prepare_BWTs_naively" if necessary.
+
+	Attention!
+	Currently, the DaTeX output is NOT FUNCTIONAL!
+	Here are the known issues:
+	1) DaTeX output uses SVG directly instead of TikZ or a similar TeX-based alternative
+	2) # sign in DaTeX may not actually work (does '$ # $' work?)
+	3) # sign in DaTeX-mode is not sorted correctly (as '$ # $' internally, it is sorted to front!)
+	4) arr_to_highlighted_str() does not highlight anything in DaTeX mode
+	5) in a line like "if (ac.indexOf('<') < 0) {" we will never have truth in DaTeX mode, where
+	   checking for indexOf '_' might make more sense
+
+	Attention again!
+	Currently, the option of setting merge_directly to false is NOT FUNCTIONAL!
+	Here are the known issues:
+	1) Incorrect pruning at the very end of the merging algorithm (see [NOTE 1])
 */
 
 window.c = {
@@ -26,18 +41,6 @@ window.c = {
 	// (In HTML, we just use $ itself without backslash in front of it, so there none of this matters.)
 
 	set_to_DaTeX: function() {
-
-		/*
-			Attention!
-			Currently, the DaTeX output is NOT FUNCTIONAL!
-			Here are the known issues:
-			1) DaTeX output uses SVG directly instead of TikZ or a similar TeX-based alternative
-			2) # sign in DaTeX may not actually work (does '$ # $' work?)
-			3) # sign in DaTeX-mode is not sorted correctly (as '$ # $' internally, it is sorted to front!)
-			4) arr_to_highlighted_str() does not highlight anything in DaTeX mode
-			5) in a line like "if (ac.indexOf('<') < 0) {" we will never have truth in DaTeX mode, where
-			   checking for indexOf '_' might make more sense
-		*/
 
 		this.give_out_HTML = false;
 
@@ -833,9 +836,54 @@ window.c = {
 
 
 		sout += 'We now want to find this BWT and ' + this.DM + ' vector just based on the ' +
-				'data we have for ' + this.DH_1 + ' and ' + this.DH_2 + '.' + this.nlnl;
+				'data we have for ' + this.DH_1 + ' and ' + this.DH_2 + '.' + this.nlnlnl;
 
-		sout += "So let's start by looking at all the prefixes, while keeping track of where " +
+		sout += 'The very first thing that we need to figure out is which letter is the last of ' +
+				this.DH_1 + ' and which letter is the first of ' + this.DH_2 + ', as this information ' +
+				'will be useful later on, and it is much easier to figure it out once and remember it.' +
+				this.nlnl;
+
+		// find last letter of H_1
+		// (implicitly assuming that there is exactly one edge
+		// out of #_1, the first node of H_2 - that is, when we
+		// go through the BWT and find any entry for #_1, then
+		// the first letter of the corresponding prefix will be
+		// the label of the node following #_1 in H_2, no matter
+		// what)
+		this.lastH1Letter = '';
+		for (i=0; i < findex1[0].length; i++) {
+			if (findex1[0][i][0] == this.DS) {
+				this.lastH1Letter = bwt1[i];
+				sout += 'Looking at the prefixes of ' + this.DH_1 + ', we can see that the prefix ' +
+						this.DS + ' has the BWT entry ' + this.lastH1Letter +
+						' associated with it, so the last letter of ' + this.DH_1 +
+						' is ' + this.lastH1Letter + '.' + this.nlnl;
+				break;
+			}
+		}
+
+		// find first letter of H_2
+		// (implicitly assuming that there is exactly one edge
+		// out of #_1, the first node of H_2 - that is, when we
+		// go through the BWT and find any entry for #_1, then
+		// the first letter of the corresponding prefix will be
+		// the label of the node following #_1 in H_2, no matter
+		// what)
+		this.firstH2Letter = '';
+		for (i=0; i < bwt2.length; i++) {
+			if (bwt2[i] == this.DK) {
+				this.firstH2Letter = findex2[0][i][0][0];
+				sout += 'Looking at the BWT of ' + this.DH_2 + ', we can see that ' +
+						this.DK + ' in the BWT has the prefix ' + findex2[0][i][0] +
+						' associated with it, so the first letter of ' + this.DH_2 +
+						' is ' + this.firstH2Letter + '.' + this.nlnlnl;
+				break;
+			}
+		}
+
+
+
+		sout += "We are now ready to look at all the prefixes, while keeping track of where " +
 				'they are coming from:' + this.nlnl;
 
 
@@ -886,6 +934,32 @@ window.c = {
 		sout += this.hideWrap(stab, 'Table');
 
 
+		sout += 'It is important to now append ' + this.DK_1_o + ' and the first letter of ' +
+				this.DH_2 + '(which is ' + this.firstH2Letter + ') to all prefixes that end on ' +
+				this.DS_1_o + ', as ' +
+				this.DS_1_o + ' is not actually in use in the final merged BWT.' + this.nlnl +
+				'(Which means that we are implicitly removing ' + this.DS_1_o + ' here, which ' +
+				'did correspond to a real node when looking at ' + this.DH_1 + ' in isolation.)' +
+				this.nlnl + 'Naturally, we first of all need to find the first node of ' + this.DH_2 +
+				'.' + this.nlnlnl;
+				'Appending the first letter of ' + this.DH_2 + '(which is ' + 
+				this.firstH2Letter + ') as well as ' + this.DK_1_o +
+				' to all prefixes ending with ' +
+				this.DS_1_o + ' gives us:' + this.nlnl;
+
+		for (i=0; i < p12.length; i++) {
+			if (p12[i][0].indexOf(this.DS_1_o) > -1) {
+				p12[i][0] += this.DK_1_o + this.firstH2Letter;
+			}
+		}
+
+		var stab = this.s_table_head;
+		stab += this.arr_to_str_wo_index(p12, this.td) + this.td + 'Prefix' + this.tabnl;
+		stab += p12_itlv.join(this.td) + this.td + 'Origin' + this.nl;
+		stab += this.endtab;
+		sout += this.hideWrap(stab, 'Table');
+
+
 		sout += 'We now need to sort these prefixes together. If we are really lucky, ' +
 				'all the prefixes are different, we can sort them together, and be done.' +
 				this.nlnl +
@@ -906,7 +980,6 @@ window.c = {
 		p12_itlv = this.get_index_from_col(p12);
 		var bwt = this.merge_with_interleave(bwt1, bwt2, p12_itlv);
 		var m = this.merge_with_interleave(m1, m2, p12_itlv);
-
 
 		var stab = this.s_table_head;
 		stab += this.arr_to_highlighted_str(p12, 2) + this.td + 'Prefix' + this.tabnl;
@@ -961,8 +1034,15 @@ window.c = {
 				}
 
 				var firstRedPrefix = p12[firstRedi][0];
-				var curOrigin = p12[firstRedi][1];
+				var curOrigOrigin = p12[firstRedi][1]; // original origin (which H are we starting in?)
+				var curOrigin = curOrigOrigin; // modified origin (which H are we ending in?)
 				var curLetter = firstRedPrefix[firstRedPrefix.length-1];
+
+				// does firstRedPrefix contain $_1 (but is not just "$_1")?
+				if (firstRedPrefix.indexOf(this.DS_1_o) > 0) {
+					// switch the origin that we are ending in from H_1 to H_2
+					curOrigin = '2';
+				}
 
 				var shide = '<div>';
 
@@ -1018,19 +1098,75 @@ window.c = {
 				shide += this.nlnl;
 
 				// 4 - insert these new prefixes instead of the original column
-				shide += 'Finally, we insert these new prefixes instead of the original column.' +
+				shide += 'We insert these new prefixes instead of the original column.' +
 						this.nlnl;
 
 				p12[firstRedi][0] = replacement_prefixes[0];
 				ins_arr = [firstRedi];
+				var Madd = '';
 				for (i=1; i < replacement_prefixes.length; i++) {
 					p12.splice(firstRedi+i, 0, [replacement_prefixes[i], p12[firstRedi][1], false]);
 					p12_itlv.splice(firstRedi+i, 0, p12_itlv[firstRedi]);
 					bwt.splice(firstRedi+i, 0, bwt[firstRedi]);
-					m.splice(firstRedi+i, 0, m[firstRedi]);
+					// set m of the new column to 1
+					m.splice(firstRedi+i, 0, '1');
 					ins_arr.push(firstRedi + i);
+					Madd += '0';
 				}
 				shide += this.fe_p12ToTableWithHighlights(p12, p12_itlv, bwt, m, [ins_arr, ins_arr, ins_arr, ins_arr]);
+
+				shide += 'We now need to consider the ' + this.DM + ' vector, which we have set ' +
+						'to 1 for all new columns. That is, we want to reduce the original ' + this.DM +
+						' value of the first replaced column by the amount of columns that were ' +
+						'inserted - in this case, ';
+
+				if (replacement_prefixes.length > 1) {
+
+					shide += 'we replaced 1 column with ' + replacement_prefixes.length +
+							' columns, so we inserted ' + (replacement_prefixes.length - 1) + ' columns.' +
+							this.nlnl;
+					
+					// reduce m of the original column by amount of replacement_prefixes
+					m[firstRedi] = m[firstRedi].slice(0, - (replacement_prefixes.length-1));
+
+					// this here should not happen (M should not become empty) if all worked
+					// out correctly... but so far, all does not always work out correctly,
+					// so we do this as a last-ditch measure to not get completely nonsensical
+					// data all over the place
+					if (m[firstRedi] === '') {
+						m[firstRedi] = '1';
+					}
+
+					shide += 'We also need to consider the preceding nodes and increase their ' + this.DM +
+							' values by that same amount, as these nodes now have gotten more outgoing ' +
+							'edges.' + this.nlnl;
+
+					// find previous nodes
+					// for now, find all nodes with the same origin whose prefixes start with the
+					// same letter as the BWT of the inserted columns contains
+					// TODO IMPORTANT :: use first-to-last-property to only find the correct node,
+					//                   not just all the nodes as now ;)
+					ins_arr = [];
+					var BWTletters = bwt[firstRedi].split('|');
+					for (i=0; i < bwt.length; i++) {
+						if (p12_itlv[i] === curOrigin) {
+							for (var k=0; k < BWTletters.length; k++) {
+								if (p12[i][0].indexOf(BWTletters[k]) === 0) {
+									ins_arr.push(i);
+
+									// add replacement_prefixes.length-1 zeroes to their M vectors
+									// (thereby adding as many outgoing edges as columns were inserted)
+									m[i] += Madd;
+								}
+							}
+						}
+					}
+
+					shide += this.fe_p12ToTableWithHighlights(p12, p12_itlv, bwt, m, [[firstRedi],[],[],ins_arr]);
+				} else {
+					shide += 'we replaced one column with another one column, so we did not insert ' +
+							'any new columns at all, and no action is required.' + this.nlnlnl;
+				}
 
 
 				// 5&6 - resort prefixes and recheck problems
@@ -1075,6 +1211,61 @@ window.c = {
 
 
 
+		if (this.merge_directly) {
+			sout += 'We can also take out the helper nodes ' + this.DS_1_o + ' and ' + this.DK_1_o +
+					' (adding the ' + this.DM + ' value of ' + this.DK_1_o + ' to the last node of ' +
+					this.H_1 + '), as well as replacing ' + this.DK_1_o + ' in the BWT with ' +
+					this.lastH1Letter +
+					', the last letter of ' + this.H_1 + ':' + this.nlnl;
+
+			// get M-value of "#_1" node
+			var Madd = '';
+			for (i=0; i < p12.length; i++) {
+				if (p12[i][0] === this.DK_1_o) {
+					Madd = m[i].slice(1);
+				}
+			}
+
+			for (i=0; i < p12.length; i++) {
+				// take out the "$_1" and "#_1" nodes
+				if ((p12[i][0].indexOf(this.DS_1_o) === 0) || (p12[i][0].indexOf(this.DK_1_o) === 0)) {
+					p12.splice(i, 1);
+					p12_itlv.splice(i, 1);
+					bwt.splice(i, 1);
+					m.splice(i, 1);
+				}
+
+				// could be broken because of splicing ;)
+				if (i < p12.length) {
+					// if there is some M-value of "#_1" node to add...
+					if (Madd !== '') {
+						// ... then add M-value of "#_1" node to M-value of last node of H_1
+						if (p12[i][0].indexOf(this.DS_1_o) === 1) {
+							m[i] += Madd;
+						}
+					}
+
+					// replace a "...$_1#_1..." caption with a "......" caption
+					p12[i][0] = p12[i][0].replace(this.DS_1_o+this.DK_1_o, '');
+
+					// replace #_1 in BWT with last node of H_1
+					if (bwt[i] === this.DK_1_o) {
+						bwt[i] = this.lastH1Letter;
+					}
+				}
+			}
+
+			sout += this.fe_p12ToTableWithHighlights(p12, p12_itlv, bwt, m, []);
+		}
+
+
+
+		// [NOTE 1] ::
+		//     if this.merge_directly is NOT true, then here we can get into trouble with
+		//     ...$_1#_1..., as e.g. TG vs. T$_1#_1A would be pruned to TG vs. T$ instead of
+		//     the correct TG vs. TA - for now we will just discontinue support for merge_directly
+		//     being false ;)
+
 		sout += 'As we are done with the prefix-doubling, we can now prune the prefixes back down ' +
 				'to the shortest possible lengths that still leave the prefixes unique:' + this.nlnl;
 
@@ -1087,23 +1278,6 @@ window.c = {
 		}
 
 		sout += this.fe_p12ToTableWithHighlights(p12, p12_itlv, bwt, m, []);
-
-
-		if (this.merge_directly) {
-			sout += 'We can also take out the helper nodes ' + this.DS_1_o + ' and ' + this.DK_1_o +
-					':' + this.nlnl;
-
-			for (i=0; i < p12.length; i++) {
-				if ((p12[i][0] == this.DS_1_o) || (p12[i][0] == this.DK_1_o)) {
-					p12.splice(i, 1);
-					p12_itlv.splice(i, 1);
-					bwt.splice(i, 1);
-					m.splice(i, 1);
-				}
-			}
-
-			sout += this.fe_p12ToTableWithHighlights(p12, p12_itlv, bwt, m, []);
-		}
 
 
 		sout += 'To make the comparison simpler, here are the BWT and ' + this.DM + ' vector ' +
@@ -1137,13 +1311,40 @@ window.c = {
 		// do the sorting!
 		p12.sort(function(a, b) {
 
-			var ac = a[0];
-			var bc = b[0];
+			var af = a[0]; // a full
+			var bf = b[0]; // b full
+
+			if (bf === undefined) {
+				bf = '';
+			}
+
+			// take out '...$_1#_1...' - we need to keep them in in general
+			// to know that we are switching from H_1 to H_2, but we do not
+			// actually want to have them within the comparison
+			// BUT do leave them in if they are on position 0 - that is,
+			// "$_1" and "#_1" should be left intact =) (that's why we have
+			// the indexOf-comparisons all over the place here)
+			if (af.indexOf(c.DS_1_o+c.DK_1_o) > 0) {
+				af = af.replace(c.DS_1_o+c.DK_1_o, '');
+			}
+			if (af.indexOf(c.DS_1_o) > 0) {
+				af = af.replace(c.DS_1_o, '');
+			}
+			if (bf.indexOf(c.DS_1_o+c.DK_1_o) > 0) {
+				bf = bf.replace(c.DS_1_o+c.DK_1_o, '');
+			}
+			if (bf.indexOf(c.DS_1_o) > 0) {
+				bf = bf.replace(c.DS_1_o, '');
+			}
+
+			var ac = af;   // a cropped
+			var bc = bf;   // b cropped
 
 			// slice / crop most prefixes, so when we compare 'C' and 'CC',
 			// actually compare 'C' and 'C' (and throw error),
 			// BUT do not slice if there is '<' present, as that is
-			// only true for #_1 and $_1, and they are never problematic
+			// only true for '#_1' and '$_1', and they are never problematic
+			// (as we cut out $_1 and #_1 from later positions within the string)
 
 			if (ac.indexOf('<') < 0) {
 				ac = ac.slice(0, bc.length);
@@ -1160,10 +1361,10 @@ window.c = {
 
 				// ... but let's compare the non-cropped ones anyway,
 				// so that the shortest ones get sorted first
-				if (a[0] > b[0]) {
+				if (af > bf) {
 					return 1;
 				} else {
-					if (a[0] < b[0]) {
+					if (af < bf) {
 						return -1;
 					} else {
 						return 0;
@@ -1265,8 +1466,14 @@ window.c = {
 	//   highlighting
 	fe_p12ToTableWithHighlights: function(p12, p12_itlv, bwt, m, highlight_arr) {
 
+		var spref = this.arr_to_highlighted_str(p12, 2, highlight_arr[0]);
+
+		while (spref.indexOf(this.lastH1Letter+this.DS_1_o+this.DK_1_o) > -1) {
+			spref = spref.replace(this.lastH1Letter+this.DS_1_o+this.DK_1_o, this.lastH1Letter+'>');
+		}
+
 		var stab = this.s_table_head;
-		stab += this.arr_to_highlighted_str(p12, 2, highlight_arr[0]) + this.td + 'Prefix' + this.tabnl;
+		stab += spref + this.td + 'Prefix' + this.tabnl;
 		stab += this.arr_to_extra_high_str(p12_itlv, highlight_arr[1]) + this.td + 'Origin' + this.tabnl;
 		stab += this.arr_to_extra_high_str(bwt, highlight_arr[2]) + this.td + 'BWT' + this.tabnl;
 		stab += this.arr_to_extra_high_str(m, highlight_arr[3]) + this.td + this.DM + this.nl;

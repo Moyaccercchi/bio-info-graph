@@ -989,15 +989,20 @@ window.c = {
 
 
 		sout += 'We should also take a look at the BWT and ' + this.DM + ' vector associated ' +
-				'with this preliminary ordering:';
+				'with this preliminary ordering.' + this.nlnl +
+				'Oh, and from now on, we will replace "' +
+				this.DS_1_o + this.DK_1_o + '" with ">", just to indicate that we are ' +
+				'switching from ' + this.DH_1 + ' to ' + this.DH_2 + ', but without having ' +
+				'to write so much all the time.' + this.nlnl +
+				'Finally, we will also rewrite ' + this.DS_1_o + this.DK_1_o + this.firstH2Letter +
+				' as just ' + this.DS_1_o + ' as this node is indeed very special: ' +
+				'We keep it in the table because it will be used whenever we come off ' + this.DH_1 +
+				', but it will not actually be considered (and will indeed be dropped in the very end)' +
+				' as it is equivalent to the node ' + this.DK_1_o + ' (which will also be dropped) ' +
+				'and the node with prefix ' + this.firstH2Letter + ' and origin 2, which in fact will ' +
+				'go on to represent the other two nodes once they are dropped in the end.' + this.nlnl;
 
-		var stab = this.s_table_head;
-		stab += this.arr_to_highlighted_str(p12, 2) + this.td + 'Prefix' + this.tabnl;
-		stab += p12_itlv.join(this.td) + this.td + 'Origin' + this.tabnl;
-		stab += bwt.join(this.td) + this.td + 'BWT' + this.tabnl;
-		stab += m.join(this.td) + this.td + this.DM + this.nl;
-		stab += this.endtab;
-		sout += this.hideWrap(stab, 'Table');
+		sout += this.fe_p12ToTableWithHighlights(p12, p12_itlv, bwt, m, []);
 
 
 		sout += 'However, we need to exchange ' + this.DS + ' and ' + this.DS_1_o +
@@ -1470,6 +1475,9 @@ window.c = {
 
 		while (spref.indexOf(this.lastH1Letter+this.DS_1_o+this.DK_1_o) > -1) {
 			spref = spref.replace(this.lastH1Letter+this.DS_1_o+this.DK_1_o, this.lastH1Letter+'>');
+		}
+		while (spref.indexOf(this.DS_1_o+this.DK_1_o+this.firstH2Letter) > -1) {
+			spref = spref.replace(this.DS_1_o+this.DK_1_o+this.firstH2Letter, this.DS_1_o);
 		}
 
 		var stab = this.s_table_head;

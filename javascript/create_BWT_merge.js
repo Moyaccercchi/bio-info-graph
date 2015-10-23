@@ -832,6 +832,7 @@ window.c = {
 	// gives out a string contain info about the BWT merging for both
 	merge_BWTs_advanced: function(h1, h2) {
 
+		var unsuccessful = false;
 		var ret = this.generate_BWTs_advanced_int(h1, h2);
 
 		var sout = ret[0];
@@ -1120,19 +1121,21 @@ window.c = {
 				'have returned that many nodes - e.g., for value 10, we would have returned ' +
 				'not just [10], but [10, 11], assuming that node 11 would have been another ' +
 				'remaining node.)' +
-				this.nlnlnl +
+				this.nlnlnl;
 
-				'We would also like to construct a special version of nextNodes called lastNodes, ' +
+		// TODO THINK
+		/*
+		sout += 'We would also like to construct a special version of nextNodes called lastNodes, ' +
 				'which will not give us the nodes immediately following node ' + this.di + ', ' +
 				'but the nodes furthest away from node ' + this.di +
 				' that we still know about directly.' + this.nlnl +
 				'However, I am not quite sure whether this can even be done, let alone how ' +
 				'(considering that we would kind of ignore lots of ' + this.DM + ' values in ' +
 				'the middle or somesuch?)' +
-				// TODO THINK
-				this.nlnlnl +
+				this.nlnlnl;
+		*/
 
-				'We are now ready to work on the highlighted problems.' + this.nlnl;
+		sout += 'We are now ready to work on the highlighted problems.' + this.nlnl;
 
 
 
@@ -1168,20 +1171,27 @@ window.c = {
 
 				// 1 - look at last letter of first red prefix
 				shide += "We want to consider the first red prefix." + this.nlnl +
-						"It is " + firstRedPrefix + " and we consider in particular " +
-						"its last letter - that is, " + curLetter + '.' + this.nlnl;
+						"It is " + firstRedPrefix + " and we jump through the table " +
+						"all the way until we reach its last letter - that is, " + curLetter +
+						'.' + this.nlnl;
 
 				shide += this.fe_p12ToTableWithHighlights([[firstRedi]]);
 
 
 				// 2 - check BWT containing the letter with origin being the same the one of the letter
 				shide += "We now look through the BWT that has the same origin and " +
-						"search for this letter, using the nextNodes(i) function." +
+						"search for the letters one by after the other, " +
+						"using the nextNodes(i) function." +
 						this.nlnl;
 
-				var next_nodes = this.nextNodes(firstRedi);
-
-				shide += this.fe_p12ToTableWithHighlights([[], [], next_nodes]);
+				var next_nodes = [firstRedi];
+				for (i=0; i < firstRedPrefix.length; i++) {
+					// we can always just take next_nodes[0], because we are assured
+					// that there is exactly one next node for all but the last node
+					// on our way (as otherwise the prefix would not have been formed)
+					next_nodes = this.nextNodes(next_nodes[0]);
+					shide += this.fe_p12ToTableWithHighlights([[], [], next_nodes]);
+				}
 
 
 				// 3 - look at corresponding prefixes, and append them to the letter
@@ -1202,8 +1212,8 @@ window.c = {
 				shide += this.nlnl;
 
 				// 4 - insert these new prefixes instead of the original column
-				shide += 'We insert these new prefixes instead of the original column.' +
-						this.nlnl;
+				shide += 'We insert these new prefixes ' +
+						'instead of the original column.' + this.nlnl;
 
 				// calculate prevNodes only if necessary - but do so before actually doing any inserting,
 				// so that we do not calculate them when the table is not in a safe state
@@ -1213,23 +1223,30 @@ window.c = {
 				}
 
 				this.p12[firstRedi][0] = replacement_prefixes[0];
+				this.m[firstRedi] = '1';
 				ins_arr = [firstRedi];
+				
 				var Madd = '';
+
 				for (i=1; i < replacement_prefixes.length; i++) {
 					this.p12.splice(firstRedi+i, 0, [replacement_prefixes[i], this.p12[firstRedi][1], false]);
 					this.p12_itlv.splice(firstRedi+i, 0, this.p12_itlv[firstRedi]);
 					this.bwt.splice(firstRedi+i, 0, this.bwt[firstRedi]);
-					// set m of the new column to 1
+
+					// set M of the inserted column to 1, as each of these nodes now has exactly one
+					// edge leaving it (which is precisely why we are doing the splitting in the first
+					// place - and we are splitting precisely once for each outedge, so we have exactly
+					// one outedge for each node now!)
 					this.m.splice(firstRedi+i, 0, '1');
+
 					ins_arr.push(firstRedi+i);
 					Madd += '0';
 				}
 				shide += this.fe_p12ToTableWithHighlights([ins_arr, ins_arr, ins_arr, ins_arr]);
 
-				shide += 'We now need to consider the ' + this.DM + ' vector, which we have set ' +
-						'to 1 for all new columns. That is, we want to reduce the original ' + this.DM +
-						' value of the first replaced column by the amount of columns that were ' +
-						'inserted - in this case, ';
+				shide += 'We now need to consider the ' + this.DM + ' vector, for which we have set ' +
+						'the correct value for the new columns (taking the one from their origin), ' +
+						'but however have not yet reset the values of the preceding nodes. In this case, ';
 
 				if (replacement_prefixes.length > 1) {
 
@@ -1237,22 +1254,15 @@ window.c = {
 							' columns, so we inserted ' + (replacement_prefixes.length - 1) + ' columns.' +
 							this.nlnl;
 					
-					ins_arr = [firstRedi];
+					var mrep_arr = [];
 
-					// reduce m of the original column by amount of replacement_prefixes
-					this.m[firstRedi] = this.m[firstRedi].slice(0, - (replacement_prefixes.length-1));
-
-					// this here should not happen (M should not become empty) if all worked
-					// out correctly... but so far, all does not always work out correctly,
-					// so we do this as a last-ditch measure to not get completely nonsensical
-					// data all over the place
-					if (this.m[firstRedi] === '') {
-						this.m[firstRedi] = '1';
-					}
-
-					shide += 'We also need to consider the preceding nodes and increase their ' + this.DM +
-							' values by that same amount, as these nodes now have gotten more outgoing ' +
-							'edges.' + this.nlnl;
+					shide += 'This means that we have to increase the ' + this.DM +
+							' values of the preceding nodes by that same amount, ' +
+							'as these nodes now have more outgoing edges. ' +
+							'To find these preceding nodes, we used the prevNodes(i) ' + 
+							'function on the table before inserting the new columns, ' +
+							'so as to not use it while the table is in an unsafe or ' +
+							'inconsistent state.' + this.nlnl;
 
 					for (i=0; i < prev_nodes.length; i++) {
 
@@ -1263,14 +1273,14 @@ window.c = {
 							pnode += replacement_prefixes.length - 1;
 						}
 
-						ins_arr.push(pnode);
+						mrep_arr.push(pnode);
 
 						// add replacement_prefixes.length-1 zeroes to their M vectors
 						// (thereby adding as many outgoing edges as columns were inserted)
 						this.m[pnode] += Madd;
 					}
 
-					shide += this.fe_p12ToTableWithHighlights([[firstRedi],[],[],ins_arr]);
+					shide += this.fe_p12ToTableWithHighlights([ins_arr,[],[],mrep_arr]);
 				} else {
 					shide += 'we replaced one column with another one column, so we did not insert ' +
 							'any new columns at all, and no action is required.' + this.nlnlnl;
@@ -1482,6 +1492,7 @@ window.c = {
 
 			if (thereAreProblems) {
 				sout += 'Sadly, the merging was not successful.' + this.nlnl;
+				unsuccessful = true;
 			} else {
 				// TODO :: what about the M vector?
 				sout += 'We have now achieved the fully merged BWT.' + this.nlnl;
@@ -1494,48 +1505,73 @@ window.c = {
 
 
 
-		if (this.merge_directly) {
-			sout += 'We can also take out the helper nodes ' + this.DS_1_o + ' and ' + this.DK_1_o +
-					' (adding the ' + this.DM + ' value of ' + this.DK_1_o + ' to the last node of ' +
-					this.DH_1 + '), as well as replacing ' + this.DK_1_o + ' in the BWT with ' +
-					this.lastH1Letter +
-					', the last letter of ' + this.DH_1 + ':' + this.nlnl;
+		if (!unsuccessful) {
+			if (this.merge_directly) {
+				sout += 'We can take out the helper nodes ' + this.DS_1_o + ' and ' + this.DK_1_o +
+						' (adding the ' + this.DM + ' value of ' + this.DK_1_o + ' to the last node of ' +
+						this.DH_1 + '), as well as replacing ' + this.DK_1_o + ' in the BWT with ' +
+						this.lastH1Letter +
+						', the last letter of ' + this.DH_1 + ':' + this.nlnl;
 
-			// get M-value of "#_1" node
-			var Madd = '';
-			for (i=0; i < this.p12.length; i++) {
-				if (this.p12[i][0] === this.DK_1_o) {
-					Madd = this.m[i].slice(1);
-				}
-			}
-
-			for (i=0; i < this.p12.length; i++) {
-				// take out the "$_1" and "#_1" nodes
-				if ((this.p12[i][0].indexOf(this.DS_1_o) === 0) ||
-					(this.p12[i][0].indexOf(this.DK_1_o) === 0)) {
-					this.p12.splice(i, 1);
-					this.p12_itlv.splice(i, 1);
-					this.bwt.splice(i, 1);
-					this.m.splice(i, 1);
+				// get M-value of "#_1" node
+				var Madd = '';
+				for (i=0; i < this.p12.length; i++) {
+					if (this.p12[i][0] === this.DK_1_o) {
+						Madd = this.m[i].slice(1);
+					}
 				}
 
-				// could be broken because of splicing ;)
-				if (i < this.p12.length) {
-					// if there is some M-value of "#_1" node to add...
-					if (Madd !== '') {
-						// ... then add M-value of "#_1" node to M-value of last node of H_1
-						if (this.p12[i][0].indexOf(this.DS_1_o) === 1) {
-							this.m[i] += Madd;
+				for (i=0; i < this.p12.length; i++) {
+					// take out the "$_1" and "#_1" nodes
+					if ((this.p12[i][0].indexOf(this.DS_1_o) === 0) ||
+						(this.p12[i][0].indexOf(this.DK_1_o) === 0)) {
+						this.p12.splice(i, 1);
+						this.p12_itlv.splice(i, 1);
+						this.bwt.splice(i, 1);
+						this.m.splice(i, 1);
+					}
+
+					// could be broken because of splicing ;)
+					if (i < this.p12.length) {
+						// if there is some M-value of "#_1" node to add...
+						if (Madd !== '') {
+							// ... then add M-value of "#_1" node to M-value of last node of H_1
+							if (this.p12[i][0].indexOf(this.DS_1_o) === 1) {
+								this.m[i] += Madd;
+							}
+						}
+
+						// replace a "...$_1#_1..." caption with a "......" caption
+						this.p12[i][0] = this.p12[i][0].replace(this.DS_1_o+this.DK_1_o, '');
+
+						// replace #_1 in BWT with last node of H_1
+						if (this.bwt[i] === this.DK_1_o) {
+							this.bwt[i] = this.lastH1Letter;
 						}
 					}
+				}
 
-					// replace a "...$_1#_1..." caption with a "......" caption
-					this.p12[i][0] = this.p12[i][0].replace(this.DS_1_o+this.DK_1_o, '');
+				sout += this.fe_p12ToTableWithHighlights([]);
+			}
 
-					// replace #_1 in BWT with last node of H_1
-					if (this.bwt[i] === this.DK_1_o) {
-						this.bwt[i] = this.lastH1Letter;
-					}
+
+
+			// [NOTE 1] ::
+			//     if this.merge_directly is NOT true, then here we can get into trouble with
+			//     ...$_1#_1..., as e.g. TG vs. T$_1#_1A would be pruned to TG vs. T$ instead of
+			//     the correct TG vs. TA - for now we will just discontinue support for merge_directly
+			//     being false ;)
+
+			sout += 'As we are done with the prefix-doubling, we can now prune the prefixes back down ' +
+					'to the shortest possible lengths that still leave the prefixes unique:' + this.nlnl;
+
+			for (i=1; i < this.p12.length-1; i++) {
+				while ((this.p12[i][0].slice(0, this.p12[i][0].length-1).slice(0, this.p12[i-1][0].length) !==
+					    this.p12[i-1][0].slice(0, this.p12[i][0].length-1)) &&
+					   (this.p12[i][0].slice(0, this.p12[i][0].length-1).slice(0, this.p12[i+1][0].length) !==
+					    this.p12[i+1][0].slice(0, this.p12[i][0].length-1)) &&
+					   (this.p12[i][0] != '')) {
+					this.p12[i][0] = this.p12[i][0].slice(0, this.p12[i][0].length-1);
 				}
 			}
 
@@ -1544,35 +1580,11 @@ window.c = {
 
 
 
-		// [NOTE 1] ::
-		//     if this.merge_directly is NOT true, then here we can get into trouble with
-		//     ...$_1#_1..., as e.g. TG vs. T$_1#_1A would be pruned to TG vs. T$ instead of
-		//     the correct TG vs. TA - for now we will just discontinue support for merge_directly
-		//     being false ;)
-
-		sout += 'As we are done with the prefix-doubling, we can now prune the prefixes back down ' +
-				'to the shortest possible lengths that still leave the prefixes unique:' + this.nlnl;
-
-		for (i=1; i < this.p12.length-1; i++) {
-			while ((this.p12[i][0].slice(0, this.p12[i][0].length-1).slice(0, this.p12[i-1][0].length) !==
-				    this.p12[i-1][0].slice(0, this.p12[i][0].length-1)) &&
-				   (this.p12[i][0].slice(0, this.p12[i][0].length-1).slice(0, this.p12[i+1][0].length) !==
-				    this.p12[i+1][0].slice(0, this.p12[i][0].length-1)) &&
-				   (this.p12[i][0] != '')) {
-				this.p12[i][0] = this.p12[i][0].slice(0, this.p12[i][0].length-1);
-			}
-		}
-
-		sout += this.fe_p12ToTableWithHighlights([]);
-
-
 		sout += 'To make the comparison simpler, here are the BWT and ' + this.DM + ' vector ' +
 				'again, which we obtained from the merged graph directly:' + this.nlnl;
 
 		sout += this.fe_findexToTable(findex, true);
 
-
-		// CURRENTLY WORKING HERE
 
 
 		sout += this.s_end_document;

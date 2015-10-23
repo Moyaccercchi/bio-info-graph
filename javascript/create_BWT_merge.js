@@ -1019,7 +1019,7 @@ window.c = {
 				'and the node with prefix ' + this.firstH2Letter + ' and origin 2, which in fact will ' +
 				'go on to represent the other two nodes once they are dropped in the end.' + this.nlnl;
 
-		sout += this.fe_p12ToTableWithHighlights([]);
+		sout += this.fe_p12ToTableWithHighlights([], true);
 
 
 		sout += 'However, we need to exchange ' + this.DS + ' and ' + this.DS_1_o +
@@ -1035,7 +1035,7 @@ window.c = {
 		}
 		this.bwt = this.merge_with_interleave(bwt1, bwt2, this.p12_itlv);
 
-		sout += this.fe_p12ToTableWithHighlights([]);
+		sout += this.fe_p12ToTableWithHighlights([], true);
 
 
 
@@ -1182,10 +1182,10 @@ window.c = {
 
 
 				// 1 - look at last letter of first red prefix
-				shide += "We want to consider any one of the shortest red prefixes.";
+				shide += "We want to consider any one of the shortest red prefixes." + this.nlnl;
 
 				if (patience === 0) {
-					shide += " (Let's arbitrarily pick the first one of the shortest red prefixes, " +
+					shide += "(Let's arbitrarily pick the first one of the shortest red prefixes, " +
 							"where " + this.DS_1_o + this.DK_1_o + " is not counted. " +
 							"Oh, and it is important that we focus on the shortest prefixes, " +
 							"as we could otherwise get into a situation in which we split " +
@@ -1193,37 +1193,40 @@ window.c = {
 							"which would put the table in an unsafe / inconsistent state unless " +
 							"we included the same BWT letter several times in that other node and " +
 							"always kept track of that until the split of that node happened, which " +
-							"seems like a lot of work.)";
+							"seems like a lot of work.)" + this.nlnl;
 				}
 
-				shide += this.nlnl +
-						"It is " + firstRedPrefix + " and we jump through the table " +
+				shide += "The prefix is " + firstRedPrefix + " and we jump through the table " +
 						"all the way until we reach its last letter - that is, " + curLetter +
 						'.' + this.nlnl;
 
-				shide += this.fe_p12ToTableWithHighlights([[firstRedi]]);
+				shide += this.fe_p12ToTableWithHighlights([[firstRedi]], true);
 
 
 				// 2 - check BWT containing the letter with origin being the same the one of the letter
 				shide += "We now look through the BWT that has the same origin and " +
-						"search for the letters one by after the other, " +
+						"search for the letters one after the other, " +
 						"using the nextNodes(i) function." +
 						this.nlnl;
 
 				var next_nodes = [firstRedi];
 				for (i=0; i < firstRedPrefix.length; i++) {
-					// we can always just take next_nodes[0], because we are assured
-					// that there is exactly one next node for all but the last node
-					// on our way (as otherwise the prefix would not have been formed)
-					next_nodes = this.nextNodes(next_nodes[0]);
-					shide += this.fe_p12ToTableWithHighlights([[], [], next_nodes]);
+					var next_s = '';
+					for (var k=0; k < next_nodes.length; k++) {
+						next_s += this.nextNodes(next_nodes[k]).join(',') + ',';
+					}
+					next_nodes = next_s.slice(0, -1).split(',');
+					for (k=0; k < next_nodes.length; k++) {
+						next_nodes[k] = parseInt(next_nodes[k], 10);
+					}
+					shide += this.fe_p12ToTableWithHighlights([[], [], next_nodes], true);
 				}
 
 
 				// 3 - look at corresponding prefixes, and append them to the letter
 				shide += 'We now take the corresponding prefixes.' + this.nlnl;
 
-				shide += this.fe_p12ToTableWithHighlights([next_nodes]);
+				shide += this.fe_p12ToTableWithHighlights([next_nodes], true);
 
 				shide += 'These prefixes get added to the original prefix ' + firstRedPrefix +
 						' that we were looking at, producing the following new prefixes:' + this.nlnl;
@@ -1268,7 +1271,7 @@ window.c = {
 					ins_arr.push(firstRedi+i);
 					Madd += '0';
 				}
-				shide += this.fe_p12ToTableWithHighlights([ins_arr, ins_arr, ins_arr, ins_arr]);
+				shide += this.fe_p12ToTableWithHighlights([ins_arr, ins_arr, ins_arr, ins_arr], true);
 
 				shide += 'We now need to consider the ' + this.DM + ' vector, for which we have set ' +
 						'the correct value for the new columns (taking the one from their origin), ' +
@@ -1306,7 +1309,7 @@ window.c = {
 						this.m[pnode] += Madd;
 					}
 
-					shide += this.fe_p12ToTableWithHighlights([ins_arr,[],[],mrep_arr]);
+					shide += this.fe_p12ToTableWithHighlights([ins_arr,[],[],mrep_arr], true);
 				} else {
 					shide += 'we replaced one column with another one column, so we did not insert ' +
 							'any new columns at all, and no action is required.' + this.nlnlnl;
@@ -1332,199 +1335,22 @@ window.c = {
 				this.bwt = this.get_first_n_from_scr(this.p12, 3);
 				this.m = this.get_first_n_from_scr(this.p12, 4);
 
-				shide += this.fe_p12ToTableWithHighlights([]);
+				shide += this.fe_p12ToTableWithHighlights([], true);
 
 
 				// 7 - repeat approach until no more problems (or run out of patience)
 				patience++;
 
 				sout += this.hideWrap(shide + '</div>', 'Step ' + patience) + this.nlnl;
-
-
-
-				/*
-				for (i=0; i < this.p12.length; i++) {
-					if (this.p12[i][2]) {
-						firstRedi = i;
-						break;
-					}
-				}
-
-				var firstRedPrefix = this.p12[firstRedi][0];
-				var curOrigOrigin = this.p12[firstRedi][1]; // original origin (which H are we starting in?)
-				var curOrigin = curOrigOrigin; // modified origin (which H are we ending in?)
-				var curLetter = firstRedPrefix[firstRedPrefix.length-1];
-
-				// does firstRedPrefix contain $_1 (but is not just "$_1")?
-				if (firstRedPrefix.indexOf(this.DS_1_o) > 0) {
-					// switch the origin that we are ending in from H_1 to H_2
-					curOrigin = '2';
-				}
-
-				var shide = '<div>';
-
-
-				// 1 - look at last letter of first red prefix
-				shide += "We want to consider the first red prefix." + this.nlnl +
-						"It is " + firstRedPrefix + " and we consider in particular " +
-						"its last letter - that is, " + curLetter + '.' + this.nlnl;
-
-				shide += this.fe_p12ToTableWithHighlights([[firstRedi]]);
-
-
-				// 2 - check BWT containing the letter with origin being the same the one of the letter
-				shide += "We now look through the BWT that has the same origin and search for this letter." +
-						this.nlnl +
-						"In this case, the origin is ";
-				if (curOrigin == '2') {
-					shide += this.DH_2;
-				} else {
-					shide += this.DH_1;
-				}
-				// TODO IMPORTANT :: use first to last property to not go through ALLLLL the things!
-				// (which would take way too much time (many many orders of magnitude) AND be wrong!)
-				shide += " and we are searching for the letter " + curLetter + '.' + this.nlnl;
-
-				var cur_bwt_pos = [];
-				for (i=0; i < this.bwt.length; i++) {
-					if (this.p12_itlv[i] === curOrigin) {
-						if (this.bwt[i].indexOf(curLetter) >= 0) {
-							cur_bwt_pos.push(i);
-						}
-					}
-				}
-
-				shide += this.fe_p12ToTableWithHighlights([[], [], cur_bwt_pos]);
-
-
-				// 3 - look at corresponding prefixes, and append them to the letter
-				shide += 'We now take the corresponding prefixes.' + this.nlnl;
-
-				shide += this.fe_p12ToTableWithHighlights([cur_bwt_pos]);
-
-				shide += 'These prefixes get added to the original prefix ' + firstRedPrefix +
-						' that we were looking at, producing the following new prefixes:' + this.nlnl;
-
-				var replacement_prefixes = [];
-
-				for (i=0; i < cur_bwt_pos.length; i++) {
-					var pref = firstRedPrefix + this.p12[cur_bwt_pos[i]][0];
-					replacement_prefixes.push(pref);
-					shide += pref + this.nlnl;
-				}
-				shide += this.nlnl;
-
-				// 4 - insert these new prefixes instead of the original column
-				shide += 'We insert these new prefixes instead of the original column.' +
-						this.nlnl;
-
-				this.p12[firstRedi][0] = replacement_prefixes[0];
-				ins_arr = [firstRedi];
-				var Madd = '';
-				for (i=1; i < replacement_prefixes.length; i++) {
-					this.p12.splice(firstRedi+i, 0, [replacement_prefixes[i], this.p12[firstRedi][1], false]);
-					this.p12_itlv.splice(firstRedi+i, 0, this.p12_itlv[firstRedi]);
-					this.bwt.splice(firstRedi+i, 0, this.bwt[firstRedi]);
-					// set m of the new column to 1
-					this.m.splice(firstRedi+i, 0, '1');
-					ins_arr.push(firstRedi+i);
-					Madd += '0';
-				}
-				shide += this.fe_p12ToTableWithHighlights([ins_arr, ins_arr, ins_arr, ins_arr]);
-
-				shide += 'We now need to consider the ' + this.DM + ' vector, which we have set ' +
-						'to 1 for all new columns. That is, we want to reduce the original ' + this.DM +
-						' value of the first replaced column by the amount of columns that were ' +
-						'inserted - in this case, ';
-
-				if (replacement_prefixes.length > 1) {
-
-					shide += 'we replaced 1 column with ' + replacement_prefixes.length +
-							' columns, so we inserted ' + (replacement_prefixes.length - 1) + ' columns.' +
-							this.nlnl;
-					
-					ins_arr = [firstRedi];
-
-					// reduce m of the original column by amount of replacement_prefixes
-					this.m[firstRedi] = this.m[firstRedi].slice(0, - (replacement_prefixes.length-1));
-
-					// this here should not happen (M should not become empty) if all worked
-					// out correctly... but so far, all does not always work out correctly,
-					// so we do this as a last-ditch measure to not get completely nonsensical
-					// data all over the place
-					if (this.m[firstRedi] === '') {
-						this.m[firstRedi] = '1';
-					}
-
-					shide += 'We also need to consider the preceding nodes and increase their ' + this.DM +
-							' values by that same amount, as these nodes now have gotten more outgoing ' +
-							'edges.' + this.nlnl;
-
-					// find previous nodes
-					// for now, find all nodes with the same origin whose prefixes start with the
-					// same letter as the BWT of the inserted columns contains
-					// TODO IMPORTANT :: use first-to-last-property to only find the correct node,
-					//                   not just all the nodes as now ;)
-					var BWTletters = this.bwt[firstRedi].split('|');
-					for (i=0; i < this.bwt.length; i++) {
-						if (this.p12_itlv[i] === curOrigOrigin) {
-							for (var k=0; k < BWTletters.length; k++) {
-								if (this.p12[i][0].indexOf(BWTletters[k]) === 0) {
-									ins_arr.push(i);
-
-									// add replacement_prefixes.length-1 zeroes to their M vectors
-									// (thereby adding as many outgoing edges as columns were inserted)
-									this.m[i] += Madd;
-								}
-							}
-						}
-					}
-
-					shide += this.fe_p12ToTableWithHighlights([[firstRedi],[],[],ins_arr]);
-				} else {
-					shide += 'we replaced one column with another one column, so we did not insert ' +
-							'any new columns at all, and no action is required.' + this.nlnlnl;
-				}
-
-
-				// 5&6 - resort prefixes and recheck problems
-				shide += 'We can now sort the prefixes again alphabetically and ' +
-						'check for further problems.' + this.nlnl;
-
-				// keep track of the BWT and M vector while sorting
-				// (we cannot just merge afterwards with the interleave vector,
-				// as we have inserted columns and therefore one original
-				// column can lead to several merged columns)
-				for (i=0; i < this.p12.length; i++) {
-					this.p12[i][3] = this.bwt[i];
-					this.p12[i][4] = this.m[i];
-				}
-
-				thereAreProblems = this.sortp12andFindProblems();
-
-				this.p12_itlv = this.get_index_from_col(this.p12);
-				this.bwt = this.get_first_n_from_scr(this.p12, 3);
-				this.m = this.get_first_n_from_scr(this.p12, 4);
-
-				shide += this.fe_p12ToTableWithHighlights([]);
-
-
-				// 7 - repeat approach until no more problems (or run out of patience)
-				patience++;
-
-				sout += this.hideWrap(shide + '</div>', 'Step ' + patience) + this.nlnl;
-				*/
 			}
 
 			if (thereAreProblems) {
 				sout += 'Sadly, the merging was not successful.' + this.nlnl;
 				unsuccessful = true;
 			} else {
-				// TODO :: what about the M vector?
 				sout += 'We have now achieved the fully merged BWT.' + this.nlnl;
 			}
 		} else {
-			// TODO :: what about the M vector?
 			sout += 'We are very lucky, as there are no problems, and we have therefore already ' +
 					'found the fully merged BWT.' + this.nlnl;
 		}
@@ -1577,7 +1403,7 @@ window.c = {
 					}
 				}
 
-				sout += this.fe_p12ToTableWithHighlights([]);
+				sout += this.fe_p12ToTableWithHighlights([], true);
 			}
 
 
@@ -1601,8 +1427,12 @@ window.c = {
 				}
 			}
 
-			sout += this.fe_p12ToTableWithHighlights([]);
+			sout += this.fe_p12ToTableWithHighlights([], true);
 		}
+
+		sout += 'Finally, we take out the origin column, as it is not needed anymore.' + this.nlnl;
+
+		sout += this.fe_p12ToTableWithHighlights([], false);
 
 
 
@@ -1610,6 +1440,18 @@ window.c = {
 				'again, which we obtained from the merged graph directly:' + this.nlnl;
 
 		sout += this.fe_findexToTable(findex, true);
+
+
+
+		if (this.finalComparison(findex)) {
+			sout += 'We can see that the table found through merging the BWTs and the ' +
+					'table found through merging the graphs and then building one BWT ' +
+					'are exactly the same! Jippey! =)' + this.nlnl;
+		} else {
+			sout += 'We can see that the table found through merging the BWTs and the ' +
+					'table found through merging the graphs and then building one BWT ' +
+					'are not the same... Sad face. =(' + this.nlnl;
+		}
 
 
 
@@ -1632,12 +1474,6 @@ window.c = {
 
 		// the origin of our node, which we will expect all other nodes to have too
 		var curOrigin = this.p12_itlv[i];
-
-		// does the prefix of node i contain $_1 (but is not just "$_1")?
-		if (this.p12[i][0].indexOf(this.DS_1_o) > 0) {
-			// switch the origin that we are ending in from H_1 to H_2
-			curOrigin = '2';
-		}
 
 		// keep track of how many nodes we need to jump over
 		var jumpOver = 0;
@@ -1731,6 +1567,37 @@ window.c = {
 		}
 
 		return retNodes;
+	},
+
+
+
+	// takes in an findex (and assumes "this" has p12, BWT and M)
+	// gives out true if the findex contains the same data as "this", or
+	//   false if there are differences
+	finalComparison: function(findex) {
+
+		// check p12 vs. findex[0]
+		for (var i=0; i < findex[0].length; i++) {
+			if (this.p12[i][0] !== findex[0][i]) {
+				return false;
+			}
+		}
+
+		// check BWT vs. findex[1]
+		for (var i=0; i < findex[1].length; i++) {
+			if (this.bwt[i] !== findex[1][i]) {
+				return false;
+			}
+		}
+
+		// check M vs. findex[2]
+		for (var i=0; i < findex[2].length; i++) {
+			if (this.m[i] !== findex[2][i]) {
+				return false;
+			}
+		}
+
+		return true;
 	},
 
 
@@ -1895,14 +1762,14 @@ window.c = {
 
 
 
-	// takes in a highlight array (and assumes a p12 array, p12 interleave vector, BWT and
-	//   M vector on "this")
+	// takes in a highlight array and a boolean parameter (and assumes a p12 array, p12
+	//   interleave vector, BWT and M vector on "this")
 	//   (highlight_arr contains the coordinates of cells in the table that should be specially
 	//   highlighted, so e.g. highlight_arr = [[3,4,5], [0,2], [1,5]] to highlight cells
 	//   3, 4 and 5 in row 0 (prefix), 0 and 2 in row 1 (origin) and 1 and 5 in row 2 (BWT))
 	// gives out a string containing a table with all the information and with the extra
 	//   highlighting
-	fe_p12ToTableWithHighlights: function(highlight_arr) {
+	fe_p12ToTableWithHighlights: function(highlight_arr, show_origin) {
 
 		var spref = this.arr_to_highlighted_str(this.p12, 2, highlight_arr[0]);
 
@@ -1918,7 +1785,9 @@ window.c = {
 			stab = stab.slice(0, -4);
 		}
 		stab += spref + this.td + 'Prefix' + this.tabnlnc;
-		stab += this.arr_to_extra_high_str(this.p12_itlv, highlight_arr[1]) + this.td + 'Origin' + this.tabnlnc;
+		if (show_origin) {
+			stab += this.arr_to_extra_high_str(this.p12_itlv, highlight_arr[1]) + this.td + 'Origin' + this.tabnlnc;
+		}
 		stab += this.arr_to_extra_high_str(this.bwt, highlight_arr[2]) + this.td + 'BWT' + this.tabnlnc;
 		stab += this.arr_to_extra_high_str(this.m, highlight_arr[3]) + this.td + this.DM + this.nl;
 		stab += this.endtab;

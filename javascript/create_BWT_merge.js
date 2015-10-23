@@ -74,6 +74,7 @@ window.c = {
 
 		this.tab = '\\tab'; // start table
 		this.tabnl = " \\\\" + this.nl; // newline in table
+		this.tabnlnc = ' \\\\'; // newline in table without starting a cell
 		this.td = " & "; // table cell divider
 		this.endtab = '\\endtab' + this.nlnl; // end table
 		this.tabchar = '      '; // a tab (horizontal space)
@@ -108,6 +109,7 @@ window.c = {
 
 		this.tab = '<div class="table_box"><table>'; // start table
 		this.tabnl = '</td></tr>' + this.nl + '<tr><td>'; // newline in table
+		this.tabnlnc = '</td></tr>' + this.nl + '<tr>'; // newline in table without starting a cell
 		this.td = '</td><td>'; // table cell divider
 		this.endtab = '</td></tr></tbody></table></div>' + this.nlnl; // end table
 		this.tabchar = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'; // a tab (horizontal space)
@@ -994,6 +996,9 @@ window.c = {
 		this.m = this.merge_with_interleave(m1, m2, this.p12_itlv);
 
 		var stab = this.s_table_head;
+		if (this.give_out_HTML) {
+			stab = stab.slice(0, -4);
+		}
 		stab += this.arr_to_highlighted_str(this.p12, 2) + this.td + 'Prefix' + this.tabnl;
 		stab += this.p12_itlv.join(this.td) + this.td + 'Origin' + this.nl;
 		stab += this.endtab;
@@ -1148,10 +1153,17 @@ window.c = {
 
 			while ((patience < 100) && (thereAreProblems)) {
 
+				// initialize to an arbitrary big number, which is bigger than
+				// the length of any prefix in the graph (and no prefix should
+				// need to be longer than the amount of nodes, but just to be
+				// sure, let's multiply by 100)
+				var shortestRedLength = 100 * this.p12.length;
+				var rep = this.DS_1_o + this.DK_1_o;
+
 				for (i=0; i < this.p12.length; i++) {
-					if (this.p12[i][2]) {
+					if (this.p12[i][2] && (this.p12[i][0].replace(rep, '').length < shortestRedLength)) {
 						firstRedi = i;
-						break;
+						shortestRedLength = this.p12[i][0].replace(rep, '').length;
 					}
 				}
 
@@ -1170,7 +1182,21 @@ window.c = {
 
 
 				// 1 - look at last letter of first red prefix
-				shide += "We want to consider the first red prefix." + this.nlnl +
+				shide += "We want to consider any one of the shortest red prefixes.";
+
+				if (patience === 0) {
+					shide += " (Let's arbitrarily pick the first one of the shortest red prefixes, " +
+							"where " + this.DS_1_o + this.DK_1_o + " is not counted. " +
+							"Oh, and it is important that we focus on the shortest prefixes, " +
+							"as we could otherwise get into a situation in which we split " +
+							"a node, but have the node following it still unsplit in the table, " +
+							"which would put the table in an unsafe / inconsistent state unless " +
+							"we included the same BWT letter several times in that other node and " +
+							"always kept track of that until the split of that node happened, which " +
+							"seems like a lot of work.)";
+				}
+
+				shide += this.nlnl +
 						"It is " + firstRedPrefix + " and we jump through the table " +
 						"all the way until we reach its last letter - that is, " + curLetter +
 						'.' + this.nlnl;
@@ -1636,7 +1662,7 @@ window.c = {
 		for (var k=0; k < this.p12.length; k++) {
 			if ((this.p12_itlv[k] === curOrigin) && (this.bwt[k].indexOf(firstPrefLetter) > -1)) {
 				// still jumping...
-				if (jumpOver > 1) {
+				if (jumpOver > 0) {
 					jumpOver--;
 				} else {
 					addToResult--;
@@ -1888,9 +1914,12 @@ window.c = {
 		}
 
 		var stab = this.s_table_head;
-		stab += spref + this.td + 'Prefix' + this.tabnl;
-		stab += this.arr_to_extra_high_str(this.p12_itlv, highlight_arr[1]) + this.td + 'Origin' + this.tabnl;
-		stab += this.arr_to_extra_high_str(this.bwt, highlight_arr[2]) + this.td + 'BWT' + this.tabnl;
+		if (this.give_out_HTML) {
+			stab = stab.slice(0, -4);
+		}
+		stab += spref + this.td + 'Prefix' + this.tabnlnc;
+		stab += this.arr_to_extra_high_str(this.p12_itlv, highlight_arr[1]) + this.td + 'Origin' + this.tabnlnc;
+		stab += this.arr_to_extra_high_str(this.bwt, highlight_arr[2]) + this.td + 'BWT' + this.tabnlnc;
 		stab += this.arr_to_extra_high_str(this.m, highlight_arr[3]) + this.td + this.DM + this.nl;
 		stab += this.endtab;
 
@@ -3533,18 +3562,16 @@ window.c = {
 					}
 				}
 			}
+			// take out the first delimiter end
+			sout = sout.slice(5);
 		} else {
 			delimiter = ' & ';
 			for (var i=0; i < arr.length; i++) {
 				sout += delimiter + arr[i][0];
 			}
+			// take out the first delimiter
+			sout = sout.slice(delimiter.length);
 		}
-
-		// take out the first delimiter - which also means that we cannot highlight
-		// the first element, because we would (a) fail the takeout (as the string then)
-		// has a different length) and (b) would have to take out the first one anyway
-		// - luckily, the first column never needs to be highlighted =)
-		sout = sout.slice(delimiter.length);
 
 		return sout;
 	},
@@ -3573,18 +3600,16 @@ window.c = {
 					sout += delimiter + arr[i];
 				}
 			}
+			// take out the first delimiter end
+			sout = sout.slice(5);
 		} else {
 			delimiter = ' & ';
 			for (var i=0; i < arr.length; i++) {
 				sout += delimiter + arr[i];
 			}
+			// take out the first delimiter
+			sout = sout.slice(delimiter.length);
 		}
-
-		// take out the first delimiter - which also means that we cannot highlight
-		// the first element, because we would (a) fail the takeout (as the string then)
-		// has a different length) and (b) would have to take out the first one anyway
-		// - luckily, the first column never needs to be highlighted =)
-		sout = sout.slice(delimiter.length);
 
 		return sout;
 	},

@@ -356,7 +356,7 @@
 
 
 	<span class="creditline absleft">
-		Version: 0.0.0.8
+		Version: 0.0.0.9
 	</span>
 	<span class="creditline absright">
 		Moyaccercchi (tws@hi.is), 2015

@@ -1804,7 +1804,7 @@ window.c = {
 		// TODO :: make this work for DaTeX output as well (e.g. with TikZ)
 		var sout = '';
 
-		sout += '<svg xmlns="http://www.w3.org/2000/svg" version="1.1"';
+		sout += '<svg xmlns="http:/' + '/www.w3.org/2000/svg" version="1.1"';
 
 		sout += 'viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">';
 

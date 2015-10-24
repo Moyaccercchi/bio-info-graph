@@ -38,6 +38,9 @@ window.c = {
 	last_mode: 'none', // 'naive' or 'advanced', init to 'none'
 	last_give_out_HTML: -1, // true or false, init as -1
 
+	origin_1: '1', // which index to show on H_1 (and to use for origin 1 in general)
+	origin_2: '2', // which index to show on H_2 (and to use for origin 2 in general)
+
 	merge_directly: true, // true: take out $1 and #1 - they should not actually be in the merged graph,
 						  //       and we should jump over them in the individual ones while merging them
 						  //       too =)
@@ -57,17 +60,17 @@ window.c = {
 		this.nlnl = "\n\n"; // newline character in print
 		this.nlnlnl = "\n\n\n"; // double newline character in print
 		this.DS = "$ \\$ $"; // $
-		this.DS_1_o = '$ \\$_1 $'; // $_1
-		this.DS_1_t = '$ \\$_1 $'; // $_1 in SVG
-		this.DS_2_o = '$ \\$_2 $'; // $_2
+		this.DS_1_o = '$ \\$_' + this.origin_1 + ' $'; // $_1
+		this.DS_1_t = '$ \\$_' + this.origin_1 + ' $'; // $_1 in SVG
+		this.DS_2_o = '$ \\$_' + this.origin_2 + ' $'; // $_2
 		this.DK = '$ # $'; // #
-		this.DK_1_o = '$ #_1 $'; // #_1
-		this.DK_1_t = '$ #_1 $'; // #_1 in SVG
-		this.H_1 = 'H_1'; // string H_1 while in mathmode
-		this.H_2 = 'H_2'; // string H_2 while in mathmode
+		this.DK_1_o = '$ #_' + this.origin_1 + ' $'; // #_1
+		this.DK_1_t = '$ #_' + this.origin_1 + ' $'; // #_1 in SVG
+		this.H_1 = 'H_' + this.origin_1; // string H_1 while in mathmode
+		this.H_2 = 'H_' + this.origin_2; // string H_2 while in mathmode
 		this.DH = '$ H $'; // string H
-		this.DH_1 = '$ H_1 $'; // string H_1
-		this.DH_2 = '$ H_2 $'; // string H_2
+		this.DH_1 = '$ H_' + this.origin_1 + ' $'; // string H_1
+		this.DH_2 = '$ H_' + this.origin_2 + ' $'; // string H_2
 		this.DM = '$ M $'; // vector M
 		this.DF = '$ F $'; // vector F
 		this.di = '$ i $'; // integer i
@@ -92,17 +95,17 @@ window.c = {
 		this.nlnl = '<br>\n'; // newline character in print
 		this.nlnlnl = '<br><br>\n'; // double newline character in print
 		this.DS = '$'; // $
-		this.DS_1_o = '$<span class="d">1</span>'; // $_1
-		this.DS_1_t = '<tspan>$</tspan><tspan class="d" dy="0.2">1</tspan>'; // $_1 in SVG
-		this.DS_2_o = '$<span class="d">2</span>'; // $_2
+		this.DS_1_o = '$<span class="d">' + this.origin_1 + '</span>'; // $_1
+		this.DS_1_t = '<tspan>$</tspan><tspan class="d" dy="0.2">' + this.origin_1 + '</tspan>'; // $_1 in SVG
+		this.DS_2_o = '$<span class="d">' + this.origin_2 + '</span>'; // $_2
 		this.DK = '^'; // #
-		this.DK_1_o = '^<span class="d">1</span>'; // #_1
-		this.DK_1_t = '<tspan>^</tspan><tspan class="d" dy="0.2">1</tspan>'; // #_1 in SVG
-		this.H_1 = 'H<span class="d">1</span>'; // string H_1 while in mathmode
-		this.H_2 = 'H<span class="d">2</span>'; // string H_2 while in mathmode
+		this.DK_1_o = '^<span class="d">' + this.origin_1 + '</span>'; // #_1
+		this.DK_1_t = '<tspan>^</tspan><tspan class="d" dy="0.2">' + this.origin_1 + '</tspan>'; // #_1 in SVG
+		this.H_1 = 'H<span class="d">' + this.origin_1 + '</span>'; // string H_1 while in mathmode
+		this.H_2 = 'H<span class="d">' + this.origin_2 + '</span>'; // string H_2 while in mathmode
 		this.DH = '<i>H</i>'; // string H
-		this.DH_1 = '<i>H<span class="d">1</span></i>'; // string H_1
-		this.DH_2 = '<i>H<span class="d">2</span></i>'; // string H_2
+		this.DH_1 = '<i>H<span class="d">' + this.origin_1 + '</span></i>'; // string H_1
+		this.DH_2 = '<i>H<span class="d">' + this.origin_2 + '</span></i>'; // string H_2
 		this.DM = '<i>M</i>'; // vector M
 		this.DF = '<i>F</i>'; // vector F
 		this.di = '<i>i</i>'; // integer i
@@ -901,8 +904,8 @@ window.c = {
 				'they are coming from:' + this.nlnl;
 
 
-		var p1 = this.add_index_to_col(findex1[0], '1');
-		var p2 = this.add_index_to_col(findex2[0], '2');
+		var p1 = this.add_index_to_col(findex1[0], this.origin_1);
+		var p2 = this.add_index_to_col(findex2[0], this.origin_2);
 		this.p12 = p1.concat(p2); // prefixes
 		this.p12_itlv = this.get_index_from_col(this.p12); // orig / interleave vector
 
@@ -1008,7 +1011,7 @@ window.c = {
 		sout += 'We should also take a look at the BWT and ' + this.DM + ' vector associated ' +
 				'with this preliminary ordering.' + this.nlnl +
 				'Oh, and from now on, we will replace "' +
-				this.DS_1_o + this.DK_1_o + '" with ">", just to indicate that we are ' +
+				this.DS_1_o + this.DK_1_o + '" with "&#62;", just to indicate that we are ' +
 				'switching from ' + this.DH_1 + ' to ' + this.DH_2 + ', but without having ' +
 				'to write so much all the time.' + this.nlnl +
 				'Finally, we will also rewrite ' + this.DS_1_o + this.DK_1_o + this.firstH2Letter +
@@ -1168,15 +1171,7 @@ window.c = {
 				}
 
 				var firstRedPrefix = this.p12[firstRedi][0];
-				var curOrigOrigin = this.p12[firstRedi][1]; // original origin (which H are we starting in?)
-				var curOrigin = curOrigOrigin; // modified origin (which H are we ending in?)
 				var curLetter = firstRedPrefix[firstRedPrefix.length-1];
-
-				// does firstRedPrefix contain $_1 (but is not just "$_1")?
-				if (firstRedPrefix.indexOf(this.DS_1_o) > 0) {
-					// switch the origin that we are ending in from H_1 to H_2
-					curOrigin = '2';
-				}
 
 				var shide = '<div>';
 
@@ -1211,6 +1206,10 @@ window.c = {
 
 				var next_nodes = [firstRedi];
 				for (i=0; i < firstRedPrefix.length; i++) {
+					// TODO :: make this more professional
+					//         (currently, we are converting an array to string and back to array
+					//         to do a deep copy rather than a pointer copy - there must a cleaner
+					//         way ^^)
 					var next_s = '';
 					for (var k=0; k < next_nodes.length; k++) {
 						next_s += this.nextNodes(next_nodes[k]).join(',') + ',';
@@ -1774,7 +1773,7 @@ window.c = {
 		var spref = this.arr_to_highlighted_str(this.p12, 2, highlight_arr[0]);
 
 		while (spref.indexOf(this.lastH1Letter+this.DS_1_o+this.DK_1_o) > -1) {
-			spref = spref.replace(this.lastH1Letter+this.DS_1_o+this.DK_1_o, this.lastH1Letter+'>');
+			spref = spref.replace(this.lastH1Letter+this.DS_1_o+this.DK_1_o, this.lastH1Letter+'&#62;');
 		}
 		while (spref.indexOf(this.DS_1_o+this.DK_1_o+this.firstH2Letter) > -1) {
 			spref = spref.replace(this.DS_1_o+this.DK_1_o+this.firstH2Letter, this.DS_1_o);
@@ -2906,20 +2905,21 @@ window.c = {
 		}
 		sout += this.h1_pos.join(this.td) + this.td + this.h2_pos.join(this.td) + this.td + "Position" + this.tabnl;
 		sout += this.h1_bwt.join(this.td) + this.td + this.h2_bwt.join(this.td) + this.td + "BWT" + this.tabnl;
-		sout += this.repjoin(this.h1_pos.length, '1', this.td) + this.td;
-		sout += this.repjoin(this.h2_pos.length, '2', this.td) + this.td + "Interleave" + this.nl;
+		sout += this.repjoin(this.h1_pos.length, this.origin_1, this.td) + this.td;
+		sout += this.repjoin(this.h2_pos.length, this.origin_2, this.td) + this.td + "Interleave" + this.nl;
 		sout += this.endtab;
 
 		sout += "The method that we will be using for the next steps is ";
 		sout += "to use the first column (sorted alphabetically) ";
 		sout += "instead of focusing on the last column (the BWT):" + this.nlnl;
 
-		var h1_col1 = this.add_index_to_col(this.get_first_n_from_scr(this.h1_scr, 0), '1');
-		var h2_col1 = this.add_index_to_col(this.get_first_n_from_scr(this.h2_scr, 0), '2');
+		var h1_col1 = this.add_index_to_col(this.get_first_n_from_scr(this.h1_scr, 0), this.origin_1);
+		var h2_col1 = this.add_index_to_col(this.get_first_n_from_scr(this.h2_scr, 0), this.origin_2);
 		var h12_cols = this.sort_indexed_col(h1_col1.concat(h2_col1));
 		var h12_itlv = this.get_index_from_col(h12_cols);
 		var itlv_changed =
-			this.repjoin(this.h1_pos.length, '1', '') + this.repjoin(this.h2_pos.length, '2', '') !==
+			this.repjoin(this.h1_pos.length, this.origin_1, '') +
+			this.repjoin(this.h2_pos.length, this.origin_2, '') !==
 			h12_itlv.join('');
 
 		var nth;
@@ -2997,8 +2997,8 @@ window.c = {
 		}
 		sout += this.h1_pos.join(this.td) + this.td + this.h2_pos.join(this.td) + this.td + "Old Position" + this.tabnl;
 		sout += this.h1_bwt.join(this.td) + this.td + this.h2_bwt.join(this.td) + this.td + "Old BWT" + this.tabnl;
-		sout += this.repjoin(this.h1_pos.length, '1', this.td) + this.td;
-		sout += this.repjoin(this.h2_pos.length, '2', this.td) + this.td + "Old Interleave" + this.nl;
+		sout += this.repjoin(this.h1_pos.length, this.origin_1, this.td) + this.td;
+		sout += this.repjoin(this.h2_pos.length, this.origin_2, this.td) + this.td + "Old Interleave" + this.nl;
 		sout += this.endtab;
 
 		sout += this.tab;
@@ -3668,7 +3668,7 @@ window.c = {
 		var i2 = 0;
 
 		for (var i = 0; i < h12_itlv.length; i++) {
-			if (h12_itlv[i] == '1') {
+			if (h12_itlv[i] == this.origin_1) {
 				aout.push(h1[i1]);
 				i1++;
 			} else {

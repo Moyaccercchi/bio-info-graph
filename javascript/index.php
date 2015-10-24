@@ -92,7 +92,8 @@
 		}
 
 		div.button {
-			padding:2px 5px;
+			padding:2px 0px;
+			text-align:center;
 		}
 
 		div.button, div.tabbutton, span.infobtn, div.svg_btn {
@@ -276,6 +277,9 @@
 		<div class="tabbutton" id="tab-btn-3" onclick="showTab(3)">
 			Merge Two Advanced BWTs
 		</div>
+		<div class="tabbutton" id="tab-btn-4" onclick="showTab(4)">
+			Options
+		</div>
 	</div>
 
 
@@ -354,9 +358,29 @@
 	</div>
 
 
+	<div id="div-in-4" class="mainbox" style="display:none">
+		<div>
+			Please enter the two indices that should be used for the two graphs:
+		</div>
+		<div class="input-info-container">
+			<input id="in-string-4-1" type="text" value="1"></input>
+		</div>
+		<div class="input-info-container">
+			<input id="in-string-4-2" type="text" value="2"></input>
+		</div>
+		<div>
+			<div class="button" onclick="applyOptions()">Apply Options</div>
+			<div class="button" style="float:right;" onclick="resetOptions()">Reset Options</div>
+		</div>
+	</div>
+
+	<div id="div-out-4" class="mainbox" style="display:none">
+	</div>
+
+
 
 	<span class="creditline absleft">
-		Version: 0.0.0.9
+		Version: 0.0.1.0
 	</span>
 	<span class="creditline absright">
 		Moyaccercchi (tws@hi.is), 2015
@@ -366,7 +390,10 @@
 		c.set_to_HTML();
 
 		// stores the visibility of div-out so that we don't reset it when changing tabs
-		div_out_visibility = [false, false, false, false];
+		div_out_visibility = [false, false, false, false, false];
+
+		// how many tabs are there?
+		upToTabs = 5;
 
 
 
@@ -375,7 +402,7 @@
 		*/
 
 		function unShowAllTabs() {
-			for (var i = 0; i < 4; i++) {
+			for (var i = 0; i < upToTabs; i++) {
 				document.getElementById('tab-btn-' + i).className = 'tabbutton';
 				document.getElementById('div-in-' + i).style.display = 'none';
 				document.getElementById('div-out-' + i).style.display = 'none';
@@ -632,7 +659,35 @@
 				svg_el.style.display = 'none';
 				svg_hide_el.innerHTML = 'Show';
 			}
-		}
+		};
+
+
+
+		function applyOptions() {
+
+			c.origin_1 = document.getElementById('in-string-4-1').value;
+			c.origin_2 = document.getElementById('in-string-4-2').value;
+
+			saveOptions();
+		};
+
+		function resetOptions() {
+
+			document.getElementById('in-string-4-1').value = '1';
+			document.getElementById('in-string-4-2').value = '2';
+
+			applyOptions();
+		};
+
+		function saveOptions() {
+
+			for (var i = 0; i < upToTabs; i++) {
+				div_out_visibility[i] = false;
+			}
+			
+			c.set_to_HTML();
+		};
+
 
 
 		// default to tab 3

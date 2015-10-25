@@ -635,6 +635,13 @@ window.c = {
 			sout += "encoded out-degree of each node as vector " + this.DM + ":" + this.nlnl;
 
 			sout += this.fe_findexToTable(findex, true);
+
+			sout += 'Converting this table back into an automaton (just to make sure ' +
+					'that everything worked out correctly) yields the following result:' + this.nlnl;
+
+			var auto = this.getAutomatonFromFindex(findex);
+
+			sout += this.visualize(auto, true);
 		}
 
 
@@ -2514,10 +2521,10 @@ window.c = {
 									// update the current node: leave p and c, but only keep the
 									// first of the out-nodes and add their label to the prefix
 									auto[same_as[j]] = {
-										p: orig_node.p,
-										c: orig_node.c,
-										n: [orig_node.n[0]],
-										f: orig_node.f + auto[orig_node.n[0]].c,
+										p: orig_node.p, // prev
+										c: orig_node.c, // caption
+										n: [orig_node.n[0]], // next
+										f: orig_node.f + auto[orig_node.n[0]].c, // prefix
 									};
 
 									if (addToSOut) {
@@ -2543,10 +2550,10 @@ window.c = {
 											}
 										}
 										auto.push({
-											p: orig_node.p,
-											c: orig_node.c,
-											n: [orig_node.n[k]],
-											f: orig_node.f + auto[orig_node.n[k]].c,
+											p: orig_node.p, // prev
+											c: orig_node.c, // caption
+											n: [orig_node.n[k]], // next
+											f: orig_node.f + auto[orig_node.n[k]].c, // prefix
 										});
 									}
 
@@ -2581,16 +2588,18 @@ window.c = {
 	deep_copy_node: function(node) {
 
 		var onode = {
-			p: [],
-			c: node.c,
-			n: [],
-			f: node.f
+			p: [], // prev
+			c: node.c, // caption
+			n: [], // next
+			f: node.f // prefix
 		};
 
+		// deep copy prev
 		for (var i=0; i < node.p.length; i++) {
 			onode.p.push(node.p[i]);
 		}
 
+		// deep copy next
 		for (var i=0; i < node.n.length; i++) {
 			onode.n.push(node.n[i]);
 		}
@@ -2671,6 +2680,116 @@ window.c = {
 		}
 
 		return [prefixes, BWT, M];
+	},
+
+
+
+	// takes in an findex with BWT and M vector
+	// gives out the automaton
+	getAutomatonFromFindex: function(findex) {
+
+		var i;
+		var auto = [];
+
+		// initiate the environment (overwriting this.p12, this.p12_itlv, this.bwt and this.m)
+		this.p12 = [];
+		this.p12_itlv = this.reparr(this.p12.length, this.origin_2);
+		for (i=0; i < findex[0].length; i++) {
+			this.p12.push([findex[0][i], this.origin_2]);
+		}
+
+		this.bwt = findex[1];
+		this.m = findex[2];
+
+		// find the first node
+		var firstNodei;
+
+		for (i=0; i < this.p12.length; i++) {
+			if (this.p12[i][0] === this.DK) {
+				firstNodei = i;
+				break;
+			}
+		}
+
+		var p12ToAuto = [];
+		p12ToAuto[firstNodei] = 0;
+		var nextAutoNode = 0;
+		var edgesDone = [];
+
+		auto[0] = {
+			p: [], // prev
+			c: this.p12[firstNodei][0][0], // caption
+			n: [], // next
+			f: this.p12[firstNodei][0], // prefix
+		};
+
+		// advance using the nextNodes function
+		var next_nodes = this.nextNodes(firstNodei);
+		var further_edges = [];
+		for (i=0; i < next_nodes.length; i++) {
+			further_edges.push(firstNodei + '>' + next_nodes[i]);
+			edgesDone.push(firstNodei + '>' + next_nodes[i]);
+		}
+
+		while (further_edges.length > 0) {
+
+			var new_further_edges = [];
+
+			for (i=0; i < further_edges.length; i++) {
+
+				// current node (the node we are adding)
+				var c_node_i = further_edges[i].slice(further_edges[i].indexOf('>')+1);
+				var c_node_ai = p12ToAuto[c_node_i]; // current node index in auto
+
+				// previous node (the node from which the edge leads to the current node)
+				var p_node_i = further_edges[i].slice(0, further_edges[i].indexOf('>'));
+				var p_node_ai = p12ToAuto[p_node_i]; // previous node index in auto
+
+				// if the current node has not been added to the automaton at all yet,
+				// add it now
+				if (c_node_ai === undefined) {
+					nextAutoNode++;
+					c_node_ai = nextAutoNode;
+					p12ToAuto[c_node_i] = c_node_ai;
+					auto.push({
+						p: [], // prev
+						c: this.p12[c_node_i][0][0], // caption
+						n: [], // next
+						f: this.p12[c_node_i][0], // prefix
+					});
+				}
+
+				// add current edge to automaton
+				auto[c_node_ai].p.push(p_node_ai);
+				auto[p_node_ai].n.push(c_node_ai);
+
+				// add all out-edges of the current node to the next round
+				next_nodes = this.nextNodes(c_node_i);
+				for (var j=0; j < next_nodes.length; j++) {
+					new_further_edges.push(c_node_i + '>' + next_nodes[j]);
+				}
+			}
+
+			further_edges = [];
+
+			for (i=0; i < new_further_edges.length; i++) {
+				if (edgesDone.indexOf(new_further_edges[i]) < 0) {
+					// store this edge as one that we want to do in the next step
+					further_edges.push(new_further_edges[i]);
+
+					// store the information that this edge has been done
+					// or will have been done soon
+					edgesDone.push(new_further_edges[i]);
+				}
+			}
+		}
+
+		// take out the next from '$'
+		auto[auto[0].p[0]].n = [];
+		// and take out the prev from '#'
+		auto[0].p = [];
+
+		return auto;
 	},
 
 
@@ -3364,6 +3483,21 @@ window.c = {
 		}
 
 		return sout;
+	},
+
+
+
+	// takes in the length of an array arr and a replacement letter
+	// gives out an array of the given length with each element being the letter
+	reparr: function(len, letter) {
+
+		var aout = [];
+
+		for (var i = 0; i < len; i++) {
+			aout.push(letter);
+		}
+
+		return aout;
 	},
 
 

@@ -29,6 +29,68 @@
 	that kind of situation, but I just thought I might want to let y'all know.)
 	TODO :: add a check against this that runs before work is started =) (and print out an error
 	message just in case)
+
+	Index of functions in window.c:
+	set_to_DaTeX: function();
+	set_to_HTML: function();
+	build_BWTs_naively: function(h1, h2);
+	prepare_BWTs_naively: function();
+	generate_BWT_naively: function(h);
+	generate_BWT_advanced: function(h);
+	generate_BWTs_advanced: function(h1, h2);
+	generate_BWTs_advanced_int: function(h1, h2);
+	merge_BWTs_advanced: function(h1, h2);
+	nextNodes: function(i);
+	prevNodes: function(i);
+	finalComparison: function(findex);
+	sortp12andFindProblems: function();
+	fe_findexToTable: function(findex, showBWTandM, show_f, show_i);
+	fe_p12ToTableWithHighlights: function(highlight_arr, show_origin, show_f, show_i);
+	visualize: function(auto, showPrefixes);
+	hideWrap: function(sout, kind);
+	graphToAutomaton: function(ha, h_graph);
+	mergeAutomata: function(auto1, auto2);
+	makeAutomatonReverseDeterministic: function(auto, addToSOut);
+	makeAutomatonReverseDeterministic_int: function(auto, addToSOut);
+	rebaseGraphForRevDet: function(i, newchar, auto, addToSOut);
+	isAutomatonReverseDeterministic: function(auto);
+	computePrefixes: function(auto);
+	generateFfromPrefixesBWTM: function(prefixes, bwt, m);
+	workOnAutomatonPrefixes: function(auto, makePrefixSorted, addToSOut);
+	workOnAutomatonPrefixes_int: function(auto, makePrefixSorted, addToSOut);
+	deep_copy_node: function(node);
+	isAutomatonPrefixSorted: function(auto);
+	makeAutomatonPrefixSorted: function(auto, addToSOut);
+	getFindexFromAutomaton: function(auto);
+	getAutomatonFromFindex: function(findex);
+	generate_BWTs_naively: function(h1, h2);
+	merge_BWTs_naively: function(h1, h2);
+	create_cyclic_rotations: function(ha, offset, offletter);
+	sort_cyclic_rotations: function(h_cr);
+	print_arrofarr: function(haa);
+	repjoin: function(len, letter, delimiter);
+	reparr: function(len, letter);
+	add_index_to_col: function(h_col, index);
+	add_indices_to_col: function(h_col, indices, h_cols);
+	arr_to_highlighted_str: function(arr, hl_pos, extra_hl_arr);
+	arr_to_extra_high_str: function(arr, extra_hl_arr);
+	arr_to_str_wo_index: function(h_col, delimiter);
+	arr_to_str_w_index: function(h_col, delimiter);
+	arr_to_arr_w_index: function(h_col);
+	sort_indexed_col: function(h_col);
+	get_index_from_col: function(h_col);
+	get_tabline_from_col_DaTeX: function(h_col);
+	get_tabline_from_col_HTML: function(arr, h_col);
+	merge_with_interleave: function(h1, h2, h12_itlv);
+	get_first_n_from_scr: function(h_scr, n);
+	get_last_n_from_scr: function(h_scr, n);
+	pos_to_str: function(pos);
+	get_pos_from_scr: function(h_scr);
+	get_bwt_from_scr: function(h_scr);
+	did_itlvs_change: function(itlv1, itlv2);
+	expand_pos: function(pos, bwt);
+	pos_equals_pos: function(pos1, pos2);
+	example: function();
 */
 
 window.c = {
@@ -1436,16 +1498,22 @@ window.c = {
 			sout += this.fe_p12ToTableWithHighlights([], true);
 		}
 
-		sout += 'Finally, we take out the origin column, as it is not needed anymore.' + this.nlnl;
+		this.f = this.generateFfromPrefixesBWTM(this.p12, this.bwt, this.m);
 
-		sout += this.fe_p12ToTableWithHighlights([], false);
+		sout += 'Finally, we take out the origin column, as it is not needed anymore.' + this.nl +
+				'We however do add another column, namely the ' + this.DF + ' bit vector.' + this.nlnl;
+
+		sout += this.fe_p12ToTableWithHighlights([], false, true);
 
 
 
-		sout += 'To make the comparison simpler, here are the BWT and ' + this.DM + ' vector ' +
+		sout += 'To make the comparison simpler, here are the BWT, ' + this.DM + ' and ' +
+				this.DF + ' vector ' +
 				'again, which we obtained from the merged graph directly:' + this.nlnl;
 
-		sout += this.fe_findexToTable(findex, true);
+		findex[3] = this.generateFfromPrefixesBWTM(findex[0], findex[1], findex[2]);
+
+		sout += this.fe_findexToTable(findex, true, true);
 
 
 
@@ -1567,6 +1635,43 @@ window.c = {
 							retNodes.push(k);
 							break;
 						}
+					}
+				}
+			}
+		}
+
+		return retNodes;
+	},
+
+
+
+	// takes in the integer position of a node in our table, assuming that the table is fully
+	//   merged and the origin has been dropped
+	// gives out an array containing the positions of all nodes which are directly preceding that one
+	prevNodes_wo_origin: function(i) {
+
+		var bwtLetters = this.bwt[i].split('|');
+
+		var retNodes = [];
+
+		for (var n=0; n < bwtLetters.length; n++) {
+
+			var curBWTLetter = bwtLetters[n];
+			var jumpOver = 0;
+
+			for (var k=0; k < i; k++) {
+				if (this.bwt[k].indexOf(curBWTLetter) > -1) {
+					jumpOver++;
+				}
+			}
+
+			// find any prefix starting with the BWT letter
+			for (var k=0; k < this.p12.length; k++) {
+				if (this.p12[k][0][0] === curBWTLetter) {
+					jumpOver -= this.m[k].length;
+					if (jumpOver < 0) {
+						retNodes.push(k);
+						break;
 					}
 				}
 			}
@@ -1738,11 +1843,12 @@ window.c = {
 
 	// takes in an findex (an array consisting of prefixes, BWT and M) and a boolean parameter
 	// gives out a table either with just the prefixes, or all of findex, depending of the parameter
-	fe_findexToTable: function(findex, showBWTandM) {
+	fe_findexToTable: function(findex, showBWTandM, show_f, show_i) {
 
-		var prefixes = findex[0];
-		var BWT = findex[1];
-		var M = findex[2];
+		// prefixes .. findex[0]
+		// BWT      .. findex[1]
+		// M        .. findex[2]
+		// F        .. findex[3]
 
 		var sout = '';
 
@@ -1752,12 +1858,23 @@ window.c = {
 		} else {
 			sout += "{" + this.repjoin(BWT.length, 'c', ' | ') + " | l}" + this.nl;
 		}
-		sout += prefixes.join(this.td) + this.td + 'Prefix';
+		if (show_i) {
+			for (var i=0; i < this.p12.length; i++) {
+				sout += i + this.td;
+			}
+			sout += this.di + this.tabnl;
+		}
+		sout += findex[0].join(this.td) + this.td + 'Prefix';
 
 		if (showBWTandM) {
 			sout += this.tabnl;
-			sout += BWT.join(this.td) + this.td + 'BWT' + this.tabnl;
-			sout += M.join(this.td) + this.td + this.DM;
+			sout += findex[1].join(this.td) + this.td + 'BWT' + this.tabnl;
+			sout += findex[2].join(this.td) + this.td + this.DM;
+		}
+
+		if (show_f) {
+			sout += this.tabnl;
+			sout += findex[3].join(this.td) + this.td + this.DF;
 		}
 
 		sout += this.nl;
@@ -1775,7 +1892,7 @@ window.c = {
 	//   3, 4 and 5 in row 0 (prefix), 0 and 2 in row 1 (origin) and 1 and 5 in row 2 (BWT))
 	// gives out a string containing a table with all the information and with the extra
 	//   highlighting
-	fe_p12ToTableWithHighlights: function(highlight_arr, show_origin) {
+	fe_p12ToTableWithHighlights: function(highlight_arr, show_origin, show_f, show_i) {
 
 		var spref = this.arr_to_highlighted_str(this.p12, 2, highlight_arr[0]);
 
@@ -1790,13 +1907,26 @@ window.c = {
 		if (this.give_out_HTML) {
 			stab = stab.slice(0, -4);
 		}
+		if (show_i) {
+			if (this.give_out_HTML) {
+				stab += '<td>';
+			}
+			for (var i=0; i < this.p12.length; i++) {
+				stab += i + this.td;
+			}
+			stab += this.di + this.tabnlnc;
+		}
 		stab += spref + this.td + 'Prefix' + this.tabnlnc;
 		if (show_origin) {
 			stab += this.arr_to_extra_high_str(this.p12_itlv, highlight_arr[1]) + this.td + 'Origin' + this.tabnlnc;
 		}
 		stab += this.arr_to_extra_high_str(this.bwt, highlight_arr[2]) + this.td + 'BWT' + this.tabnlnc;
-		stab += this.arr_to_extra_high_str(this.m, highlight_arr[3]) + this.td + this.DM + this.nl;
-		stab += this.endtab;
+		stab += this.arr_to_extra_high_str(this.m, highlight_arr[3]) + this.td + this.DM;
+		if (show_f) {
+			stab += this.tabnlnc;
+			stab += this.arr_to_extra_high_str(this.f, highlight_arr[4]) + this.td + this.DF;
+		}
+		stab += this.nl + this.endtab;
 
 		return this.hideWrap(stab, 'Table');
 	},
@@ -2382,6 +2512,45 @@ window.c = {
 	// gives out the automaton with prefixes calculated for each node
 	computePrefixes: function(auto) {
 		return this.workOnAutomatonPrefixes(auto, false, false);
+	},
+
+
+
+	// takes in a prefix array, a BWT array and an M bit vector array
+	// gives out the F bit vector array generated from these
+	generateFfromPrefixesBWTM: function(prefixes, bwt, m) {
+
+		// TODO :: this is quite experimental for now, as I don't actually know
+		// if this is how Siren2014 defines the F bit vector... we'll see
+
+		var f = [];
+		
+		// PUSH
+		var orig_p12 = this.p12;
+		this.p12 = prefixes;
+		var orig_bwt = this.bwt;
+		this.bwt = bwt;
+		var orig_m = this.m;
+		this.m = m;
+
+		// generate F
+		for (var i=0; i < prefixes.length; i++) {
+
+			var newf = '1';
+			var len = this.prevNodes_wo_origin(i).length;
+			for (var j=1; j < len; j++) {
+				newf += '0';
+			}
+
+			f.push(newf);
+		}
+
+		// POP
+		this.p12 = orig_p12;
+		this.bwt = orig_bwt;
+		this.m = orig_m;
+
+		return f;
 	},
 
 

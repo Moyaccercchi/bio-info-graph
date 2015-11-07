@@ -335,6 +335,20 @@
 	<div id="div-out-2" class="mainbox" style="display:none">
 	</div>
 
+	<div id="div-xbw-2" class="mainbox" style="display:none">
+		<div>
+			<u>XBW Environment</u><br><br>
+			To start the XBW environment, we first of all flatten the BWT (replacing any
+			entries with several options by as many single-optioned entries) and add the
+			first column (the alphabetically sorted BWT.)<br>
+			We can get away with not explicitly storing the first column, but we want to
+			show it here to make sense of what is going on. =)<br>
+			We will also have a look at the <i>M</i> and <i>F</i> vectors.<br>
+			<div class="table_box" id="div-xbw-2-env-table">
+			</div>
+		</div>
+	</div>
+
 
 	<div id="div-in-3" class="mainbox" style="display:none">
 		<div>
@@ -406,6 +420,10 @@
 				document.getElementById('tab-btn-' + i).className = 'tabbutton';
 				document.getElementById('div-in-' + i).style.display = 'none';
 				document.getElementById('div-out-' + i).style.display = 'none';
+				var el = document.getElementById('div-xbw-' + i);
+				if (el) {
+					el.style.display = 'none';
+				}
 			}
 		}
 
@@ -416,14 +434,26 @@
 			document.getElementById('div-in-' + nexttab).style.display = 'block';
 			if (div_out_visibility[nexttab]) {
 				document.getElementById('div-out-' + nexttab).style.display = 'block';
+				var el = document.getElementById('div-xbw-' + nexttab);
+				if (el) {
+					el.style.display = 'block';
+				}
 			}
 		}
 
 		function activateDivOut(i) {
-			var el = document.getElementById('div-out-' + i);
+			
+			var el = document.getElementById('div-xbw-' + i);
+			if (el) {
+				el.style.display = 'block';
+			}
+
+			el = document.getElementById('div-out-' + i);
 			el.innerHTML = '<div>... working on your request ...</div>';
 			el.style.display = 'block';
+
 			div_out_visibility[i] = true;
+			
 			return el;
 		}
 

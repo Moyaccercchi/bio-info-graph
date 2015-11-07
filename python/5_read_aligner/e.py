@@ -609,8 +609,7 @@ def select(c, BWT, j):
     while (k < j) and (i < lenBWT):
         if (BWT[i] == c):
             k += 1
-        else:
-            i += 1
+        i += 1
     return i
 
 # only used by advanced BWT (see Siren2014, but with or without pigeonhole algorithm)

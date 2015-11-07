@@ -90,7 +90,10 @@
 	did_itlvs_change: function(itlv1, itlv2);
 	expand_pos: function(pos, bwt);
 	pos_equals_pos: function(pos1, pos2);
+	printKeyValArr: function(keys, values);
+	make_xbw_environment: function();
 	example: function();
+	xbw_example: function();
 */
 
 window.c = {
@@ -704,6 +707,24 @@ window.c = {
 			var auto = this.getAutomatonFromFindex(findex);
 
 			sout += this.visualize(auto, true);
+
+			sout += 'We now want to do a bit of work on the table, so we add the ' + this.DF + ' vector:';
+
+			findex[3] = this.generateFfromPrefixesBWTM(findex[0], findex[1], findex[2]);
+
+			sout += this.fe_findexToTable(findex, true, true, true);
+
+			// share internal variables with the rest of c for playing around with the XBW
+			this.p12 = findex[0];
+			this.bwt = findex[1];
+			this.m = findex[2];
+			this.f = findex[3];
+
+			// initialize XBW environment
+			var xbw = this.make_xbw_environment();
+			xbw.init(this.bwt, this.m, this.f, true);
+			window.xbw = xbw;
+			window.xbw.generateHTML();
 		}
 
 
@@ -4170,6 +4191,380 @@ window.c = {
 		}
 
 		return true;
+	},
+
+
+
+	// takes in two arrays, one containing keys and the other one
+	//   containing values for the keys (e.g. ['A', 'B'] and ['A'=>0, 'B'=>2])
+	// gives out a php-like string representation of the values
+	printKeyValArr: function(keys, values) {
+
+		var sout = '[';
+
+		for (var i=0; i < keys.length; i++) {
+			sout += keys[i] + ' => ' + values[keys[i]] + ', ';
+		}
+
+		sout = sout.slice(0, -2);
+
+		sout += ']';
+
+		return sout;
+	},
+
+
+
+	// use as:
+	// var xbw = make_xbw_environment();
+	// xbw.init(...);
+	// xbw.nextNodes(...);
+	// ...
+	// (see also xbw_example() afterwards)
+	make_xbw_environment: function() {
+
+		// navigation through XBW
+
+		// the BWT itself (as string, so ['A', 'A|C', 'C'] is here 'AACC')
+		var BWT = '';
+
+		// the first column / sorted BWT (as string)
+		var FiC = '';
+		
+		// the M bit-vector (as string)
+		var M = '';
+
+		// the F bit-vector (as string)
+		var F = '';
+
+		// the C array, containing the amount of characters before each key in the first column
+		var C = [];
+
+		// the language (set of characters) we are using;
+		// can be used to convert an index to a character:
+		// c = char(i)
+		var char = [];
+
+		// the positions of the characters within the language;
+		// can be used to convert a character to an index:
+		// i = ord(c)
+		var ord = [];
+
+		// give out lots of console logs about what is going on?
+		var talktome = true;
+
+		function recalculate() {
+
+			/*
+			C[0, s°+1] is an array such that C[c] is the total number of characters
+			in the BWT that are contained in the set {$, 1, 2, ..., c-1},
+			with C[0] = C[$] = 0, C[1] = 1, C[2] = 1 + amount of character 1, ... and C[s°+1] = n
+			*/
+
+			var characters = [];
+
+			var i = BWT.length;
+			while (i--) {
+				characters.push(BWT[i]);
+			}
+
+			characters.sort();
+
+			FiC = characters.join('');
+
+			C = [];
+			char = [];
+			ord = [];
+			var lastChar = '';
+			var add = 0;
+			var prev = 0;
+
+			for (i=0; i < characters.length; i++) {
+				if (lastChar !== characters[i]) {
+					lastChar = characters[i];
+					ord[lastChar] = char.length;
+					char.push(lastChar);
+					C[lastChar] = prev + add;
+					prev += add;
+					add = 0;
+				}
+				add++;
+			}
+		}
+
+		/*
+		rank(BWT[i], BWT, i) is the lexicographic rank of suffix T[SA[i], n] among suffixes
+		preceded by character BWT[i]
+
+		rank in python:
+			# only used by advanced BWT (see Siren2014, but with or without pigeonhole algorithm)
+			# rank(c, BWT, i) is the number of occurrences of character c in prefix BWT[1, i]
+			def rank(c, arr, i):
+				return arr.count(c, 0, i)
+		*/
+		function rank(c, arr, i) {
+
+			var counter = 0;
+
+			for (var j=0; j < i; j++) {
+				if (arr[j] == c) {
+					counter++;
+				}
+			}
+
+			return counter;
+		}
+
+		/*
+		select in python:
+			# select(c, BWT, j) is the position in BWT at which the character c occurs for the jth time
+			def select(c, arr, j):
+				i = 0
+				k = 0
+				len_arr = len(arr)
+				while (k < j) and (i < len_arr):
+					if (arr[i] == c):
+						k += 1
+					i += 1
+				return i
+		*/
+		function select(c, arr, j) {
+
+			var i = 0;
+			var k = 0;
+			var len_arr = len(arr);
+
+			while ((k < j) && (i < len_arr)) {
+				if (arr[i] == c) {
+					k++;
+				}
+				i++;
+			}
+
+			return i;
+		}
+
+		// spep is [sp, ep]
+		function lf(spep, c) {
+			sp = select(1, F, sp);
+			ep = select(1, F, ep+1) - 1;
+			
+			sp = C[c] + rank(c, BWT, sp-1) + 1;
+			ep = C[c] + rank(c, BWT, ep);
+			
+			sp = rank(1, M, sp);
+			ep = rank(1, M, ep);
+
+			return [sp, ep];
+		}
+
+		/*
+		phi in python:
+			# phi(i) is select(ch, BWT, i - C[ch]) where ch is the highest value with C[ch] < i
+			def phi(i, BWT, C):
+
+				for ch in range(0, len(numToAlphabet)):
+					if C[ch] >= i:
+						ch -= 1
+						break
+
+				return select(ch, BWT, i - C[ch])
+		*/
+		function phi(i, j) {
+			c = char[i];
+			i = select(1, M, i) + j - 1;
+			i = select(c, BWT, i - C[c]);
+
+			i = rank(1, F, i);
+			
+			return i;
+		}
+
+		function find(P) {
+			// in Siren2014, we have one-indexed strings and therefore
+			// sp = C[P[|P|]] + 1
+			// ep = C[P[|P|] + 1]
+
+			// however, we change this for zero-indexed strings:
+			// sp = C[P[|P|-1]] + 1 - 1
+			// ep = C[P[|P|-1] + 1] - 1
+
+			// finally, we also cannot simply calculate P[|P|-1] + 1,
+			// as we do not have a highly compressed data structure, but instead
+			// just regular characters - therefore, we use ord to go to integers,
+			// add one, and then use char to get back to characters
+
+			sp = C[P[P.length-1]];
+			ep = C[char[ord[P[P.length-1]] + 1]] - 1;
+
+			if (talktome) {
+				console.log('find::init: [sp: ' + sp + ', ep: ' + ep + '], P: ' + P);
+			}
+
+			var i = P.length-1;
+
+			while (i--) {
+				// in Siren2014, we have one-indexed strings and therefore
+				// sp = C[P[i]] + rank(P[i], BWT, sp-1) + 1;
+				// ep = C[P[i]] + rank(P[i], BWT, ep);
+
+				// however, we change this for zero-indexed strings:
+				sp = C[P[i]] + rank(P[i], BWT, sp);
+				ep = C[P[i]] + rank(P[i], BWT, ep);
+
+				if (talktome) {
+					console.log('find::next_round: [sp: ' + sp + ', ep: ' + ep + '], i: ' + i + ' P[i]: ' + P[i]);
+				}
+
+				if (ep < sp) {
+					if (talktome) {
+						console.log('find::return: [] << due to ep < sp');
+					}
+					return [];
+				}
+			}
+			if (talktome) {
+				console.log('find::return: [sp: ' + sp + ', ep: ' + ep + ']');
+			}
+			return [sp, ep];
+		}
+
+		return {
+			init: function(pBWT, pM, pF, ptalktome) {
+				
+				BWT = '';
+				for (var i=0; i < pBWT.length; i++) {
+					if (pBWT[i].length > 1) {
+						var BWTarr = pBWT[i].split('|');
+						for (var j=0; j < BWTarr.length; j++) {
+							BWT += BWTarr[j];
+						}
+					} else {
+						BWT += pBWT[i];
+					}
+				}
+				
+				M = pM.join('');
+				
+				F = pF.join('');
+				
+				talktome = ptalktome;
+
+				recalculate();
+			},
+			nextNodes: function(i) {
+
+			},
+			prevNodes: function(i) {
+
+			},
+			analyze: function() {
+				var ostr = 'i   : ';
+				for (var i=0; i < BWT.length; i++) {
+					if (i % 10 == 0) {
+						ostr += Math.round(i / 10) % 10;
+					} else {
+						ostr += ' ';
+					}
+				}
+				console.log(ostr);
+				ostr = '      ';
+				for (var i=0; i < BWT.length; i++) {
+					ostr += i % 10;
+				}
+				console.log(ostr);
+				console.log('FiC : ' + FiC);
+				console.log('BWT : ' + BWT);
+				console.log('M   : ' + M);
+				console.log('F   : ' + F);
+				console.log('C   : ' + window.c.printKeyValArr(char, C));
+				console.log('char: {' + char.join(', ') + '}');
+				console.log(' ');
+
+				var flag = 0;
+				if (M.length !== F.length) {
+					console.log('[ERROR] length mismatch between M and F');
+					flag = 1;
+				}
+				var foundLess = false;
+				for (var i=1; i < C.length; i++) {
+					if (C[i-1] > C[i]) {
+						foundLess = true;
+						break;
+					}
+				}
+				if (foundLess) {
+					console.log('[ERROR] C not monotonically increasing');
+					flag = 1;
+				}
+				if (flag === 0) {
+					console.log('(no errors detected)');
+				}
+			},
+			generateHTML: function() {
+				var sout = '';
+
+				sout += '<table>';
+				sout += '<tbody class="vbars">';
+
+				sout += '<tr>';
+				sout += '<td>';
+				for (var i=0; i < BWT.length; i++) {
+					sout += i + '</td><td>';
+				}
+				sout += '<i>i</i>';
+				sout += '</td>';
+				sout += '</tr>';
+
+				sout += '<tr>';
+				sout += '<td>';
+				sout += BWT.split('').join('</td><td>') + '</td><td>';
+				sout += '<i>BWT</i>';
+				sout += '</td>';
+				sout += '</tr>';
+
+				sout += '<tr>';
+				sout += '<td>';
+				sout += FiC.split('').join('</td><td>') + '</td><td>';
+				sout += '<i>First Column</i>';
+				sout += '</td>';
+				sout += '</tr>';
+
+				sout += '</tbody>';
+				sout += '</table>';
+
+
+
+				// replace '^' with '#' before printout
+				sout = sout.replace(/\^/g, '#');
+
+				document.getElementById('div-xbw-2-env-table').innerHTML = sout;
+			},
+			ex: function() {
+				console.log("calling find('AC')");
+				var found = find('AC');
+				var rescorr = 'correct';
+				if ((found.length !== 2) || (found[0] !== 1) || (found[1] !== 4)) {
+					rescorr = 'wrong;';
+				}
+				console.log('expected result: [1, 4], result found: [' + found.join(', ') + '], result is: ' + rescorr);
+			},
+		};
+	},
+
+
+
+	// takes nothing in
+	// gives out an example run of the XBW environment
+	xbw_example: function() {
+		window.showTab(2);
+		window.generateAdvancedBWT();
+
+		var xbw = this.make_xbw_environment();
+		xbw.init(this.bwt, this.m, this.f, true);
+		window.xbw = xbw;
+		window.xbw.analyze();
+		window.xbw.ex();
 	},
 
 

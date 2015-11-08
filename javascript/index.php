@@ -210,6 +210,21 @@
 			padding:1px 3px 2px 3px;
 		}
 
+		tr.barless > td {
+			border-left:0px;
+			border-right:0px;
+		}
+		tr.barless > td:first-child {
+			border-left:1px solid #000;
+		}
+		tr.barless > td:nth-last-child(2) {
+			border-right:1px solid #000;
+		}
+		tr.barless > td:last-child {
+			border-left:1px solid #000;
+			border-right:1px solid #000;
+		}
+
 
 
 		/* SVG */
@@ -233,6 +248,10 @@
 		svg {
 			width:100%;
 			height:300px;
+		}
+
+		.svgheight {
+			max-height:300px;
 		}
 		
 		svg > text, svg > text > tspan {
@@ -336,17 +355,6 @@
 	</div>
 
 	<div id="div-xbw-2" class="mainbox" style="display:none">
-		<div>
-			<u>XBW Environment</u><br><br>
-			To start the XBW environment, we first of all flatten the BWT (replacing any
-			entries with several options by as many single-optioned entries) and add the
-			first column (the alphabetically sorted BWT.)<br>
-			We can get away with not explicitly storing the first column, but we want to
-			show it here to make sense of what is going on. =)<br>
-			We will also have a look at the <i>M</i> and <i>F</i> vectors.<br>
-			<div class="table_box" id="div-xbw-2-env-table">
-			</div>
-		</div>
 	</div>
 
 
@@ -369,6 +377,9 @@
 	</div>
 
 	<div id="div-out-3" class="mainbox" style="display:none">
+	</div>
+
+	<div id="div-xbw-3" class="mainbox" style="display:none">
 	</div>
 
 
@@ -441,11 +452,17 @@
 			}
 		}
 
-		function activateDivOut(i) {
+		function activateDivOut(i, showXBWenv) {
 			
+			var el;
+
 			var el = document.getElementById('div-xbw-' + i);
 			if (el) {
-				el.style.display = 'block';
+				if (showXBWenv) {
+					el.style.display = 'block';
+				} else {
+					el.style.display = 'none';
+				}
 			}
 
 			el = document.getElementById('div-out-' + i);
@@ -464,7 +481,7 @@
 		*/
 
 		function generateNaiveBWT() {
-			var el = activateDivOut(0);
+			var el = activateDivOut(0, false);
 			el.innerHTML = '<div>' + c.generate_BWT_naively(
 				document.getElementById('in-string-0').value.toUpperCase()) + '</div>';
 		}
@@ -477,14 +494,14 @@
 		*/
 
 		function generateNaiveBWTs() {
-			var el = activateDivOut(1);
+			var el = activateDivOut(1, false);
 			el.innerHTML = '<div>' + c.generate_BWTs_naively(
 				document.getElementById('in-string-1-1').value.toUpperCase(),
 				document.getElementById('in-string-1-2').value.toUpperCase()) + '</div>';
 		}
 
 		function mergeNaiveBWTs() {
-			var el = activateDivOut(1);
+			var el = activateDivOut(1, false);
 			el.innerHTML = '<div>' + c.merge_BWTs_naively(
 				document.getElementById('in-string-1-1').value.toUpperCase(),
 				document.getElementById('in-string-1-2').value.toUpperCase()) + '</div>';
@@ -496,7 +513,7 @@
 			Tab 3 - Generate One BWT (advanced)
 		*/
 		function generateAdvancedBWT() {
-			var el = activateDivOut(2);
+			var el = activateDivOut(2, true);
 			el.innerHTML = '<div>' + c.generate_BWT_advanced(
 				document.getElementById('in-string-2').value.toUpperCase()) + '</div>';
 		}
@@ -509,14 +526,14 @@
 		*/
 
 		function generateAdvancedBWTs() {
-			var el = activateDivOut(3);
+			var el = activateDivOut(3, false);
 			el.innerHTML = '<div>' + c.generate_BWTs_advanced(
 				document.getElementById('in-string-3-1').value.toUpperCase(),
 				document.getElementById('in-string-3-2').value.toUpperCase()) + '</div>';
 		}
 
 		function mergeAdvancedBWTs() {
-			var el = activateDivOut(3);
+			var el = activateDivOut(3, true);
 			el.innerHTML = '<div>' + c.merge_BWTs_advanced(
 				document.getElementById('in-string-3-1').value.toUpperCase(),
 				document.getElementById('in-string-3-2').value.toUpperCase()) + '</div>';
@@ -579,7 +596,7 @@
 			', which will be merged with ' + c.DH_1 + '.<br><br>';
 
 		function generateNaiveBWTIn1Info(e) {
-			var el = activateDivOut(0);
+			var el = activateDivOut(0, false);
 			
 			var sout = '<div>';
 			sout += '<u>Na&iuml;ve BWT Generation - Input</u><br><br>';
@@ -592,7 +609,7 @@
 		}
 
 		function mergeNaiveBWTsIn1Info(e) {
-			var el = activateDivOut(1);
+			var el = activateDivOut(1, false);
 			
 			var sout = '<div>';
 			sout += '<u>Na&iuml;ve BWT Merging - Input 1</u><br><br>';
@@ -605,7 +622,7 @@
 		}
 
 		function mergeNaiveBWTsIn2Info(e) {
-			var el = activateDivOut(1);
+			var el = activateDivOut(1, false);
 			
 			var sout = '<div>';
 			sout += '<u>Na&iuml;ve BWT Merging - Input 2</u><br><br>';
@@ -618,7 +635,7 @@
 		}
 
 		function mergeNaiveBWTsInfo(e) {
-			var el = activateDivOut(1);
+			var el = activateDivOut(1, false);
 			
 			var sout = '<div>';
 			sout += '<u>Na&iuml;ve BWT Merging</u><br><br>';
@@ -636,7 +653,7 @@
 
 
 		function generateAdvancedBWTIn1Info(e) {
-			var el = activateDivOut(2);
+			var el = activateDivOut(2, false);
 			
 			var sout = '<div>';
 			sout += '<u>Advanced BWT Generation - Input</u><br><br>';
@@ -650,7 +667,7 @@
 
 
 		function mergeAdvancedBWTsIn1Info(e) {
-			var el = activateDivOut(3);
+			var el = activateDivOut(3, false);
 			
 			var sout = '<div>';
 			sout += '<u>Advanced BWT Merging - Input 1</u><br><br>';
@@ -663,7 +680,7 @@
 		}
 
 		function mergeAdvancedBWTsIn2Info(e) {
-			var el = activateDivOut(3);
+			var el = activateDivOut(3, false);
 			
 			var sout = '<div>';
 			sout += '<u>Advanced BWT Merging - Input 2</u><br><br>';
@@ -689,7 +706,7 @@
 				svg_el.style.display = 'none';
 				svg_hide_el.innerHTML = 'Show';
 			}
-		};
+		}
 
 
 

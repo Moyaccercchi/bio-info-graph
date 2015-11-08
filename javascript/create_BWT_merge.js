@@ -46,7 +46,7 @@
 	sortp12andFindProblems: function();
 	fe_findexToTable: function(findex, showBWTandM, show_f, show_i);
 	fe_p12ToTableWithHighlights: function(highlight_arr, show_origin, show_f, show_i);
-	visualize: function(auto, showPrefixes);
+	visualize: function(auto, showPrefixes, highlight_p12);
 	hideWrap: function(sout, kind);
 	graphToAutomaton: function(ha, h_graph);
 	mergeAutomata: function(auto1, auto2);
@@ -91,6 +91,7 @@
 	expand_pos: function(pos, bwt);
 	pos_equals_pos: function(pos1, pos2);
 	printKeyValArr: function(keys, values);
+	count_up_array: function(i);
 	make_xbw_environment: function();
 	example: function();
 	xbw_example: function();
@@ -714,17 +715,12 @@ window.c = {
 
 			sout += this.fe_findexToTable(findex, true, true, true);
 
-			// share internal variables with the rest of c for playing around with the XBW
-			this.p12 = findex[0];
-			this.bwt = findex[1];
-			this.m = findex[2];
-			this.f = findex[3];
+
 
 			// initialize XBW environment
-			var xbw = this.make_xbw_environment();
-			xbw.init(this.bwt, this.m, this.f, true);
-			window.xbw = xbw;
-			window.xbw.generateHTML();
+			window.xbw = this.make_xbw_environment();
+			window.xbw.init(findex);
+			window.xbw.generateHTML(2);
 		}
 
 
@@ -1550,6 +1546,14 @@ window.c = {
 
 
 
+
+		// initialize XBW environment
+		window.xbw = this.make_xbw_environment();
+		window.xbw.init(findex);
+		window.xbw.generateHTML(3);
+
+
+
 		sout += this.s_end_document;
 
 		// replace '^' with '#' before printout
@@ -1954,9 +1958,15 @@ window.c = {
 
 
 
-	// takes in an automaton
+	// takes in an automaton, a boolean parameter (whether to show the prefixes
+	//   or not) and optionally an array (containing all prefixes for which the
+	//   nodes with these prefixes should be highlighted)
 	// gives out a string containing a graph visualization of the input
-	visualize: function(auto, showPrefixes) {
+	visualize: function(auto, showPrefixes, highlight_p12) {
+
+		if (highlight_p12 === undefined) {
+			highlight_p12 = [];
+		}
 
 		// TODO :: make this work for DaTeX output as well (e.g. with TikZ)
 		var sout = '';
@@ -1998,12 +2008,22 @@ window.c = {
 			xoffnext = 50+(100*(1.5+j - (hlen / 2))/hlen);
 			positions[i] = xoff;
 
-			sout += '<circle cx="' + xoff + '" cy="50" r="2" style="fill:#000" />';
-			sout += '<circle cx="' + xoff + '" cy="50" r="1.8" style="fill:#FFF" />';
-			sout += '<text x="' + xoff + '" y="51" text-anchor="middle">' + auto[i].c + '</text>';
+			var highcolor = '#000';
+			var bgcolor = '#FFF';
+			if (highlight_p12.indexOf(auto[i].f) >= 0) {
+				highcolor = '#A0A';
+				bgcolor = '#FFA';
+			}
+
+			sout += '<circle cx="' + xoff + '" cy="50" r="2" style="fill:' + highcolor + '" />';
+			sout += '<circle cx="' + xoff + '" cy="50" r="1.8" style="fill:' + bgcolor + '" />';
+			sout += '<text x="' + xoff + '" y="51" text-anchor="middle" style="fill:' + highcolor + '">' +
+					auto[i].c + '</text>';
 
 			if (showPrefixes) {
-				sout += '<text class="prefix" x="' + xoff + '" y="47.8" text-anchor="middle">' + auto[i].f + '</text>';
+				sout += '<text class="prefix" x="' + xoff +
+						'" y="47.8" text-anchor="middle" style="fill:' + highcolor + '">' +
+						auto[i].f + '</text>';
 			}
 
 			if (auto[i].c !== this.DS) {
@@ -2090,12 +2110,23 @@ window.c = {
 						xoffnext = xoff_mid+(xoff_width*(1.5+i - (plen / 2))/plen);
 						positions[path[i]] = xoff;
 
-						sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="2" style="fill:#000" />';
-						sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="1.8" style="fill:#FFF" />';
-						sout += '<text x="' + xoff + '" y="' + (yoffl+1) + '" text-anchor="middle">' + auto[path[i]].c + '</text>';
+						var highcolor = '#000';
+						var bgcolor = '#FFF';
+						if (highlight_p12.indexOf(auto[path[i]].f) >= 0) {
+							highcolor = '#A0A';
+							bgcolor = '#FFA';
+						}
+
+						sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="2" style="fill:' + highcolor + '" />';
+						sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="1.8" style="fill:' + bgcolor + '" />';
+						sout += '<text x="' + xoff + '" y="' + (yoffl+1) +
+								'" text-anchor="middle" style="fill:' + highcolor + '">' +
+								auto[path[i]].c + '</text>';
 
 						if (showPrefixes) {
-							sout += '<text class="prefix" x="' + xoff + '" y="' + (yoffl-2.2) + '" text-anchor="middle">' + auto[path[i]].f + '</text>';
+							sout += '<text class="prefix" x="' + xoff + '" y="' + (yoffl-2.2) +
+									'" text-anchor="middle" style="fill:' + highcolor + '">' +
+									auto[path[i]].f + '</text>';
 						}
 
 						if (i < 1) {
@@ -4215,12 +4246,21 @@ window.c = {
 
 
 
+	// takes in an integer i
+	// gives out an array [0, 1, 2, ..., i-1]
+	count_up_array: function(i) {
+		aout = [];
+		for (var j=0; j < i; j++) {
+			aout.push(j);
+		}
+		return aout;
+	},
+
+
+
 	// use as:
 	// var xbw = make_xbw_environment();
-	// xbw.init(...);
-	// xbw.nextNodes(...);
-	// ...
-	// (see also xbw_example() afterwards)
+	// xbw.init(findex);
 	make_xbw_environment: function() {
 
 		// navigation through XBW
@@ -4228,9 +4268,6 @@ window.c = {
 		// the BWT itself (as string, so ['A', 'A|C', 'C'] is here 'AACC')
 		var BWT = '';
 
-		// the first column / sorted BWT (as string)
-		var FiC = '';
-		
 		// the M bit-vector (as string)
 		var M = '';
 
@@ -4250,8 +4287,20 @@ window.c = {
 		// i = ord(c)
 		var ord = [];
 
-		// give out lots of console logs about what is going on?
-		var talktome = true;
+
+
+		// the following entries are not explicitly used in the XBW environment,
+		// but are here to help us illustrate the interior processes to the user
+
+		// the first column / sorted BWT (as string)
+		var FiC = '';
+
+		// the automaton
+		var auto = [];
+
+		// prefixes of the automaton
+		var prefixes = [];
+
 
 		function recalculate() {
 
@@ -4304,13 +4353,19 @@ window.c = {
 		*/
 		function rank(c, arr, i) {
 
+			// offset adjustment
+			i++;
+
 			var counter = 0;
 
 			for (var j=0; j < i; j++) {
-				if (arr[j] == c) {
+				if (arr[j] === c) {
 					counter++;
 				}
 			}
+
+			// offset adjustment
+			counter--;
 
 			return counter;
 		}
@@ -4330,30 +4385,46 @@ window.c = {
 		*/
 		function select(c, arr, j) {
 
+			// offset adjustment
+			j++;
+
 			var i = 0;
 			var k = 0;
-			var len_arr = len(arr);
+			var len_arr = arr.length;
 
 			while ((k < j) && (i < len_arr)) {
-				if (arr[i] == c) {
+				if (arr[i] === c) {
 					k++;
 				}
 				i++;
 			}
 
+			// adjustment (if some j left over, add it here, so that we can call select(+1)-1)
+			// without this adjustment, e.g. the following would fail:
+			// find('G$') on 'GACGTACCTG|,2,T,4;,3,,5;,6,,10;,6,,8'
+			if (k < j) {
+				i += j - k - 1;
+			}
+
+			// offset adjustment
+			i--;
+
 			return i;
 		}
 
 		// spep is [sp, ep]
-		function lf(spep, c) {
-			sp = select(1, F, sp);
-			ep = select(1, F, ep+1) - 1;
-			
+		function lf(spep, c, not_last_round) {
+
+			var sp = select('1', F, spep[0]);
+			var ep = select('1', F, spep[1]+1) - 1;
+
 			sp = C[c] + rank(c, BWT, sp-1) + 1;
 			ep = C[c] + rank(c, BWT, ep);
-			
-			sp = rank(1, M, sp);
-			ep = rank(1, M, ep);
+
+			if (not_last_round) {
+				sp = rank('1', M, sp);
+				ep = rank('1', M, ep);
+			}
 
 			return [sp, ep];
 		}
@@ -4372,66 +4443,44 @@ window.c = {
 		*/
 		function phi(i, j) {
 			c = char[i];
-			i = select(1, M, i) + j - 1;
+			i = select('1', M, i) + j - 1;
 			i = select(c, BWT, i - C[c]);
 
-			i = rank(1, F, i);
+			i = rank('1', F, i);
 			
 			return i;
 		}
 
 		function find(P) {
-			// in Siren2014, we have one-indexed strings and therefore
-			// sp = C[P[|P|]] + 1
-			// ep = C[P[|P|] + 1]
 
-			// however, we change this for zero-indexed strings:
-			// sp = C[P[|P|-1]] + 1 - 1
-			// ep = C[P[|P|-1] + 1] - 1
-
-			// finally, we also cannot simply calculate P[|P|-1] + 1,
-			// as we do not have a highly compressed data structure, but instead
-			// just regular characters - therefore, we use ord to go to integers,
-			// add one, and then use char to get back to characters
-
-			sp = C[P[P.length-1]];
-			ep = C[char[ord[P[P.length-1]] + 1]] - 1;
-
-			if (talktome) {
-				console.log('find::init: [sp: ' + sp + ', ep: ' + ep + '], P: ' + P);
-			}
-
-			var i = P.length-1;
+			var spep = [0, BWT.length - 1];
+			var i = P.length;
 
 			while (i--) {
-				// in Siren2014, we have one-indexed strings and therefore
-				// sp = C[P[i]] + rank(P[i], BWT, sp-1) + 1;
-				// ep = C[P[i]] + rank(P[i], BWT, ep);
+				spep = lf(spep, P[i], i > 0);
 
-				// however, we change this for zero-indexed strings:
-				sp = C[P[i]] + rank(P[i], BWT, sp);
-				ep = C[P[i]] + rank(P[i], BWT, ep);
-
-				if (talktome) {
-					console.log('find::next_round: [sp: ' + sp + ', ep: ' + ep + '], i: ' + i + ' P[i]: ' + P[i]);
-				}
-
-				if (ep < sp) {
-					if (talktome) {
-						console.log('find::return: [] << due to ep < sp');
-					}
+				if (spep[1] < spep[0]) {
 					return [];
 				}
 			}
-			if (talktome) {
-				console.log('find::return: [sp: ' + sp + ', ep: ' + ep + ']');
-			}
-			return [sp, ep];
+
+			return spep;
 		}
 
 		return {
-			init: function(pBWT, pM, pF, ptalktome) {
-				
+			init: function(findex) {
+
+				auto = window.c.getAutomatonFromFindex(findex);
+				auto = window.c.computePrefixes(auto);
+
+				prefixes = [];
+				for (var i=0; i < auto.length; i++) {
+					prefixes.push(auto[i].f);
+				}
+				prefixes.sort();
+
+
+				var pBWT = findex[1];
 				BWT = '';
 				for (var i=0; i < pBWT.length; i++) {
 					if (pBWT[i].length > 1) {
@@ -4443,12 +4492,10 @@ window.c = {
 						BWT += pBWT[i];
 					}
 				}
-				
-				M = pM.join('');
-				
-				F = pF.join('');
-				
-				talktome = ptalktome;
+
+				M = findex[2].join('');
+
+				F = findex[3].join('');
 
 				recalculate();
 			},
@@ -4501,44 +4548,157 @@ window.c = {
 					console.log('(no errors detected)');
 				}
 			},
-			generateHTML: function() {
+			generateHTML: function(tab) {
+
+				var sout = '';
+
+				sout += '<div>';
+				
+				sout += '<u>XBW Environment</u><br><br>';
+
+				sout += 'To start the XBW environment, we first of all flatten the BWT (replacing any ' +
+						'entries with several options by as many single-optioned entries) and add the ' +
+						'first column (the alphabetically sorted BWT.)<br>' +
+						'We can get away with not explicitly storing the first column, but we want to ' +
+						'show it here to make sense of what is going on. =)<br>' +
+						'We will also have a look at the <i>M</i> and <i>F</i> vectors.<br>';
+
+				sout += '<div class="table_box" id="div-xbw-' + tab + '-env-table">' +
+						'</div>' +
+						'<br>';
+				
+				sout += 'The language that we are considering is <span id="span-xbw-' + tab + '-env-lang"></span> and ' +
+						'the <i>C</i> array is <span id="span-xbw-' + tab + '-env-c"></span>.<br>' +
+						'To better keep track of what is happening, we also have a look at the corresponding graph: ' +
+						'<div id="div-xbw-' + tab  + '-env-graph" class="svgheight">' +
+						'</div>' +
+						"So... let's use the XBW to search for some string:" +
+						'</div>';
+				
+				sout += '<div class="input-info-container">' +
+						'<input id="in-string-' + tab + '-xbw-find" type="text" value="AC" style="display: inline-block; width: 79%;"></input>' +
+						'<div class="button" onclick="window.xbw.findHTML(' + tab + ')" style="float:right; width:19%;">XBW find()</div>' +
+						'</div>';
+
+				document.getElementById('div-xbw-' + tab).innerHTML = sout;
+
+				window.xbw.generateTable([], tab);
+				window.xbw.generateGraph([], tab);
+			},
+			generateTable: function(highlight_arr, tab) {
+
 				var sout = '';
 
 				sout += '<table>';
 				sout += '<tbody class="vbars">';
 
 				sout += '<tr>';
+				sout += window.c.arr_to_extra_high_str(
+					window.c.count_up_array(BWT.length),
+					highlight_arr[0]
+				);
 				sout += '<td>';
-				for (var i=0; i < BWT.length; i++) {
-					sout += i + '</td><td>';
-				}
 				sout += '<i>i</i>';
 				sout += '</td>';
 				sout += '</tr>';
 
 				sout += '<tr>';
+				sout += window.c.arr_to_extra_high_str(BWT, highlight_arr[1]);
 				sout += '<td>';
-				sout += BWT.split('').join('</td><td>') + '</td><td>';
 				sout += '<i>BWT</i>';
 				sout += '</td>';
 				sout += '</tr>';
 
 				sout += '<tr>';
+				sout += window.c.arr_to_extra_high_str(FiC, highlight_arr[2]);
 				sout += '<td>';
-				sout += FiC.split('').join('</td><td>') + '</td><td>';
 				sout += '<i>First Column</i>';
 				sout += '</td>';
 				sout += '</tr>';
 
+				sout += '<tr class="barless">';
+				sout += window.c.arr_to_extra_high_str(M, highlight_arr[3]);
+				sout += '<td>';
+				sout += '<i>M</i>';
+				sout += '</td>';
+				sout += '</tr>';
+
+				sout += '<tr class="barless">';
+				sout += window.c.arr_to_extra_high_str(F, highlight_arr[4]);
+				sout += '<td>';
+				sout += '<i>F</i>';
+				sout += '</td>';
+				sout += '</tr>';
+
+
 				sout += '</tbody>';
 				sout += '</table>';
-
-
 
 				// replace '^' with '#' before printout
 				sout = sout.replace(/\^/g, '#');
 
-				document.getElementById('div-xbw-2-env-table').innerHTML = sout;
+				document.getElementById('div-xbw-' + tab + '-env-table').innerHTML = sout;
+
+
+
+				sout = '{' + char.join(', ') + '}';
+
+				// replace '^' with '#' before printout
+				sout = sout.replace(/\^/g, '#');
+				
+				document.getElementById('span-xbw-' + tab + '-env-lang').innerHTML = sout;
+
+
+
+				sout = window.c.printKeyValArr(char, C);
+
+				// replace '^' with '#' before printout
+				sout = sout.replace(/\^/g, '#');
+				
+				document.getElementById('span-xbw-' + tab + '-env-c').innerHTML = sout;
+			},
+			generateGraph: function(highnodes, tab) {
+
+				console.log(highnodes);
+
+				var sout = window.c.visualize(auto, true, highnodes);
+
+				// replace '^' with '#' before printout
+				sout = sout.replace(/\^/g, '#');
+				
+				document.getElementById('div-xbw-' + tab + '-env-graph').innerHTML = sout;
+			},
+			findHTML: function(tab) {
+
+				var searchfor = document.getElementById('in-string-' + tab + '-xbw-find').value;
+
+				// replace '#' with '^' before calculations
+				searchfor = searchfor.toUpperCase().replace(/\#/g, '^');
+
+				var spep = find(searchfor);
+
+				var higharr = [];
+				var highnodes = [];
+
+				if (spep.length > 0) {
+					
+					var sp = spep[0];
+					var ep = spep[1];
+
+					for (var i=sp; i < ep+1; i++) {
+						higharr.push(i);
+					}
+
+					var graph_sp = rank('1', M, sp);
+					var graph_ep = rank('1', M, ep);
+
+					for (var i=graph_sp; i < graph_ep+1; i++) {
+						highnodes.push(prefixes[i]);
+					}
+				}
+
+				window.xbw.generateTable([higharr, [], higharr], tab);
+				window.xbw.generateGraph(highnodes, tab);
 			},
 			ex: function() {
 				console.log("calling find('AC')");
@@ -4550,21 +4710,6 @@ window.c = {
 				console.log('expected result: [1, 4], result found: [' + found.join(', ') + '], result is: ' + rescorr);
 			},
 		};
-	},
-
-
-
-	// takes nothing in
-	// gives out an example run of the XBW environment
-	xbw_example: function() {
-		window.showTab(2);
-		window.generateAdvancedBWT();
-
-		var xbw = this.make_xbw_environment();
-		xbw.init(this.bwt, this.m, this.f, true);
-		window.xbw = xbw;
-		window.xbw.analyze();
-		window.xbw.ex();
 	},
 
 

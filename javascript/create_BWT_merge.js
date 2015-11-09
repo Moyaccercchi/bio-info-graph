@@ -4581,10 +4581,11 @@ window.c = {
 						'show it here to make sense of what is going on. =)<br>' +
 						'We will also have a look at the <i>M</i> and <i>F</i> vectors.<br>';
 
-				sout += '<div class="table_box" id="div-xbw-' + tab + '-env-table">' +
-						'</div>' +
-						'<br>';
-				
+				var shide = '<div class="table_box" id="div-xbw-' + tab + '-env-table">' +
+							'</div>';
+
+				sout += window.c.hideWrap(shide, 'Table') + '<br>';
+
 				sout += 'The language that we are considering is <span id="span-xbw-' + tab + '-env-lang"></span> and ' +
 						'the <i>C</i> array is <span id="span-xbw-' + tab + '-env-c"></span>.<br>' +
 						'To better keep track of what is happening, we also have a look at the corresponding graph: ' +
@@ -4595,24 +4596,24 @@ window.c = {
 
 				sout += '<div class="input-info-container">' +
 						'<input id="in-string-' + tab + '-xbw-find" type="text" value="AC" style="display: inline-block; width: 79%;"></input>' +
-						'<div class="button" onclick="window.xbw.findHTML(' + tab + ')" style="float:right; width:19%;">XBW find()</div>' +
+						'<div class="button" onclick="window.xbw.findHTML(' + tab + ')" style="float:right; width:19%;">find()</div>' +
 						'</div>';
 
 				sout += '<div class="input-info-container">' +
 						'<input id="in-string-' + tab + '-xbw-lf" type="text" value="7,10,A,false" style="display: inline-block; width: 38%;"></input>' +
-						'<div class="button" onclick="window.xbw.lfHTML(' + tab + ')" style="width:9%; margin-left:2%;">XBW LF()</div>' +
-						'<div class="button" onclick="window.xbw.psiHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">XBW &#936;()</div>' +
+						'<div class="button" onclick="window.xbw.lfHTML(' + tab + ')" style="width:9%; margin-left:2%;">LF()</div>' +
+						'<div class="button" onclick="window.xbw.psiHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">&#936;()</div>' +
 						'<input id="in-string-' + tab + '-xbw-psi" type="text" value="1,4" style="float:right; display: inline-block; width: 38%;"></input>' +
 						'</div>';
 
 				sout += '<div class="input-info-container">' +
 						'<input id="in-string-' + tab + '-xbw-select" type="text" value="1,M,13" style="display: inline-block; width: 38%;"></input>' +
-						'<div class="button" onclick="window.xbw.selectHTML(' + tab + ')" style="width:9%; margin-left:2%;">XBW select()</div>' +
-						'<div class="button" onclick="window.xbw.rankHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">XBW rank()</div>' +
+						'<div class="button" onclick="window.xbw.selectHTML(' + tab + ')" style="width:9%; margin-left:2%;">select()</div>' +
+						'<div class="button" onclick="window.xbw.rankHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">rank()</div>' +
 						'<input id="in-string-' + tab + '-xbw-rank" type="text" value="1,F,13" style="float:right; display: inline-block; width: 38%;"></input>' +
 						'</div>';
 
-				sout += '<div>Results: <span id="span-' + tab + '-xbw-results">(none)</span></div>';
+				sout += '<div>Result: <span id="span-' + tab + '-xbw-results">(none)</span></div>';
 
 				document.getElementById('div-xbw-' + tab).innerHTML = sout;
 
@@ -4722,7 +4723,7 @@ window.c = {
 
 				document.getElementById('span-' + tab + '-xbw-results').innerHTML = spep;
 
-				window.xbw.show_spep_in_HTML(spep, tab, ['i', 'FiC']);
+				window.xbw.show_spep_in_HTML(spep, tab, ['i', 'FiC'], undefined, undefined);
 			},
 			lfHTML: function(tab) {
 
@@ -4739,7 +4740,7 @@ window.c = {
 
 				document.getElementById('span-' + tab + '-xbw-results').innerHTML = spep;
 
-				window.xbw.show_spep_in_HTML(spep, tab, ['i', 'FiC']);
+				window.xbw.show_spep_in_HTML(spep, tab, ['i', 'FiC'], undefined, undefined);
 			},
 			psiHTML: function(tab) {
 
@@ -4749,7 +4750,7 @@ window.c = {
 
 				document.getElementById('span-' + tab + '-xbw-results').innerHTML = i;
 
-				window.xbw.show_spep_in_HTML([i, i], tab, ['i', 'FiC']);
+				window.xbw.show_spep_in_HTML([i, i], tab, ['i', 'FiC'], undefined, undefined);
 			},
 			selectHTML: function(tab) {
 
@@ -4778,7 +4779,7 @@ window.c = {
 
 				document.getElementById('span-' + tab + '-xbw-results').innerHTML = i;
 
-				window.xbw.show_spep_in_HTML([i, i], tab, ['i', searchfor[1]]);
+				window.xbw.show_spep_in_HTML([i, i], tab, ['i', searchfor[1]], i, searchfor[0]);
 			},
 			rankHTML: function(tab) {
 
@@ -4792,24 +4793,24 @@ window.c = {
 
 				switch (searchfor[1]) {
 					case 'M':
-						i = select(searchfor[0], M, j);
+						i = rank(searchfor[0], M, j);
 						break;
 					case 'F':
-						i = select(searchfor[0], F, j);
+						i = rank(searchfor[0], F, j);
 						break;
 					case 'BWT':
-						i = select(searchfor[0], BWT, j);
+						i = rank(searchfor[0], BWT, j);
 						break;
 					case 'FiC':
-						i = select(searchfor[0], FiC, j);
+						i = rank(searchfor[0], FiC, j);
 						break;
 				}
 
 				document.getElementById('span-' + tab + '-xbw-results').innerHTML = i;
 
-				window.xbw.show_spep_in_HTML([i, i], tab, ['i', searchfor[1]]);
+				window.xbw.show_spep_in_HTML([i, i], tab, ['i', searchfor[1]], j, searchfor[0]);
 			},
-			show_spep_in_HTML: function(spep, tab, highrows) {
+			show_spep_in_HTML: function(spep, tab, highrows, override_last_row, override_with) {
 
 				var higharr = [];
 				var highnodes = [];
@@ -4861,6 +4862,45 @@ window.c = {
 					higharr_collection.push(higharr);
 				} else {
 					higharr_collection.push([]);
+				}
+
+				if (override_last_row !== undefined) {
+					lastrow = [];
+
+					switch (highrows[highrows.length-1]) {
+						case 'BWT':
+							for (var i=0; i <= override_last_row; i++) {
+								if (BWT[i] == override_with) {
+									lastrow.push(i);
+								}
+							}
+							higharr_collection[1] = lastrow;
+ 							break;
+						case 'FiC':
+							for (var i=0; i <= override_last_row; i++) {
+								if (FiC[i] == override_with) {
+									lastrow.push(i);
+								}
+							}
+							higharr_collection[2] = lastrow;
+ 							break;
+						case 'M':
+							for (var i=0; i <= override_last_row; i++) {
+								if (M[i] == override_with) {
+									lastrow.push(i);
+								}
+							}
+							higharr_collection[3] = lastrow;
+ 							break;
+						case 'F':
+							for (var i=0; i <= override_last_row; i++) {
+								if (F[i] == override_with) {
+									lastrow.push(i);
+								}
+							}
+							higharr_collection[4] = lastrow;
+ 							break;
+					}
 				}
 
 				window.xbw.generateTable(higharr_collection, tab);

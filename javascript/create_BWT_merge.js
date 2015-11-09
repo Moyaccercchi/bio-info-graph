@@ -4458,8 +4458,12 @@ window.c = {
 			var spep = [0, BWT.length - 1];
 			var i = P.length;
 
+			console.log('find::init  [sp: 0, ep: ' + (BWT.length-1) + ']');
+
 			while (i--) {
 				spep = lf(spep, P[i], i > 0);
+
+				console.log('find::while [sp: ' + spep[0] + ', ep: ' + spep[1] + ']');
 
 				if (spep[1] < spep[0]) {
 					return [];
@@ -4585,7 +4589,7 @@ window.c = {
 				sout += '<div>It would also be nice to be able to look at the outcomes of the navigation functions directly:</div>';
 
 				sout += '<div class="input-info-container">' +
-						'<input id="in-string-' + tab + '-xbw-lf" type="text" value="1,4,A,true" style="display: inline-block; width: 38%;"></input>' +
+						'<input id="in-string-' + tab + '-xbw-lf" type="text" value="7,10,A,false" style="display: inline-block; width: 38%;"></input>' +
 						'<div class="button" onclick="window.xbw.lfHTML(' + tab + ')" style="width:9%; margin-left:2%;">XBW LF()</div>' +
 						'<div class="button" onclick="window.xbw.psiHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">XBW &#936;()</div>' +
 						'<input id="in-string-' + tab + '-xbw-psi" type="text" value="1,4" style="float:right; display: inline-block; width: 38%;"></input>' +
@@ -4695,9 +4699,9 @@ window.c = {
 				// replace '#' with '^' before calculations
 				searchfor = searchfor.toUpperCase().replace(/\#/g, '^').split(',');
 
-				var spep = [searchfor[0], searchfor[1]];
+				var spep = [parseInt(searchfor[0], 10), parseInt(searchfor[1], 10)];
 
-				searchfor[3] = searchfor[3] === 'true';
+				searchfor[3] = searchfor[3] === 'TRUE';
 
 				spep = lf(spep, searchfor[2], searchfor[3]);
 
@@ -4707,7 +4711,7 @@ window.c = {
 
 				var searchfor = document.getElementById('in-string-' + tab + '-xbw-psi').value;
 
-				var spep = psi(searchfor[0], searchfor[1]);
+				var spep = psi(parseInt(searchfor[0], 10), parseInt(searchfor[1], 10));
 
 				window.xbw.show_spep_in_HTML(spep, tab);
 			},

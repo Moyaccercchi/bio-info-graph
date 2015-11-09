@@ -4430,9 +4430,9 @@ window.c = {
 		}
 
 		/*
-		phi in python:
-			# phi(i) is select(ch, BWT, i - C[ch]) where ch is the highest value with C[ch] < i
-			def phi(i, BWT, C):
+		psi in python:
+			# psi(i) is select(ch, BWT, i - C[ch]) where ch is the highest value with C[ch] < i
+			def psi(i, BWT, C):
 
 				for ch in range(0, len(numToAlphabet)):
 					if C[ch] >= i:
@@ -4441,7 +4441,9 @@ window.c = {
 
 				return select(ch, BWT, i - C[ch])
 		*/
-		function phi(i, j) {
+		function psi(i, j) {
+			var c, i;
+
 			c = char[i];
 			i = select('1', M, i) + j - 1;
 			i = select(c, BWT, i - C[c]);
@@ -4580,6 +4582,15 @@ window.c = {
 						'<div class="button" onclick="window.xbw.findHTML(' + tab + ')" style="float:right; width:19%;">XBW find()</div>' +
 						'</div>';
 
+				sout += '<div>It would also be nice to be able to look at the outcomes of the navigation functions directly:</div>';
+
+				sout += '<div class="input-info-container">' +
+						'<input id="in-string-' + tab + '-xbw-lf" type="text" value="1,4,A,true" style="display: inline-block; width: 38%;"></input>' +
+						'<div class="button" onclick="window.xbw.lfHTML(' + tab + ')" style="width:9%; margin-left:2%;">XBW LF()</div>' +
+						'<div class="button" onclick="window.xbw.psiHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">XBW &#936;()</div>' +
+						'<input id="in-string-' + tab + '-xbw-psi" type="text" value="1,4" style="float:right; display: inline-block; width: 38%;"></input>' +
+						'</div>';
+
 				document.getElementById('div-xbw-' + tab).innerHTML = sout;
 
 				window.xbw.generateTable([], tab);
@@ -4659,8 +4670,6 @@ window.c = {
 			},
 			generateGraph: function(highnodes, tab) {
 
-				console.log(highnodes);
-
 				var sout = window.c.visualize(auto, true, highnodes);
 
 				// replace '^' with '#' before printout
@@ -4676,6 +4685,33 @@ window.c = {
 				searchfor = searchfor.toUpperCase().replace(/\#/g, '^');
 
 				var spep = find(searchfor);
+
+				window.xbw.show_spep_in_HTML(spep, tab);
+			},
+			lfHTML: function(tab) {
+
+				var searchfor = document.getElementById('in-string-' + tab + '-xbw-lf').value;
+
+				// replace '#' with '^' before calculations
+				searchfor = searchfor.toUpperCase().replace(/\#/g, '^').split(',');
+
+				var spep = [searchfor[0], searchfor[1]];
+
+				searchfor[3] = searchfor[3] === 'true';
+
+				spep = lf(spep, searchfor[2], searchfor[3]);
+
+				window.xbw.show_spep_in_HTML(spep, tab);
+			},
+			psiHTML: function(tab) {
+
+				var searchfor = document.getElementById('in-string-' + tab + '-xbw-psi').value;
+
+				var spep = psi(searchfor[0], searchfor[1]);
+
+				window.xbw.show_spep_in_HTML(spep, tab);
+			},
+			show_spep_in_HTML: function(spep, tab) {
 
 				var higharr = [];
 				var highnodes = [];

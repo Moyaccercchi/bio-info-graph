@@ -4444,12 +4444,24 @@ window.c = {
 		function psi(i, j) {
 			var c, i;
 
+			console.log('psi::init i: ' + i + ', j: ' + j);
+
 			c = char[i];
+
+			console.log(c);
+
 			i = select('1', M, i) + j - 1;
+
+			console.log(i);
+
 			i = select(c, BWT, i - C[c]);
 
+			console.log(i);
+
 			i = rank('1', F, i);
-			
+
+			console.log(i);
+
 			return i;
 		}
 
@@ -4578,15 +4590,13 @@ window.c = {
 						'To better keep track of what is happening, we also have a look at the corresponding graph: ' +
 						'<div id="div-xbw-' + tab  + '-env-graph" class="svgheight">' +
 						'</div>' +
-						"So... let's use the XBW to search for some string:" +
+						"Let's use the XBW to search for some string using find(), or go for the navigation functions directly:" +
 						'</div>';
-				
+
 				sout += '<div class="input-info-container">' +
 						'<input id="in-string-' + tab + '-xbw-find" type="text" value="AC" style="display: inline-block; width: 79%;"></input>' +
 						'<div class="button" onclick="window.xbw.findHTML(' + tab + ')" style="float:right; width:19%;">XBW find()</div>' +
 						'</div>';
-
-				sout += '<div>It would also be nice to be able to look at the outcomes of the navigation functions directly:</div>';
 
 				sout += '<div class="input-info-container">' +
 						'<input id="in-string-' + tab + '-xbw-lf" type="text" value="7,10,A,false" style="display: inline-block; width: 38%;"></input>' +
@@ -4594,6 +4604,15 @@ window.c = {
 						'<div class="button" onclick="window.xbw.psiHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">XBW &#936;()</div>' +
 						'<input id="in-string-' + tab + '-xbw-psi" type="text" value="1,4" style="float:right; display: inline-block; width: 38%;"></input>' +
 						'</div>';
+
+				sout += '<div class="input-info-container">' +
+						'<input id="in-string-' + tab + '-xbw-select" type="text" value="1,M,13" style="display: inline-block; width: 38%;"></input>' +
+						'<div class="button" onclick="window.xbw.selectHTML(' + tab + ')" style="width:9%; margin-left:2%;">XBW select()</div>' +
+						'<div class="button" onclick="window.xbw.rankHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">XBW rank()</div>' +
+						'<input id="in-string-' + tab + '-xbw-rank" type="text" value="1,F,13" style="float:right; display: inline-block; width: 38%;"></input>' +
+						'</div>';
+
+				sout += '<div>Results: <span id="span-' + tab + '-xbw-results">(none)</span></div>';
 
 				document.getElementById('div-xbw-' + tab).innerHTML = sout;
 
@@ -4674,12 +4693,23 @@ window.c = {
 			},
 			generateGraph: function(highnodes, tab) {
 
+				var outerdiv = document.getElementById('div-xbw-' + tab + '-env-graph');
+				var prevdispstyle = 'block';
+				var prevdispcaption = 'Hide';
+				if (outerdiv.childNodes[0]) {
+					prevdispstyle = outerdiv.childNodes[0].childNodes[1].style.display;
+					prevdispcaption = outerdiv.childNodes[0].childNodes[0].childNodes[0].innerHTML;
+				}
+
 				var sout = window.c.visualize(auto, true, highnodes);
 
 				// replace '^' with '#' before printout
 				sout = sout.replace(/\^/g, '#');
 				
-				document.getElementById('div-xbw-' + tab + '-env-graph').innerHTML = sout;
+				outerdiv.innerHTML = sout;
+
+				outerdiv.childNodes[0].childNodes[1].style.display = prevdispstyle;
+				outerdiv.childNodes[0].childNodes[0].childNodes[0].innerHTML = prevdispcaption;
 			},
 			findHTML: function(tab) {
 
@@ -4690,7 +4720,9 @@ window.c = {
 
 				var spep = find(searchfor);
 
-				window.xbw.show_spep_in_HTML(spep, tab);
+				document.getElementById('span-' + tab + '-xbw-results').innerHTML = spep;
+
+				window.xbw.show_spep_in_HTML(spep, tab, ['i', 'FiC']);
 			},
 			lfHTML: function(tab) {
 
@@ -4705,23 +4737,85 @@ window.c = {
 
 				spep = lf(spep, searchfor[2], searchfor[3]);
 
-				window.xbw.show_spep_in_HTML(spep, tab);
+				document.getElementById('span-' + tab + '-xbw-results').innerHTML = spep;
+
+				window.xbw.show_spep_in_HTML(spep, tab, ['i', 'FiC']);
 			},
 			psiHTML: function(tab) {
 
-				var searchfor = document.getElementById('in-string-' + tab + '-xbw-psi').value;
+				var searchfor = document.getElementById('in-string-' + tab + '-xbw-psi').value.split(',');
 
-				var spep = psi(parseInt(searchfor[0], 10), parseInt(searchfor[1], 10));
+				var i = psi(parseInt(searchfor[0], 10), parseInt(searchfor[1], 10));
 
-				window.xbw.show_spep_in_HTML(spep, tab);
+				document.getElementById('span-' + tab + '-xbw-results').innerHTML = i;
+
+				window.xbw.show_spep_in_HTML([i, i], tab, ['i', 'FiC']);
 			},
-			show_spep_in_HTML: function(spep, tab) {
+			selectHTML: function(tab) {
+
+				var searchfor = document.getElementById('in-string-' + tab + '-xbw-select').value;
+
+				// replace '#' with '^' before calculations
+				searchfor = searchfor.split(',');
+				searchfor[0] = searchfor[0].toUpperCase().replace(/\#/g, '^');
+
+				var i, j = parseInt(searchfor[2], 10);
+
+				switch (searchfor[1]) {
+					case 'M':
+						i = select(searchfor[0], M, j);
+						break;
+					case 'F':
+						i = select(searchfor[0], F, j);
+						break;
+					case 'BWT':
+						i = select(searchfor[0], BWT, j);
+						break;
+					case 'FiC':
+						i = select(searchfor[0], FiC, j);
+						break;
+				}
+
+				document.getElementById('span-' + tab + '-xbw-results').innerHTML = i;
+
+				window.xbw.show_spep_in_HTML([i, i], tab, ['i', searchfor[1]]);
+			},
+			rankHTML: function(tab) {
+
+				var searchfor = document.getElementById('in-string-' + tab + '-xbw-rank').value;
+
+				// replace '#' with '^' before calculations
+				searchfor = searchfor.split(',');
+				searchfor[0] = searchfor[0].toUpperCase().replace(/\#/g, '^');
+
+				var i, j = parseInt(searchfor[2], 10);
+
+				switch (searchfor[1]) {
+					case 'M':
+						i = select(searchfor[0], M, j);
+						break;
+					case 'F':
+						i = select(searchfor[0], F, j);
+						break;
+					case 'BWT':
+						i = select(searchfor[0], BWT, j);
+						break;
+					case 'FiC':
+						i = select(searchfor[0], FiC, j);
+						break;
+				}
+
+				document.getElementById('span-' + tab + '-xbw-results').innerHTML = i;
+
+				window.xbw.show_spep_in_HTML([i, i], tab, ['i', searchfor[1]]);
+			},
+			show_spep_in_HTML: function(spep, tab, highrows) {
 
 				var higharr = [];
 				var highnodes = [];
 
 				if (spep.length > 0) {
-					
+
 					var sp = spep[0];
 					var ep = spep[1];
 
@@ -4737,7 +4831,39 @@ window.c = {
 					}
 				}
 
-				window.xbw.generateTable([higharr, [], higharr], tab);
+				higharr_collection = [];
+
+				if (highrows.indexOf('i') >= 0) {
+					higharr_collection.push(higharr);
+				} else {
+					higharr_collection.push([]);
+				}
+
+				if (highrows.indexOf('BWT') >= 0) {
+					higharr_collection.push(higharr);
+				} else {
+					higharr_collection.push([]);
+				}
+
+				if (highrows.indexOf('FiC') >= 0) {
+					higharr_collection.push(higharr);
+				} else {
+					higharr_collection.push([]);
+				}
+
+				if (highrows.indexOf('M') >= 0) {
+					higharr_collection.push(higharr);
+				} else {
+					higharr_collection.push([]);
+				}
+
+				if (highrows.indexOf('F') >= 0) {
+					higharr_collection.push(higharr);
+				} else {
+					higharr_collection.push([]);
+				}
+
+				window.xbw.generateTable(higharr_collection, tab);
 				window.xbw.generateGraph(highnodes, tab);
 			},
 			ex: function() {

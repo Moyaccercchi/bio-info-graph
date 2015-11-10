@@ -524,6 +524,24 @@
 			}
 		}
 
+		function setJumpDispStyle(i, show) {
+
+			var dispstyle = 'none';
+
+			if (show) {
+				dispstyle = 'inline';
+			}
+
+			var j = 1;
+			var el = document.getElementById('a-jump-' + i + '-' + j);
+
+			while (el) {
+				el.style.display = dispstyle;
+				el = document.getElementById('a-jump-' + i + '-' + j);
+				j++;
+			}
+		}
+
 		function activateDivOut(i, showXBWenv, showAnchors) {
 
 			var el = document.getElementById('div-xbw-' + i);
@@ -536,20 +554,7 @@
 			}
 
 
-			var dispstyle = 'none';
-
-			if (showAnchors) {
-				dispstyle = 'inline';
-			}
-
-			var j = 1;
-			el = document.getElementById('a-jump-' + i + '-' + j);
-
-			while (el) {
-				el.style.display = dispstyle;
-				el = document.getElementById('a-jump-' + i + '-' + j);
-				j++
-			}
+			setJumpDispStyle(i, showAnchors);
 
 
 			el = document.getElementById('div-out-' + i);
@@ -874,8 +879,9 @@
 
 			for (var i = 0; i < upToTabs; i++) {
 				div_out_visibility[i] = false;
+				setJumpDispStyle(i, false);
 			}
-			
+
 			c.set_to_HTML();
 
 			var dispstyle = 'none';

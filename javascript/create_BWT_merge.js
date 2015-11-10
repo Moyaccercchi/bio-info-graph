@@ -1611,11 +1611,19 @@ window.c = {
 		var char_and_C_str2 = xbw2.get_char_and_C_str();
 		var char_and_C_str = xbw.get_char_and_C_str();
 
-		sout += 'The alphabets are<br>' +
-				'&#931;<span class="d">' + this.origin_1 + '</span> = ' + char_and_C_str1[0] + ',<br>' +
-				'&#931;<span class="d">' + this.origin_2 + '</span> = ' + char_and_C_str2[0] + ',<br>' +
+		sout += 'The alphabets and <i>C</i>-arrays are<br>' +
+				'&#931;<span class="d">' + this.origin_1 + '</span> = ' + char_and_C_str1[0] +
+				',&nbsp;&nbsp;&nbsp;' +
+				'<i>C<span class="d">' + this.origin_1 + '</span></i> = ' + char_and_C_str1[1] +
+				',<br>' +
+				'&#931;<span class="d">' + this.origin_2 + '</span> = ' + char_and_C_str2[0] +
+				',&nbsp;&nbsp;&nbsp;' +
+				'<i>C<span class="d">' + this.origin_2 + '</span></i> = ' + char_and_C_str2[1] +
+				',<br>' +
 				'&#931;<span class="d" style="color:#FFF">' + this.origin_1 + '</span> = ' +
-				char_and_C_str[0] + '.' + this.nlnl;
+				char_and_C_str[0] + ',&nbsp;&nbsp;&nbsp;' +
+				'<i>C<span class="d" style="color:#FFF">' + this.origin_1 + '</span></i> = ' +
+				char_and_C_str[1] + '.' + this.nlnlnl;
 
 		if (char_and_C_str1[0] == char_and_C_str2[0]) {
 			sout += 'As &#931;<span class="d">' + this.origin_1 + '</span> and ' +
@@ -1624,17 +1632,29 @@ window.c = {
 		} else {
 			sout += 'As &#931;<span class="d">' + this.origin_1 + '</span> and ' +
 					'&#931;<span class="d">' + this.origin_2 + '</span> are different, ' +
-					'we first need to unify these alphabets.' + this.nlnl;
+					'we first need to unify these alphabets by adding any characters from ' +
+					'' +
+					'This also means expanding the <i>C</i>-arrays with new entries.' + this.nlnl;
 
-			// TODO ...
+			xbw1.mergeAlphabetWith(xbw2);
+			xbw2.mergeAlphabetWith(xbw1);
+
+			char_and_C_str1 = xbw1.get_char_and_C_str();
+			char_and_C_str2 = xbw2.get_char_and_C_str();
+
+			sout += 'The modified alphabets and <i>C</i>-arrays are now<br>' +
+					'&#931;<span class="d">' + this.origin_1 + '</span> = ' + char_and_C_str1[0] +
+					',&nbsp;&nbsp;&nbsp;' +
+					'<i>C<span class="d">' + this.origin_1 + '</span></i> = ' + char_and_C_str1[1] +
+					',<br>' +
+					'&#931;<span class="d">' + this.origin_2 + '</span> = ' + char_and_C_str2[0] +
+					',&nbsp;&nbsp;&nbsp;' +
+					'<i>C<span class="d">' + this.origin_2 + '</span></i> = ' + char_and_C_str2[1] +
+					'.' + this.nlnlnl;
 
 			sout += 'As both ' + this.DH_1 + ' and ' + this.DH_2 + ' now use the same alphabet, ' +
 					'we can now carry on.' + this.nlnlnl;
 		}
-
-		sout += 'We now consider the <i>C</i>-arrays.' + this.nlnl;
-
-		// TODO ...
 
 		sout += this.nlnl;
 		sout += 'All the preparations have been finished to finally be able to drop the prefixes ' +
@@ -4584,6 +4604,13 @@ window.c = {
 		}
 
 		return {
+
+			// initialize the XBW to the data from the findex
+			// (the findex should be an array containing a BWT array in position 1,
+			// an M bit vector array in position 2, and an F bit vector array in position 3;
+			// the p12 / prefix array which could be in position 0 is ignored, as the
+			// prefixes are generated on the fly when the graph is generated)
+
 			init: function(findex) {
 
 				auto = window.c.getAutomatonFromFindex(findex);
@@ -4615,12 +4642,57 @@ window.c = {
 
 				recalculate();
 			},
-			nextNodes: function(i) {
 
-			},
-			prevNodes: function(i) {
 
+
+			// interaction between two XBW environments (e.g. used for merging them together)
+			// btw., all functions starting with "_publish" are used internally for the two XBW
+			// environments to communicate with each other, but are not intended to be called
+			// by the outside world
+
+			// merge all characters of the otherXBW's alphabet into our alphabet
+			mergeAlphabetWith: function(otherXBW) {
+
+				var otherchar = otherXBW._publishAlphabet();
+
+				// go through the entire alphabet of the other XBW
+				for (var i=0; i < otherchar.length; i++) {
+
+					// if a character of theirs is missing in our alphabet
+					if (char.indexOf(otherchar[i]) < 0) {
+
+						// then push that character into our alphabet
+						char.push(otherchar[i]);
+						char.sort();
+
+						// and find out where it was inserted
+						var insertedAt = char.indexOf(otherchar[i]);
+
+						// update ord
+						ord[otherchar[i]] = insertedAt;
+						for (var j=insertedAt+1; j < char.length; j++) {
+							ord[char[j]] += 1;
+						}
+
+						// update the C-array
+						if (insertedAt < 1) {
+							C[otherchar[i]] = 0;
+						} else {
+							C[otherchar[i]] = C[char[insertedAt-1]];
+						}
+					}
+				}
 			},
+
+			_publishAlphabet: function() {
+				return char;
+			},
+
+
+
+			// quick analysis via the command line
+			// (most of this functionality is also provided by the generateHTML GUI)
+
 			analyze: function() {
 				var ostr = 'i   : ';
 				for (var i=0; i < BWT.length; i++) {
@@ -4642,6 +4714,7 @@ window.c = {
 				console.log('F   : ' + F);
 				console.log('C   : ' + window.c.printKeyValArr(char, C));
 				console.log('char: {' + char.join(', ') + '}');
+				console.log('ord : ' + window.c.printKeyValArr(char, ord));
 				console.log(' ');
 
 				var flag = 0;
@@ -4664,6 +4737,15 @@ window.c = {
 					console.log('(no errors detected)');
 				}
 			},
+
+
+
+			// HTML functions that are not part of the core XBW environment, but just used
+			// for I/O with the user.
+			// The HTML functions usually assume that the XBW environment is stored at window.xbw,
+			// as there should only really ever be one main XBW environment with active GUI in
+			// the window.
+
 			generateHTML: function(tab) {
 
 				var sout = '';
@@ -4684,8 +4766,10 @@ window.c = {
 
 				sout += window.c.hideWrap(shide, 'Table') + '<br>';
 
-				sout += 'The alphabet that we are considering is &#931; = <span id="span-xbw-' + tab + '-env-lang"></span> and ' +
-						'the <i>C</i> array is <span id="span-xbw-' + tab + '-env-c"></span>.<br>' +
+				var char_and_C_str = window.xbw.get_char_and_C_str();
+
+				sout += 'The alphabet that we are considering is &#931; = ' + char_and_C_str[0] + ' and ' +
+						'the <i>C</i> array is ' + char_and_C_str[1] + '.<br>' +
 						'To better keep track of what is happening, we also have a look at the corresponding graph: ' +
 						'<div id="div-xbw-' + tab  + '-env-graph" class="svgheight">' +
 						'</div>' +
@@ -4713,17 +4797,23 @@ window.c = {
 
 				sout += '<div>Result: <span id="span-' + tab + '-xbw-results">(none)</span></div>';
 
+				// replace '^' with '#' before printout
+				sout = sout.replace(/\^/g, '#');
+
 				document.getElementById('div-xbw-' + tab).innerHTML = sout;
 
 				window.xbw.generateTable([], tab);
 				window.xbw.generateGraph([], tab);
 			},
+			get_char_and_C_str: function() {
+
+				return ['{' + char.join(', ') + '}', window.c.printKeyValArr(char, C)];
+			},
 			generateTable: function(highlight_arr, tab) {
 
 				var sout = '';
 
-				sout += '<table>';
-				sout += '<tbody class="vbars">';
+				sout += '<table><tbody class="vbars">';
 
 				sout += '<tr>';
 				sout += window.c.arr_to_extra_high_str(
@@ -4732,67 +4822,34 @@ window.c = {
 				);
 				sout += '<td>';
 				sout += window.c.di;
-				sout += '</td>';
-				sout += '</tr>';
+				sout += '</td></tr>';
 
 				sout += '<tr>';
 				sout += window.c.arr_to_extra_high_str(BWT, highlight_arr[1]);
-				sout += '<td>';
-				sout += 'BWT';
-				sout += '</td>';
-				sout += '</tr>';
+				sout += '<td>BWT</td></tr>';
 
 				sout += '<tr>';
 				sout += window.c.arr_to_extra_high_str(FiC, highlight_arr[2]);
-				sout += '<td>';
-				sout += 'First Column';
-				sout += '</td>';
-				sout += '</tr>';
+				sout += '<td>First Column</td></tr>';
 
 				sout += '<tr class="barless">';
 				sout += window.c.arr_to_extra_high_str(M, highlight_arr[3]);
 				sout += '<td>';
 				sout += window.c.DM;
-				sout += '</td>';
-				sout += '</tr>';
+				sout += '</td></tr>';
 
 				sout += '<tr class="barless">';
 				sout += window.c.arr_to_extra_high_str(F, highlight_arr[4]);
 				sout += '<td>';
 				sout += window.c.DF;
-				sout += '</td>';
-				sout += '</tr>';
+				sout += '</td></tr>';
 
-
-				sout += '</tbody>';
-				sout += '</table>';
+				sout += '</tbody></table>';
 
 				// replace '^' with '#' before printout
 				sout = sout.replace(/\^/g, '#');
 
 				document.getElementById('div-xbw-' + tab + '-env-table').innerHTML = sout;
-
-
-
-				sout = '{' + char.join(', ') + '}';
-
-				// replace '^' with '#' before printout
-				sout = sout.replace(/\^/g, '#');
-
-				document.getElementById('span-xbw-' + tab + '-env-lang').innerHTML = sout;
-
-
-
-				sout = window.c.printKeyValArr(char, C);
-
-				// replace '^' with '#' before printout
-				sout = sout.replace(/\^/g, '#');
-
-				document.getElementById('span-xbw-' + tab + '-env-c').innerHTML = sout;
-			},
-			get_char_and_C_str: function() {
-
-				return ['{' + char.join(', ') + '}', window.c.printKeyValArr(char, C)];
 			},
 			generateGraph: function(highnodes, tab) {
 
@@ -5007,15 +5064,6 @@ window.c = {
 
 				window.xbw.generateTable(higharr_collection, tab);
 				window.xbw.generateGraph(highnodes, tab);
-			},
-			ex: function() {
-				console.log("calling find('AC')");
-				var found = find('AC');
-				var rescorr = 'correct';
-				if ((found.length !== 2) || (found[0] !== 1) || (found[1] !== 4)) {
-					rescorr = 'wrong;';
-				}
-				console.log('expected result: [1, 4], result found: [' + found.join(', ') + '], result is: ' + rescorr);
 			},
 		};
 	},

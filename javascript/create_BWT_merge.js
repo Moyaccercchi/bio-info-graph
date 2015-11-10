@@ -38,8 +38,9 @@
 	generate_BWT_naively: function(h);
 	generate_BWT_advanced: function(h);
 	generate_BWTs_advanced: function(h1, h2);
-	generate_BWTs_advanced_int: function(h1, h2);
+	generate_BWTs_advanced_int: function(h1, h2, generate_F);
 	merge_BWTs_advanced: function(h1, h2);
+	merge_XBWs: function(h1, h2);
 	nextNodes: function(i);
 	prevNodes: function(i);
 	finalComparison: function(findex);
@@ -98,6 +99,8 @@
 */
 
 window.c = {
+
+	ao: 0, // global array offset - used whenever we show stuff on the GUI / accept data from there
 
 	last_h1: '', // h1 that was used on last call
 	last_h2: '', // h2 that was used on last call
@@ -739,7 +742,7 @@ window.c = {
 	// gives out a string containing info about the BWT generation for both
 	generate_BWTs_advanced: function(h1, h2) {
 
-		var sout = this.generate_BWTs_advanced_int(h1, h2)[0];
+		var sout = this.generate_BWTs_advanced_int(h1, h2, false)[0];
 
 		sout += this.s_end_document;
 
@@ -754,7 +757,7 @@ window.c = {
 	// takes in two graph strings
 	// gives out a string containing info about the BWT generation for both,
 	//   as well as the findexes for the merged H, for H_1 and for H_2
-	generate_BWTs_advanced_int: function(h1, h2) {
+	generate_BWTs_advanced_int: function(h1, h2, generate_F) {
 
 		var h1_split = h1.split('|');
 		var h2_split = h2.split('|');
@@ -897,21 +900,36 @@ window.c = {
 			// BWT and pos for H
 
 			sout += "We can now generate the BWT of the graph, ";
-			sout += "together with the vector " + this.DM + "." + this.nlnl;
+			sout += "together with the ";
+			if (generate_F) {
+				sout += "vectors " + this.DM + ' and ' + this.DF;
+			} else {
+				sout += "vector " + this.DM;
+			}
+			sout += "." + this.nlnl;
 			sout += "For " + this.DH_1 + " we get:" + this.nlnl;
 
 			var findex1 = this.getFindexFromAutomaton(auto1);
-			sout += this.fe_findexToTable(findex1, true);
+			if (generate_F) {
+				findex1[3] = this.generateFfromPrefixesBWTM(findex1[0], findex1[1], findex1[2]);
+			}
+			sout += this.fe_findexToTable(findex1, true, generate_F);
 
 			sout += "And for " + this.DH_2 + " we have:" + this.nlnl;
 
 			var findex2 = this.getFindexFromAutomaton(auto2);
-			sout += this.fe_findexToTable(findex2, true);
+			if (generate_F) {
+				findex2[3] = this.generateFfromPrefixesBWTM(findex2[0], findex2[1], findex2[2]);
+			}
+			sout += this.fe_findexToTable(findex2, true, generate_F);
 
 			sout += "As well as for " + this.DH + ":" + this.nlnl;
 
 			var findex = this.getFindexFromAutomaton(auto);
-			sout += this.fe_findexToTable(findex, true);
+			if (generate_F) {
+				findex[3] = this.generateFfromPrefixesBWTM(findex[0], findex[1], findex[2]);
+			}
+			sout += this.fe_findexToTable(findex, true, generate_F);
 		}
 
 		return [sout, findex, findex1, findex2];
@@ -924,7 +942,7 @@ window.c = {
 	merge_BWTs_advanced: function(h1, h2) {
 
 		var unsuccessful = false;
-		var ret = this.generate_BWTs_advanced_int(h1, h2);
+		var ret = this.generate_BWTs_advanced_int(h1, h2, false);
 
 		var sout = ret[0];
 
@@ -938,7 +956,8 @@ window.c = {
 		var m2 = findex2[2];
 
 
-		sout += 'We now want to find this BWT and ' + this.DM + ' vector just based on the ' +
+		sout += '<span id="in-jump-3-3">We</span> now want to find this prefix array, BWT and ' +
+				this.DM + ' vector just based on the ' +
 				'data we have for ' + this.DH_1 + ' and ' + this.DH_2 + '.' + this.nlnlnl;
 
 		sout += 'The very first thing that we need to figure out is which letter is the last of ' +
@@ -1216,18 +1235,6 @@ window.c = {
 				'not just [10], but [10, 11], assuming that node 11 would have been another ' +
 				'remaining node.)' +
 				this.nlnlnl;
-
-		// TODO THINK
-		/*
-		sout += 'We would also like to construct a special version of nextNodes called lastNodes, ' +
-				'which will not give us the nodes immediately following node ' + this.di + ', ' +
-				'but the nodes furthest away from node ' + this.di +
-				' that we still know about directly.' + this.nlnl +
-				'However, I am not quite sure whether this can even be done, let alone how ' +
-				'(considering that we would kind of ignore lots of ' + this.DM + ' values in ' +
-				'the middle or somesuch?)' +
-				this.nlnlnl;
-		*/
 
 		sout += 'We are now ready to work on the highlighted problems.' + this.nlnl;
 
@@ -1551,6 +1558,96 @@ window.c = {
 		window.xbw = this.make_xbw_environment();
 		window.xbw.init(findex);
 		window.xbw.generateHTML(3);
+
+
+
+		sout += this.s_end_document;
+
+		// replace '^' with '#' before printout
+		sout = sout.replace(/\^/g, '#');
+
+		return sout;
+	},
+
+
+
+	// takes in two graph strings
+	// gives out a string contain info about the XBW merging for both
+	merge_XBWs: function(h1, h2) {
+
+		var unsuccessful = false;
+		var ret = this.generate_BWTs_advanced_int(h1, h2, true);
+
+		var sout = ret[0];
+
+		var findex = ret[1];
+		var findex1 = ret[2];
+		var findex2 = ret[3];
+
+		var bwt1 = findex1[1];
+		var bwt2 = findex2[1];
+		var m1 = findex1[2];
+		var m2 = findex2[2];
+
+
+		sout += '<span id="in-jump-5-3">We</span> now want to find the XBW data of ' + this.DH +
+				' just based on the ' +
+				'XBW data we have for ' + this.DH_1 + ' and ' + this.DH_2 + '.' + this.nlnl;
+
+		sout += 'To work with the actual XBW data, we need to consider the alphabets ' +
+				'(that is, all the occuring characters) ' +
+				'and the <i>C</i>-arrays, before then flattening the BWTs and dropping the prefixes.' +
+				this.nlnlnl;
+
+		// initialize XBW environment
+		var xbw1 = this.make_xbw_environment();
+		var xbw2 = this.make_xbw_environment();
+		var xbw = this.make_xbw_environment();
+		xbw1.init(findex1);
+		xbw2.init(findex2);
+		xbw.init(findex);
+
+		var char_and_C_str1 = xbw1.get_char_and_C_str();
+		var char_and_C_str2 = xbw2.get_char_and_C_str();
+		var char_and_C_str = xbw.get_char_and_C_str();
+
+		sout += 'The alphabets are<br>' +
+				'&#931;<span class="d">' + this.origin_1 + '</span> = ' + char_and_C_str1[0] + ',<br>' +
+				'&#931;<span class="d">' + this.origin_2 + '</span> = ' + char_and_C_str2[0] + ',<br>' +
+				'&#931;<span class="d" style="color:#FFF">' + this.origin_1 + '</span> = ' +
+				char_and_C_str[0] + '.' + this.nlnl;
+
+		if (char_and_C_str1[0] == char_and_C_str2[0]) {
+			sout += 'As &#931;<span class="d">' + this.origin_1 + '</span> and ' +
+					'&#931;<span class="d">' + this.origin_2 + '</span> are already equal, ' +
+					'we do not need to further think about the alphabets.' + this.nlnlnl;
+		} else {
+			sout += 'As &#931;<span class="d">' + this.origin_1 + '</span> and ' +
+					'&#931;<span class="d">' + this.origin_2 + '</span> are different, ' +
+					'we first need to unify these alphabets.' + this.nlnl;
+
+			// TODO ...
+
+			sout += 'As both ' + this.DH_1 + ' and ' + this.DH_2 + ' now use the same alphabet, ' +
+					'we can now carry on.' + this.nlnlnl;
+		}
+
+		sout += 'We now consider the <i>C</i>-arrays.' + this.nlnl;
+
+		// TODO ...
+
+		sout += this.nlnl;
+		sout += 'All the preparations have been finished to finally be able to drop the prefixes ' +
+				'and flatten the BWTs.' + this.nlnl;
+
+		// TODO ...
+
+		sout += this.nlnl;
+		sout += '<span id="in-jump-5-4">We</span> can now merge ' + this.DH_1 + ' and ' +
+				this.DH_2 + ' just based on their XBW data: BWT, ' + this.DM + ', ' + this.DF +
+				' and <i>C</i>.' + this.nlnlnl;
+
+		// TODO ...
 
 
 
@@ -3215,7 +3312,8 @@ window.c = {
 
 		// round 1
 
-		sout += "To do so, we basically need to sort the two sorted cyclic ";
+		sout += '<span id="in-jump-1-3">To</span> ';
+		sout += "do so, we basically need to sort the two sorted cyclic ";
 		sout += "rotation lists into one big sorted cyclic rotation list. ";
 		sout += "However, if we just do that naively, then we are doing just ";
 		sout += "as much work as we would have by starting with the full " + this.DH + " in ";
@@ -4277,12 +4375,12 @@ window.c = {
 		// the C array, containing the amount of characters before each key in the first column
 		var C = [];
 
-		// the language (set of characters) we are using;
+		// the alphabet (set of characters) we are using;
 		// can be used to convert an index to a character:
 		// c = char(i)
 		var char = [];
 
-		// the positions of the characters within the language;
+		// the positions of the characters within the alphabet;
 		// can be used to convert a character to an index:
 		// i = ord(c)
 		var ord = [];
@@ -4579,14 +4677,14 @@ window.c = {
 						'first column (the alphabetically sorted BWT.)<br>' +
 						'We can get away with not explicitly storing the first column, but we want to ' +
 						'show it here to make sense of what is going on. =)<br>' +
-						'We will also have a look at the <i>M</i> and <i>F</i> vectors.<br>';
+						'We will also have a look at the ' + window.c.DM + ' and ' + window.c.DF + ' vectors.<br>';
 
 				var shide = '<div class="table_box" id="div-xbw-' + tab + '-env-table">' +
 							'</div>';
 
 				sout += window.c.hideWrap(shide, 'Table') + '<br>';
 
-				sout += 'The language that we are considering is <span id="span-xbw-' + tab + '-env-lang"></span> and ' +
+				sout += 'The alphabet that we are considering is &#931; = <span id="span-xbw-' + tab + '-env-lang"></span> and ' +
 						'the <i>C</i> array is <span id="span-xbw-' + tab + '-env-c"></span>.<br>' +
 						'To better keep track of what is happening, we also have a look at the corresponding graph: ' +
 						'<div id="div-xbw-' + tab  + '-env-graph" class="svgheight">' +
@@ -4601,14 +4699,14 @@ window.c = {
 
 				sout += '<div class="input-info-container">' +
 						'<input id="in-string-' + tab + '-xbw-lf" type="text" value="7,10,A,false" style="display: inline-block; width: 38%;"></input>' +
-						'<div class="button" onclick="window.xbw.lfHTML(' + tab + ')" style="width:9%; margin-left:2%;">LF()</div>' +
+						'<div class="button" onclick="window.xbw.lfHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">LF()</div>' +
 						'<div class="button" onclick="window.xbw.psiHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">&#936;()</div>' +
 						'<input id="in-string-' + tab + '-xbw-psi" type="text" value="1,4" style="float:right; display: inline-block; width: 38%;"></input>' +
 						'</div>';
 
 				sout += '<div class="input-info-container">' +
 						'<input id="in-string-' + tab + '-xbw-select" type="text" value="1,M,13" style="display: inline-block; width: 38%;"></input>' +
-						'<div class="button" onclick="window.xbw.selectHTML(' + tab + ')" style="width:9%; margin-left:2%;">select()</div>' +
+						'<div class="button" onclick="window.xbw.selectHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">select()</div>' +
 						'<div class="button" onclick="window.xbw.rankHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">rank()</div>' +
 						'<input id="in-string-' + tab + '-xbw-rank" type="text" value="1,F,13" style="float:right; display: inline-block; width: 38%;"></input>' +
 						'</div>';
@@ -4633,35 +4731,35 @@ window.c = {
 					highlight_arr[0]
 				);
 				sout += '<td>';
-				sout += '<i>i</i>';
+				sout += window.c.di;
 				sout += '</td>';
 				sout += '</tr>';
 
 				sout += '<tr>';
 				sout += window.c.arr_to_extra_high_str(BWT, highlight_arr[1]);
 				sout += '<td>';
-				sout += '<i>BWT</i>';
+				sout += 'BWT';
 				sout += '</td>';
 				sout += '</tr>';
 
 				sout += '<tr>';
 				sout += window.c.arr_to_extra_high_str(FiC, highlight_arr[2]);
 				sout += '<td>';
-				sout += '<i>First Column</i>';
+				sout += 'First Column';
 				sout += '</td>';
 				sout += '</tr>';
 
 				sout += '<tr class="barless">';
 				sout += window.c.arr_to_extra_high_str(M, highlight_arr[3]);
 				sout += '<td>';
-				sout += '<i>M</i>';
+				sout += window.c.DM;
 				sout += '</td>';
 				sout += '</tr>';
 
 				sout += '<tr class="barless">';
 				sout += window.c.arr_to_extra_high_str(F, highlight_arr[4]);
 				sout += '<td>';
-				sout += '<i>F</i>';
+				sout += window.c.DF;
 				sout += '</td>';
 				sout += '</tr>';
 
@@ -4680,7 +4778,7 @@ window.c = {
 
 				// replace '^' with '#' before printout
 				sout = sout.replace(/\^/g, '#');
-				
+
 				document.getElementById('span-xbw-' + tab + '-env-lang').innerHTML = sout;
 
 
@@ -4689,8 +4787,12 @@ window.c = {
 
 				// replace '^' with '#' before printout
 				sout = sout.replace(/\^/g, '#');
-				
+
 				document.getElementById('span-xbw-' + tab + '-env-c').innerHTML = sout;
+			},
+			get_char_and_C_str: function() {
+
+				return ['{' + char.join(', ') + '}', window.c.printKeyValArr(char, C)];
 			},
 			generateGraph: function(highnodes, tab) {
 

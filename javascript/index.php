@@ -26,6 +26,10 @@
 			font-style:italic;
 		}
 
+		b {
+			font-weight:bold;
+		}
+
 		span.creditline {
 			position:absolute;
 			bottom:8px;
@@ -75,9 +79,13 @@
 			width:100%;
 		}
 
-		div.mainbox > div > div.button {
+		div.mainbox > div > div.md-2, div.mainbox > div > input.md-2 {
 			display:inline-block;
 			width:49%;
+		}
+
+		div.mainbox > div > div.md-2:last-child, div.mainbox > div > input.md-2:last-child {
+			float:right;
 		}
 
 		input, div.button {
@@ -127,6 +135,10 @@
 			position:absolute;
 			right:6px;
 			top:3px;
+		}
+
+		div.button > span.infobtn {
+			margin-right:5px;
 		}
 
 		div.tabbox > div.active {
@@ -284,17 +296,20 @@
 	<script src="create_BWT_merge.js"></script>
 
 	<div class="tabbox">
-		<div class="tabbutton" id="tab-btn-0" onclick="showTab(0)">
-			Generate One Na&iuml;ve BWT
+		<div class="tabbutton" id="tab-btn-0" onclick="showTab(0)" style="display:none">
+			Generate Na&iuml;ve Graph BWT
 		</div>
-		<div class="tabbutton" id="tab-btn-1" onclick="showTab(1)">
-			Merge Two Na&iuml;ve BWTs
+		<div class="tabbutton" id="tab-btn-1" onclick="showTab(1)" style="display:none">
+			Merge Na&iuml;ve Graph BWTs
 		</div>
 		<div class="tabbutton" id="tab-btn-2" onclick="showTab(2)">
-			Generate One Advanced BWT
+			Generate Graph BWT
 		</div>
 		<div class="tabbutton" id="tab-btn-3" onclick="showTab(3)">
-			Merge Two Advanced BWTs
+			Merge Graph BWTs
+		</div>
+		<div class="tabbutton" id="tab-btn-5" onclick="showTab(5)">
+			Merge Graph XBWs
 		</div>
 		<div class="tabbutton" id="tab-btn-4" onclick="showTab(4)">
 			Options
@@ -305,13 +320,20 @@
 
 	<div id="div-in-0" class="mainbox" style="display:none">
 		<div>
+			<b>This tab is using the na&iuml;ve graph BWT, which can only handle the very
+			simplest graphs and has been discontinued. Please do not expect anything on this
+			tab to actually work.</b><br><br>
+			Here, you can enter a simple graph in bubble notation. <a id="a-jump-0-1" href="#in-jump-0-1" style="display:none">Go there</a><br>
+			It will be converted into a na&iuml;ve graph BWT. <a id="a-jump-0-2" href="#div-out-0" style="display:none">Go there</a>
+		</div>
+		<div id="in-jump-0-1">
 			Please enter the string that you are interested in:
 		</div>
 		<div class="input-info-container">
 			<input id="in-string-0" type="text" value="A(A|C)CAACCC"></input>
 			<span class="infobtn" onclick="generateNaiveBWTIn1Info(event)">Info</span>
 		</div>
-		<div class="button" onclick="generateNaiveBWT()">Generate na&iuml;ve BWT</div>
+		<div class="button" onclick="generateNaiveBWT()">Generate na&iuml;ve graph BWT</div>
 	</div>
 
 	<div id="div-out-0" class="mainbox" style="display:none">
@@ -320,6 +342,14 @@
 
 	<div id="div-in-1" class="mainbox" style="display:none">
 		<div>
+			<b>This tab is using the na&iuml;ve graph BWT, which can only handle the very
+			simplest graphs and has been discontinued. Please do not expect anything on this
+			tab to actually work.</b><br><br>
+			Here, you can enter two simple graphs in bubble notation. <a id="a-jump-1-1" href="#in-jump-1-1" style="display:none">Go there</a><br>
+			They will both be converted into na&iuml;ve graph BWTs. <a id="a-jump-1-2" href="#div-out-1" style="display:none">Go there</a><br>
+			These BWTs will then be merged. <a id="a-jump-1-3" href="#in-jump-1-3" style="display:none">Go there</a>
+		</div>
+		<div id="in-jump-1-1">
 			Please enter the two strings that you are interested in:
 		</div>
 		<div class="input-info-container">
@@ -331,8 +361,8 @@
 			<span class="infobtn" onclick="mergeNaiveBWTsIn2Info(event)">Info</span>
 		</div>
 		<div>
-			<div class="button" onclick="generateNaiveBWTs()">Generate na&iuml;ve BWTs</div>
-			<div class="button" style="float:right;" onclick="mergeNaiveBWTs()">Merge na&iuml;ve BWTs (see Holt 2014)<span class="infobtn" onclick="mergeNaiveBWTsInfo(event)">Info</span></div>
+			<div class="button md-2" onclick="generateNaiveBWTs()">Generate na&iuml;ve graph BWTs</div>
+			<div class="button md-2" onclick="mergeNaiveBWTs()">Merge na&iuml;ve graph BWTs (see Holt 2014)<span class="infobtn" onclick="mergeNaiveBWTsInfo(event)">Info</span></div>
 		</div>
 	</div>
 
@@ -342,13 +372,18 @@
 
 	<div id="div-in-2" class="mainbox" style="display:none">
 		<div>
+			Here, you can enter a graph. <a id="a-jump-2-1" href="#in-jump-2-1" style="display:none">Go there</a><br>
+			It will be converted into a prefix-sorted automaton. <a id="a-jump-2-2" href="#div-out-2" style="display:none">Go there</a><br>
+			The automaton will be used to initialize an XBW environment, in which path queries and substring searches can be executed. <a id="a-jump-2-3" href="#div-xbw-2" style="display:none">Go there</a>
+		</div>
+		<div id="in-jump-2-1">
 			Please enter the string that you are interested in:
 		</div>
 		<div class="input-info-container">
 			<input id="in-string-2" type="text" value="GACGTACCTG|,2,T,4;,3,,5;,6,,10;,6,,8"></input>
 			<span class="infobtn" onclick="generateAdvancedBWTIn1Info(event)">Info</span>
 		</div>
-		<div class="button" onclick="generateAdvancedBWT()">Generate advanced BWT (see Siren 2014)</div>
+		<div class="button" onclick="generateAdvancedBWT()">Generate graph BWT (see Siren 2014)</div>
 	</div>
 
 	<div id="div-out-2" class="mainbox" style="display:none">
@@ -360,6 +395,12 @@
 
 	<div id="div-in-3" class="mainbox" style="display:none">
 		<div>
+			Here, you can enter two graphs. <a id="a-jump-3-1" href="#in-jump-3-1" style="display:none">Go there</a><br>
+			They will both be converted into prefix-sorted automata. <a id="a-jump-3-2" href="#div-out-3" style="display:none">Go there</a><br>
+			The automata will then be merged. <a id="a-jump-3-3" href="#in-jump-3-3" style="display:none">Go there</a><br>
+			The resulting automaton will be used to initialize an XBW environment, in which path queries and substring searches can be executed. <a id="a-jump-3-4" href="#div-xbw-3" style="display:none">Go there</a>
+		</div>
+		<div id="in-jump-3-1">
 			Please enter the two strings that you are interested in:
 		</div>
 		<div class="input-info-container">
@@ -371,8 +412,8 @@
 			<span class="infobtn" onclick="mergeAdvancedBWTsIn2Info(event)">Info</span>
 		</div>
 		<div>
-			<div class="button" onclick="generateAdvancedBWTs()">Generate advanced BWTs (see Siren 2014)</div>
-			<div class="button" style="float:right;" onclick="mergeAdvancedBWTs()">Merge advanced BWTs (see Holt 2014 and Siren 2014)</div>
+			<!-- div class="button" onclick="generateAdvancedBWTs()">Generate graph BWTs (see Siren 2014)</div -->
+			<div class="button" onclick="mergeAdvancedBWTs()">Merge graph BWTs (see Holt 2014 and Siren 2014)</div>
 		</div>
 	</div>
 
@@ -388,18 +429,49 @@
 			Please enter the two indices that should be used for the two graphs:
 		</div>
 		<div class="input-info-container">
-			<input id="in-string-4-1" type="text" value="1"></input>
+			<input id="in-options-index-1" type="text" value="1" class="md-2"></input>
+			<input id="in-options-index-2" type="text" value="2" class="md-2"></input>
 		</div>
-		<div class="input-info-container">
-			<input id="in-string-4-2" type="text" value="2"></input>
+		<div onclick="changeOptions_show_graph()" style="cursor:pointer">
+			<span id="in-options-show-graph" style="display: inline-block; box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.8); border-radius: 4px; border: 1px solid rgb(0, 0, 0); text-align: center; margin-right: 5px; width: 25px;">&nbsp;</span> Show na&iuml;ve graph functionality
 		</div>
 		<div>
-			<div class="button" onclick="applyOptions()">Apply Options</div>
-			<div class="button" style="float:right;" onclick="resetOptions()">Reset Options</div>
+			The first element of any string and array is obviously <input id="in-options-array-offset" type="text" value="0" style="display: inline-block; width: 10%; margin-right: 5px; margin-left: 5px;"></input>.
+		</div>
+		<div>
+			<div class="button md-2" onclick="applyOptions()">Apply Options</div>
+			<div class="button md-2" onclick="resetOptions()">Reset Options</div>
 		</div>
 	</div>
 
 	<div id="div-out-4" class="mainbox" style="display:none">
+	</div>
+
+
+	<div id="div-in-5" class="mainbox" style="display:none">
+		<div>
+			Here, you can enter two graphs. <a id="a-jump-5-1" href="#in-jump-5-1" style="display:none">Go there</a><br>
+			They will both be converted into prefix-sorted automata. <a id="a-jump-5-2" href="#div-out-5" style="display:none">Go there</a><br>
+			The automata will then be used to initialize XBW environments. <a id="a-jump-5-3" href="#in-jump-5-3" style="display:none">Go there</a><br>
+			These individual XBW environments will then be merged. <a id="a-jump-5-4" href="#in-jump-5-4" style="display:none">Go there</a>
+		</div>
+		<div id="in-jump-5-1">
+			Please enter the two strings that you are interested in:
+		</div>
+		<div class="input-info-container">
+			<input id="in-string-5-1" type="text" value="GACGT|,2,T,4;,3,,5"></input>
+			<span class="infobtn" onclick="mergeGraphXBWsIn1Info(event)">Info</span>
+		</div>
+		<div class="input-info-container">
+			<input id="in-string-5-2" type="text" value="ACCTG|,1,,5;,1,,3"></input>
+			<span class="infobtn" onclick="mergeGraphXBWsIn2Info(event)">Info</span>
+		</div>
+		<div>
+			<div class="button" onclick="mergeGraphXBWs()">Merge graph XBWs (see Holt 2014 and Siren 2014)</div>
+		</div>
+	</div>
+
+	<div id="div-out-5" class="mainbox" style="display:none">
 	</div>
 
 
@@ -408,17 +480,17 @@
 		Version: 0.0.1.1
 	</span>
 	<span class="creditline absright">
-		Moyaccercchi (tws@hi.is), 2015
+		Moyaccercchi (tws@hi.is), University of Iceland, 1<span class="u">st</span> Sep 2014 - 10<span class="u">th</span> Nov 2015
 	</span>
 	
 	<script>
 		c.set_to_HTML();
 
 		// stores the visibility of div-out so that we don't reset it when changing tabs
-		div_out_visibility = [false, false, false, false, false];
+		div_out_visibility = [false, false, false, false, false, false];
 
 		// how many tabs are there?
-		upToTabs = 5;
+		upToTabs = 6;
 
 
 
@@ -452,9 +524,7 @@
 			}
 		}
 
-		function activateDivOut(i, showXBWenv) {
-			
-			var el;
+		function activateDivOut(i, showXBWenv, showAnchors) {
 
 			var el = document.getElementById('div-xbw-' + i);
 			if (el) {
@@ -465,23 +535,40 @@
 				}
 			}
 
+
+			var dispstyle = 'none';
+
+			if (showAnchors) {
+				dispstyle = 'inline';
+			}
+
+			var j = 1;
+			el = document.getElementById('a-jump-' + i + '-' + j);
+
+			while (el) {
+				el.style.display = dispstyle;
+				el = document.getElementById('a-jump-' + i + '-' + j);
+				j++
+			}
+
+
 			el = document.getElementById('div-out-' + i);
 			el.innerHTML = '<div>... working on your request ...</div>';
 			el.style.display = 'block';
 
 			div_out_visibility[i] = true;
-			
+
 			return el;
 		}
 
 
 
 		/*
-			Tab 1 - Generate One BWT (naively)
+			Tab 0 - Generate One BWT (naively)
 		*/
 
 		function generateNaiveBWT() {
-			var el = activateDivOut(0, false);
+			var el = activateDivOut(0, false, true);
 			el.innerHTML = '<div>' + c.generate_BWT_naively(
 				document.getElementById('in-string-0').value.toUpperCase()) + '</div>';
 		}
@@ -490,18 +577,18 @@
 
 
 		/*
-			Tab 2 - Merge Two BWTs (naively)
+			Tab 1 - Merge Two BWTs (naively)
 		*/
 
 		function generateNaiveBWTs() {
-			var el = activateDivOut(1, false);
+			var el = activateDivOut(1, false, false);
 			el.innerHTML = '<div>' + c.generate_BWTs_naively(
 				document.getElementById('in-string-1-1').value.toUpperCase(),
 				document.getElementById('in-string-1-2').value.toUpperCase()) + '</div>';
 		}
 
 		function mergeNaiveBWTs() {
-			var el = activateDivOut(1, false);
+			var el = activateDivOut(1, false, true);
 			el.innerHTML = '<div>' + c.merge_BWTs_naively(
 				document.getElementById('in-string-1-1').value.toUpperCase(),
 				document.getElementById('in-string-1-2').value.toUpperCase()) + '</div>';
@@ -510,10 +597,10 @@
 
 
 		/*
-			Tab 3 - Generate One BWT (advanced)
+			Tab 2 - Generate One BWT (advanced)
 		*/
 		function generateAdvancedBWT() {
-			var el = activateDivOut(2, true);
+			var el = activateDivOut(2, true, true);
 			el.innerHTML = '<div>' + c.generate_BWT_advanced(
 				document.getElementById('in-string-2').value.toUpperCase()) + '</div>';
 		}
@@ -522,21 +609,34 @@
 
 
 		/*
-			Tab 4 - Merge Two BWTs (advanced)
+			Tab 3 - Merge Two BWTs (advanced)
 		*/
 
 		function generateAdvancedBWTs() {
-			var el = activateDivOut(3, false);
+			var el = activateDivOut(3, false, true);
 			el.innerHTML = '<div>' + c.generate_BWTs_advanced(
 				document.getElementById('in-string-3-1').value.toUpperCase(),
 				document.getElementById('in-string-3-2').value.toUpperCase()) + '</div>';
 		}
 
 		function mergeAdvancedBWTs() {
-			var el = activateDivOut(3, true);
+			var el = activateDivOut(3, true, true);
 			el.innerHTML = '<div>' + c.merge_BWTs_advanced(
 				document.getElementById('in-string-3-1').value.toUpperCase(),
 				document.getElementById('in-string-3-2').value.toUpperCase()) + '</div>';
+		}
+
+
+
+		/*
+			Tab 5 - Merge Two XBWs
+		*/
+
+		function mergeGraphXBWs() {
+			var el = activateDivOut(5, false, true);
+			el.innerHTML = '<div>' + c.merge_XBWs(
+				document.getElementById('in-string-5-1').value.toUpperCase(),
+				document.getElementById('in-string-5-2').value.toUpperCase()) + '</div>';
 		}
 
 
@@ -596,10 +696,10 @@
 			', which will be merged with ' + c.DH_1 + '.<br><br>';
 
 		function generateNaiveBWTIn1Info(e) {
-			var el = activateDivOut(0, false);
+			var el = activateDivOut(0, false, false);
 			
 			var sout = '<div>';
-			sout += '<u>Na&iuml;ve BWT Generation - Input</u><br><br>';
+			sout += '<u>Na&iuml;ve Graph BWT Generation - Input</u><br><br>';
 
 			sout += s_input;
 			sout += s_naiveInputFormat;
@@ -609,10 +709,10 @@
 		}
 
 		function mergeNaiveBWTsIn1Info(e) {
-			var el = activateDivOut(1, false);
+			var el = activateDivOut(1, false, false);
 			
 			var sout = '<div>';
-			sout += '<u>Na&iuml;ve BWT Merging - Input 1</u><br><br>';
+			sout += '<u>Na&iuml;ve Graph BWT Merging - Input 1</u><br><br>';
 
 			sout += s_input1;
 			sout += s_naiveInputFormat;
@@ -622,10 +722,10 @@
 		}
 
 		function mergeNaiveBWTsIn2Info(e) {
-			var el = activateDivOut(1, false);
+			var el = activateDivOut(1, false, false);
 			
 			var sout = '<div>';
-			sout += '<u>Na&iuml;ve BWT Merging - Input 2</u><br><br>';
+			sout += '<u>Na&iuml;ve Graph BWT Merging - Input 2</u><br><br>';
 
 			sout += s_input2;
 			sout += s_naiveInputFormat;
@@ -635,10 +735,10 @@
 		}
 
 		function mergeNaiveBWTsInfo(e) {
-			var el = activateDivOut(1, false);
+			var el = activateDivOut(1, false, false);
 			
 			var sout = '<div>';
-			sout += '<u>Na&iuml;ve BWT Merging</u><br><br>';
+			sout += '<u>Na&iuml;ve Graph BWT Merging</u><br><br>';
 			sout += 'Limitations:<br>';
 			sout += '<ul>';
 			sout += '<li>only works with at most one bubble in ' + c.H_1 + ' and ' + c.H_2 + ' each (with each bubble having two alternatives, each being one character long)</li>';
@@ -653,10 +753,10 @@
 
 
 		function generateAdvancedBWTIn1Info(e) {
-			var el = activateDivOut(2, false);
+			var el = activateDivOut(2, false, false);
 			
 			var sout = '<div>';
-			sout += '<u>Advanced BWT Generation - Input</u><br><br>';
+			sout += '<u>Graph BWT Generation - Input</u><br><br>';
 
 			sout += s_input;
 			sout += s_advancedInputFormat;
@@ -667,10 +767,10 @@
 
 
 		function mergeAdvancedBWTsIn1Info(e) {
-			var el = activateDivOut(3, false);
+			var el = activateDivOut(3, false, false);
 			
 			var sout = '<div>';
-			sout += '<u>Advanced BWT Merging - Input 1</u><br><br>';
+			sout += '<u>Graph BWT Merging - Input 1</u><br><br>';
 
 			sout += s_input1;
 			sout += s_advancedInputFormat;
@@ -680,10 +780,37 @@
 		}
 
 		function mergeAdvancedBWTsIn2Info(e) {
-			var el = activateDivOut(3, false);
+			var el = activateDivOut(3, false, false);
 			
 			var sout = '<div>';
-			sout += '<u>Advanced BWT Merging - Input 2</u><br><br>';
+			sout += '<u>Graph BWT Merging - Input 2</u><br><br>';
+
+			sout += s_input2;
+			sout += s_advancedInputFormat;
+
+			el.innerHTML = sout;
+			e.stopPropagation();
+		}
+
+
+		function mergeGraphXBWsIn1Info(e) {
+			var el = activateDivOut(5, false, false);
+			
+			var sout = '<div>';
+			sout += '<u>Graph XBW Merging - Input 1</u><br><br>';
+
+			sout += s_input1;
+			sout += s_advancedInputFormat;
+
+			el.innerHTML = sout;
+			e.stopPropagation();
+		}
+
+		function mergeGraphXBWsIn2Info(e) {
+			var el = activateDivOut(5, false, false);
+			
+			var sout = '<div>';
+			sout += '<u>Graph XBW Merging - Input 2</u><br><br>';
 
 			sout += s_input2;
 			sout += s_advancedInputFormat;
@@ -710,21 +837,38 @@
 
 
 
+		function changeOptions_show_graph() {
+
+			var el = document.getElementById('in-options-show-graph');
+
+			if (el.innerHTML == 'X') {
+				el.innerHTML = '&nbsp;';
+			} else {
+				el.innerHTML = 'X';
+			}
+		}
+
 		function applyOptions() {
 
-			c.origin_1 = document.getElementById('in-string-4-1').value;
-			c.origin_2 = document.getElementById('in-string-4-2').value;
+			c.origin_1 = document.getElementById('in-options-index-1').value;
+			c.origin_2 = document.getElementById('in-options-index-2').value;
+
+			c.ao = parseInt(document.getElementById('in-options-array-offset').value, 10);
 
 			saveOptions();
-		};
+		}
 
 		function resetOptions() {
 
-			document.getElementById('in-string-4-1').value = '1';
-			document.getElementById('in-string-4-2').value = '2';
+			document.getElementById('in-options-index-1').value = '1';
+			document.getElementById('in-options-index-2').value = '2';
+
+			document.getElementById('in-options-array-offset').value = '0';
+
+			document.getElementById('in-options-show-graph').innerHTML = '&nbsp;';
 
 			applyOptions();
-		};
+		}
 
 		function saveOptions() {
 
@@ -733,12 +877,21 @@
 			}
 			
 			c.set_to_HTML();
+
+			var dispstyle = 'none';
+			
+			if (document.getElementById('in-options-show-graph').innerHTML == 'X') {
+				dispstyle = 'inline-block';
+			}
+
+			document.getElementById('tab-btn-0').style.display = dispstyle;
+			document.getElementById('tab-btn-1').style.display = dispstyle;
 		};
 
 
 
-		// default to tab 3
-		showTab(3);
+		// default to tab 5
+		showTab(5);
 	</script>
 
 </body>

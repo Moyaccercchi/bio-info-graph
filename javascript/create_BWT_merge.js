@@ -1611,26 +1611,26 @@ window.c = {
 		var char_and_C_str2 = xbw2.get_char_and_C_str();
 		var char_and_C_str = xbw.get_char_and_C_str();
 
-		sout += 'The alphabets and <i>C</i>-arrays are<br>' +
+		var shide = '<div>The alphabets and <i>C</i>-arrays are' + this.nlnl +
 				'&#931;<span class="d">' + this.origin_1 + '</span> = ' + char_and_C_str1[0] +
 				',&nbsp;&nbsp;&nbsp;' +
 				'<i>C<span class="d">' + this.origin_1 + '</span></i> = ' + char_and_C_str1[1] +
-				',<br>' +
+				',' + this.nlnl +
 				'&#931;<span class="d">' + this.origin_2 + '</span> = ' + char_and_C_str2[0] +
 				',&nbsp;&nbsp;&nbsp;' +
 				'<i>C<span class="d">' + this.origin_2 + '</span></i> = ' + char_and_C_str2[1] +
-				',<br>' +
+				',' + this.nlnl +
 				'&#931;<span class="d" style="color:#FFF">' + this.origin_1 + '</span> = ' +
 				char_and_C_str[0] + ',&nbsp;&nbsp;&nbsp;' +
 				'<i>C<span class="d" style="color:#FFF">' + this.origin_1 + '</span></i> = ' +
 				char_and_C_str[1] + '.' + this.nlnlnl;
 
 		if (char_and_C_str1[0] == char_and_C_str2[0]) {
-			sout += 'As &#931;<span class="d">' + this.origin_1 + '</span> and ' +
+			shide += 'As &#931;<span class="d">' + this.origin_1 + '</span> and ' +
 					'&#931;<span class="d">' + this.origin_2 + '</span> are already equal, ' +
 					'we do not need to further think about the alphabets.' + this.nlnlnl;
 		} else {
-			sout += 'As &#931;<span class="d">' + this.origin_1 + '</span> and ' +
+			shide += 'As &#931;<span class="d">' + this.origin_1 + '</span> and ' +
 					'&#931;<span class="d">' + this.origin_2 + '</span> are different, ' +
 					'we first need to unify these alphabets by adding any characters from ' +
 					'' +
@@ -1642,27 +1642,43 @@ window.c = {
 			char_and_C_str1 = xbw1.get_char_and_C_str();
 			char_and_C_str2 = xbw2.get_char_and_C_str();
 
-			sout += 'The modified alphabets and <i>C</i>-arrays are now<br>' +
+			shide += 'The modified alphabets and <i>C</i>-arrays are now' + this.nlnl +
 					'&#931;<span class="d">' + this.origin_1 + '</span> = ' + char_and_C_str1[0] +
 					',&nbsp;&nbsp;&nbsp;' +
 					'<i>C<span class="d">' + this.origin_1 + '</span></i> = ' + char_and_C_str1[1] +
-					',<br>' +
+					',' + this.nlnl +
 					'&#931;<span class="d">' + this.origin_2 + '</span> = ' + char_and_C_str2[0] +
 					',&nbsp;&nbsp;&nbsp;' +
 					'<i>C<span class="d">' + this.origin_2 + '</span></i> = ' + char_and_C_str2[1] +
 					'.' + this.nlnlnl;
 
-			sout += 'As both ' + this.DH_1 + ' and ' + this.DH_2 + ' now use the same alphabet, ' +
-					'we can now carry on.' + this.nlnlnl;
+			shide += 'As both ' + this.DH_1 + ' and ' + this.DH_2 + ' now use the same alphabet, ' +
+					'we can carry on.' + this.nlnlnl;
 		}
 
-		sout += this.nlnl;
+		shide += '</div>';
+
+		sout += this.hideWrap(shide, 'Alphabets');
+
 		sout += 'All the preparations have been finished to finally be able to drop the prefixes ' +
 				'and flatten the BWTs.' + this.nlnl;
 
-		// TODO ...
+		sout += "For " + this.DH_1 + " we get:" + this.nlnl;
 
-		sout += this.nlnl;
+		shide = '<div class="table_box">' + xbw1.generateTable([]) + '</div>';
+		sout += this.hideWrap(shide, 'Table') + this.nlnl;
+
+		sout += "And for " + this.DH_2 + " we have:" + this.nlnl;
+
+		shide = '<div class="table_box">' + xbw2.generateTable([]) + '</div>';
+		sout += this.hideWrap(shide, 'Table') + this.nlnl;
+
+		sout += "As well as for " + this.DH + ":" + this.nlnl;
+
+		shide = '<div class="table_box">' + xbw.generateTable([]) + '</div>';
+		sout += this.hideWrap(shide, 'Table') + this.nlnl;
+
+
 		sout += '<span id="in-jump-5-4">We</span> can now merge ' + this.DH_1 + ' and ' +
 				this.DH_2 + ' just based on their XBW data: BWT, ' + this.DM + ', ' + this.DF +
 				' and <i>C</i>.' + this.nlnlnl;
@@ -4752,24 +4768,25 @@ window.c = {
 
 				sout += '<div>';
 				
-				sout += '<u>XBW Environment</u><br><br>';
+				sout += '<u>XBW Environment</u>' + this.nlnlnl;
 
 				sout += 'To start the XBW environment, we first of all flatten the BWT (replacing any ' +
 						'entries with several options by as many single-optioned entries) and add the ' +
-						'first column (the alphabetically sorted BWT.)<br>' +
+						'first column (the alphabetically sorted BWT.)' + this.nlnl +
 						'We can get away with not explicitly storing the first column, but we want to ' +
-						'show it here to make sense of what is going on. =)<br>' +
-						'We will also have a look at the ' + window.c.DM + ' and ' + window.c.DF + ' vectors.<br>';
+						'show it here to make sense of what is going on. =)' + this.nlnl +
+						'We will also have a look at the ' + window.c.DM + ' and ' + window.c.DF + ' vectors.' +
+						this.nlnl;
 
 				var shide = '<div class="table_box" id="div-xbw-' + tab + '-env-table">' +
 							'</div>';
 
-				sout += window.c.hideWrap(shide, 'Table') + '<br>';
+				sout += window.c.hideWrap(shide, 'Table') + this.nlnl;
 
 				var char_and_C_str = window.xbw.get_char_and_C_str();
 
 				sout += 'The alphabet that we are considering is &#931; = ' + char_and_C_str[0] + ' and ' +
-						'the <i>C</i> array is ' + char_and_C_str[1] + '.<br>' +
+						'the <i>C</i> array is ' + char_and_C_str[1] + '.' + this.nlnl +
 						'To better keep track of what is happening, we also have a look at the corresponding graph: ' +
 						'<div id="div-xbw-' + tab  + '-env-graph" class="svgheight">' +
 						'</div>' +
@@ -4800,16 +4817,19 @@ window.c = {
 				// replace '^' with '#' before printout
 				sout = sout.replace(/\^/g, '#');
 
-				document.getElementById('div-xbw-' + tab).innerHTML = sout;
+				document.getElementById('div-xbw-' + tab).innerHTML =
+					sout;
 
-				window.xbw.generateTable([], tab);
+				document.getElementById('div-xbw-' + tab + '-env-table').innerHTML =
+					window.xbw.generateTable([]);
+
 				window.xbw.generateGraph([], tab);
 			},
 			get_char_and_C_str: function() {
 
 				return ['{' + char.join(', ') + '}', window.c.printKeyValArr(char, C)];
 			},
-			generateTable: function(highlight_arr, tab) {
+			generateTable: function(highlight_arr) {
 
 				var sout = '';
 
@@ -4849,7 +4869,7 @@ window.c = {
 				// replace '^' with '#' before printout
 				sout = sout.replace(/\^/g, '#');
 
-				document.getElementById('div-xbw-' + tab + '-env-table').innerHTML = sout;
+				return sout;
 			},
 			generateGraph: function(highnodes, tab) {
 
@@ -5062,7 +5082,9 @@ window.c = {
 					}
 				}
 
-				window.xbw.generateTable(higharr_collection, tab);
+				document.getElementById('div-xbw-' + tab + '-env-table').innerHTML =
+					window.xbw.generateTable(higharr_collection);
+
 				window.xbw.generateGraph(highnodes, tab);
 			},
 		};

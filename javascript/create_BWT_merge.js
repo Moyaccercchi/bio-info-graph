@@ -71,6 +71,7 @@
 	print_arrofarr: function(haa);
 	repjoin: function(len, letter, delimiter);
 	reparr: function(len, letter);
+	repeatstr: function(len, str);
 	add_index_to_col: function(h_col, index);
 	add_indices_to_col: function(h_col, indices, h_cols);
 	arr_to_highlighted_str: function(arr, hl_pos, extra_hl_arr);
@@ -93,6 +94,7 @@
 	pos_equals_pos: function(pos1, pos2);
 	printKeyValArr: function(keys, values);
 	count_up_array: function(i);
+	repeat
 	make_xbw_environment: function();
 	example: function();
 	xbw_example: function();
@@ -107,8 +109,8 @@ window.c = {
 	last_mode: 'none', // 'naive' or 'advanced', init to 'none'
 	last_give_out_HTML: -1, // true or false, init as -1
 
-	origin_1: '1', // which index to show on H_1 (and to use for origin 1 in general)
-	origin_2: '2', // which index to show on H_2 (and to use for origin 2 in general)
+	origin_1: '0', // which index to show on H_1 (and to use for origin 1 in general)
+	origin_2: '1', // which index to show on H_2 (and to use for origin 2 in general)
 
 	merge_directly: true, // true: take out $1 and #1 - they should not actually be in the merged graph,
 						  //       and we should jump over them in the individual ones while merging them
@@ -1524,8 +1526,8 @@ window.c = {
 
 		this.f = this.generateFfromPrefixesBWTM(this.p12, this.bwt, this.m);
 
-		sout += 'Finally, we take out the origin column, as it is not needed anymore.' + this.nl +
-				'We however do add another column, namely the ' + this.DF + ' bit vector.' + this.nlnl;
+		sout += 'Finally, we take out the origin row, as it is not needed anymore.' + this.nl +
+				'We however do add another row, namely the ' + this.DF + ' bit vector.' + this.nlnl;
 
 		sout += this.fe_p12ToTableWithHighlights([], false, true);
 
@@ -1682,8 +1684,58 @@ window.c = {
 		sout += '<span id="in-jump-5-4">We</span> can now merge ' + this.DH_1 + ' and ' +
 				this.DH_2 + ' just based on their XBW data: BWT, ' + this.DM + ', ' + this.DF +
 				' and <i>C</i>.' + this.nlnlnl;
+		/*
+		sout += 'To do so, we first of all unify both ' + this.DH_1 + ' and ' + this.DH_2 + ' ' +
+				'into the same table by adding a row that keeps track of the origin of each ' +
+				'node.' +
+				this.nlnl;
+		*/
+		sout += 'To do so, we add nodes from the ' + this.DH_2 + ' table on the right ' +
+				'one by one to the ' + this.DH_1 + ' table on the left, keeping track of ' +
+				'our position within each table. We never need to go left in either table, ' +
+				'as we know that both are already sorted within themselves; so if we get an ' +
+				'entry from table ' + this.DH_2 + ' into ' + this.DH_1 + ' at position 9, ' +
+				'then we know that the next entry from table ' + this.DH_2 + ' must be put ' +
+				'into ' + this.DH_1 + ' at position 9 or greater, not lower than 9.' +
+				this.nlnl;
 
-		// TODO ...
+		var xbw12 = xbw1;
+		xbw12.startToMergeWith(xbw2);
+
+		shide = '<div class="table_box">' + xbw12.generateBothTables() + '</div>';
+		sout += this.hideWrap(shide, 'Table') + this.nlnl;
+
+		var overflow_protection = 10;
+
+		while (xbw12.notFullyMerged() && (overflow_protection > 0)) {
+
+			overflow_protection--;
+
+			var sstep = '<div>' + xbw12.mergeOneMore();
+
+			sstep += 'We now have:' + this.nlnl;
+
+			shide = '<div class="table_box">' + xbw12.generateBothTables() + '</div>';
+			sstep += this.hideWrap(shide, 'Table') + this.nlnl;
+
+			sstep += '</div>';
+
+			sout += this.hideWrap(sstep, 'Step') + this.nlnl;
+		}
+
+		sout += this.nlnl;
+		sout += 'The merging algorithm has now finished' +
+		/*
+				' and we can clean up by ' +
+				'connecting the last node of ' + this.DH_1 + ' with the first node of ' +
+				this.DH_2 + ' and by dropping the origin row.';
+		*/
+				'.';
+
+		xbw12.finalizeMerge();
+
+		shide = '<div class="table_box">' + xbw12.generateTable([]) + '</div>';
+		sout += this.hideWrap(shide, 'Table') + this.nlnl;
 
 
 
@@ -3361,11 +3413,18 @@ window.c = {
 
 		sout += "One method to achieve this sorting, according to Holt2014, is as follows:" + this.nlnl;
 
-		sout += "We create an interleave vector which is 1 in each position ";
+		sout += "We create an interleave vector which is " + this.origin_1 + " in each position ";
 		sout += "in which we choose the next element from " + this.DH_1 + " and ";
-		sout += "which is 2 in each position in which we choose the ";
-		sout += "next element from " + this.DH_2 + " (originally it's 0 and 1, but the ";
-		sout += "difference is purely notational.) ";
+		sout += "which is " + this.origin_2 + " in each position in which we choose the ";
+		sout += "next element from " + this.DH_2;
+
+		if ((this.origin_1 == '0') && (this.origin_2 == '1')) {
+			sout += '. ';
+		} else {
+			sout += " (originally it's 0 and 1, but the ";
+			sout += "difference is purely notational.) ";
+		}
+
 		sout += "The first interleave vector that we create here simply corresponds ";
 		sout += "to fully writing out the information for " + this.DH_1 + ", followed by ";
 		sout += "fully writing out the information for " + this.DH_2 + ":" + this.nlnl;
@@ -3853,6 +3912,21 @@ window.c = {
 		}
 
 		return aout;
+	},
+
+
+
+	// takes in a length and a string
+	// gives out that same string repeated as often as the length indicates
+	repeatstr: function(len, str) {
+
+		var sout = '';
+
+		for (var i=0; i < len; i++) {
+			sout += str;
+		}
+
+		return sout;
 	},
 
 
@@ -4421,6 +4495,28 @@ window.c = {
 		// i = ord(c)
 		var ord = [];
 
+		// true if this XBW environment keeps track of two XBWs which are in the
+		// process of being merged
+		var multiOrigin = false;
+
+		var otherXBW;
+
+		// current position in our XBW
+		var multi_cur_1 = 0;
+
+		// current position in the other XBW
+		var multi_cur_2 = 0;
+
+		/*
+		// bit-vector (as string) containing the origins if multiOrigin == true
+		var origin = '';
+
+		// used during merging to keep track of the data for H_2
+		var otherC = [];
+		var otherchar = [];
+		var otherord = [];
+		*/
+
 
 
 		// the following entries are not explicitly used in the XBW environment,
@@ -4629,6 +4725,8 @@ window.c = {
 
 			init: function(findex) {
 
+				multiOrigin = false;
+
 				auto = window.c.getAutomatonFromFindex(findex);
 				auto = window.c.computePrefixes(auto);
 
@@ -4704,6 +4802,140 @@ window.c = {
 				return char;
 			},
 
+			startToMergeWith: function(potherXBW) {
+
+				multiOrigin = true;
+
+				otherXBW = potherXBW;
+
+				multi_cur_1 = 0;
+				multi_cur_2 = 0;
+
+				/*
+				var otherData = otherXBW._publishData();
+
+				var otherBWT = otherData[0];
+				var otherFiC = otherData[1];
+				var otherM  =  otherData[2];
+				var otherF  =  otherData[3];
+
+				var len_1 = BWT.length;
+				var len_2 = otherBWT.length;
+
+				origin = window.c.repeatstr(len_2, window.c.origin_2) +
+						 window.c.repeatstr(len_1, window.c.origin_1); 
+
+				BWT = otherBWT + BWT;
+				FiC = otherFiC + FiC;
+				M = otherM + M;
+				F = otherF + F;
+
+				otherC = otherData[4];
+				otherchar = otherData[5];
+				otherord = otherData[6];
+				*/
+			},
+
+			/*
+			_publishData: function() {
+
+				return [BWT, FiC, M, F, C, char, ord];
+			},
+			*/
+
+			finalizeMerge: function() {
+
+				/*
+
+				var last_of_1, second_last_of_1, first_of_2;
+
+				var DK = window.c.DK;
+				var DS = window.c.DS;
+				var origin_1 = window.c.origin_1;
+				var origin_2 = window.c.origin_2;
+
+				var i = BWT.length;
+
+				while (i--) {
+					
+					if ((BWT[i] == DK) && (origin[i] == origin_2)) {
+						first_of_2 = i;
+					}
+
+					// count down and jump on any entry with origin 1
+					// (due to sorting, the second last node of 1 is
+					// at the first position with origin 1)
+					if (origin[i] == origin_1) {
+						second_last_of_1 = i;
+					}
+
+					if ((BWT[i] == DS) && (origin[i] == origin_2)) {
+						last_of_1 = i;
+					}
+				}
+
+				// drop the second to last node of H_1, which is extra
+				// (merge the BWT a bit differently, which is not necessary for FiC,
+				// as that one is already on the correct node,
+				// and not necessary for M or F, as they should just be '1' either way)
+				BWT = BWT.slice(0, first_of_2) + BWT[second_last_of_1] + BWT.slice(first_of_2 + 1);
+				BWT = BWT.slice(0, second_last_of_1) + BWT.slice(second_last_of_1 + 1);
+				FiC = FiC.slice(0, second_last_of_1) + FiC.slice(second_last_of_1 + 1);
+				M = M.slice(0, second_last_of_1) + M.slice(second_last_of_1 + 1);
+				F = F.slice(0, second_last_of_1) + F.slice(second_last_of_1 + 1);
+
+				// drop the last node of H_1, which is also extra
+				BWT = BWT.slice(0, last_of_1) + BWT.slice(last_of_1 + 1);
+				FiC = FiC.slice(0, last_of_1) + FiC.slice(last_of_1 + 1);
+				M = M.slice(0, last_of_1) + M.slice(last_of_1 + 1);
+				F = F.slice(0, last_of_1) + F.slice(last_of_1 + 1);
+
+				*/
+
+				// ... aaand the spook is over, no more multi origin!
+				multiOrigin = false;
+			},
+
+			notFullyMerged: function() {
+				
+				// TODO NOW
+
+				return true;
+			},
+
+			mergeOneMore: function() {
+
+				var sout = '';
+
+				sout += 'We now take column ' + multi_cur_2 + ' from ' + window.c.DH_2 +
+						' and insert it into ' + window.c.DH_1 + '.' + window.c.nlnl;
+
+				var pref_1 = '';
+				var pref_2 = '';
+
+				var pref_1_cur_i = multi_cur_1;
+
+				for (var i=0; i<5; i++) {
+					pref_1_cur_i = psi(pref_1_cur_i, pref_1_cur_i);
+					if (BWT[pref_1_cur_i]) {
+						pref_1 += BWT[pref_1_cur_i];
+					}
+				}
+
+				sout += 'The prefix of ' + window.c.DH_1 + '[' + multi_cur_1 + '] is ' +
+						pref_1 + '.' + window.c.nlnl;
+
+				sout += 'The prefix of ' + window.c.DH_2 + '[' + multi_cur_2 + '] is ' +
+						pref_2 + '.' + window.c.nlnl;
+
+				// TODO NOW
+
+				// emrg
+				multi_cur_1++;
+
+				return sout;
+			},
+
 
 
 			// quick analysis via the command line
@@ -4758,9 +4990,6 @@ window.c = {
 
 			// HTML functions that are not part of the core XBW environment, but just used
 			// for I/O with the user.
-			// The HTML functions usually assume that the XBW environment is stored at window.xbw,
-			// as there should only really ever be one main XBW environment with active GUI in
-			// the window.
 
 			generateHTML: function(tab) {
 
@@ -4768,25 +4997,25 @@ window.c = {
 
 				sout += '<div>';
 				
-				sout += '<u>XBW Environment</u>' + this.nlnlnl;
+				sout += '<u>XBW Environment</u><br><br>';
 
 				sout += 'To start the XBW environment, we first of all flatten the BWT (replacing any ' +
 						'entries with several options by as many single-optioned entries) and add the ' +
-						'first column (the alphabetically sorted BWT.)' + this.nlnl +
+						'first column (the alphabetically sorted BWT.)<br>' +
 						'We can get away with not explicitly storing the first column, but we want to ' +
-						'show it here to make sense of what is going on. =)' + this.nlnl +
+						'show it here to make sense of what is going on. =)<br>' +
 						'We will also have a look at the ' + window.c.DM + ' and ' + window.c.DF + ' vectors.' +
-						this.nlnl;
+						'<br>';
 
 				var shide = '<div class="table_box" id="div-xbw-' + tab + '-env-table">' +
 							'</div>';
 
-				sout += window.c.hideWrap(shide, 'Table') + this.nlnl;
+				sout += window.c.hideWrap(shide, 'Table') + '<br>';
 
-				var char_and_C_str = window.xbw.get_char_and_C_str();
+				var char_and_C_str = this.get_char_and_C_str();
 
 				sout += 'The alphabet that we are considering is &#931; = ' + char_and_C_str[0] + ' and ' +
-						'the <i>C</i> array is ' + char_and_C_str[1] + '.' + this.nlnl +
+						'the <i>C</i> array is ' + char_and_C_str[1] + '.<br>' +
 						'To better keep track of what is happening, we also have a look at the corresponding graph: ' +
 						'<div id="div-xbw-' + tab  + '-env-graph" class="svgheight">' +
 						'</div>' +
@@ -4812,7 +5041,15 @@ window.c = {
 						'<input id="in-string-' + tab + '-xbw-rank" type="text" value="1,F,13" style="float:right; display: inline-block; width: 38%;"></input>' +
 						'</div>';
 
-				sout += '<div>Result: <span id="span-' + tab + '-xbw-results">(none)</span></div>';
+				sout += '<div>Result: <span id="span-' + tab + '-xbw-results">(none)</span><br><br>' +
+						'Just in case you are as forgetful as I am:<br>' +
+						'Assume we have position <i>x</i>, then call ' +
+						'LF(<i>x</i>,<i>x</i>,BWT[<i>x</i>],false) ' +
+						'to get the node <b>before</b> <i>x</i>, ' +
+						'and call &#936;(<i>x</i>,<i>x</i>) to get the node <b>after</b> <i>x</i>.<br>' +
+						'To get the prefix of node <i>x</i>, use BWT[&#936;(<i>x</i>,<i>x</i>)] + ' +
+						'BWT[&#936;(&#936;(<i>x</i>,<i>x</i>),&#936;(<i>x</i>,<i>x</i>))] + ...' +
+						'</div>';
 
 				// replace '^' with '#' before printout
 				sout = sout.replace(/\^/g, '#');
@@ -4821,9 +5058,9 @@ window.c = {
 					sout;
 
 				document.getElementById('div-xbw-' + tab + '-env-table').innerHTML =
-					window.xbw.generateTable([]);
+					this.generateTable([]);
 
-				window.xbw.generateGraph([], tab);
+				this.generateGraph([], tab);
 			},
 			get_char_and_C_str: function() {
 
@@ -4864,12 +5101,25 @@ window.c = {
 				sout += window.c.DF;
 				sout += '</td></tr>';
 
+				/*
+				if (multiOrigin) {
+					sout += '<tr class="barless">';
+					sout += window.c.arr_to_extra_high_str(origin, highlight_arr[5]);
+					sout += '<td>Origin</td></tr>';
+				}
+				*/
+
 				sout += '</tbody></table>';
 
 				// replace '^' with '#' before printout
 				sout = sout.replace(/\^/g, '#');
 
 				return sout;
+			},
+			generateBothTables: function() {
+
+				return this.generateTable([[multi_cur_1]]) + '&nbsp;&nbsp;&nbsp;' +
+				   otherXBW.generateTable([[multi_cur_2]]);
 			},
 			generateGraph: function(highnodes, tab) {
 
@@ -4902,7 +5152,7 @@ window.c = {
 
 				document.getElementById('span-' + tab + '-xbw-results').innerHTML = spep;
 
-				window.xbw.show_spep_in_HTML(spep, tab, ['i', 'FiC'], undefined, undefined);
+				this.show_spep_in_HTML(spep, tab, ['i', 'FiC'], undefined, undefined);
 			},
 			lfHTML: function(tab) {
 
@@ -4919,7 +5169,7 @@ window.c = {
 
 				document.getElementById('span-' + tab + '-xbw-results').innerHTML = spep;
 
-				window.xbw.show_spep_in_HTML(spep, tab, ['i', 'FiC'], undefined, undefined);
+				this.show_spep_in_HTML(spep, tab, ['i', 'FiC'], undefined, undefined);
 			},
 			psiHTML: function(tab) {
 
@@ -4929,7 +5179,7 @@ window.c = {
 
 				document.getElementById('span-' + tab + '-xbw-results').innerHTML = i;
 
-				window.xbw.show_spep_in_HTML([i, i], tab, ['i', 'FiC'], undefined, undefined);
+				this.show_spep_in_HTML([i, i], tab, ['i', 'FiC'], undefined, undefined);
 			},
 			selectHTML: function(tab) {
 
@@ -4958,7 +5208,7 @@ window.c = {
 
 				document.getElementById('span-' + tab + '-xbw-results').innerHTML = i;
 
-				window.xbw.show_spep_in_HTML([i, i], tab, ['i', searchfor[1]], i, searchfor[0]);
+				this.show_spep_in_HTML([i, i], tab, ['i', searchfor[1]], i, searchfor[0]);
 			},
 			rankHTML: function(tab) {
 
@@ -4987,7 +5237,7 @@ window.c = {
 
 				document.getElementById('span-' + tab + '-xbw-results').innerHTML = i;
 
-				window.xbw.show_spep_in_HTML([i, i], tab, ['i', searchfor[1]], j, searchfor[0]);
+				this.show_spep_in_HTML([i, i], tab, ['i', searchfor[1]], j, searchfor[0]);
 			},
 			show_spep_in_HTML: function(spep, tab, highrows, override_last_row, override_with) {
 
@@ -5083,9 +5333,9 @@ window.c = {
 				}
 
 				document.getElementById('div-xbw-' + tab + '-env-table').innerHTML =
-					window.xbw.generateTable(higharr_collection);
+					this.generateTable(higharr_collection);
 
-				window.xbw.generateGraph(highnodes, tab);
+				this.generateGraph(highnodes, tab);
 			},
 		};
 	},

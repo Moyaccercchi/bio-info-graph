@@ -429,8 +429,8 @@
 			Please enter the two indices that should be used for the two graphs:
 		</div>
 		<div class="input-info-container">
-			<input id="in-options-index-1" type="text" value="1" class="md-2"></input>
-			<input id="in-options-index-2" type="text" value="2" class="md-2"></input>
+			<input id="in-options-index-1" type="text" value="0" class="md-2"></input>
+			<input id="in-options-index-2" type="text" value="1" class="md-2"></input>
 		</div>
 		<div onclick="changeOptions_show_graph()" style="cursor:pointer">
 			<span id="in-options-show-graph" style="display: inline-block; box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.8); border-radius: 4px; border: 1px solid rgb(0, 0, 0); text-align: center; margin-right: 5px; width: 25px;">&nbsp;</span> Show na&iuml;ve graph functionality
@@ -477,10 +477,10 @@
 
 
 	<span class="creditline absleft">
-		Version: 0.0.1.1
+		Version: 0.0.1.2
 	</span>
 	<span class="creditline absright">
-		Moyaccercchi (tws@hi.is), University of Iceland, 1<span class="u">st</span> Sep 2014 - 10<span class="u">th</span> Nov 2015
+		Moyaccercchi (tws@hi.is), University of Iceland, 1<span class="u">st</span> Sep 2014 - 11<span class="u">th</span> Nov 2015
 	</span>
 	
 	<script>
@@ -865,8 +865,8 @@
 
 		function resetOptions() {
 
-			document.getElementById('in-options-index-1').value = '1';
-			document.getElementById('in-options-index-2').value = '2';
+			document.getElementById('in-options-index-1').value = '0';
+			document.getElementById('in-options-index-2').value = '1';
 
 			document.getElementById('in-options-array-offset').value = '0';
 

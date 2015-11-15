@@ -1609,25 +1609,25 @@ window.c = {
 		xbw2.init(findex2);
 		xbw.init(findex);
 
-		var char_and_C_str1 = xbw1.get_char_and_C_str();
-		var char_and_C_str2 = xbw2.get_char_and_C_str();
-		var char_and_C_str = xbw.get_char_and_C_str();
+		var alph_and_C_str1 = xbw1.get_alph_and_C_str();
+		var alph_and_C_str2 = xbw2.get_alph_and_C_str();
+		var alph_and_C_str = xbw.get_alph_and_C_str();
 
 		var shide = '<div>The alphabets and <i>C</i>-arrays are' + this.nlnl +
-				'&#931;<span class="d">' + this.origin_1 + '</span> = ' + char_and_C_str1[0] +
+				'&#931;<span class="d">' + this.origin_1 + '</span> = ' + alph_and_C_str1[0] +
 				',&nbsp;&nbsp;&nbsp;' +
-				'<i>C<span class="d">' + this.origin_1 + '</span></i> = ' + char_and_C_str1[1] +
+				'<i>C<span class="d">' + this.origin_1 + '</span></i> = ' + alph_and_C_str1[1] +
 				',' + this.nlnl +
-				'&#931;<span class="d">' + this.origin_2 + '</span> = ' + char_and_C_str2[0] +
+				'&#931;<span class="d">' + this.origin_2 + '</span> = ' + alph_and_C_str2[0] +
 				',&nbsp;&nbsp;&nbsp;' +
-				'<i>C<span class="d">' + this.origin_2 + '</span></i> = ' + char_and_C_str2[1] +
+				'<i>C<span class="d">' + this.origin_2 + '</span></i> = ' + alph_and_C_str2[1] +
 				',' + this.nlnl +
 				'&#931;<span class="d" style="color:#FFF">' + this.origin_1 + '</span> = ' +
-				char_and_C_str[0] + ',&nbsp;&nbsp;&nbsp;' +
+				alph_and_C_str[0] + ',&nbsp;&nbsp;&nbsp;' +
 				'<i>C<span class="d" style="color:#FFF">' + this.origin_1 + '</span></i> = ' +
-				char_and_C_str[1] + '.' + this.nlnlnl;
+				alph_and_C_str[1] + '.' + this.nlnlnl;
 
-		if (char_and_C_str1[0] == char_and_C_str2[0]) {
+		if (alph_and_C_str1[0] == alph_and_C_str2[0]) {
 			shide += 'As &#931;<span class="d">' + this.origin_1 + '</span> and ' +
 					'&#931;<span class="d">' + this.origin_2 + '</span> are already equal, ' +
 					'we do not need to further think about the alphabets.' + this.nlnlnl;
@@ -1641,17 +1641,17 @@ window.c = {
 			xbw1.mergeAlphabetWith(xbw2);
 			xbw2.mergeAlphabetWith(xbw1);
 
-			char_and_C_str1 = xbw1.get_char_and_C_str();
-			char_and_C_str2 = xbw2.get_char_and_C_str();
+			alph_and_C_str1 = xbw1.get_alph_and_C_str();
+			alph_and_C_str2 = xbw2.get_alph_and_C_str();
 
 			shide += 'The modified alphabets and <i>C</i>-arrays are now' + this.nlnl +
-					'&#931;<span class="d">' + this.origin_1 + '</span> = ' + char_and_C_str1[0] +
+					'&#931;<span class="d">' + this.origin_1 + '</span> = ' + alph_and_C_str1[0] +
 					',&nbsp;&nbsp;&nbsp;' +
-					'<i>C<span class="d">' + this.origin_1 + '</span></i> = ' + char_and_C_str1[1] +
+					'<i>C<span class="d">' + this.origin_1 + '</span></i> = ' + alph_and_C_str1[1] +
 					',' + this.nlnl +
-					'&#931;<span class="d">' + this.origin_2 + '</span> = ' + char_and_C_str2[0] +
+					'&#931;<span class="d">' + this.origin_2 + '</span> = ' + alph_and_C_str2[0] +
 					',&nbsp;&nbsp;&nbsp;' +
-					'<i>C<span class="d">' + this.origin_2 + '</span></i> = ' + char_and_C_str2[1] +
+					'<i>C<span class="d">' + this.origin_2 + '</span></i> = ' + alph_and_C_str2[1] +
 					'.' + this.nlnlnl;
 
 			shide += 'As both ' + this.DH_1 + ' and ' + this.DH_2 + ' now use the same alphabet, ' +
@@ -1684,12 +1684,7 @@ window.c = {
 		sout += '<span id="in-jump-5-4">We</span> can now merge ' + this.DH_1 + ' and ' +
 				this.DH_2 + ' just based on their XBW data: BWT, ' + this.DM + ', ' + this.DF +
 				' and <i>C</i>.' + this.nlnlnl;
-		/*
-		sout += 'To do so, we first of all unify both ' + this.DH_1 + ' and ' + this.DH_2 + ' ' +
-				'into the same table by adding a row that keeps track of the origin of each ' +
-				'node.' +
-				this.nlnl;
-		*/
+
 		sout += 'To do so, we add nodes from the ' + this.DH_2 + ' table on the right ' +
 				'one by one to the ' + this.DH_1 + ' table on the left, keeping track of ' +
 				'our position within each table. We never need to go left in either table, ' +
@@ -1724,13 +1719,7 @@ window.c = {
 		}
 
 		sout += this.nlnl;
-		sout += 'The merging algorithm has now finished' +
-		/*
-				' and we can clean up by ' +
-				'connecting the last node of ' + this.DH_1 + ' with the first node of ' +
-				this.DH_2 + ' and by dropping the origin row.';
-		*/
-				'.';
+		sout += 'The merging algorithm has now finished.';
 
 		xbw12.finalizeMerge();
 
@@ -4487,14 +4476,19 @@ window.c = {
 		// the C array, containing the amount of characters before each key in the first column
 		var C = [];
 
+		// the first column / sorted BWT (as string)
+		// can be used to convert an index into the table to a character:
+		// c = char[i]
+		var char = '';
+
 		// the alphabet (set of characters) we are using;
-		// can be used to convert an index to a character:
-		// c = char(i)
-		var char = [];
+		// can be used to convert an index into the alphabet to a character:
+		// c = alph[i]
+		var alph = [];
 
 		// the positions of the characters within the alphabet;
 		// can be used to convert a character to an index:
-		// i = ord(c)
+		// i = ord[c]
 		var ord = [];
 
 		// true if this XBW environment keeps track of two XBWs which are in the
@@ -4509,23 +4503,10 @@ window.c = {
 		// current position in the other XBW
 		var multi_cur_2 = 0;
 
-		/*
-		// bit-vector (as string) containing the origins if multiOrigin == true
-		var origin = '';
-
-		// used during merging to keep track of the data for H_2
-		var otherC = [];
-		var otherchar = [];
-		var otherord = [];
-		*/
-
 
 
 		// the following entries are not explicitly used in the XBW environment,
 		// but are here to help us illustrate the interior processes to the user
-
-		// the first column / sorted BWT (as string)
-		var FiC = '';
 
 		// the automaton
 		var auto = [];
@@ -4551,10 +4532,10 @@ window.c = {
 
 			characters.sort();
 
-			FiC = characters.join('');
+			char = characters.join('');
 
 			C = [];
-			char = [];
+			alph = [];
 			ord = [];
 			var lastChar = '';
 			var add = 0;
@@ -4563,8 +4544,8 @@ window.c = {
 			for (i=0; i < characters.length; i++) {
 				if (lastChar !== characters[i]) {
 					lastChar = characters[i];
-					ord[lastChar] = char.length;
-					char.push(lastChar);
+					ord[lastChar] = alph.length;
+					alph.push(lastChar);
 					C[lastChar] = prev + add;
 					prev += add;
 					add = 0;
@@ -4769,39 +4750,39 @@ window.c = {
 			// merge all characters of the otherXBW's alphabet into our alphabet
 			mergeAlphabetWith: function(otherXBW) {
 
-				var otherchar = otherXBW._publishAlphabet();
+				var otheralph = otherXBW._publishAlphabet();
 
 				// go through the entire alphabet of the other XBW
-				for (var i=0; i < otherchar.length; i++) {
+				for (var i=0; i < otheralph.length; i++) {
 
 					// if a character of theirs is missing in our alphabet
-					if (char.indexOf(otherchar[i]) < 0) {
+					if (alph.indexOf(otheralph[i]) < 0) {
 
 						// then push that character into our alphabet
-						char.push(otherchar[i]);
-						char.sort();
+						alph.push(otheralph[i]);
+						alph.sort();
 
 						// and find out where it was inserted
-						var insertedAt = char.indexOf(otherchar[i]);
+						var insertedAt = alph.indexOf(otheralph[i]);
 
 						// update ord
-						ord[otherchar[i]] = insertedAt;
-						for (var j=insertedAt+1; j < char.length; j++) {
-							ord[char[j]] += 1;
+						ord[otheralph[i]] = insertedAt;
+						for (var j=insertedAt+1; j < alph.length; j++) {
+							ord[alph[j]] += 1;
 						}
 
 						// update the C-array
 						if (insertedAt < 1) {
-							C[otherchar[i]] = 0;
+							C[otheralph[i]] = 0;
 						} else {
-							C[otherchar[i]] = C[char[insertedAt-1]];
+							C[otheralph[i]] = C[alph[insertedAt-1]];
 						}
 					}
 				}
 			},
 
 			_publishAlphabet: function() {
-				return char;
+				return alph;
 			},
 
 			startToMergeWith: function(potherXBW) {
@@ -4812,87 +4793,9 @@ window.c = {
 
 				multi_cur_1 = 0;
 				multi_cur_2 = 0;
-
-				/*
-				var otherData = otherXBW._publishData();
-
-				var otherBWT = otherData[0];
-				var otherFiC = otherData[1];
-				var otherM  =  otherData[2];
-				var otherF  =  otherData[3];
-
-				var len_1 = BWT.length;
-				var len_2 = otherBWT.length;
-
-				origin = window.c.repeatstr(len_2, window.c.origin_2) +
-						 window.c.repeatstr(len_1, window.c.origin_1); 
-
-				BWT = otherBWT + BWT;
-				FiC = otherFiC + FiC;
-				M = otherM + M;
-				F = otherF + F;
-
-				otherC = otherData[4];
-				otherchar = otherData[5];
-				otherord = otherData[6];
-				*/
 			},
-
-			/*
-			_publishData: function() {
-
-				return [BWT, FiC, M, F, C, char, ord];
-			},
-			*/
 
 			finalizeMerge: function() {
-
-				/*
-
-				var last_of_1, second_last_of_1, first_of_2;
-
-				var DK = window.c.DK;
-				var DS = window.c.DS;
-				var origin_1 = window.c.origin_1;
-				var origin_2 = window.c.origin_2;
-
-				var i = BWT.length;
-
-				while (i--) {
-					
-					if ((BWT[i] == DK) && (origin[i] == origin_2)) {
-						first_of_2 = i;
-					}
-
-					// count down and jump on any entry with origin 1
-					// (due to sorting, the second last node of 1 is
-					// at the first position with origin 1)
-					if (origin[i] == origin_1) {
-						second_last_of_1 = i;
-					}
-
-					if ((BWT[i] == DS) && (origin[i] == origin_2)) {
-						last_of_1 = i;
-					}
-				}
-
-				// drop the second to last node of H_1, which is extra
-				// (merge the BWT a bit differently, which is not necessary for FiC,
-				// as that one is already on the correct node,
-				// and not necessary for M or F, as they should just be '1' either way)
-				BWT = BWT.slice(0, first_of_2) + BWT[second_last_of_1] + BWT.slice(first_of_2 + 1);
-				BWT = BWT.slice(0, second_last_of_1) + BWT.slice(second_last_of_1 + 1);
-				FiC = FiC.slice(0, second_last_of_1) + FiC.slice(second_last_of_1 + 1);
-				M = M.slice(0, second_last_of_1) + M.slice(second_last_of_1 + 1);
-				F = F.slice(0, second_last_of_1) + F.slice(second_last_of_1 + 1);
-
-				// drop the last node of H_1, which is also extra
-				BWT = BWT.slice(0, last_of_1) + BWT.slice(last_of_1 + 1);
-				FiC = FiC.slice(0, last_of_1) + FiC.slice(last_of_1 + 1);
-				M = M.slice(0, last_of_1) + M.slice(last_of_1 + 1);
-				F = F.slice(0, last_of_1) + F.slice(last_of_1 + 1);
-
-				*/
 
 				// ... aaand the spook is over, no more multi origin!
 				multiOrigin = false;
@@ -4918,9 +4821,15 @@ window.c = {
 				var pref_1_cur_i = multi_cur_1;
 
 				for (var i=0; i<5; i++) {
-					pref_1_cur_i = psi(pref_1_cur_i, pref_1_cur_i);
+					pref_1_cur_i = psi(pref_1_cur_i, 1);
 					if (BWT[pref_1_cur_i]) {
 						pref_1 += BWT[pref_1_cur_i];
+					} else {
+						pref_1 += '_';
+					}
+
+					if (BWT[pref_1_cur_i] == '$') {
+						break;
 					}
 				}
 
@@ -4958,13 +4867,13 @@ window.c = {
 					ostr += i % 10;
 				}
 				console.log(ostr);
-				console.log('FiC : ' + FiC);
+				console.log('char: ' + char);
 				console.log('BWT : ' + BWT);
 				console.log('M   : ' + M);
 				console.log('F   : ' + F);
-				console.log('C   : ' + window.c.printKeyValArr(char, C));
-				console.log('char: {' + char.join(', ') + '}');
-				console.log('ord : ' + window.c.printKeyValArr(char, ord));
+				console.log('C   : ' + window.c.printKeyValArr(alph, C));
+				console.log('alph: {' + alph.join(', ') + '}');
+				console.log('ord : ' + window.c.printKeyValArr(alph, ord));
 				console.log(' ');
 
 				var flag = 0;
@@ -5014,10 +4923,10 @@ window.c = {
 
 				sout += window.c.hideWrap(shide, 'Table') + '<br>';
 
-				var char_and_C_str = this.get_char_and_C_str();
+				var alph_and_C_str = this.get_alph_and_C_str();
 
-				sout += 'The alphabet that we are considering is &#931; = ' + char_and_C_str[0] + ' and ' +
-						'the <i>C</i> array is ' + char_and_C_str[1] + '.<br>' +
+				sout += 'The alphabet that we are considering is &#931; = ' + alph_and_C_str[0] + ' and ' +
+						'the <i>C</i> array is ' + alph_and_C_str[1] + '.<br>' +
 						'To better keep track of what is happening, we also have a look at the corresponding graph: ' +
 						'<div id="div-xbw-' + tab  + '-env-graph" class="svgheight">' +
 						'</div>' +
@@ -5064,9 +4973,9 @@ window.c = {
 
 				this.generateGraph([], tab);
 			},
-			get_char_and_C_str: function() {
+			get_alph_and_C_str: function() {
 
-				return ['{' + char.join(', ') + '}', window.c.printKeyValArr(char, C)];
+				return ['{' + alph.join(', ') + '}', window.c.printKeyValArr(alph, C)];
 			},
 			generateTable: function(highlight_arr) {
 
@@ -5088,7 +4997,7 @@ window.c = {
 				sout += '<td>BWT</td></tr>';
 
 				sout += '<tr>';
-				sout += window.c.arr_to_extra_high_str(FiC, highlight_arr[2]);
+				sout += window.c.arr_to_extra_high_str(char, highlight_arr[2]);
 				sout += '<td>First Column</td></tr>';
 
 				sout += '<tr class="barless">';
@@ -5102,14 +5011,6 @@ window.c = {
 				sout += '<td>';
 				sout += window.c.DF;
 				sout += '</td></tr>';
-
-				/*
-				if (multiOrigin) {
-					sout += '<tr class="barless">';
-					sout += window.c.arr_to_extra_high_str(origin, highlight_arr[5]);
-					sout += '<td>Origin</td></tr>';
-				}
-				*/
 
 				sout += '</tbody></table>';
 
@@ -5154,7 +5055,7 @@ window.c = {
 
 				document.getElementById('span-' + tab + '-xbw-results').innerHTML = spep;
 
-				this.show_spep_in_HTML(spep, tab, ['i', 'FiC'], undefined, undefined);
+				this.show_spep_in_HTML(spep, tab, ['i', 'char'], undefined, undefined);
 			},
 			lfHTML: function(tab) {
 
@@ -5171,7 +5072,7 @@ window.c = {
 
 				document.getElementById('span-' + tab + '-xbw-results').innerHTML = spep;
 
-				this.show_spep_in_HTML(spep, tab, ['i', 'FiC'], undefined, undefined);
+				this.show_spep_in_HTML(spep, tab, ['i', 'char'], undefined, undefined);
 			},
 			psiHTML: function(tab) {
 
@@ -5181,7 +5082,7 @@ window.c = {
 
 				document.getElementById('span-' + tab + '-xbw-results').innerHTML = i;
 
-				this.show_spep_in_HTML([i, i], tab, ['i', 'FiC'], undefined, undefined);
+				this.show_spep_in_HTML([i, i], tab, ['i', 'char'], undefined, undefined);
 			},
 			selectHTML: function(tab) {
 
@@ -5203,8 +5104,8 @@ window.c = {
 					case 'BWT':
 						i = select(searchfor[0], BWT, j);
 						break;
-					case 'FiC':
-						i = select(searchfor[0], FiC, j);
+					case 'char':
+						i = select(searchfor[0], char, j);
 						break;
 				}
 
@@ -5232,8 +5133,8 @@ window.c = {
 					case 'BWT':
 						i = rank(searchfor[0], BWT, j);
 						break;
-					case 'FiC':
-						i = rank(searchfor[0], FiC, j);
+					case 'char':
+						i = rank(searchfor[0], char, j);
 						break;
 				}
 
@@ -5277,7 +5178,7 @@ window.c = {
 					higharr_collection.push([]);
 				}
 
-				if (highrows.indexOf('FiC') >= 0) {
+				if (highrows.indexOf('char') >= 0) {
 					higharr_collection.push(higharr);
 				} else {
 					higharr_collection.push([]);
@@ -5307,9 +5208,9 @@ window.c = {
 							}
 							higharr_collection[1] = lastrow;
  							break;
-						case 'FiC':
+						case 'char':
 							for (var i=0; i <= override_last_row; i++) {
-								if (FiC[i] == override_with) {
+								if (char[i] == override_with) {
 									lastrow.push(i);
 								}
 							}

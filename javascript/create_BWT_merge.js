@@ -2160,8 +2160,10 @@ window.c = {
 
 		sout += 'viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">';
 
+		var markerArrow = 'markerArrow' + (this.hide_counter + 1);
+
 		sout += '<defs>';
-		sout += '<marker id="markerArrow" markerWidth="13" markerHeight="13" refX="4" refY="7" orient="auto">';
+		sout += '<marker id="' + markerArrow + '" markerWidth="13" markerHeight="13" refX="4" refY="7" orient="auto">';
 		sout += '<path d="M2,4.5 L2,9.5 L5,7 L2,4.5" style="fill: #000000;" />';
 		sout += '</marker>';
 		sout += '</defs>';
@@ -2213,7 +2215,7 @@ window.c = {
 
 			if (auto[i].c !== this.DS) {
 				sout += '<path d="M' + (xoff + 2.5) + ',50 L' + (xoffnext - 2.5) + ',50" ';
-				sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
+				sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#' + markerArrow + ');" ';
 				sout += '/>';
 			}
 
@@ -2316,17 +2318,17 @@ window.c = {
 
 						if (i < 1) {
 							sout += '<path d="M' + (xoff_start + 0.3) + ',' + yoff + ' Q' + (xoff_start + 1) + ',' + yoffl + ' ' + (xoff - 2.5) + ',' + yoffl + '" ';
-							sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
+							sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#' + markerArrow + ');" ';
 							sout += '/>';
 						}
 
 						if (i < plen-1) {
 							sout += '<path d="M' + (xoff + 2.5) + ',' + yoffl + ' L' + (xoffnext - 2.5) + ',' + yoffl + '" ';
-							sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
+							sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#' + markerArrow + ');" ';
 							sout += '/>';
 						} else {
 							sout += '<path d="M' + (xoff + 2.5) + ',' + yoffl + ' Q' + (xoff_end - 1) + ',' + yoffl + ' ' + (xoff_end - 0.3) + ',' + yoff + '" ';
-							sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
+							sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#' + markerArrow + ');" ';
 							sout += '/>';
 						}
 					}
@@ -2340,7 +2342,7 @@ window.c = {
 					xoff_mid = (xoff_end + xoff_start) / 2;
 
 					sout += '<path d="M' + (xoff_start + 1) + ',' + yoff + ' Q' + xoff_mid + ',' + yoffdl + ' ' + (xoff_end - 1) + ',' + yoff + '" ';
-					sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#markerArrow);" ';
+					sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#' + markerArrow + ');" ';
 					sout += '/>';
 				}
 

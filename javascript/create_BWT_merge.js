@@ -131,10 +131,12 @@ window.c = {
 		this.nlnl = "\n\n"; // newline character in print
 		this.nlnlnl = "\n\n\n"; // double newline character in print
 		this.DS = "$ \\$ $"; // $
+		this.DS_1 = '%'; // $_1 internally
 		this.DS_1_o = '$ \\$_' + this.origin_1 + ' $'; // $_1
 		this.DS_1_t = '$ \\$_' + this.origin_1 + ' $'; // $_1 in SVG
 		this.DS_2_o = '$ \\$_' + this.origin_2 + ' $'; // $_2
 		this.DK = '$ # $'; // #
+		this.DK_1 = '_'; // #_1 internally
 		this.DK_1_o = '$ #_' + this.origin_1 + ' $'; // #_1
 		this.DK_1_t = '$ #_' + this.origin_1 + ' $'; // #_1 in SVG
 		this.H_1 = 'H_' + this.origin_1; // string H_1 while in mathmode
@@ -166,10 +168,12 @@ window.c = {
 		this.nlnl = '<br>\n'; // newline character in print
 		this.nlnlnl = '<br><br>\n'; // double newline character in print
 		this.DS = '$'; // $
+		this.DS_1 = '%'; // $_1 internally
 		this.DS_1_o = '$<span class="d">' + this.origin_1 + '</span>'; // $_1
 		this.DS_1_t = '<tspan>$</tspan><tspan class="d" dy="0.2">' + this.origin_1 + '</tspan>'; // $_1 in SVG
 		this.DS_2_o = '$<span class="d">' + this.origin_2 + '</span>'; // $_2
 		this.DK = '^'; // #
+		this.DK_1 = '_'; // #_1 internally
 		this.DK_1_o = '^<span class="d">' + this.origin_1 + '</span>'; // #_1
 		this.DK_1_t = '<tspan>^</tspan><tspan class="d" dy="0.2">' + this.origin_1 + '</tspan>'; // #_1 in SVG
 		this.H_1 = 'H<span class="d">' + this.origin_1 + '</span>'; // string H_1 while in mathmode
@@ -1596,10 +1600,8 @@ window.c = {
 				' just based on the ' +
 				'XBW data we have for ' + this.DH_1 + ' and ' + this.DH_2 + '.' + this.nlnl;
 
-		sout += 'To work with the actual XBW data, we need to consider the alphabets ' +
-				'(that is, all the occuring characters) ' +
-				'and the <i>C</i>-arrays, before then flattening the BWTs and dropping the prefixes.' +
-				this.nlnlnl;
+		sout += 'We need to flatten the BWTs and drop the prefixes.' +
+				this.nlnl;
 
 		// initialize XBW environment
 		var xbw1 = this.make_xbw_environment();
@@ -1608,62 +1610,6 @@ window.c = {
 		xbw1.init(findex1);
 		xbw2.init(findex2);
 		xbw.init(findex);
-
-		var alph_and_C_str1 = xbw1.get_alph_and_C_str();
-		var alph_and_C_str2 = xbw2.get_alph_and_C_str();
-		var alph_and_C_str = xbw.get_alph_and_C_str();
-
-		var shide = '<div>The alphabets and <i>C</i>-arrays are' + this.nlnl +
-				'&#931;<span class="d">' + this.origin_1 + '</span> = ' + alph_and_C_str1[0] +
-				',&nbsp;&nbsp;&nbsp;' +
-				'<i>C<span class="d">' + this.origin_1 + '</span></i> = ' + alph_and_C_str1[1] +
-				',' + this.nlnl +
-				'&#931;<span class="d">' + this.origin_2 + '</span> = ' + alph_and_C_str2[0] +
-				',&nbsp;&nbsp;&nbsp;' +
-				'<i>C<span class="d">' + this.origin_2 + '</span></i> = ' + alph_and_C_str2[1] +
-				',' + this.nlnl +
-				'&#931;<span class="d" style="color:#FFF">' + this.origin_1 + '</span> = ' +
-				alph_and_C_str[0] + ',&nbsp;&nbsp;&nbsp;' +
-				'<i>C<span class="d" style="color:#FFF">' + this.origin_1 + '</span></i> = ' +
-				alph_and_C_str[1] + '.' + this.nlnlnl;
-
-		if (alph_and_C_str1[0] == alph_and_C_str2[0]) {
-			shide += 'As &#931;<span class="d">' + this.origin_1 + '</span> and ' +
-					'&#931;<span class="d">' + this.origin_2 + '</span> are already equal, ' +
-					'we do not need to further think about the alphabets.' + this.nlnlnl;
-		} else {
-			shide += 'As &#931;<span class="d">' + this.origin_1 + '</span> and ' +
-					'&#931;<span class="d">' + this.origin_2 + '</span> are different, ' +
-					'we first need to unify these alphabets by adding any characters from ' +
-					'' +
-					'This also means expanding the <i>C</i>-arrays with new entries.' + this.nlnl;
-
-			xbw1.mergeAlphabetWith(xbw2);
-			xbw2.mergeAlphabetWith(xbw1);
-
-			alph_and_C_str1 = xbw1.get_alph_and_C_str();
-			alph_and_C_str2 = xbw2.get_alph_and_C_str();
-
-			shide += 'The modified alphabets and <i>C</i>-arrays are now' + this.nlnl +
-					'&#931;<span class="d">' + this.origin_1 + '</span> = ' + alph_and_C_str1[0] +
-					',&nbsp;&nbsp;&nbsp;' +
-					'<i>C<span class="d">' + this.origin_1 + '</span></i> = ' + alph_and_C_str1[1] +
-					',' + this.nlnl +
-					'&#931;<span class="d">' + this.origin_2 + '</span> = ' + alph_and_C_str2[0] +
-					',&nbsp;&nbsp;&nbsp;' +
-					'<i>C<span class="d">' + this.origin_2 + '</span></i> = ' + alph_and_C_str2[1] +
-					'.' + this.nlnlnl;
-
-			shide += 'As both ' + this.DH_1 + ' and ' + this.DH_2 + ' now use the same alphabet, ' +
-					'we can carry on.' + this.nlnlnl;
-		}
-
-		shide += '</div>';
-
-		sout += this.hideWrap(shide, 'Alphabets');
-
-		sout += 'All the preparations have been finished to finally be able to drop the prefixes ' +
-				'and flatten the BWTs.' + this.nlnl;
 
 		sout += "For " + this.DH_1 + " we get:" + this.nlnl;
 
@@ -1694,23 +1640,22 @@ window.c = {
 				'into ' + this.DH_1 + ' at position 9 or greater, not lower than 9.' +
 				this.nlnl;
 
-		var xbw12 = xbw1;
-		xbw12.startToMergeWith(xbw2);
+		var xbw12 = xbw1.startToMergeWith(xbw2);
 
-		shide = '<div class="table_box">' + xbw12.generateBothTables() + '</div>';
+		shide = '<div class="table_box">' + xbw1.generateBothTables() + '</div>';
 		sout += this.hideWrap(shide, 'Table') + this.nlnl;
 
-		var overflow_protection = 10;
+		var overflow_protection = 100;
 
-		while (xbw12.notFullyMerged() && (overflow_protection > 0)) {
+		while (xbw1.notFullyMerged() && (overflow_protection > 0)) {
 
 			overflow_protection--;
 
-			var sstep = '<div>' + xbw12.mergeOneMore();
+			var sstep = '<div>' + xbw1.mergeOneMore();
 
 			sstep += 'We now have:' + this.nlnl;
 
-			shide = '<div class="table_box">' + xbw12.generateBothTables() + '</div>';
+			shide = '<div class="table_box">' + xbw1.generateBothTables() + '</div>';
 			sstep += this.hideWrap(shide, 'Table') + this.nlnl;
 
 			sstep += '</div>';
@@ -1718,12 +1663,29 @@ window.c = {
 			sout += this.hideWrap(sstep, 'Step') + this.nlnl;
 		}
 
-		sout += this.nlnl;
-		sout += 'The merging algorithm has now finished.';
+		sout += 'The main part of the merging algorithm has now finished, but we should still ' +
+				'join the ' + this.DS_1_o + ' and ' + this.DK_1_o + ' nodes.';
+
+		shide = '<div class="table_box">' + xbw12.generateTable([]) + '</div>';
+		sout += this.hideWrap(shide, 'Table') + this.nlnl;
 
 		xbw12.finalizeMerge();
 
+		// TODO :: we could here also create finalizeMerge functionality for xbw1 and xbw2,
+		// to restore them to their previous form, if we were inclined to do so... however,
+		// why would we?
+		// (If that is ever necessary: set multiOrigin = false in xbw1, and replace the
+		// #_1 and $_1 back to their original forms.)
+
+		sout += 'Having joined the ' + this.DS_1_o + ' and ' + this.DK_1_o + ' nodes, ' +
+				'the merging has now been completed:';
+
 		shide = '<div class="table_box">' + xbw12.generateTable([]) + '</div>';
+		sout += this.hideWrap(shide, 'Table') + this.nlnl;
+
+		sout += 'To simplify the comparison, here is the table that we wanted to achieve:';
+
+		shide = '<div class="table_box">' + xbw.generateTable([]) + '</div>';
 		sout += this.hideWrap(shide, 'Table') + this.nlnl;
 
 
@@ -2167,9 +2129,12 @@ window.c = {
 		var done_paths = [];
 
 		// find main row by following from # always the first alternative, until we arrive at $
+		// alternatively, we could also go until we reached a node with no outgoing nodes,
+		// but sometimes some funny bunnies actually put an edge from $ to # to confuse us,
+		// so we'll not do that ;)
 		var mainrow = [0];
 		var i = 0;
-		while (auto[i].c !== this.DS) {
+		while ((auto[i].c !== this.DS) && (auto[i].c !== this.DS_1)) {
 			i = auto[i].n[0];
 			mainrow.push(i);
 		}
@@ -3185,6 +3150,43 @@ window.c = {
 		auto[auto[0].p[0]].n = [];
 		// and take out the prev from '#'
 		auto[0].p = [];
+
+		// This here is not strictly necessary for a valid automaton,
+		// but it being done is an assumption within the visualization
+		// function: basically, we assume that on the main row, .n[0]
+		// contains the next node on the main row (which is trivially
+		// true, as that is how we define the main row ^^), AND that
+		// on the main row, .p[0] contains the previous node on the
+		// main row - which however would not necessarily be true at
+		// this point here!
+		// To circumvent doing A LOT of calculations within the visualization
+		// function over and over again, we just swap entries within .p
+		// over here until .p[0] contains the previous node on the main
+		// row (we now that the previous one is SOMEWHERE in .p anyway,
+		// but without this piece of code it might be in .p[1] or .p[2] etc.)
+		
+		var i = 0;
+
+		// go through the mainrow by going from # always via the first alternative
+		// until we find a node that has no outgoing nodes (which will be $ / $_1,
+		// and here we know that no funny bunnies put an edge from $ to #, as we
+		// just built all the edges ourselves ^^)
+		while (auto[i].n.length > 0) {
+			
+			var next = auto[i].n[0];
+
+			// now replace auto[next].p = [..., i, ...] with newp = [i, ..., ...],
+			// so that i is always in the beginning of auto[next].p
+			var newp = [i];
+			for (var j=0; j < auto[next].p.length; j++) {
+				if (auto[next].p[j] != i) {
+					newp.push(auto[next].p[j]);
+				}
+			}
+			auto[next].p = newp;
+
+			i = next;
+		}
 
 		return auto;
 	},
@@ -4496,6 +4498,7 @@ window.c = {
 		var multiOrigin = false;
 
 		var otherXBW;
+		var mergedXBW;
 
 		// current position in our XBW
 		var multi_cur_1 = 0;
@@ -4515,7 +4518,7 @@ window.c = {
 		var prefixes = [];
 
 
-		function recalculate() {
+		function recalculate(updateChar) {
 
 			/*
 			C[0, s°+1] is an array such that C[c] is the total number of characters
@@ -4532,7 +4535,9 @@ window.c = {
 
 			characters.sort();
 
-			char = characters.join('');
+			if (updateChar) {
+				char = characters.join('');
+			}
 
 			C = [];
 			alph = [];
@@ -4655,25 +4660,26 @@ window.c = {
 				return select(ch, BWT, i - C[ch])
 		*/
 		function psi(i, j) {
-			var c, i;
 
-			console.log('psi::init i: ' + i + ', j: ' + j);
+			var c, i;
 
 			c = char[i];
 
-			console.log(c);
-
+			// emrg
 			i = select('1', M, i) + j - 1;
 
-			console.log(i);
+			console.log('Ps for ' + c);
+			console.log('i: ' + i + ' C[c]: ' + C[c] + ' i-C[c]: ' + (i - C[c]));
 
 			i = select(c, BWT, i - C[c]);
 
-			console.log(i);
-
+			// TODO :: we took this out there because it seems to work better without it...
+			//         but it really shouldn't; should it?
+			// emrg
 			i = rank('1', F, i);
 
 			console.log(i);
+			console.log(rank('1', F, i));
 
 			return i;
 		}
@@ -4683,12 +4689,8 @@ window.c = {
 			var spep = [0, BWT.length - 1];
 			var i = P.length;
 
-			console.log('find::init  [sp: 0, ep: ' + (BWT.length-1) + ']');
-
 			while (i--) {
 				spep = lf(spep, P[i], i > 0);
-
-				console.log('find::while [sp: ' + spep[0] + ', ep: ' + spep[1] + ']');
 
 				if (spep[1] < spep[0]) {
 					return [];
@@ -4710,34 +4712,36 @@ window.c = {
 
 				multiOrigin = false;
 
-				auto = window.c.getAutomatonFromFindex(findex);
-				auto = window.c.computePrefixes(auto);
+				if (findex) {
+					auto = window.c.getAutomatonFromFindex(findex);
+					auto = window.c.computePrefixes(auto);
 
-				prefixes = [];
-				for (var i=0; i < auto.length; i++) {
-					prefixes.push(auto[i].f);
-				}
-				prefixes.sort();
-
-
-				var pBWT = findex[1];
-				BWT = '';
-				for (var i=0; i < pBWT.length; i++) {
-					if (pBWT[i].length > 1) {
-						var BWTarr = pBWT[i].split('|');
-						for (var j=0; j < BWTarr.length; j++) {
-							BWT += BWTarr[j];
-						}
-					} else {
-						BWT += pBWT[i];
+					prefixes = [];
+					for (var i=0; i < auto.length; i++) {
+						prefixes.push(auto[i].f);
 					}
+					prefixes.sort();
+
+
+					var pBWT = findex[1];
+					BWT = '';
+					for (var i=0; i < pBWT.length; i++) {
+						if (pBWT[i].length > 1) {
+							var BWTarr = pBWT[i].split('|');
+							for (var j=0; j < BWTarr.length; j++) {
+								BWT += BWTarr[j];
+							}
+						} else {
+							BWT += pBWT[i];
+						}
+					}
+
+					M = findex[2].join('');
+
+					F = findex[3].join('');
 				}
 
-				M = findex[2].join('');
-
-				F = findex[3].join('');
-
-				recalculate();
+				recalculate(true);
 			},
 
 
@@ -4747,44 +4751,6 @@ window.c = {
 			// environments to communicate with each other, but are not intended to be called
 			// by the outside world
 
-			// merge all characters of the otherXBW's alphabet into our alphabet
-			mergeAlphabetWith: function(otherXBW) {
-
-				var otheralph = otherXBW._publishAlphabet();
-
-				// go through the entire alphabet of the other XBW
-				for (var i=0; i < otheralph.length; i++) {
-
-					// if a character of theirs is missing in our alphabet
-					if (alph.indexOf(otheralph[i]) < 0) {
-
-						// then push that character into our alphabet
-						alph.push(otheralph[i]);
-						alph.sort();
-
-						// and find out where it was inserted
-						var insertedAt = alph.indexOf(otheralph[i]);
-
-						// update ord
-						ord[otheralph[i]] = insertedAt;
-						for (var j=insertedAt+1; j < alph.length; j++) {
-							ord[alph[j]] += 1;
-						}
-
-						// update the C-array
-						if (insertedAt < 1) {
-							C[otheralph[i]] = 0;
-						} else {
-							C[otheralph[i]] = C[alph[insertedAt-1]];
-						}
-					}
-				}
-			},
-
-			_publishAlphabet: function() {
-				return alph;
-			},
-
 			startToMergeWith: function(potherXBW) {
 
 				multiOrigin = true;
@@ -4793,58 +4759,205 @@ window.c = {
 
 				multi_cur_1 = 0;
 				multi_cur_2 = 0;
+
+				mergedXBW = window.c.make_xbw_environment();
+				mergedXBW.init();
+
+				this._replaceSpecialChar(window.c.DS, window.c.DS_1);
+				otherXBW._replaceSpecialChar(window.c.DK, window.c.DK_1);
+
+				return mergedXBW;
+			},
+
+			_replaceSpecialChar: function(oldspecchar, newspecchar) {
+
+				while (BWT.indexOf(oldspecchar) > -1) {
+					BWT = BWT.replace(oldspecchar, newspecchar);
+				}
+
+				while (char.indexOf(oldspecchar) > -1) {
+					char = char.replace(oldspecchar, newspecchar);
+				}
+
+				for (var i=0; i < alph.length; i++) {
+					if (alph[i] === oldspecchar) {
+						alph[i] = newspecchar;
+					}
+				}
+
+				C[newspecchar] = C[oldspecchar];
+				ord[newspecchar] = ord[oldspecchar];
 			},
 
 			finalizeMerge: function() {
 
-				// ... aaand the spook is over, no more multi origin!
-				multiOrigin = false;
+				var mergeFrom, mergeTo;
+
+				// TODO :: should this also work for several DS_1 nodes?
+				for (var i=0; i < char.length; i++) {
+					if (char[i] == window.c.DS_1) {
+						mergeFrom = i;
+						break;
+					}
+				}
+
+				for (var i=0; i < BWT.length; i++) {
+					if (BWT[i] == window.c.DK_1) {
+						mergeTo = i;
+						break;
+					}
+				}
+
+
+				// replace #_1 with the predecessor of $_1
+
+				BWT = BWT.slice(0, mergeTo) + BWT[mergeFrom] + BWT.slice(mergeTo+1);
+
+
+				// delete $_1
+
+				BWT = BWT.slice(0, mergeFrom) + BWT.slice(mergeFrom+1);
+				char = char.slice(0, mergeFrom) + char.slice(mergeFrom+1);
+				M = M.slice(0, mergeFrom) + M.slice(mergeFrom+1);
+				F = F.slice(0, mergeFrom) + F.slice(mergeFrom+1);
+
+
+				// now unify the $_1, $, #, #_1 madness
+
+				for (var i=char.length-1; i > -1; i--) {
+					if (char[i] == window.c.DK_1) {
+						mergeFrom = i;
+						break;
+					}
+				}
+
+				for (var i=BWT.length-1; i > -1; i--) {
+					if (BWT[i] == window.c.DS_1) {
+						mergeTo = i;
+						break;
+					}
+				}
+
+				BWT = BWT.slice(0, mergeTo) + BWT[mergeFrom] + BWT.slice(mergeTo+1);
+
+				BWT = BWT.slice(0, mergeFrom) + BWT.slice(mergeFrom+1);
+				char = char.slice(0, mergeFrom) + char.slice(mergeFrom+1);
+				M = M.slice(0, mergeFrom) + M.slice(mergeFrom+1);
+				F = F.slice(0, mergeFrom) + F.slice(mergeFrom+1);
+
+				recalculate(true);
 			},
 
 			notFullyMerged: function() {
-				
-				// TODO NOW
+				return !((multi_cur_1 > BWT.length-1) && (multi_cur_2 > otherXBW._publishBWTlen()-1));
+			},
 
-				return true;
+			_publishBWTlen: function() {
+				return BWT.length;
+			},
+
+			_publishPrefix: function(pref_cur_i) {
+
+				var pref = '';
+
+				// todo :: don't just go up to 10 arbitrarily,
+				// but until a difference between this and the other prefix
+				// is found
+				for (var i=0; i<10; i++) {
+					pref_cur_i = psi(pref_cur_i, 1);
+					if (BWT[pref_cur_i]) {
+						pref += BWT[pref_cur_i];
+					} else {
+						pref += '.';
+					}
+
+					if ((BWT[pref_cur_i] == window.c.DS) || (BWT[pref_cur_i] == window.c.DS_1)) {
+						break;
+					}
+				}
+
+				return pref;
+			},
+
+			_publishNode: function(i) {
+
+				return [BWT[i], char[i], M[i], F[i]];
 			},
 
 			mergeOneMore: function() {
 
 				var sout = '';
 
-				sout += 'We now take column ' + multi_cur_2 + ' from ' + window.c.DH_2 +
-						' and insert it into ' + window.c.DH_1 + '.' + window.c.nlnl;
+				var takeNode2;
 
-				var pref_1 = '';
-				var pref_2 = '';
-
-				var pref_1_cur_i = multi_cur_1;
-
-				for (var i=0; i<5; i++) {
-					pref_1_cur_i = psi(pref_1_cur_i, 1);
-					if (BWT[pref_1_cur_i]) {
-						pref_1 += BWT[pref_1_cur_i];
+				// 1 is overshooting? - take 2!
+				if (multi_cur_1 > BWT.length-1) {
+					takeNode2 = true;
+				} else {
+					// 2 is overshooting? - take 1!
+					if (multi_cur_2 > otherXBW._publishBWTlen()-1) {
+						takeNode2 = false;
 					} else {
-						pref_1 += '_';
-					}
+						// todo :: only generate as long prefixes as necessary
+						// (basically, keep generating until you find a difference to be
+						// able to sort; and also, keep previous results in memory,
+						// instead of re-generating them!)
 
-					if (BWT[pref_1_cur_i] == '$') {
-						break;
+						var pref_1 = this._publishPrefix(multi_cur_1);
+						var pref_2 = otherXBW._publishPrefix(multi_cur_2);
+
+						sout += 'The prefix of ' + window.c.DH_1 + '[' + multi_cur_1 + '] is ' +
+								pref_1 + '.' + window.c.nlnl;
+
+						sout += 'The prefix of ' + window.c.DH_2 + '[' + multi_cur_2 + '] is ' +
+								pref_2 + '.' + window.c.nlnl;
+
+						var otherNode;
+
+						takeNode2 = pref_1 > pref_2;
 					}
 				}
 
-				sout += 'The prefix of ' + window.c.DH_1 + '[' + multi_cur_1 + '] is ' +
-						pref_1 + '.' + window.c.nlnl;
+				if (takeNode2) {
 
-				sout += 'The prefix of ' + window.c.DH_2 + '[' + multi_cur_2 + '] is ' +
-						pref_2 + '.' + window.c.nlnl;
+					sout += 'We now take node ' + multi_cur_2 + ' from ' + window.c.DH_2 +
+							' and insert it into the merged table.' + window.c.nlnl;
 
-				// TODO NOW
+					// insert node from the other XBW at multi_cur_2 into the merged XBW
+					otherNode = otherXBW._publishNode(multi_cur_2);
 
-				// emrg
-				multi_cur_1++;
+					multi_cur_2++;
+				
+				} else {
+
+					sout += 'We now take node ' + multi_cur_1 + ' from ' + window.c.DH_1 +
+							' and insert it into the merged table.' + window.c.nlnl;
+
+					// insert node from this XBW at multi_cur_2 into the merged XBW
+					otherNode = this._publishNode(multi_cur_1);
+
+					multi_cur_1++;
+				}
+
+				mergedXBW._addNode(otherNode);
 
 				return sout;
+			},
+
+			_addNode: function(otherNode) {
+
+				BWT += otherNode[0];
+				char += otherNode[1];
+				M += otherNode[2];
+				F += otherNode[3];
+
+				// TODO :: do not recalculate everything here,
+				// but instead just update what needs to be updated!
+				// (right now, we do not do any calculations on the mergedXBW
+				// anyway, so we could even not call this at all, but later on
+				// we probably need to because of merging graphy stuff and so
+				// on...)
+				recalculate(false);
 			},
 
 
@@ -5014,6 +5127,17 @@ window.c = {
 
 				sout += '</tbody></table>';
 
+
+				// replace the internal representation of '#_1' with the actual visual representation
+				while (sout.indexOf(window.c.DK_1) > -1) {
+					sout = sout.replace(window.c.DK_1, window.c.DK_1_o);
+				}
+
+				// replace the internal representation of '$_1' with the actual visual representation
+				while (sout.indexOf(window.c.DS_1) > -1) {
+					sout = sout.replace(window.c.DS_1, window.c.DS_1_o);
+				}
+
 				// replace '^' with '#' before printout
 				sout = sout.replace(/\^/g, '#');
 
@@ -5022,7 +5146,8 @@ window.c = {
 			generateBothTables: function() {
 
 				return this.generateTable([[multi_cur_1]]) + '&nbsp;&nbsp;&nbsp;' +
-				   otherXBW.generateTable([[multi_cur_2]]);
+				   otherXBW.generateTable([[multi_cur_2]]) + '<br>' +
+				  mergedXBW.generateTable([[mergedXBW._publishBWTlen()-1]]);
 			},
 			generateGraph: function(highnodes, tab) {
 

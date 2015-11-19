@@ -1688,6 +1688,13 @@ window.c = {
 		shide = '<div class="table_box">' + xbw.generateTable([]) + '</div>';
 		sout += this.hideWrap(shide, 'Table') + this.nlnl;
 
+		if (xbw.equals(xbw12)) {
+			sout += 'We can see that these are exactly the same, and we are happy!' + this.nlnl;
+		} else {
+			sout += 'We can see that these are different from each other, ' +
+					'so something somewhere went wrong...' + this.nlnl;
+		}
+
 
 
 		sout += this.s_end_document;
@@ -4005,13 +4012,17 @@ window.c = {
 
 	// takes in an array and an extra highlight array
 	// gives out a string representing each element joined on the standard
-	//   delimiter with each entry of extra_hl_arr being extra highlighted
-	arr_to_extra_high_str: function(arr, extra_hl_arr) {
+	//   delimiter with each entry of hl_arr being highlighted and each
+	//   entry of extra_hl_arr being extra highlighted
+	arr_to_extra_high_str: function(arr, hl_arr, extra_hl_arr) {
 
 		var sout = '';
 		var delimiter;
 
 		// also allow this to be undefined
+		if (!hl_arr) {
+			hl_arr = [];
+		}
 		if (!extra_hl_arr) {
 			extra_hl_arr = [];
 		}
@@ -4020,9 +4031,13 @@ window.c = {
 			delimiter = '</td><td>';
 			for (var i=0; i < arr.length; i++) {
 				if (extra_hl_arr.indexOf(i) >= 0) {
-					sout += '</td><td class="x">' + arr[i];
+					sout += '</td><td class="h">' + arr[i];
 				} else {
-					sout += delimiter + arr[i];
+					if (hl_arr.indexOf(i) >= 0) {
+						sout += '</td><td class="x">' + arr[i];
+					} else {
+						sout += delimiter + arr[i];
+					}
 				}
 			}
 			// take out the first delimiter end
@@ -4506,6 +4521,10 @@ window.c = {
 		// current position in the other XBW
 		var multi_cur_2 = 0;
 
+		// keep track from where the last node came to highlight it visually
+		var last_high_1 = -1;
+		var last_high_2 = -1;
+
 
 
 		// the following entries are not explicitly used in the XBW environment,
@@ -4668,7 +4687,7 @@ window.c = {
 			// emrg
 			i = select('1', M, i) + j - 1;
 
-			console.log('Ps for ' + c);
+			console.log('Ps for ' + c + ' in BWT: ' + BWT + ' and M: ' + M);
 			console.log('i: ' + i + ' C[c]: ' + C[c] + ' i-C[c]: ' + (i - C[c]));
 
 			i = select(c, BWT, i - C[c]);
@@ -4918,7 +4937,12 @@ window.c = {
 					}
 				}
 
+				last_high_1 = -1;
+				last_high_2 = -1;
+
 				if (takeNode2) {
+
+					last_high_2 = multi_cur_2;
 
 					sout += 'We now take node ' + multi_cur_2 + ' from ' + window.c.DH_2 +
 							' and insert it into the merged table.' + window.c.nlnl;
@@ -4929,6 +4953,8 @@ window.c = {
 					multi_cur_2++;
 				
 				} else {
+
+					last_high_1 = multi_cur_1;
 
 					sout += 'We now take node ' + multi_cur_1 + ' from ' + window.c.DH_1 +
 							' and insert it into the merged table.' + window.c.nlnl;
@@ -4958,6 +4984,52 @@ window.c = {
 				// we probably need to because of merging graphy stuff and so
 				// on...)
 				recalculate(false);
+			},
+
+			equals: function(otherXBW) {
+
+				return otherXBW._areWeTheSame(BWT, char, M, F, alph, ord, C);
+			},
+
+			_areWeTheSame: function(pBWT, pchar, pM, pF, palph, pord, pC) {
+
+				if (BWT !== pBWT) {
+					return false;
+				}
+
+				if (char !== pchar) {
+					return false;
+				}
+
+				if (M !== pM) {
+					return false;
+				}
+
+				if (F !== pF) {
+					return false;
+				}
+
+				var len = Math.max(alph.length, palph.length);
+
+				for (var i=0; i < len; i++) {
+					if (alph[i] !== palph[i]) {
+						return false;
+					}
+				}
+
+				for (var i=0; i < len; i++) {
+					if (ord[alph[i]] !== pord[palph[i]]) {
+						return false;
+					}
+				}
+
+				for (var i=0; i < len; i++) {
+					if (C[alph[i]] !== pC[palph[i]]) {
+						return false;
+					}
+				}
+
+				return true;
 			},
 
 
@@ -5090,7 +5162,14 @@ window.c = {
 
 				return ['{' + alph.join(', ') + '}', window.c.printKeyValArr(alph, C)];
 			},
-			generateTable: function(highlight_arr) {
+			generateTable: function(highlight_arr, extra_highlight_arr) {
+
+				if (!highlight_arr) {
+					highlight_arr = [];
+				}
+				if (!extra_highlight_arr) {
+					extra_highlight_arr = [];
+				}
 
 				var sout = '';
 
@@ -5099,28 +5178,29 @@ window.c = {
 				sout += '<tr>';
 				sout += window.c.arr_to_extra_high_str(
 					window.c.count_up_array(BWT.length),
-					highlight_arr[0]
+					highlight_arr[0],
+					extra_highlight_arr[0]
 				);
 				sout += '<td>';
 				sout += window.c.di;
 				sout += '</td></tr>';
 
 				sout += '<tr>';
-				sout += window.c.arr_to_extra_high_str(BWT, highlight_arr[1]);
+				sout += window.c.arr_to_extra_high_str(BWT, highlight_arr[1], extra_highlight_arr[1]);
 				sout += '<td>BWT</td></tr>';
 
 				sout += '<tr>';
-				sout += window.c.arr_to_extra_high_str(char, highlight_arr[2]);
+				sout += window.c.arr_to_extra_high_str(char, highlight_arr[2], extra_highlight_arr[2]);
 				sout += '<td>First Column</td></tr>';
 
 				sout += '<tr class="barless">';
-				sout += window.c.arr_to_extra_high_str(M, highlight_arr[3]);
+				sout += window.c.arr_to_extra_high_str(M, highlight_arr[3], extra_highlight_arr[3]);
 				sout += '<td>';
 				sout += window.c.DM;
 				sout += '</td></tr>';
 
 				sout += '<tr class="barless">';
-				sout += window.c.arr_to_extra_high_str(F, highlight_arr[4]);
+				sout += window.c.arr_to_extra_high_str(F, highlight_arr[4], extra_highlight_arr[4]);
 				sout += '<td>';
 				sout += window.c.DF;
 				sout += '</td></tr>';
@@ -5145,9 +5225,9 @@ window.c = {
 			},
 			generateBothTables: function() {
 
-				return this.generateTable([[multi_cur_1]]) + '&nbsp;&nbsp;&nbsp;' +
-				   otherXBW.generateTable([[multi_cur_2]]) + '<br>' +
-				  mergedXBW.generateTable([[mergedXBW._publishBWTlen()-1]]);
+				return this.generateTable([[multi_cur_1]], [[last_high_1]]) + '&nbsp;&nbsp;&nbsp;' +
+				   otherXBW.generateTable([[multi_cur_2]], [[last_high_2]]) + '<br>' +
+				  mergedXBW.generateTable([], [[mergedXBW._publishBWTlen()-1]]);
 			},
 			generateGraph: function(highnodes, tab) {
 

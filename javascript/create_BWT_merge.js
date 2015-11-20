@@ -94,7 +94,7 @@
 	pos_equals_pos: function(pos1, pos2);
 	printKeyValArr: function(keys, values);
 	count_up_array: function(i);
-	repeat
+	makeVisualsNice: function(sout);
 	make_xbw_environment: function();
 	example: function();
 	xbw_example: function();
@@ -4474,6 +4474,29 @@ window.c = {
 
 
 
+	// takes in an HTML text
+	// gives out the same HTML text, but internal representations replaced with
+	//   actual visual representations
+	makeVisualsNice: function(sout) {
+
+		// replace the internal representation of '#_1' with the actual visual representation
+		while (sout.indexOf(window.c.DK_1) > -1) {
+			sout = sout.replace(window.c.DK_1, window.c.DK_1_o);
+		}
+
+		// replace the internal representation of '$_1' with the actual visual representation
+		while (sout.indexOf(window.c.DS_1) > -1) {
+			sout = sout.replace(window.c.DS_1, window.c.DS_1_o);
+		}
+
+		// replace '^' with '#' before printout
+		sout = sout.replace(/\^/g, '#');
+
+		return sout;
+	},
+
+
+
 	// use as:
 	// var xbw = make_xbw_environment();
 	// xbw.init(findex);
@@ -4682,23 +4705,30 @@ window.c = {
 
 			var c, i;
 
-			c = char[i];
+			console.log('Ps for i: ' + i + ' j: ' + j + ' in BWT: ' + BWT + ' and M: ' + M + ' c would be: ' + char[i]);
 
-			// emrg
+			// convert node i to table i
 			i = select('1', M, i) + j - 1;
 
-			console.log('Ps for ' + c + ' in BWT: ' + BWT + ' and M: ' + M);
-			console.log('i: ' + i + ' C[c]: ' + C[c] + ' i-C[c]: ' + (i - C[c]));
+			// emrg :: we put exchanged the previous and following lines,
+			//         as char[i] is actually measured in table i, not node i,
+			//         which means though that in Siren2014 it IS measured in
+			//         node i and we need to actually change how "char" is defined
+			//         (e.g. if A has two out-edges, then table char says: $AAB
+			//                                       while node char says: $AB )
+			c = char[i];
 
+			console.log('c: ' + c + ' i: ' + i + ' C[c]: ' + C[c] + ' i-C[c]: ' + (i - C[c]));
+
+			// get the next node within the table
 			i = select(c, BWT, i - C[c]);
 
-			// TODO :: we took this out there because it seems to work better without it...
-			//         but it really shouldn't; should it?
-			// emrg
-			i = rank('1', F, i);
+			console.log(i);
+
+			// convert table i to node i
+			// emrg   i = rank('1', F, i);
 
 			console.log(i);
-			console.log(rank('1', F, i));
 
 			return i;
 		}
@@ -4883,7 +4913,15 @@ window.c = {
 				// but until a difference between this and the other prefix
 				// is found
 				for (var i=0; i<10; i++) {
+					
+					// get node i
 					pref_cur_i = psi(pref_cur_i, 1);
+
+					/*
+					// convert node i to table i
+					pref_cur_i = select('1', M, pref_cur_i_psi);
+					*/
+
 					if (BWT[pref_cur_i]) {
 						pref += BWT[pref_cur_i];
 					} else {
@@ -4893,6 +4931,9 @@ window.c = {
 					if ((BWT[pref_cur_i] == window.c.DS) || (BWT[pref_cur_i] == window.c.DS_1)) {
 						break;
 					}
+
+					// emrg
+					pref_cur_i = rank('1', F, pref_cur_i);
 				}
 
 				return pref;
@@ -4966,6 +5007,8 @@ window.c = {
 				}
 
 				mergedXBW._addNode(otherNode);
+
+				sout = window.c.makeVisualsNice(sout);
 
 				return sout;
 			},
@@ -5208,18 +5251,7 @@ window.c = {
 				sout += '</tbody></table>';
 
 
-				// replace the internal representation of '#_1' with the actual visual representation
-				while (sout.indexOf(window.c.DK_1) > -1) {
-					sout = sout.replace(window.c.DK_1, window.c.DK_1_o);
-				}
-
-				// replace the internal representation of '$_1' with the actual visual representation
-				while (sout.indexOf(window.c.DS_1) > -1) {
-					sout = sout.replace(window.c.DS_1, window.c.DS_1_o);
-				}
-
-				// replace '^' with '#' before printout
-				sout = sout.replace(/\^/g, '#');
+				sout = window.c.makeVisualsNice(sout);
 
 				return sout;
 			},

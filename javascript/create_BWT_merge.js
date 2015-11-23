@@ -47,7 +47,7 @@
 	sortp12andFindProblems: function();
 	fe_findexToTable: function(findex, showBWTandM, show_f, show_i);
 	fe_p12ToTableWithHighlights: function(highlight_arr, show_origin, show_f, show_i);
-	visualize: function(auto, showPrefixes, highlight_p12);
+	visualize: function(auto, showPrefixes, highlight_p12, show_vis_hl);
 	hideWrap: function(sout, kind);
 	graphToAutomaton: function(ha, h_graph);
 	mergeAutomata: function(auto1, auto2);
@@ -2101,11 +2101,23 @@ window.c = {
 
 
 
+	vis_highlight_nodes: [],
+
+
+
 	// takes in an automaton, a boolean parameter (whether to show the prefixes
 	//   or not) and optionally an array (containing all prefixes for which the
-	//   nodes with these prefixes should be highlighted)
+	//   nodes with these prefixes should be highlighted) and optionally the
+	//   boolean parameter show_vis_hl (default: false), which tells us whether
+	//   the nodes in window.c.vis_highlight_nodes should be highlighted too
 	// gives out a string containing a graph visualization of the input
-	visualize: function(auto, showPrefixes, highlight_p12) {
+	visualize: function(auto, showPrefixes, highlight_p12, show_vis_hl) {
+
+		if (show_vis_hl) {
+			// TODO :: do something with vis_highlight_nodes
+			// (basically convert them from table i to auto i...
+			// or have converted them earlier!)
+		}
 
 		if (highlight_p12 === undefined) {
 			highlight_p12 = [];
@@ -4705,30 +4717,10 @@ window.c = {
 
 			var c, i;
 
-			console.log('Ps for i: ' + i + ' j: ' + j + ' in BWT: ' + BWT + ' and M: ' + M + ' c would be: ' + char[i]);
-
-			// convert node i to table i
-			i = select('1', M, i) + j - 1;
-
-			// emrg :: we put exchanged the previous and following lines,
-			//         as char[i] is actually measured in table i, not node i,
-			//         which means though that in Siren2014 it IS measured in
-			//         node i and we need to actually change how "char" is defined
-			//         (e.g. if A has two out-edges, then table char says: $AAB
-			//                                       while node char says: $AB )
 			c = char[i];
-
-			console.log('c: ' + c + ' i: ' + i + ' C[c]: ' + C[c] + ' i-C[c]: ' + (i - C[c]));
 
 			// get the next node within the table
 			i = select(c, BWT, i - C[c]);
-
-			console.log(i);
-
-			// convert table i to node i
-			// emrg   i = rank('1', F, i);
-
-			console.log(i);
 
 			return i;
 		}
@@ -4909,18 +4901,22 @@ window.c = {
 
 				var pref = '';
 
+				window.c.vis_highlight_nodes = [];
+
 				// todo :: don't just go up to 10 arbitrarily,
 				// but until a difference between this and the other prefix
-				// is found
+				// is found / until we reach '!'
 				for (var i=0; i<10; i++) {
-					
+
+					window.c.vis_highlight_nodes.push(pref_cur_i);
+
+					if (i > 0) {
+						// convert node i to table i
+						pref_cur_i = select('1', M, pref_cur_i) + 1 - 1;
+					}
+
 					// get node i
 					pref_cur_i = psi(pref_cur_i, 1);
-
-					/*
-					// convert node i to table i
-					pref_cur_i = select('1', M, pref_cur_i_psi);
-					*/
 
 					if (BWT[pref_cur_i]) {
 						pref += BWT[pref_cur_i];
@@ -4932,7 +4928,7 @@ window.c = {
 						break;
 					}
 
-					// emrg
+					// convert table i to node i
 					pref_cur_i = rank('1', F, pref_cur_i);
 				}
 
@@ -5161,9 +5157,18 @@ window.c = {
 						"Let's use the XBW to search for some string using find(), or go for the navigation functions directly:" +
 						'</div>';
 
+				/* single input full width template:
 				sout += '<div class="input-info-container">' +
 						'<input id="in-string-' + tab + '-xbw-find" type="text" value="AC" style="display: inline-block; width: 79%;"></input>' +
 						'<div class="button" onclick="window.xbw.findHTML(' + tab + ')" style="float:right; width:19%;">find()</div>' +
+						'</div>';
+				*/
+
+				sout += '<div class="input-info-container">' +
+						'<input id="in-string-' + tab + '-xbw-find" type="text" value="AC" style="display: inline-block; width: 38%;"></input>' +
+						'<div class="button" onclick="window.xbw.findHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">find()</div>' +
+						'<div class="button" onclick="window.xbw.prefHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">prefix()</div>' +
+						'<input id="in-string-' + tab + '-xbw-pref" type="text" value="2" style="float:right; display: inline-block; width: 38%;"></input>' +
 						'</div>';
 
 				sout += '<div class="input-info-container">' +
@@ -5261,7 +5266,7 @@ window.c = {
 				   otherXBW.generateTable([[multi_cur_2]], [[last_high_2]]) + '<br>' +
 				  mergedXBW.generateTable([], [[mergedXBW._publishBWTlen()-1]]);
 			},
-			generateGraph: function(highnodes, tab) {
+			generateGraph: function(highnodes, tab, show_vis_hl) {
 
 				var outerdiv = document.getElementById('div-xbw-' + tab + '-env-graph');
 				var prevdispstyle = 'block';
@@ -5271,7 +5276,7 @@ window.c = {
 					prevdispcaption = outerdiv.childNodes[0].childNodes[0].childNodes[0].innerHTML;
 				}
 
-				var sout = window.c.visualize(auto, true, highnodes);
+				var sout = window.c.visualize(auto, true, highnodes, show_vis_hl);
 
 				// replace '^' with '#' before printout
 				sout = sout.replace(/\^/g, '#');
@@ -5293,6 +5298,18 @@ window.c = {
 				document.getElementById('span-' + tab + '-xbw-results').innerHTML = spep;
 
 				this.show_spep_in_HTML(spep, tab, ['i', 'char'], undefined, undefined);
+			},
+			prefHTML: function(tab) {
+
+				var pref_i = document.getElementById('in-string-' + tab + '-xbw-pref').value;
+
+				pref_i = parseInt(pref_i, 10);
+
+				var prefix = this._publishPrefix(pref_i);
+
+				document.getElementById('span-' + tab + '-xbw-results').innerHTML = prefix;
+
+				this.show_spep_in_HTML([pref_i, pref_i], tab, ['i', 'char'], undefined, undefined, true);
 			},
 			lfHTML: function(tab) {
 
@@ -5319,7 +5336,7 @@ window.c = {
 
 				document.getElementById('span-' + tab + '-xbw-results').innerHTML = i;
 
-				this.show_spep_in_HTML([i, i], tab, ['i', 'char'], undefined, undefined);
+				this.show_spep_in_HTML([i, i], tab, ['i', 'BWT'], undefined, undefined);
 			},
 			selectHTML: function(tab) {
 
@@ -5379,7 +5396,7 @@ window.c = {
 
 				this.show_spep_in_HTML([i, i], tab, ['i', searchfor[1]], j, searchfor[0]);
 			},
-			show_spep_in_HTML: function(spep, tab, highrows, override_last_row, override_with) {
+			show_spep_in_HTML: function(spep, tab, highrows, override_last_row, override_with, show_vis_hl) {
 
 				var higharr = [];
 				var highnodes = [];
@@ -5475,7 +5492,7 @@ window.c = {
 				document.getElementById('div-xbw-' + tab + '-env-table').innerHTML =
 					this.generateTable(higharr_collection);
 
-				this.generateGraph(highnodes, tab);
+				this.generateGraph(highnodes, tab, show_vis_hl);
 			},
 		};
 	},

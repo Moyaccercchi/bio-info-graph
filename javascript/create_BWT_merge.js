@@ -4813,6 +4813,9 @@ window.c = {
 			var spep = [0, BWT.length - 1];
 			var i = P.length;
 
+			// just for visualization
+			window.c.vis_highlight_nodes = [];
+
 			while (i--) {
 				spep = lf(spep, P[i], i > 0);
 
@@ -4820,6 +4823,16 @@ window.c = {
 					return [];
 				}
 			}
+
+			// just for visualization
+			var vis_int = [];
+			for (var j=spep[0]; j < spep[1]+1; j++) {
+				window.xbw._publishPrefix(j, P.length);
+				for (var k=0; k < window.c.vis_highlight_nodes.length; k++) {
+					vis_int.push(window.c.vis_highlight_nodes[k]);
+				}
+			}
+			window.c.vis_highlight_nodes = vis_int;
 
 			return spep;
 		}
@@ -4991,16 +5004,23 @@ window.c = {
 				return BWT.length;
 			},
 
-			_publishPrefix: function(pref_cur_i) {
+			// pref_cur_i .. current prefix i
+			// length .. maximum length of prefix reported [optional]
+			//           (if given, result can be shorter, but not longer)
+			_publishPrefix: function(pref_cur_i, length) {
 
 				var pref = '';
 
 				window.c.vis_highlight_nodes = [];
 
+				if (length === undefined) {
+					length = 20;
+				}
+
 				// todo :: don't just go up to 20 arbitrarily,
 				// but until a difference between this and the other prefix
 				// is found / until we reach '!'
-				for (var i=0; i<20; i++) {
+				for (var i=0; i<length; i++) {
 
 					window.c.vis_highlight_nodes.push(pref_cur_i);
 
@@ -5399,7 +5419,7 @@ window.c = {
 
 				document.getElementById('span-' + tab + '-xbw-results').innerHTML = spep;
 
-				this.show_spep_in_HTML(spep, tab, ['i', 'char'], undefined, undefined);
+				this.show_spep_in_HTML(spep, tab, ['i', 'char'], undefined, undefined, true);
 			},
 			prefHTML: function(tab) {
 

@@ -2101,7 +2101,16 @@ window.c = {
 
 
 
+	// basically, we start with a table i (id of table column) that we want to highlight
+	// which is stored in vis_highlight_nodes,
+	// use vis_tableToP12 to convert it to a p12 i (id of node in graph-like table),
+	// use vis_p12ToAuto to convert it to an auto i (id of node in automaton),
+	// and finally put the outcoming value into a new array of nodes within the automaton
+	// that are actually highlighted
+	// (all of this happens in the visualization function IF show_vis_hl is set to true)
 	vis_highlight_nodes: [],
+	vis_tableToP12: [],
+	vis_p12ToAuto: [],
 
 
 
@@ -2113,10 +2122,35 @@ window.c = {
 	// gives out a string containing a graph visualization of the input
 	visualize: function(auto, showPrefixes, highlight_p12, show_vis_hl) {
 
+		var default_color = '#000';
+		var default_bg_color = '#FFF';
+		var extra_color = '#C00';
+		var extra_bg_color = '#FCF';
+		var high_color = '#A0A';
+		var high_bg_color = '#FFA';
+
+		var extra_high_nodes = [];
+		var extra_high_edges = [];
+
 		if (show_vis_hl) {
-			// TODO :: do something with vis_highlight_nodes
-			// (basically convert them from table i to auto i...
-			// or have converted them earlier!)
+			// convert the first node using tableToP12 from table i to p12 i to auto i
+			extra_high_nodes.push(
+				this.vis_p12ToAuto[
+					this.vis_tableToP12[
+						this.vis_highlight_nodes[0]
+					]
+				]
+			);
+
+			// convert all other nodes just from p12 i to auto i
+			for (var i=1; i < this.vis_highlight_nodes.length; i++) {
+				extra_high_nodes.push(
+					this.vis_p12ToAuto[
+						this.vis_highlight_nodes[i]
+					]
+				);
+				extra_high_edges.push(extra_high_nodes[i-1] + '_' + extra_high_nodes[i]);
+			}
 		}
 
 		if (highlight_p12 === undefined) {
@@ -2134,7 +2168,10 @@ window.c = {
 
 		sout += '<defs>';
 		sout += '<marker id="' + markerArrow + '" markerWidth="13" markerHeight="13" refX="4" refY="7" orient="auto">';
-		sout += '<path d="M2,4.5 L2,9.5 L5,7 L2,4.5" style="fill: #000000;" />';
+		sout += '<path d="M2,4.5 L2,9.5 L5,7 L2,4.5" style="fill:' + default_color + ';" />';
+		sout += '</marker>';
+		sout += '<marker id="' + markerArrow + '_extra" markerWidth="13" markerHeight="13" refX="4" refY="7" orient="auto">';
+		sout += '<path d="M2,4.5 L2,9.5 L5,7 L2,4.5" style="fill:' + extra_color + ';" />';
 		sout += '</marker>';
 		sout += '</defs>';
 
@@ -2168,11 +2205,15 @@ window.c = {
 			xoffnext = 50+(100*(1.5+j - (hlen / 2))/hlen);
 			positions[i] = xoff;
 
-			var highcolor = '#000';
-			var bgcolor = '#FFF';
+			var highcolor = default_color;
+			var bgcolor = default_bg_color;
+			if (extra_high_nodes.indexOf(i) >= 0) {
+				highcolor = extra_color;
+				bgcolor = extra_bg_color;
+			}
 			if (highlight_p12.indexOf(auto[i].f) >= 0) {
-				highcolor = '#A0A';
-				bgcolor = '#FFA';
+				highcolor = high_color;
+				bgcolor = high_bg_color;
 			}
 
 			sout += '<circle cx="' + xoff + '" cy="50" r="2" style="fill:' + highcolor + '" />';
@@ -2186,9 +2227,16 @@ window.c = {
 						auto[i].f + '</text>';
 			}
 
+			var strokecolor = default_color;
+			var marker_kind = '';
+			if (extra_high_edges.indexOf(i + '_' + mainrow[j+1]) >= 0) {
+				strokecolor = extra_color;
+				marker_kind = '_extra';
+			}
+
 			if (auto[i].c !== this.DS) {
 				sout += '<path d="M' + (xoff + 2.5) + ',50 L' + (xoffnext - 2.5) + ',50" ';
-				sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#' + markerArrow + ');" ';
+				sout += 'style="stroke: ' + strokecolor + '; stroke-width: 0.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
 				sout += '/>';
 			}
 
@@ -2270,11 +2318,15 @@ window.c = {
 						xoffnext = xoff_mid+(xoff_width*(1.5+i - (plen / 2))/plen);
 						positions[path[i]] = xoff;
 
-						var highcolor = '#000';
-						var bgcolor = '#FFF';
+						var highcolor = default_color;
+						var bgcolor = default_bg_color;
+						if (extra_high_nodes.indexOf(path[i]) >= 0) {
+							highcolor = extra_color;
+							bgcolor = extra_bg_color;
+						}
 						if (highlight_p12.indexOf(auto[path[i]].f) >= 0) {
-							highcolor = '#A0A';
-							bgcolor = '#FFA';
+							highcolor = high_color;
+							bgcolor = high_bg_color;
 						}
 
 						sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="2" style="fill:' + highcolor + '" />';
@@ -2290,18 +2342,39 @@ window.c = {
 						}
 
 						if (i < 1) {
+							var strokecolor = default_color;
+							var marker_kind = '';
+							if (extra_high_edges.indexOf(auto[path[0]].p[0] + '_' + path[i]) >= 0) {
+								strokecolor = extra_color;
+								marker_kind = '_extra';
+							}
+
 							sout += '<path d="M' + (xoff_start + 0.3) + ',' + yoff + ' Q' + (xoff_start + 1) + ',' + yoffl + ' ' + (xoff - 2.5) + ',' + yoffl + '" ';
-							sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#' + markerArrow + ');" ';
+							sout += 'style="stroke: ' + strokecolor + '; stroke-width: 0.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
 							sout += '/>';
 						}
 
 						if (i < plen-1) {
+							var strokecolor = default_color;
+							var marker_kind = '';
+							if (extra_high_edges.indexOf(path[i] + '_' + path[i+1]) >= 0) {
+								strokecolor = extra_color;
+								marker_kind = '_extra';
+							}
+
 							sout += '<path d="M' + (xoff + 2.5) + ',' + yoffl + ' L' + (xoffnext - 2.5) + ',' + yoffl + '" ';
-							sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#' + markerArrow + ');" ';
+							sout += 'style="stroke: ' + strokecolor + '; stroke-width: 0.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
 							sout += '/>';
 						} else {
+							var strokecolor = default_color;
+							var marker_kind = '';
+							if (extra_high_edges.indexOf(path[i] + '_' + auto[path[plen-1]].n[0]) >= 0) {
+								strokecolor = extra_color;
+								marker_kind = '_extra';
+							}
+
 							sout += '<path d="M' + (xoff + 2.5) + ',' + yoffl + ' Q' + (xoff_end - 1) + ',' + yoffl + ' ' + (xoff_end - 0.3) + ',' + yoff + '" ';
-							sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#' + markerArrow + ');" ';
+							sout += 'style="stroke: ' + strokecolor + '; stroke-width: 0.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
 							sout += '/>';
 						}
 					}
@@ -2314,8 +2387,15 @@ window.c = {
 					xoff_end = positions[to];
 					xoff_mid = (xoff_end + xoff_start) / 2;
 
+					var strokecolor = default_color;
+					var marker_kind = '';
+					if (extra_high_edges.indexOf(from + '_' + to) >= 0) {
+						strokecolor = extra_color;
+						marker_kind = '_extra';
+					}
+
 					sout += '<path d="M' + (xoff_start + 1) + ',' + yoff + ' Q' + xoff_mid + ',' + yoffdl + ' ' + (xoff_end - 1) + ',' + yoff + '" ';
-					sout += 'style="stroke: #000; stroke-width: 0.25px; fill: none; marker-end: url(#' + markerArrow + ');" ';
+					sout += 'style="stroke: ' + strokecolor + '; stroke-width: 0.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
 					sout += '/>';
 				}
 
@@ -3206,6 +3286,9 @@ window.c = {
 
 			i = next;
 		}
+
+		// just used for later visualization purposes
+		window.c.vis_p12ToAuto = p12ToAuto;
 
 		return auto;
 	},
@@ -4780,6 +4863,17 @@ window.c = {
 					M = findex[2].join('');
 
 					F = findex[3].join('');
+
+
+					var tableToP12 = [];
+					var cur_ttop12 = -1;
+					for (var i=0; i < M.length; i++) {
+						if (M[i] == '1') {
+							cur_ttop12++;
+						}
+						tableToP12.push(cur_ttop12);
+					}
+					window.c.vis_tableToP12 = tableToP12;
 				}
 
 				recalculate(true);
@@ -4903,10 +4997,10 @@ window.c = {
 
 				window.c.vis_highlight_nodes = [];
 
-				// todo :: don't just go up to 10 arbitrarily,
+				// todo :: don't just go up to 20 arbitrarily,
 				// but until a difference between this and the other prefix
 				// is found / until we reach '!'
-				for (var i=0; i<10; i++) {
+				for (var i=0; i<20; i++) {
 
 					window.c.vis_highlight_nodes.push(pref_cur_i);
 
@@ -5159,30 +5253,30 @@ window.c = {
 
 				/* single input full width template:
 				sout += '<div class="input-info-container">' +
-						'<input id="in-string-' + tab + '-xbw-find" type="text" value="AC" style="display: inline-block; width: 79%;"></input>' +
+						'<input id="in-string-' + tab + '-xbw-find" onkeypress="window.xbw.in_func = window.xbw.findHTML; window.xbw.in_tab = ' + tab + '; window.xbw.inputEnter(event);" type="text" value="AC" style="display: inline-block; width: 79%;"></input>' +
 						'<div class="button" onclick="window.xbw.findHTML(' + tab + ')" style="float:right; width:19%;">find()</div>' +
 						'</div>';
 				*/
 
 				sout += '<div class="input-info-container">' +
-						'<input id="in-string-' + tab + '-xbw-find" type="text" value="AC" style="display: inline-block; width: 38%;"></input>' +
+						'<input id="in-string-' + tab + '-xbw-find" onkeypress="window.xbw.in_func = window.xbw.findHTML; window.xbw.in_tab = ' + tab + '; window.xbw.inputEnter(event);" type="text" value="AC" style="display: inline-block; width: 38%;"></input>' +
 						'<div class="button" onclick="window.xbw.findHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">find()</div>' +
 						'<div class="button" onclick="window.xbw.prefHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">prefix()</div>' +
-						'<input id="in-string-' + tab + '-xbw-pref" type="text" value="2" style="float:right; display: inline-block; width: 38%;"></input>' +
+						'<input id="in-string-' + tab + '-xbw-pref" onkeypress="window.xbw.in_func = window.xbw.prefHTML; window.xbw.in_tab = ' + tab + '; window.xbw.inputEnter(event);" type="text" value="2" style="float:right; display: inline-block; width: 38%;"></input>' +
 						'</div>';
 
 				sout += '<div class="input-info-container">' +
-						'<input id="in-string-' + tab + '-xbw-lf" type="text" value="7,10,A,false" style="display: inline-block; width: 38%;"></input>' +
+						'<input id="in-string-' + tab + '-xbw-lf" onkeypress="window.xbw.in_func = window.xbw.lfHTML; window.xbw.in_tab = ' + tab + '; window.xbw.inputEnter(event);" type="text" value="7,10,A,false" style="display: inline-block; width: 38%;"></input>' +
 						'<div class="button" onclick="window.xbw.lfHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">LF()</div>' +
 						'<div class="button" onclick="window.xbw.psiHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">&#936;()</div>' +
-						'<input id="in-string-' + tab + '-xbw-psi" type="text" value="1,4" style="float:right; display: inline-block; width: 38%;"></input>' +
+						'<input id="in-string-' + tab + '-xbw-psi" onkeypress="window.xbw.in_func = window.xbw.psiHTML; window.xbw.in_tab = ' + tab + '; window.xbw.inputEnter(event);" type="text" value="1,4" style="float:right; display: inline-block; width: 38%;"></input>' +
 						'</div>';
 
 				sout += '<div class="input-info-container">' +
-						'<input id="in-string-' + tab + '-xbw-select" type="text" value="1,M,13" style="display: inline-block; width: 38%;"></input>' +
+						'<input id="in-string-' + tab + '-xbw-select" onkeypress="window.xbw.in_func = window.xbw.selectHTML; window.xbw.in_tab = ' + tab + '; window.xbw.inputEnter(event);" type="text" value="1,M,13" style="display: inline-block; width: 38%;"></input>' +
 						'<div class="button" onclick="window.xbw.selectHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">select()</div>' +
 						'<div class="button" onclick="window.xbw.rankHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">rank()</div>' +
-						'<input id="in-string-' + tab + '-xbw-rank" type="text" value="1,F,13" style="float:right; display: inline-block; width: 38%;"></input>' +
+						'<input id="in-string-' + tab + '-xbw-rank" onkeypress="window.xbw.in_func = window.xbw.rankHTML; window.xbw.in_tab = ' + tab + '; window.xbw.inputEnter(event);" type="text" value="1,F,13" style="float:right; display: inline-block; width: 38%;"></input>' +
 						'</div>';
 
 				sout += '<div>Result: <span id="span-' + tab + '-xbw-results">(none)</span><br><br>' +
@@ -5285,6 +5379,14 @@ window.c = {
 
 				outerdiv.childNodes[0].childNodes[1].style.display = prevdispstyle;
 				outerdiv.childNodes[0].childNodes[0].childNodes[0].innerHTML = prevdispcaption;
+			},
+			inputEnter: function(e) {
+				if (!e) e = window.event;
+				var keyCode = e.keyCode || e.which;
+				if (keyCode == '13') {
+					// Enter pressed
+					window.xbw.in_func(window.xbw.in_tab);
+				}
 			},
 			findHTML: function(tab) {
 

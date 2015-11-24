@@ -102,6 +102,10 @@
 
 window.c = {
 
+	overflow_ceiling: 100, // general overflow protection: whereever it is likely that through
+						   // weird input or ridiculous bugs we could run into an inifinite loop,
+						   // stop when reaching this iteration
+
 	ao: 0, // global array offset - used whenever we show stuff on the GUI / accept data from there
 
 	last_h1: '', // h1 that was used on last call
@@ -1645,7 +1649,7 @@ window.c = {
 		shide = '<div class="table_box">' + xbw1.generateBothTables() + '</div>';
 		sout += this.hideWrap(shide, 'Table') + this.nlnl;
 
-		var overflow_protection = 100;
+		var overflow_protection = this.overflow_ceiling;
 
 		while (xbw1.notFullyMerged() && (overflow_protection > 0)) {
 
@@ -5020,14 +5024,11 @@ window.c = {
 				window.c.vis_highlight_nodes = [[]];
 
 				if (length === undefined) {
-					length = 20;
+					length = window.c.overflow_ceiling;
 				}
 
 				var pref_cur_is = [pref_cur_i];
 
-				// todo :: don't just go up to 20 arbitrarily,
-				// but until a difference between this and the other prefix
-				// is found / until we reach '!'
 				for (var i=0; i<length; i++) {
 
 					for (var j=0; j<pref_cur_is.length; j++) {
@@ -5320,8 +5321,6 @@ window.c = {
 				sout += 'To start the XBW environment, we first of all flatten the BWT (replacing any ' +
 						'entries with several options by as many single-optioned entries) and add the ' +
 						'first column (the alphabetically sorted BWT.)<br>' +
-						'We can get away with not explicitly storing the first column, but we want to ' +
-						'show it here to make sense of what is going on. =)<br>' +
 						'We will also have a look at the ' + window.c.DM + ' and ' + window.c.DF + ' vectors.' +
 						'<br>';
 

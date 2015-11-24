@@ -2102,7 +2102,7 @@ window.c = {
 
 
 	// basically, we start with a table i (id of table column) that we want to highlight
-	// which is stored in vis_highlight_nodes,
+	// which is stored in the array of arrays vis_highlight_nodes,
 	// use vis_tableToP12 to convert it to a p12 i (id of node in graph-like table),
 	// use vis_p12ToAuto to convert it to an auto i (id of node in automaton),
 	// and finally put the outcoming value into a new array of nodes within the automaton
@@ -2137,19 +2137,25 @@ window.c = {
 			extra_high_nodes.push(
 				this.vis_p12ToAuto[
 					this.vis_tableToP12[
-						this.vis_highlight_nodes[0]
+						this.vis_highlight_nodes[0][0]
 					]
 				]
 			);
 
 			// convert all other nodes just from p12 i to auto i
-			for (var i=1; i < this.vis_highlight_nodes.length; i++) {
-				extra_high_nodes.push(
-					this.vis_p12ToAuto[
-						this.vis_highlight_nodes[i]
-					]
-				);
-				extra_high_edges.push(extra_high_nodes[i-1] + '_' + extra_high_nodes[i]);
+			for (var j=0; j < this.vis_highlight_nodes.length; j++) {
+				for (var i=1; i < this.vis_highlight_nodes[j].length; i++) {
+					extra_high_nodes.push(
+						this.vis_p12ToAuto[
+							this.vis_highlight_nodes[j][i]
+						]
+					);
+					var starti = extra_high_nodes.length-2;
+					if (i < 2) {
+						starti = 0;
+					}
+					extra_high_edges.push(extra_high_nodes[starti] + '_' + extra_high_nodes[extra_high_nodes.length-1]);
+				}
 			}
 		}
 
@@ -2990,7 +2996,7 @@ window.c = {
 
 									if (addToSOut) {
 										this.sout += 'We split the node with label ' + orig_node.c +
-													' and prefix ' + orig_node.f + '!' +
+													' and prefix ' + orig_node.f + this.prefixErrorChar +
 													' into ' + orig_node.n.length + ' nodes:' + this.nl;
 									}
 
@@ -5011,39 +5017,102 @@ window.c = {
 
 				var pref = '';
 
-				window.c.vis_highlight_nodes = [];
+				window.c.vis_highlight_nodes = [[]];
 
 				if (length === undefined) {
 					length = 20;
 				}
+
+				var pref_cur_is = [pref_cur_i];
 
 				// todo :: don't just go up to 20 arbitrarily,
 				// but until a difference between this and the other prefix
 				// is found / until we reach '!'
 				for (var i=0; i<length; i++) {
 
-					window.c.vis_highlight_nodes.push(pref_cur_i);
+					for (var j=0; j<pref_cur_is.length; j++) {
+						window.c.vis_highlight_nodes[j].push(pref_cur_is[j]);
+					}
 
+					// ignore this all if we are in the first iteration
+					// (we do not convert node i to table i, as table i is given in,
+					// and we do not abandon all hope if the current node has more
+					// than one outgoing edge, as a direct table i has been provided
+					// which tells us about the exact edge we want to take - without
+					// that (that is, at i > 0) we would have to select one at random,
+					// and that is a real reason for despair!)
 					if (i > 0) {
-						// convert node i to table i
-						pref_cur_i = select('1', M, pref_cur_i) + 1 - 1;
+						// here, getting the length before going into the loop is actually
+						// important, as we do not want to loop through the elements that
+						// are added inside (as they have already been converted)
+						var len = pref_cur_is.length;
+						for (var j=0; j<len; j++) {
+							// convert node i to table i
+							pref_cur_is[j] = select('1', M, pref_cur_is[j]);
+
+							// add '!' iff we are at a node with more than one outgoing edge
+							var k = 1;
+							while (M[pref_cur_is[j]+k] == '0') {
+								pref_cur_is.push(pref_cur_is[j]+k);
+								var new_vis_high = [];
+								for (var l=0; l<window.c.vis_highlight_nodes[0].length; l++) {
+									new_vis_high.push(window.c.vis_highlight_nodes[0][l]);
+								}
+								window.c.vis_highlight_nodes.push(new_vis_high);
+								k++;
+							}
+						}
 					}
 
 					// get node i
-					pref_cur_i = psi(pref_cur_i, 1);
-
-					if (BWT[pref_cur_i]) {
-						pref += BWT[pref_cur_i];
-					} else {
-						pref += '.';
+					for (var j=0; j<pref_cur_is.length; j++) {
+						pref_cur_is[j] = psi(pref_cur_is[j], 1);
 					}
 
-					if ((BWT[pref_cur_i] == window.c.DS) || (BWT[pref_cur_i] == window.c.DS_1)) {
+					var char_to_add_now = '.';
+					if (BWT[pref_cur_is[0]]) {
+						char_to_add_now = BWT[pref_cur_is[0]];
+					}
+					var not_all_chars_are_the_same = false;
+
+					for (var j=0; j<pref_cur_is.length; j++) {
+						if (BWT[pref_cur_is[j]]) {
+							if (char_to_add_now != BWT[pref_cur_is[j]]) {
+								not_all_chars_are_the_same = true;
+							}
+						} else {
+							if (char_to_add_now != '.') {
+								not_all_chars_are_the_same = true;
+							}
+						}
+					}
+
+					if (not_all_chars_are_the_same) {
+
+						// add error char '!' to the prefix
+						pref += window.c.prefixErrorChar;
+
+						// remove last highlighted node
+						for (var j=0; j < window.c.vis_highlight_nodes.length; j++) {
+							window.c.vis_highlight_nodes[j].splice(window.c.vis_highlight_nodes[j].length-1, 1);
+						}
+
+						// abandon all hope / leave function
+						break;
+
+					} else {
+
+						pref += char_to_add_now;
+					}
+
+					if ((char_to_add_now == window.c.DS) || (char_to_add_now == window.c.DS_1)) {
 						break;
 					}
 
 					// convert table i to node i
-					pref_cur_i = rank('1', F, pref_cur_i);
+					for (var j=0; j<pref_cur_is.length; j++) {
+						pref_cur_is[j] = rank('1', F, pref_cur_is[j]);
+					}
 				}
 
 				return pref;
@@ -5428,6 +5497,9 @@ window.c = {
 				pref_i = parseInt(pref_i, 10);
 
 				var prefix = this._publishPrefix(pref_i);
+
+				// replace '^' with '#' before output
+				prefix = prefix.split('^').join('#');
 
 				document.getElementById('span-' + tab + '-xbw-results').innerHTML = prefix;
 

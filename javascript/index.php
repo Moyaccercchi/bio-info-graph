@@ -472,11 +472,11 @@
 			Please enter the two strings that you are interested in:
 		</div>
 		<div class="input-info-container">
-			<input id="in-string-5-1" type="text" value="ACEG"></input>
+			<input id="in-string-5-1" type="text" value="C"></input>
 			<span class="infobtn" onclick="mergeGraphXBWsIn1Info(event)">Info</span>
 		</div>
 		<div class="input-info-container">
-			<input id="in-string-5-2" type="text" value="BDFK"></input>
+			<input id="in-string-5-2" type="text" value="ACTG|,2,,4"></input>
 			<span class="infobtn" onclick="mergeGraphXBWsIn2Info(event)">Info</span>
 		</div>
 		<div>

@@ -1658,24 +1658,24 @@ window.c = {
 		var xbw12 = xbw1.startToMergeWith(xbw2);
 
 		shide = '<div class="table_box">' + xbw1.generateBothTables() + '</div>';
-		sout += this.hideWrap(shide, 'Table') + this.nlnl;
+		sout += this.hideWrap(shide, 'Tables') + this.nlnl;
 
-		var overflow_protection = this.overflow_ceiling;
+		var i = 0;
 
-		while (xbw1.notFullyMerged() && (overflow_protection > 0)) {
+		while (xbw1.notFullyMerged() && (i < this.overflow_ceiling)) {
 
-			overflow_protection--;
+			i++;
 
 			var sstep = '<div>' + xbw1.mergeOneMore();
 
 			sstep += 'We now have:' + this.nlnl;
 
 			shide = '<div class="table_box">' + xbw1.generateBothTables() + '</div>';
-			sstep += this.hideWrap(shide, 'Table') + this.nlnl;
+			sstep += this.hideWrap(shide, 'Tables') + this.nlnl;
 
 			sstep += '</div>';
 
-			sout += this.hideWrap(sstep, 'Step') + this.nlnl;
+			sout += this.hideWrap(sstep, 'Step ' + i) + this.nlnl;
 		}
 
 		sout += 'The main part of the merging algorithm has now finished, but we should still ' +
@@ -4868,7 +4868,7 @@ window.c = {
 			// just for visualization
 			var vis_int = [];
 			for (var j=spep[0]; j < spep[1]+1; j++) {
-				window.xbw._publishPrefix(j, P.length);
+				window.xbw._publishPrefix(j, false, P.length);
 				for (var k=0; k < window.c.vis_highlight_nodes.length; k++) {
 					vis_int.push(window.c.vis_highlight_nodes[k]);
 				}
@@ -5048,14 +5048,26 @@ window.c = {
 			},
 
 			// pref_cur_i .. current prefix i
+			// strict .. boolean [optional, default: false]
+			//           (if true, the starting node is checked for more outgoing edges
+			//           and if there are several different ones, a ! report is issued;
+			//           if false, the edge out of the starting node is determined by the
+			//           flat table pref_cur_i, and only all following nodes are handled
+			//           as previously described)
 			// length .. maximum length of prefix reported [optional]
 			//           (if given, result can be shorter, but not longer)
 			// bwtInsteadOfFiC .. boolean [optional, default: false]
 			//           (if true, the prefix is a special kind of the BWT and F comparison
 			//           as opposed to the regular kind for the FiC and M comparison)
-			_publishPrefix: function(pref_cur_i, length, bwtInsteadOfFiC) {
+			_publishPrefix: function(pref_cur_i, strict, length, bwtInsteadOfFiC) {
 
 				var pref = '';
+
+				// used for the BWT mode, in which we want to go one extra cycle before
+				// abandoning based on '!', as everything is delayed by a cycle (without
+				// this, we would be missing out on the last character that we actually
+				// ARE granted!)
+				var bwt_not_all_last_round = false;
 
 				window.c.vis_highlight_nodes = [[]];
 
@@ -5078,14 +5090,24 @@ window.c = {
 					// which tells us about the exact edge we want to take - without
 					// that (that is, at i > 0) we would have to select one at random,
 					// and that is a real reason for despair!)
-					if (i > 0) {
+					if ((i > 0) || strict) {
 						// here, getting the length before going into the loop is actually
 						// important, as we do not want to loop through the elements that
 						// are added inside (as they have already been converted)
 						var len = pref_cur_is.length;
 						for (var j=0; j<len; j++) {
-							// convert node i to table i
-							pref_cur_is[j] = select('1', M, pref_cur_is[j]);
+							if (i > 0) {
+								// convert node i to table i
+								pref_cur_is[j] = select('1', M, pref_cur_is[j]);
+							} else {
+								// if strict, we already have table i - but we need to
+								// do something to it anyway; we need to go to the left
+								// as long as we have '0' in M to get to the bottom of
+								// this all ;)
+								while (M[pref_cur_is[j]] == '0') {
+									pref_cur_is[j]--;
+								}
+							}
 
 							// add '!' iff we are at a node with more than one outgoing edge
 							var k = 1;
@@ -5193,7 +5215,7 @@ window.c = {
 						}
 					}
 
-					if (not_all_chars_are_the_same) {
+					if (bwt_not_all_last_round || ((!bwtInsteadOfFiC) && not_all_chars_are_the_same)) {
 
 						// add error char '!' to the prefix
 						pref += window.c.prefixErrorChar;
@@ -5207,6 +5229,10 @@ window.c = {
 						break;
 
 					} else {
+
+						if (not_all_chars_are_the_same) {
+							bwt_not_all_last_round = true;
+						}
 
 						pref += char_to_add_now;
 					}
@@ -5235,6 +5261,14 @@ window.c = {
 
 				var takeNode2_fic;
 				var takeNode2_bwt;
+
+				last_high_1_fic = -1;
+				last_high_1_bwt = -1;
+				last_high_2_fic = -1;
+				last_high_2_bwt = -1;
+
+				var otherNode_fic;
+				var otherNode_bwt;
 
 
 
@@ -5269,20 +5303,47 @@ window.c = {
 							//             instead of in every cycle building again from the very
 							//             beginning
 
-							pref_1 = this._publishPrefix(multi_cur_1_fic, i, false);
-							pref_2 = otherXBW._publishPrefix(multi_cur_2_fic, i, false);
+							pref_1 = this._publishPrefix(multi_cur_1_fic, true, i, false);
+							pref_2 = otherXBW._publishPrefix(multi_cur_2_fic, true, i, false);
 
 							i++;
 						}
 
-						sout += 'The prefix of ' + window.c.DH_1 + '[' + multi_cur_1_fic + '] is ' +
+						sout += 'The first-column-based prefix of ' + window.c.DH_1 + '[' + multi_cur_1_fic + '] is ' +
 								pref_1 + '.' + window.c.nlnl;
 
-						sout += 'The prefix of ' + window.c.DH_2 + '[' + multi_cur_2_fic + '] is ' +
+						sout += 'The first-column-based prefix of ' + window.c.DH_2 + '[' + multi_cur_2_fic + '] is ' +
 								pref_2 + '.' + window.c.nlnl;
 
 						takeNode2_fic = pref_1 > pref_2;
 					}
+				}
+
+				if (takeNode2_fic) {
+
+					last_high_2_fic = multi_cur_2_fic;
+
+					sout += 'We take the first column and <i>M</i> from node ' +
+							multi_cur_2_fic + ' from ' + window.c.DH_2 +
+							' and insert it into the merged table.' + window.c.nlnlnl;
+
+					// insert node from the other XBW at multi_cur_2 into the merged XBW
+					otherNode_fic = otherXBW._publishNode(multi_cur_2_fic);
+
+					multi_cur_2_fic++;
+				
+				} else {
+
+					last_high_1_fic = multi_cur_1_fic;
+
+					sout += 'We take the first column and <i>M</i> from node ' +
+							multi_cur_1_fic + ' from ' + window.c.DH_1 +
+							' and insert it into the merged table.' + window.c.nlnlnl;
+
+					// insert node from this XBW at multi_cur_1 into the merged XBW
+					otherNode_fic = this._publishNode(multi_cur_1_fic);
+
+					multi_cur_1_fic++;
 				}
 
 
@@ -5318,64 +5379,29 @@ window.c = {
 							//             instead of in every cycle building again from the very
 							//             beginning
 
-							pref_1 = this._publishPrefix(multi_cur_1_bwt, i, true);
-							pref_2 = otherXBW._publishPrefix(multi_cur_2_bwt, i, true);
+							pref_1 = this._publishPrefix(multi_cur_1_bwt, true, i, true);
+							pref_2 = otherXBW._publishPrefix(multi_cur_2_bwt, true, i, true);
 
 							i++;
 						}
 
-						sout += 'The BWT-prefix of ' + window.c.DH_1 + '[' + multi_cur_1_bwt + '] is ' +
+						sout += 'The BWT-based prefix of ' + window.c.DH_1 + '[' + multi_cur_1_bwt + '] is ' +
 								pref_1 + '.' + window.c.nlnl;
 
-						sout += 'The BWT-prefix of ' + window.c.DH_2 + '[' + multi_cur_2_bwt + '] is ' +
+						sout += 'The BWT-based prefix of ' + window.c.DH_2 + '[' + multi_cur_2_bwt + '] is ' +
 								pref_2 + '.' + window.c.nlnl;
 
 						takeNode2_bwt = pref_1 > pref_2;
 					}
 				}
 
-				last_high_1_fic = -1;
-				last_high_1_bwt = -1;
-				last_high_2_fic = -1;
-				last_high_2_bwt = -1;
-
-				var otherNode_fic;
-				var otherNode_bwt;
-
-				if (takeNode2_fic) {
-
-					last_high_2_fic = multi_cur_2_fic;
-
-					sout += 'We now take the first column and <i>M</i> from node ' +
-							multi_cur_2_fic + ' from ' + window.c.DH_2 +
-							' and insert it into the merged table.' + window.c.nlnl;
-
-					// insert node from the other XBW at multi_cur_2 into the merged XBW
-					otherNode_fic = otherXBW._publishNode(multi_cur_2_fic);
-
-					multi_cur_2_fic++;
-				
-				} else {
-
-					last_high_1_fic = multi_cur_1_fic;
-
-					sout += 'We now take the first column and <i>M</i> from node ' +
-							multi_cur_1_fic + ' from ' + window.c.DH_1 +
-							' and insert it into the merged table.' + window.c.nlnl;
-
-					// insert node from this XBW at multi_cur_1 into the merged XBW
-					otherNode_fic = this._publishNode(multi_cur_1_fic);
-
-					multi_cur_1_fic++;
-				}
-
 				if (takeNode2_bwt) {
 
 					last_high_2_bwt = multi_cur_2_bwt;
 
-					sout += 'We now take the BWT and <i>F</i> from node ' +
+					sout += 'We take the BWT and <i>F</i> from node ' +
 							multi_cur_2_bwt + ' from ' + window.c.DH_2 +
-							' and insert it into the merged table.' + window.c.nlnl;
+							' and insert it into the merged table.' + window.c.nlnlnl;
 
 					// insert node from the other XBW at multi_cur_2 into the merged XBW
 					otherNode_bwt = otherXBW._publishNode(multi_cur_2_bwt);
@@ -5386,15 +5412,17 @@ window.c = {
 
 					last_high_1_bwt = multi_cur_1_bwt;
 
-					sout += 'We now take the BWT and <i>F</i> from node ' +
+					sout += 'We take the BWT and <i>F</i> from node ' +
 							multi_cur_1_bwt + ' from ' + window.c.DH_1 +
-							' and insert it into the merged table.' + window.c.nlnl;
+							' and insert it into the merged table.' + window.c.nlnlnl;
 
 					// insert node from this XBW at multi_cur_1 into the merged XBW
 					otherNode_bwt = this._publishNode(multi_cur_1_bwt);
 
 					multi_cur_1_bwt++;
 				}
+
+
 
 				mergedXBW._addNodeBasedOnTwo(otherNode_fic, otherNode_bwt);
 

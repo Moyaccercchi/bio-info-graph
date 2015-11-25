@@ -98,6 +98,15 @@
 	make_xbw_environment: function();
 	example: function();
 	xbw_example: function();
+
+	Abbreviations:
+	    BWT .. Burrows-Wheeler Transform
+	    FiC .. first column
+	      M .. bit-vector M
+	      F .. bit-vector F
+	 auto i .. index of node in automaton
+	 node i .. index of column in node table (table representing automaton 1:1)
+	table i .. index of column in flat table
 */
 
 window.c = {
@@ -4653,15 +4662,19 @@ window.c = {
 		var otherXBW;
 		var mergedXBW;
 
-		// current position in our XBW
-		var multi_cur_1 = 0;
+		// current positions in our XBW
+		var multi_cur_1_fic = 0; // first column and M
+		var multi_cur_1_bwt = 0; // BWT and F
 
-		// current position in the other XBW
-		var multi_cur_2 = 0;
+		// current positions in the other XBW
+		var multi_cur_2_fic = 0; // first column and M
+		var multi_cur_2_bwt = 0; // BWT and F
 
 		// keep track from where the last node came to highlight it visually
-		var last_high_1 = -1;
-		var last_high_2 = -1;
+		var last_high_1_fic = -1;
+		var last_high_1_bwt = -1;
+		var last_high_2_fic = -1;
+		var last_high_2_bwt = -1;
 
 
 
@@ -4933,8 +4946,10 @@ window.c = {
 
 				otherXBW = potherXBW;
 
-				multi_cur_1 = 0;
-				multi_cur_2 = 0;
+				multi_cur_1_fic = 0;
+				multi_cur_1_bwt = 0;
+				multi_cur_2_fic = 0;
+				multi_cur_2_bwt = 0;
 
 				mergedXBW = window.c.make_xbw_environment();
 				mergedXBW.init();
@@ -5025,7 +5040,7 @@ window.c = {
 			},
 
 			notFullyMerged: function() {
-				return !((multi_cur_1 > BWT.length-1) && (multi_cur_2 > otherXBW._publishBWTlen()-1));
+				return !((multi_cur_1_fic > BWT.length-1) && (multi_cur_2_fic > otherXBW._publishBWTlen()-1));
 			},
 
 			_publishBWTlen: function() {
@@ -5035,7 +5050,10 @@ window.c = {
 			// pref_cur_i .. current prefix i
 			// length .. maximum length of prefix reported [optional]
 			//           (if given, result can be shorter, but not longer)
-			_publishPrefix: function(pref_cur_i, length) {
+			// bwtInsteadOfFiC .. boolean [optional, default: false]
+			//           (if true, the prefix is a special kind of the BWT and F comparison
+			//           as opposed to the regular kind for the FiC and M comparison)
+			_publishPrefix: function(pref_cur_i, length, bwtInsteadOfFiC) {
 
 				var pref = '';
 
@@ -5083,25 +5101,94 @@ window.c = {
 						}
 					}
 
+					// we copy from pref_cur_is to pref_copy_is explicitly
+					// deep so that we can play around with it in case of
+					// bwtInsteadOfFiC being true while still being able to
+					// retrieve the old values afterwards =)
+					var pref_copy_is = [];
+					for (var j=0; j<pref_cur_is.length; j++) {
+						pref_copy_is.push(pref_cur_is[j]);
+					}
+
 					// get node i
 					for (var j=0; j<pref_cur_is.length; j++) {
 						pref_cur_is[j] = psi(pref_cur_is[j], 1);
 					}
 
 					var char_to_add_now = '.';
-					if (BWT[pref_cur_is[0]]) {
-						char_to_add_now = BWT[pref_cur_is[0]];
-					}
 					var not_all_chars_are_the_same = false;
 
-					for (var j=0; j<pref_cur_is.length; j++) {
-						if (BWT[pref_cur_is[j]]) {
-							if (char_to_add_now != BWT[pref_cur_is[j]]) {
-								not_all_chars_are_the_same = true;
+					if (bwtInsteadOfFiC) {
+						for (var j=0; j<pref_copy_is.length; j++) {
+
+							// TODO :: look into whether this here is totally correct
+							//         Basically, what we want to do within one cycle
+							//         of the for-loop is:
+							//           pref_copy_is[j] += rank('0', M, pref_copy_is[j]) + 1;
+							//           pref_copy_is[j] -= rank('0', F, pref_copy_is[j]) + 1;
+							//
+							//        However, when we tried this with the merging of
+							//          H_1: ACEG|,1,,3;,2,TB,4  and  H_2: BDFK|,2,,4
+							//        then we noticed that there was a B and C inversed
+							//        in the final BWT; further investigation showed that
+							//        the C was sorted wrongly because its prefix_bwt was
+							//        wrongly given as C when it should have been E,
+							//        caused by a zero in the adjacent column on the right
+							//        which is ignored by the naive way that is shown above;
+							//        the answer to that was the clusterfun that follows
+							//        (where we basically stash the subtraction, then
+							//        do the main addition, then iterate over further
+							//        additions as long as they are directly adjacent,
+							//        and then finally carry out the subtraction);
+							//        our example indicates that now everything is fine,
+							//        but thinking through this here a bit more would
+							//        actually be quite necessary. =)
+
+							var subtract = rank('0', F, pref_copy_is[j]) + 1;
+
+							pref_copy_is[j] += rank('0', M, pref_copy_is[j]) + 1;
+
+							while (M[pref_copy_is[j]] == '0') {
+								pref_copy_is[j]++;
 							}
-						} else {
-							if (char_to_add_now != '.') {
-								not_all_chars_are_the_same = true;
+
+							pref_copy_is[j] -= subtract;
+						}
+
+						if (char[pref_copy_is[0]]) {
+							char_to_add_now = char[pref_copy_is[0]];
+						}
+
+						for (var j=0; j<pref_copy_is.length; j++) {
+							if (char[pref_copy_is[j]]) {
+								if (char_to_add_now != char[pref_copy_is[j]]) {
+									not_all_chars_are_the_same = true;
+								}
+							} else {
+								if (char_to_add_now != '.') {
+									not_all_chars_are_the_same = true;
+								}
+							}
+						}
+					} else {
+						pref_copy_is = [];
+						for (var j=0; j<pref_cur_is.length; j++) {
+							pref_copy_is.push(pref_cur_is[j]);
+						}
+
+						if (BWT[pref_copy_is[0]]) {
+							char_to_add_now = BWT[pref_copy_is[0]];
+						}
+
+						for (var j=0; j<pref_copy_is.length; j++) {
+							if (BWT[pref_copy_is[j]]) {
+								if (char_to_add_now != BWT[pref_copy_is[j]]) {
+									not_all_chars_are_the_same = true;
+								}
+							} else {
+								if (char_to_add_now != '.') {
+									not_all_chars_are_the_same = true;
+								}
 							}
 						}
 					}
@@ -5146,84 +5233,189 @@ window.c = {
 
 				var sout = '';
 
-				var takeNode2;
+				var takeNode2_fic;
+				var takeNode2_bwt;
+
+
+
+				// construct prefixes for first column and M comparison
 
 				// 1 is overshooting? - take 2!
-				if (multi_cur_1 > BWT.length-1) {
-					takeNode2 = true;
+				if (multi_cur_1_fic > BWT.length-1) {
+					takeNode2_fic = true;
 				} else {
 					// 2 is overshooting? - take 1!
-					if (multi_cur_2 > otherXBW._publishBWTlen()-1) {
-						takeNode2 = false;
+					if (multi_cur_2_fic > otherXBW._publishBWTlen()-1) {
+						takeNode2_fic = false;
 					} else {
-						// todo :: only generate as long prefixes as necessary
-						// (basically, keep generating until you find a difference to be
-						// able to sort; and also, keep previous results in memory,
-						// instead of re-generating them!)
 
-						var pref_1 = this._publishPrefix(multi_cur_1);
-						var pref_2 = otherXBW._publishPrefix(multi_cur_2);
+						// TODO NOW :: keep previous results in memory (so if we generated the
+						//             prefix for this here in the previous step, then we do not
+						//             need to create it again)
 
-						sout += 'The prefix of ' + window.c.DH_1 + '[' + multi_cur_1 + '] is ' +
+						var i = 1;
+						var pref_1 = '';
+						var pref_2 = '';
+						var pEC = window.c.prefixErrorChar;
+
+						// we here do not need to explicitly check for reaching $ or $_1,
+						// as they are both different, and therefore we would necessarily
+						// reach a difference between the prefixes, which we ARE already
+						// checking for anyway =)
+						while ((i < window.c.overflow_ceiling) && (pref_1 == pref_2) &&
+								(pref_1[pref_1.length-1] != pEC) && (pref_2[pref_2.length-1] != pEC)) {
+
+							// TODO NOW :: build prefixes char-by-char and keep last pref in memory
+							//             instead of in every cycle building again from the very
+							//             beginning
+
+							pref_1 = this._publishPrefix(multi_cur_1_fic, i, false);
+							pref_2 = otherXBW._publishPrefix(multi_cur_2_fic, i, false);
+
+							i++;
+						}
+
+						sout += 'The prefix of ' + window.c.DH_1 + '[' + multi_cur_1_fic + '] is ' +
 								pref_1 + '.' + window.c.nlnl;
 
-						sout += 'The prefix of ' + window.c.DH_2 + '[' + multi_cur_2 + '] is ' +
+						sout += 'The prefix of ' + window.c.DH_2 + '[' + multi_cur_2_fic + '] is ' +
 								pref_2 + '.' + window.c.nlnl;
 
-						var otherNode;
-
-						takeNode2 = pref_1 > pref_2;
+						takeNode2_fic = pref_1 > pref_2;
 					}
 				}
 
-				last_high_1 = -1;
-				last_high_2 = -1;
 
-				if (takeNode2) {
 
-					last_high_2 = multi_cur_2;
+				// construct prefixes for BWT and F comparison
 
-					sout += 'We now take node ' + multi_cur_2 + ' from ' + window.c.DH_2 +
+				// 1 is overshooting? - take 2!
+				if (multi_cur_1_bwt > BWT.length-1) {
+					takeNode2_bwt = true;
+				} else {
+					// 2 is overshooting? - take 1!
+					if (multi_cur_2_bwt > otherXBW._publishBWTlen()-1) {
+						takeNode2_bwt = false;
+					} else {
+
+						// TODO NOW :: keep previous results in memory (so if we generated the
+						//             prefix for this here in the previous step, then we do not
+						//             need to create it again)
+
+						var i = 1;
+						var pref_1 = '';
+						var pref_2 = '';
+						var pEC = window.c.prefixErrorChar;
+
+						// we here do not need to explicitly check for reaching $ or $_1,
+						// as they are both different, and therefore we would necessarily
+						// reach a difference between the prefixes, which we ARE already
+						// checking for anyway =)
+						while ((i < window.c.overflow_ceiling) && (pref_1 == pref_2) &&
+								(pref_1[pref_1.length-1] != pEC) && (pref_2[pref_2.length-1] != pEC)) {
+
+							// TODO NOW :: build prefixes char-by-char and keep last pref in memory
+							//             instead of in every cycle building again from the very
+							//             beginning
+
+							pref_1 = this._publishPrefix(multi_cur_1_bwt, i, true);
+							pref_2 = otherXBW._publishPrefix(multi_cur_2_bwt, i, true);
+
+							i++;
+						}
+
+						sout += 'The BWT-prefix of ' + window.c.DH_1 + '[' + multi_cur_1_bwt + '] is ' +
+								pref_1 + '.' + window.c.nlnl;
+
+						sout += 'The BWT-prefix of ' + window.c.DH_2 + '[' + multi_cur_2_bwt + '] is ' +
+								pref_2 + '.' + window.c.nlnl;
+
+						takeNode2_bwt = pref_1 > pref_2;
+					}
+				}
+
+				last_high_1_fic = -1;
+				last_high_1_bwt = -1;
+				last_high_2_fic = -1;
+				last_high_2_bwt = -1;
+
+				var otherNode_fic;
+				var otherNode_bwt;
+
+				if (takeNode2_fic) {
+
+					last_high_2_fic = multi_cur_2_fic;
+
+					sout += 'We now take the first column and <i>M</i> from node ' +
+							multi_cur_2_fic + ' from ' + window.c.DH_2 +
 							' and insert it into the merged table.' + window.c.nlnl;
 
 					// insert node from the other XBW at multi_cur_2 into the merged XBW
-					otherNode = otherXBW._publishNode(multi_cur_2);
+					otherNode_fic = otherXBW._publishNode(multi_cur_2_fic);
 
-					multi_cur_2++;
+					multi_cur_2_fic++;
 				
 				} else {
 
-					last_high_1 = multi_cur_1;
+					last_high_1_fic = multi_cur_1_fic;
 
-					sout += 'We now take node ' + multi_cur_1 + ' from ' + window.c.DH_1 +
+					sout += 'We now take the first column and <i>M</i> from node ' +
+							multi_cur_1_fic + ' from ' + window.c.DH_1 +
 							' and insert it into the merged table.' + window.c.nlnl;
 
-					// insert node from this XBW at multi_cur_2 into the merged XBW
-					otherNode = this._publishNode(multi_cur_1);
+					// insert node from this XBW at multi_cur_1 into the merged XBW
+					otherNode_fic = this._publishNode(multi_cur_1_fic);
 
-					multi_cur_1++;
+					multi_cur_1_fic++;
 				}
 
-				mergedXBW._addNode(otherNode);
+				if (takeNode2_bwt) {
+
+					last_high_2_bwt = multi_cur_2_bwt;
+
+					sout += 'We now take the BWT and <i>F</i> from node ' +
+							multi_cur_2_bwt + ' from ' + window.c.DH_2 +
+							' and insert it into the merged table.' + window.c.nlnl;
+
+					// insert node from the other XBW at multi_cur_2 into the merged XBW
+					otherNode_bwt = otherXBW._publishNode(multi_cur_2_bwt);
+
+					multi_cur_2_bwt++;
+				
+				} else {
+
+					last_high_1_bwt = multi_cur_1_bwt;
+
+					sout += 'We now take the BWT and <i>F</i> from node ' +
+							multi_cur_1_bwt + ' from ' + window.c.DH_1 +
+							' and insert it into the merged table.' + window.c.nlnl;
+
+					// insert node from this XBW at multi_cur_1 into the merged XBW
+					otherNode_bwt = this._publishNode(multi_cur_1_bwt);
+
+					multi_cur_1_bwt++;
+				}
+
+				mergedXBW._addNodeBasedOnTwo(otherNode_fic, otherNode_bwt);
 
 				sout = window.c.makeVisualsNice(sout);
 
 				return sout;
 			},
 
-			_addNode: function(otherNode) {
+			_addNodeBasedOnTwo: function(otherNode_fic, otherNode_bwt) {
 
-				BWT += otherNode[0];
-				char += otherNode[1];
-				M += otherNode[2];
-				F += otherNode[3];
+				BWT  += otherNode_bwt[0];
+				char += otherNode_fic[1];
+				M    += otherNode_fic[2];
+				F    += otherNode_bwt[3];
 
 				// TODO :: do not recalculate everything here,
 				// but instead just update what needs to be updated!
 				// (right now, we do not do any calculations on the mergedXBW
 				// anyway, so we could even not call this at all, but later on
 				// we probably need to because of merging graphy stuff and so
-				// on...)
+				// on...) <- TODO NOW :: check if this is actually necessary
 				recalculate(false);
 			},
 
@@ -5462,9 +5654,11 @@ window.c = {
 			},
 			generateBothTables: function() {
 
-				return this.generateTable([[multi_cur_1]], [[last_high_1]]) + '&nbsp;&nbsp;&nbsp;' +
-				   otherXBW.generateTable([[multi_cur_2]], [[last_high_2]]) + '<br>' +
-				  mergedXBW.generateTable([], [[mergedXBW._publishBWTlen()-1]]);
+				var l = mergedXBW._publishBWTlen()-1;
+
+				return this.generateTable([[], [multi_cur_1_bwt], [multi_cur_1_fic], [multi_cur_1_fic], [multi_cur_1_bwt]], [[], [last_high_1_bwt], [last_high_1_fic], [last_high_1_fic], [last_high_1_bwt]]) + '&nbsp;&nbsp;&nbsp;' +
+				   otherXBW.generateTable([[], [multi_cur_2_bwt], [multi_cur_2_fic], [multi_cur_2_fic], [multi_cur_2_bwt]], [[], [last_high_2_bwt], [last_high_2_fic], [last_high_2_fic], [last_high_2_bwt]]) + '<br>' +
+				  mergedXBW.generateTable([], [[], [l], [l], [l], [l]]);
 			},
 			generateGraph: function(highnodes, tab, show_vis_hl) {
 

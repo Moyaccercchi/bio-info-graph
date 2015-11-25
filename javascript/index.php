@@ -490,10 +490,10 @@
 
 
 	<span class="creditline absleft">
-		Version: 0.0.1.2
+		Version: 0.0.1.3
 	</span>
 	<span class="creditline absright">
-		Moyaccercchi (tws@hi.is), University of Iceland, 1<span class="u">st</span> Sep 2014 - 11<span class="u">th</span> Nov 2015
+		Moyaccercchi (tws@hi.is), University of Iceland, 1<span class="u">st</span> Sep 2014 - 25<span class="u">th</span> Nov 2015
 	</span>
 	
 	<script>

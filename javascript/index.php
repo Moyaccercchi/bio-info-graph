@@ -237,6 +237,16 @@
 			border-right:1px solid #000;
 		}
 
+		.our_checkbox {
+			display: inline-block;
+			box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.8);
+			border-radius: 4px;
+			border: 1px solid rgb(0, 0, 0);
+			text-align: center;
+			margin-right: 5px;
+			width: 25px;
+		}
+
 
 
 		/* SVG */
@@ -433,7 +443,10 @@
 			<input id="in-options-index-2" type="text" value="1" class="md-2"></input>
 		</div>
 		<div onclick="changeOptions_show_graph()" style="cursor:pointer">
-			<span id="in-options-show-graph" style="display: inline-block; box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.8); border-radius: 4px; border: 1px solid rgb(0, 0, 0); text-align: center; margin-right: 5px; width: 25px;">&nbsp;</span> Show na&iuml;ve graph functionality
+			<span id="in-options-show-graph" class="our_checkbox">&nbsp;</span> Show tab for na&iuml;ve graph functionality
+		</div>
+		<div onclick="changeOptions_show_autoi()" style="cursor:pointer">
+			<span id="in-options-show-autoi" class="our_checkbox">&nbsp;</span> Show auto <i>i</i> above automaton nodes
 		</div>
 		<div>
 			The first element of any string and array is obviously <input id="in-options-array-offset" type="text" value="0" style="display: inline-block; width: 10%; margin-right: 5px; margin-left: 5px;"></input>.
@@ -853,6 +866,17 @@
 			}
 		}
 
+		function changeOptions_show_autoi() {
+
+			var el = document.getElementById('in-options-show-autoi');
+
+			if (el.innerHTML == 'X') {
+				el.innerHTML = '&nbsp;';
+			} else {
+				el.innerHTML = 'X';
+			}
+		}
+
 		function applyOptions() {
 
 			c.origin_1 = document.getElementById('in-options-index-1').value;
@@ -871,6 +895,7 @@
 			document.getElementById('in-options-array-offset').value = '0';
 
 			document.getElementById('in-options-show-graph').innerHTML = '&nbsp;';
+			document.getElementById('in-options-show-autoi').innerHTML = '&nbsp;';
 
 			applyOptions();
 		}
@@ -889,6 +914,8 @@
 			if (document.getElementById('in-options-show-graph').innerHTML == 'X') {
 				dispstyle = 'inline-block';
 			}
+
+			window.c.show_auto_i = document.getElementById('in-options-show-autoi').innerHTML == 'X';
 
 			document.getElementById('tab-btn-0').style.display = dispstyle;
 			document.getElementById('tab-btn-1').style.display = dispstyle;

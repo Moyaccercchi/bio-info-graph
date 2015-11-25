@@ -121,6 +121,8 @@ window.c = {
 						  //       too =)
 						  // false: actually insert $1 and #1 nodes in between
 
+	show_auto_i: false, // true: show auto i above automaton nodes in the visualize function, false: do not
+
 	// A note about DaTeX:
 	// In DaTeX, we enclose maths expressions in dollarsigns, and to write an actual dollarsign, we write \S.
 	// Just sorting \$ would be a problem as lex(\) > lex(c) for a character c, but sorting $ \$ $ is fine,
@@ -2135,8 +2137,8 @@ window.c = {
 
 		var extra_high_nodes = [];
 		var extra_high_edges = [];
-
-		if (show_vis_hl) {
+ 
+		if (show_vis_hl && (this.vis_highlight_nodes.length > 0) && (this.vis_highlight_nodes[0].length > 0)) {
 			// convert the first node using tableToP12 from table i to p12 i to auto i
 			extra_high_nodes.push(
 				this.vis_p12ToAuto[
@@ -2234,7 +2236,11 @@ window.c = {
 			if (showPrefixes) {
 				sout += '<text class="prefix" x="' + xoff +
 						'" y="47.8" text-anchor="middle" style="fill:' + highcolor + '">' +
-						auto[i].f + '</text>';
+						auto[i].f;
+				if (this.show_auto_i) {
+					sout += ' ' + i;
+				}
+				sout += '</text>';
 			}
 
 			var strokecolor = default_color;
@@ -2348,7 +2354,11 @@ window.c = {
 						if (showPrefixes) {
 							sout += '<text class="prefix" x="' + xoff + '" y="' + (yoffl-2.2) +
 									'" text-anchor="middle" style="fill:' + highcolor + '">' +
-									auto[path[i]].f + '</text>';
+									auto[path[i]].f;
+							if (this.show_auto_i) {
+								sout += ' ' + path[i];
+							}
+							sout += '</text>';
 						}
 
 						if (i < 1) {
@@ -4786,6 +4796,14 @@ window.c = {
 			sp = C[c] + rank(c, BWT, sp-1) + 1;
 			ep = C[c] + rank(c, BWT, ep);
 
+			// if ep < sp, then we want cannot return anything
+			// (this hebre was to be done before the following
+			// rank-rank, as that might bring ep = sp when
+			// ep < sp before!)
+			if (ep < sp) {
+				return [];
+			}
+
 			if (not_last_round) {
 				sp = rank('1', M, sp);
 				ep = rank('1', M, ep);
@@ -4829,7 +4847,7 @@ window.c = {
 			while (i--) {
 				spep = lf(spep, P[i], i > 0);
 
-				if (spep[1] < spep[0]) {
+				if ((spep.length < 1) || (spep[1] < spep[0])) {
 					return [];
 				}
 			}

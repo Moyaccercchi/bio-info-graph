@@ -1642,6 +1642,83 @@ window.c = {
 		sout += this.hideWrap(shide, 'Table') + this.nlnl;
 
 
+
+		// start splitting
+
+		sout += 'We now need to split nodes in order to ensure that the generated ' +
+				'structure will be prefix-sorted. For that, we go pretend to merge ' + 
+				'by comparing the prefixes one by one, and if we cannot make a decision, ' +
+				'we split the node and remember that we will have to do the entire process ' +
+				'another time.' + this.nlnl;
+
+		var xbw12 = xbw1.startToMergeWith(xbw2);
+
+		var round = 1;
+		var doAnotherRound = true;
+
+		while ((round < this.overflow_ceiling) && (doAnotherRound)) {
+
+			doAnotherRound = false;
+
+			sround = '<div>We start round ' + round + ':' + this.nlnl;
+
+			shide = '<div class="table_box">' + xbw1.generateBothTables(true) + '</div>';
+			sround += this.hideWrap(shide, 'Tables') + this.nlnl;
+
+			var i = 0;
+
+			xbw1.startNewSplitRound();
+
+			while (xbw1.notFullyMerged() && (i < this.overflow_ceiling)) {
+
+				i++;
+				var splitnodes = [];
+
+				var sstep = '<div>' + xbw1.checkIfSplitOneMore(splitnodes);
+
+				if (splitnodes.length > 0) {
+					sstep += xbw1.splitOneMore(splitnodes);
+					doAnotherRound = true;
+				}
+
+				sstep += 'We now have:' + this.nlnl;
+
+				shide = '<div class="table_box">' + xbw1.generateBothTables(true) + '</div>';
+				sstep += this.hideWrap(shide, 'Tables') + this.nlnl;
+
+				sstep += '</div>';
+
+				sround += this.hideWrap(sstep, 'Step ' + i) + this.nlnl;
+			}
+
+			sround += '</div>';
+			
+			sout += this.hideWrap(sround, 'Round ' + round) + this.nlnl;
+		}
+
+
+
+		/*
+		sout += "After splitting nodes, we have for " + this.DH_1 + ":" + this.nlnl;
+
+		shide = '<div class="table_box">' + xbw1.generateTable([]) + '</div>';
+		sout += this.hideWrap(shide, 'Table') + this.nlnl;
+
+		sout += "And for " + this.DH_2 + " we have:" + this.nlnl;
+
+		shide = '<div class="table_box">' + xbw2.generateTable([]) + '</div>';
+		sout += this.hideWrap(shide, 'Table') + this.nlnl;
+
+		sout += "Also, " + this.DH + " is still:" + this.nlnl;
+
+		shide = '<div class="table_box">' + xbw.generateTable([]) + '</div>';
+		sout += this.hideWrap(shide, 'Table') + this.nlnl;
+		*/
+
+		// end splitting
+
+
+
 		sout += '<span id="in-jump-5-4">We</span> can now merge ' + this.DH_1 + ' and ' +
 				this.DH_2 + ' just based on their XBW data: BWT, ' + this.DM + ', ' + this.DF +
 				' and <i>C</i>.' + this.nlnlnl;
@@ -1655,12 +1732,12 @@ window.c = {
 				'into ' + this.DH_1 + ' at position 9 or greater, not lower than 9.' +
 				this.nlnl;
 
-		var xbw12 = xbw1.startToMergeWith(xbw2);
-
 		shide = '<div class="table_box">' + xbw1.generateBothTables() + '</div>';
 		sout += this.hideWrap(shide, 'Tables') + this.nlnl;
 
 		var i = 0;
+
+		xbw1.startNewSplitRound();
 
 		while (xbw1.notFullyMerged() && (i < this.overflow_ceiling)) {
 
@@ -5029,6 +5106,14 @@ window.c = {
 				return mergedXBW;
 			},
 
+			startNewSplitRound: function() {
+
+				multi_cur_1_fic = 0;
+				multi_cur_1_bwt = 0;
+				multi_cur_2_fic = 0;
+				multi_cur_2_bwt = 0;
+			},
+
 			_replaceSpecialChar: function(oldspecchar, newspecchar) {
 
 				while (BWT.indexOf(oldspecchar) > -1) {
@@ -5324,7 +5409,7 @@ window.c = {
 				return [BWT[i], char[i], M[i], F[i]];
 			},
 
-			mergeOneMore: function() {
+			_constructBothPrefixes: function() {
 
 				var sout = '';
 
@@ -5338,6 +5423,8 @@ window.c = {
 
 				var otherNode_fic;
 				var otherNode_bwt;
+
+				var pEC = window.c.prefixErrorChar;
 
 
 
@@ -5357,36 +5444,101 @@ window.c = {
 						//             need to create it again)
 
 						var i = 1;
-						var pref_1 = '';
-						var pref_2 = '';
-						var pEC = window.c.prefixErrorChar;
+						var pref_1_fic = '';
+						var pref_2_fic = '';
 
 						// we here do not need to explicitly check for reaching $ or $_1,
 						// as they are both different, and therefore we would necessarily
 						// reach a difference between the prefixes, which we ARE already
 						// checking for anyway =)
-						while ((i < window.c.overflow_ceiling) && (pref_1 == pref_2) &&
-								(pref_1[pref_1.length-1] != pEC) && (pref_2[pref_2.length-1] != pEC)) {
+						while ((i < window.c.overflow_ceiling) && (pref_1_fic == pref_2_fic) &&
+								(pref_1_fic[pref_1_fic.length-1] != pEC) && (pref_2_fic[pref_2_fic.length-1] != pEC)) {
 
 							// TODO NOW :: build prefixes char-by-char and keep last pref in memory
 							//             instead of in every cycle building again from the very
 							//             beginning
 
-							pref_1 = this._publishPrefix(multi_cur_1_fic, true, i, false);
-							pref_2 = otherXBW._publishPrefix(multi_cur_2_fic, true, i, false);
+							pref_1_fic = this._publishPrefix(multi_cur_1_fic, true, i, false);
+							pref_2_fic = otherXBW._publishPrefix(multi_cur_2_fic, true, i, false);
 
 							i++;
 						}
 
 						sout += 'The first-column-based prefix of ' + window.c.DH_1 + '[' + multi_cur_1_fic + '] is ' +
-								pref_1 + '.' + window.c.nlnl;
+								pref_1_fic + '.' + window.c.nlnl;
 
 						sout += 'The first-column-based prefix of ' + window.c.DH_2 + '[' + multi_cur_2_fic + '] is ' +
-								pref_2 + '.' + window.c.nlnl;
+								pref_2_fic + '.' + window.c.nlnl;
 
-						takeNode2_fic = pref_1 > pref_2;
+						takeNode2_fic = pref_1_fic > pref_2_fic;
 					}
 				}
+
+
+
+				// construct prefixes for BWT and F comparison
+
+				// 1 is overshooting? - take 2!
+				if (multi_cur_1_bwt > BWT.length-1) {
+					takeNode2_bwt = true;
+				} else {
+					// 2 is overshooting? - take 1!
+					if (multi_cur_2_bwt > otherXBW._publishBWTlen()-1) {
+						takeNode2_bwt = false;
+					} else {
+
+						// TODO NOW :: keep previous results in memory (so if we generated the
+						//             prefix for this here in the previous step, then we do not
+						//             need to create it again)
+
+						var i = 1;
+						var pref_1_bwt = '';
+						var pref_2_bwt = '';
+
+						// we here do not need to explicitly check for reaching $ or $_1,
+						// as they are both different, and therefore we would necessarily
+						// reach a difference between the prefixes, which we ARE already
+						// checking for anyway =)
+						while ((i < window.c.overflow_ceiling) && (pref_1_bwt == pref_2_bwt) &&
+								(pref_1_bwt[pref_1_bwt.length-1] != pEC) && (pref_2_bwt[pref_2_bwt.length-1] != pEC)) {
+
+							// TODO NOW :: build prefixes char-by-char and keep last pref in memory
+							//             instead of in every cycle building again from the very
+							//             beginning
+
+							pref_1_bwt = this._publishPrefix(multi_cur_1_bwt, true, i, true);
+							pref_2_bwt = otherXBW._publishPrefix(multi_cur_2_bwt, true, i, true);
+
+							i++;
+						}
+
+						sout += 'The BWT-based prefix of ' + window.c.DH_1 + '[' + multi_cur_1_bwt + '] is ' +
+								pref_1_bwt + '.' + window.c.nlnl;
+
+						sout += 'The BWT-based prefix of ' + window.c.DH_2 + '[' + multi_cur_2_bwt + '] is ' +
+								pref_2_bwt + '.' + window.c.nlnl;
+
+						takeNode2_bwt = pref_1_bwt > pref_2_bwt;
+					}
+				}
+
+
+
+				return [sout, takeNode2_fic, takeNode2_bwt, otherNode_fic, otherNode_bwt,
+						pref_1_fic, pref_2_fic, pref_1_bwt, pref_2_bwt];
+			},
+
+			mergeOneMore: function() {
+
+				var p = this._constructBothPrefixes();
+
+				var sout = p[0];
+				var takeNode2_fic = p[1];
+				var takeNode2_bwt = p[2];
+				var otherNode_fic = p[3];
+				var otherNode_bwt = p[4];
+
+
 
 				if (takeNode2_fic) {
 
@@ -5416,53 +5568,6 @@ window.c = {
 				}
 
 
-
-				// construct prefixes for BWT and F comparison
-
-				// 1 is overshooting? - take 2!
-				if (multi_cur_1_bwt > BWT.length-1) {
-					takeNode2_bwt = true;
-				} else {
-					// 2 is overshooting? - take 1!
-					if (multi_cur_2_bwt > otherXBW._publishBWTlen()-1) {
-						takeNode2_bwt = false;
-					} else {
-
-						// TODO NOW :: keep previous results in memory (so if we generated the
-						//             prefix for this here in the previous step, then we do not
-						//             need to create it again)
-
-						var i = 1;
-						var pref_1 = '';
-						var pref_2 = '';
-						var pEC = window.c.prefixErrorChar;
-
-						// we here do not need to explicitly check for reaching $ or $_1,
-						// as they are both different, and therefore we would necessarily
-						// reach a difference between the prefixes, which we ARE already
-						// checking for anyway =)
-						while ((i < window.c.overflow_ceiling) && (pref_1 == pref_2) &&
-								(pref_1[pref_1.length-1] != pEC) && (pref_2[pref_2.length-1] != pEC)) {
-
-							// TODO NOW :: build prefixes char-by-char and keep last pref in memory
-							//             instead of in every cycle building again from the very
-							//             beginning
-
-							pref_1 = this._publishPrefix(multi_cur_1_bwt, true, i, true);
-							pref_2 = otherXBW._publishPrefix(multi_cur_2_bwt, true, i, true);
-
-							i++;
-						}
-
-						sout += 'The BWT-based prefix of ' + window.c.DH_1 + '[' + multi_cur_1_bwt + '] is ' +
-								pref_1 + '.' + window.c.nlnl;
-
-						sout += 'The BWT-based prefix of ' + window.c.DH_2 + '[' + multi_cur_2_bwt + '] is ' +
-								pref_2 + '.' + window.c.nlnl;
-
-						takeNode2_bwt = pref_1 > pref_2;
-					}
-				}
 
 				if (takeNode2_bwt) {
 
@@ -5498,6 +5603,58 @@ window.c = {
 				sout = window.c.makeVisualsNice(sout);
 
 				return sout;
+			},
+
+			checkIfSplitOneMore: function(splitnodes) {
+
+				var p = this._constructBothPrefixes();
+
+				var sout = p[0];
+				var takeNode2_fic = p[1];
+				var takeNode2_bwt = p[2];
+				var otherNode_fic = p[3];
+				var otherNode_bwt = p[4];
+				var pref_1_fic = p[5];
+				var pref_2_fic = p[6];
+				var pref_1_bwt = p[7];
+				var pref_2_bwt = p[8];
+
+				if (takeNode2_fic) {
+					multi_cur_2_fic++;
+				} else {
+					multi_cur_1_fic++;
+				}
+
+				if (takeNode2_bwt) {
+					multi_cur_2_bwt++;
+				} else {
+					multi_cur_1_bwt++;
+				}
+
+				// EMRG TODO :: check if one of the prefixes contains a '!' at the end
+				// (or both, lol...)
+
+				/*
+				splitnodes.push({}) // nodes that are supposed to be split,
+									// each node having an origin o (1 or 2) and
+									// an sn_i (split node i)
+									// we can split at most 4 different nodes (fic and bwt
+									// for both H_1 and H_2, if these are ALL ending in !
+									// and bwt and fic are in different locations)
+									// however, to make it simpler, we will just report one
+									// for now? TODO :: think about this!
+				*/
+
+				return sout;
+			},
+
+			// H is 1 or 2, depending on whether we are splitting a node in H_1 or H_2
+			// sn_i is the splitting node i as flat table i
+			splitOneMore: function(nodes) {
+
+				// EMRG TODO :: actually split ;)
+
+				return 'WE SPLIT OH MY GOD WE SPLIT!<br>';
 			},
 
 			_addNodeBasedOnTwo: function(otherNode_fic, otherNode_bwt) {
@@ -5618,6 +5775,9 @@ window.c = {
 
 
 				// 2. Set the M value of the original and all copies to 1.
+				//    (We are not inserting / deleting here, just setting values to 1 that were 0,
+				//    so we can do this BEFORE step 3, in which we modify M again, based on the
+				//    locations of ones and zeroes BEFORE step 2.)
 
 				var newM = M.slice(0,Mloc1);
 				for (var i=Mloc1; i < Mloc2; i++) {
@@ -5842,13 +6002,18 @@ window.c = {
 
 				return sout;
 			},
-			generateBothTables: function() {
+			generateBothTables: function(hideMergedTable) {
 
 				var l = mergedXBW._publishBWTlen()-1;
 
-				return this.generateTable([[], [multi_cur_1_bwt], [multi_cur_1_fic], [multi_cur_1_fic], [multi_cur_1_bwt]], [[], [last_high_1_bwt], [last_high_1_fic], [last_high_1_fic], [last_high_1_bwt]]) + '&nbsp;&nbsp;&nbsp;' +
-				   otherXBW.generateTable([[], [multi_cur_2_bwt], [multi_cur_2_fic], [multi_cur_2_fic], [multi_cur_2_bwt]], [[], [last_high_2_bwt], [last_high_2_fic], [last_high_2_fic], [last_high_2_bwt]]) + '<br>' +
-				  mergedXBW.generateTable([], [[], [l], [l], [l], [l]]);
+				var r = this.generateTable([[], [multi_cur_1_bwt], [multi_cur_1_fic], [multi_cur_1_fic], [multi_cur_1_bwt]], [[], [last_high_1_bwt], [last_high_1_fic], [last_high_1_fic], [last_high_1_bwt]]) + '&nbsp;&nbsp;&nbsp;' +
+				    otherXBW.generateTable([[], [multi_cur_2_bwt], [multi_cur_2_fic], [multi_cur_2_fic], [multi_cur_2_bwt]], [[], [last_high_2_bwt], [last_high_2_fic], [last_high_2_fic], [last_high_2_bwt]]);
+
+				if (!hideMergedTable) {
+					r += '<br>' + mergedXBW.generateTable([], [[], [l], [l], [l], [l]]);
+				}
+
+				return r;
 			},
 			generateGraph: function(highnodes, tab, show_vis_hl) {
 

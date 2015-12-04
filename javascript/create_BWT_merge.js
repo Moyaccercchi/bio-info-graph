@@ -1697,25 +1697,6 @@ window.c = {
 			sout += this.hideWrap(sround, 'Round ' + round) + this.nlnl;
 		}
 
-
-
-		/*
-		sout += "After splitting nodes, we have for " + this.DH_1 + ":" + this.nlnl;
-
-		shide = '<div class="table_box">' + xbw1.generateTable([]) + '</div>';
-		sout += this.hideWrap(shide, 'Table') + this.nlnl;
-
-		sout += "And for " + this.DH_2 + " we have:" + this.nlnl;
-
-		shide = '<div class="table_box">' + xbw2.generateTable([]) + '</div>';
-		sout += this.hideWrap(shide, 'Table') + this.nlnl;
-
-		sout += "Also, " + this.DH + " is still:" + this.nlnl;
-
-		shide = '<div class="table_box">' + xbw.generateTable([]) + '</div>';
-		sout += this.hideWrap(shide, 'Table') + this.nlnl;
-		*/
-
 		// end splitting
 
 
@@ -4709,6 +4690,19 @@ window.c = {
 
 
 
+	exchangeInString: function(str, pos1, pos2) {
+
+		var char1 = str[pos1];
+		var char2 = str[pos2];
+
+		str = str.slice(0, pos1) + char1 + str.slice(pos1+1);
+		str = str.slice(0, pos2) + char2 + str.slice(pos2+1);
+
+		return str;
+	},
+
+
+
 	// use as:
 	// var xbw = make_xbw_environment();
 	// xbw.init(findex);
@@ -5137,6 +5131,10 @@ window.c = {
 
 			finalizeMerge: function() {
 
+				// TODO :: we here exchange # and #_0, we would otherwise get the wrong result
+				//         for merging C with ACTG|,1,C,4
+				BWT = window.c.exchangeInString(BWT, BWT.indexOf(window.c.DK), BWT.indexOf(window.c.DK_1));
+
 				var mergeFrom, mergeTo;
 
 				// TODO :: should this also work for several DS_1 nodes?
@@ -5156,7 +5154,6 @@ window.c = {
 
 
 				// replace #_1 with the predecessor of $_1
-
 				BWT = BWT.slice(0, mergeTo) + BWT[mergeFrom] + BWT.slice(mergeTo+1);
 
 

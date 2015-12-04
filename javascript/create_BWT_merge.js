@@ -1712,6 +1712,16 @@ window.c = {
 
 
 
+		// TODO :: analyze and use these... and then take them out =)
+
+		console.log('xbw findex:');
+		console.log(xbw._publishFindex());
+
+		console.log('xbw12 findex:');
+		console.log(xbw12._publishFindex());
+
+
+
 		sout += this.s_end_document;
 
 		// replace '^' with '#' before printout
@@ -4687,6 +4697,11 @@ window.c = {
 		// prefixes of the automaton
 		var prefixes = [];
 
+		// the last tab for which generateHTML was called (so that we can call it
+		// again without needing to know where we are, from the inside - e.g. in
+		// splitNodeHTML())
+		var last_tab = 0;
+
 
 		function recalculate(updateChar) {
 
@@ -4931,6 +4946,60 @@ window.c = {
 				}
 
 				recalculate(true);
+			},
+
+
+
+			_publishFindex: function() {
+
+				var findex = [];
+
+
+				var p12 = [];
+
+				for (var i=0; i < char.length; i++) {
+					if (M[i] == '1') {
+						p12.push(this._publishPrefix(i));
+					}
+				}
+
+
+				var pBWT = [];
+
+				for (var i=0; i < BWT.length; i++) {
+					if (F[i] == '1') {
+						pBWT.push(BWT[i]);
+					} else {
+						pBWT[pBWT.length-1] += '|' + BWT[i];
+					}
+				}
+
+
+				var pM = [];
+
+				for (var i=0; i < M.length; i++) {
+					if (M[i] == '1') {
+						pM.push('1');
+					} else {
+						pM[pM.length-1] += '0';
+					}
+				}
+
+
+				var pF = [];
+
+				for (var i=0; i < F.length; i++) {
+					if (F[i] == '1') {
+						pF.push('1');
+					} else {
+						pF[pF.length-1] += '0';
+					}
+				}
+
+
+				findex = [p12, pBWT, pM, pF];
+
+				return findex;
 			},
 
 
@@ -5494,6 +5563,91 @@ window.c = {
 			},
 
 
+			// split the node in flat table sn_i
+			_splitNode: function(sn_i) {
+
+				// Thinking about the node table, here is what we want to do:
+				// 1. Take the node itself, and copy it for each 0 in its M node.
+				//    (Here we basically copy the entire node as it is: BWT, FiC, M, F.)
+				// 2. Set the M value of the original and all copies to 1.
+				// 3. Add as many zeroes to the M of the preceding node as nodes were copied.
+				// 4. Add the first letter of the next node prefixes to the new prefixes.
+				//    (4 is not necessary when looking at the flat table)
+				// = this here assumes that:
+				//   (a) the node has several outgoing edges (which we will all split up)
+				//       > if not, then we cannot split anything without actually changing
+				//         the underlying language that our automaton realizes
+				//   (b) the node only has one incoming edge
+				//       > if not, then we have to think even more about what to do with
+				//         the several preceding nodes; MAYBE this works in that case,
+				//         but likely not
+
+				// However, we here have a flat table, not a node table,
+				// so we need to instead go through the following steps:
+				// 1. Just like before, take the node itself, and copy it for each 0 in its M node.
+				//    (We also add ones to the F vector; we do not need to copy FiC, as it is
+				//    just regenerated afterwards, and M will be looked at separately anyway.)
+				// 2. Just like before, set the M value of the original and all copies to 1.
+				// 3. Add as many zeroes to the M of the preceding node as nodes were copied.
+				//    (Basically, first of all find the preceding node, and then just insert
+				//    the zeroes - do not replace / overwrite, just insert.)
+
+				// For an example, consider "ACTG|,2,,4" which is transformed into "ACTG|,1,C,4"
+				// when we split on node 2 (flat table i 2, counting arrays from 0)
+
+
+				// 1. Take the node itself, and copy it for each 0 in its M node.
+
+				// get location of this node's M
+				var Mloc = sn_i - (1 + rank('0', F, sn_i));
+
+				// get number within this node's M
+				var Mloc1 = select('1', M, Mloc);
+				var Mloc2 = select('1', M, Mloc+1);
+				var Mnum = Mloc2 - Mloc1;
+
+				// insert into BWT and F at the same time
+				var newBWT = BWT.slice(0, sn_i+1);
+				var newF = F.slice(0, sn_i+1);
+				for (var i=1; i < Mnum; i++) {
+					newBWT += BWT[sn_i];
+					newF += F[sn_i];
+				}
+				newBWT += BWT.slice(sn_i+1);
+				newF += F.slice(sn_i+1);
+
+
+				// 2. Set the M value of the original and all copies to 1.
+
+				var newM = M.slice(0,Mloc1);
+				for (var i=Mloc1; i < Mloc2; i++) {
+					newM += '1';
+				}
+				newM += M.slice(Mloc2);
+
+
+				// 3. Add as many zeroes to the M of the preceding node as nodes were copied.
+
+				var prevNode = lf([sn_i, sn_i], BWT[sn_i], false)[0];
+
+				var newMn = newM.slice(0, prevNode+1);
+				for (var i=1; i < Mnum; i++) {
+					newMn += '0';
+				}
+				newMn += newM.slice(prevNode+1);
+
+
+				// actually update BWT, M and F explicitly
+
+				BWT = newBWT;
+				M = newMn;
+				F = newF;
+
+				// TODO :: apply directly to char, ord etc., so that no recalculation is necessary
+				recalculate(true);
+			},
+
+
 
 			// quick analysis via the command line
 			// (most of this functionality is also provided by the generateHTML GUI)
@@ -5550,6 +5704,12 @@ window.c = {
 
 			generateHTML: function(tab) {
 
+				if (tab === undefined) {
+					tab = last_tab;
+				} else {
+					last_tab = tab;
+				}
+
 				var sout = '';
 
 				sout += '<div>';
@@ -5585,10 +5745,12 @@ window.c = {
 				*/
 
 				sout += '<div class="input-info-container">' +
-						'<input id="in-string-' + tab + '-xbw-find" onkeypress="window.xbw.in_func = window.xbw.findHTML; window.xbw.in_tab = ' + tab + '; window.xbw.inputEnter(event);" type="text" value="AC" style="display: inline-block; width: 38%;"></input>' +
+						'<input id="in-string-' + tab + '-xbw-find" onkeypress="window.xbw.in_func = window.xbw.findHTML; window.xbw.in_tab = ' + tab + '; window.xbw.inputEnter(event);" type="text" value="AC" style="display: inline-block; width: 21%;"></input>' +
 						'<div class="button" onclick="window.xbw.findHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">find()</div>' +
-						'<div class="button" onclick="window.xbw.prefHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">prefix()</div>' +
-						'<input id="in-string-' + tab + '-xbw-pref" onkeypress="window.xbw.in_func = window.xbw.prefHTML; window.xbw.in_tab = ' + tab + '; window.xbw.inputEnter(event);" type="text" value="2" style="float:right; display: inline-block; width: 38%;"></input>' +
+						'<input id="in-string-' + tab + '-xbw-pref" onkeypress="window.xbw.in_func = window.xbw.prefHTML; window.xbw.in_tab = ' + tab + '; window.xbw.inputEnter(event);" type="text" value="2" style="display: inline-block; width: 21%; margin-left:2%;"></input>' +
+						'<div class="button" onclick="window.xbw.prefHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">prefix()</div>' +
+						'<div class="button" onclick="window.xbw.splitNodeHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">split node()</div>' +
+						'<input id="in-string-' + tab + '-xbw-split-node" onkeypress="window.xbw.in_func = window.xbw.splitNodeHTML; window.xbw.in_tab = ' + tab + '; window.xbw.inputEnter(event);" type="text" value="2" style="float:right; display: inline-block; width: 21%;"></input>' +
 						'</div>';
 
 				sout += '<div class="input-info-container">' +
@@ -5743,6 +5905,16 @@ window.c = {
 				document.getElementById('span-' + tab + '-xbw-results').innerHTML = prefix;
 
 				this.show_spep_in_HTML([pref_i, pref_i], tab, ['i', 'char'], undefined, undefined, true);
+			},
+			splitNodeHTML: function(tab) {
+
+				var sn_i = document.getElementById('in-string-' + tab + '-xbw-split-node').value;
+
+				sn_i = parseInt(sn_i, 10);
+
+				this._splitNode(sn_i);
+
+				this.generateHTML();
 			},
 			lfHTML: function(tab) {
 

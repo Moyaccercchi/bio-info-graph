@@ -1653,14 +1653,15 @@ window.c = {
 
 		var xbw12 = xbw1.startToMergeWith(xbw2);
 
-		var round = 1;
+		var round = 0;
 		var doAnotherRound = true;
 
 		while ((round < this.overflow_ceiling) && (doAnotherRound)) {
 
+			round++;
 			doAnotherRound = false;
 
-			sround = '<div>We start round ' + round + ':' + this.nlnl;
+			sround = '<div>' + this.nlnl + 'We start round ' + round + ':' + this.nlnl;
 
 			shide = '<div class="table_box">' + xbw1.generateBothTables(true) + '</div>';
 			sround += this.hideWrap(shide, 'Tables') + this.nlnl;
@@ -1681,7 +1682,7 @@ window.c = {
 					doAnotherRound = true;
 				}
 
-				sstep += 'We now have:' + this.nlnl;
+				sstep += this.nlnl + 'We now have:' + this.nlnl;
 
 				shide = '<div class="table_box">' + xbw1.generateBothTables(true) + '</div>';
 				sstep += this.hideWrap(shide, 'Tables') + this.nlnl;
@@ -5619,31 +5620,54 @@ window.c = {
 				var pref_1_bwt = p[7];
 				var pref_2_bwt = p[8];
 
-				if (takeNode2_fic) {
-					multi_cur_2_fic++;
-				} else {
-					multi_cur_1_fic++;
+				var pEC = window.c.prefixErrorChar;
+
+
+
+				// Check if one of the prefixes contains a '!' at the end - if so,
+				// earmark it being split.
+				// Btw., splitnodes is an array of nodes that are supposed to be split,
+				// each node having an origin o (1 or 2) and an sn_i (split node i.)
+				// We can split at most 4 different nodes (fic and bwt for both H_1 and H_2,
+				// if these are ALL ending in ! and bwt and fic are in different locations.)
+				// However, to make it simpler, we will just report one for now.
+				// TODO :: think about reporting several ones at once and handling them all!
+
+				if (pref_1_fic && (pref_1_fic[pref_1_fic.length-1] === pEC)) {
+					splitnodes.push({o: 1, sn_i: multi_cur_1_fic});
+					return sout;
 				}
 
-				if (takeNode2_bwt) {
-					multi_cur_2_bwt++;
-				} else {
-					multi_cur_1_bwt++;
+				if (pref_2_fic && (pref_2_fic[pref_2_fic.length-1] === pEC)) {
+					splitnodes.push({o: 2, sn_i: multi_cur_2_fic});
+					return sout;
 				}
 
-				// EMRG TODO :: check if one of the prefixes contains a '!' at the end
-				// (or both, lol...)
+				if (pref_1_bwt && (pref_1_bwt[pref_1_bwt.length-1] === pEC)) {
+					splitnodes.push({o: 1, sn_i: multi_cur_1_bwt});
+					return sout;
+				}
 
-				/*
-				splitnodes.push({}) // nodes that are supposed to be split,
-									// each node having an origin o (1 or 2) and
-									// an sn_i (split node i)
-									// we can split at most 4 different nodes (fic and bwt
-									// for both H_1 and H_2, if these are ALL ending in !
-									// and bwt and fic are in different locations)
-									// however, to make it simpler, we will just report one
-									// for now? TODO :: think about this!
-				*/
+				if (pref_2_bwt && (pref_2_bwt[pref_2_bwt.length-1] === pEC)) {
+					splitnodes.push({o: 2, sn_i: multi_cur_2_bwt});
+					return sout;
+				}
+
+
+				// do the regular update if nothing changed
+				if (splitnodes.length < 1) {
+					if (takeNode2_fic) {
+						multi_cur_2_fic++;
+					} else {
+						multi_cur_1_fic++;
+					}
+
+					if (takeNode2_bwt) {
+						multi_cur_2_bwt++;
+					} else {
+						multi_cur_1_bwt++;
+					}
+				}
 
 				return sout;
 			},
@@ -5652,9 +5676,25 @@ window.c = {
 			// sn_i is the splitting node i as flat table i
 			splitOneMore: function(nodes) {
 
-				// EMRG TODO :: actually split ;)
+				var sout = '';
 
-				return 'WE SPLIT OH MY GOD WE SPLIT!<br>';
+				for (var i=0; i < nodes.length; i++) {
+
+					sout += 'We observe a ' + window.c.prefixErrorChar + ' in the prefix, ' +
+							'and therefore have to split a node in ';
+
+					if (nodes[i].o == 2) {
+						otherXBW._splitNode(nodes[i].sn_i);
+						sout += window.c.DH_2;
+					} else {
+						this._splitNode(nodes[i].sn_i);
+						sout += window.c.DH_1;
+					}
+
+					sout += '.<br>';
+				}
+
+				return sout;
 			},
 
 			_addNodeBasedOnTwo: function(otherNode_fic, otherNode_bwt) {

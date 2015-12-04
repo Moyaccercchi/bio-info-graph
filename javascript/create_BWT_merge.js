@@ -4689,17 +4689,34 @@ window.c = {
 	},
 
 
+	// takes in two prefix strings p1 and p2
+	// gives out 1 if p1 > p2, 0 if p1 == p2, -1 if p1 < p2
+	//   keeps track of taking out $_0#_0 before doing comparisons!
+	comparePrefixes: function(p1, p2) {
 
-	exchangeInString: function(str, pos1, pos2) {
+		var S0K0 = this.DS_1 + this.DK_1;
 
-		var char1 = str[pos1];
-		var char2 = str[pos2];
+		var p1i = p1.indexOf(S0K0);
 
-		str = str.slice(0, pos1) + char1 + str.slice(pos1+1);
-		str = str.slice(0, pos2) + char2 + str.slice(pos2+1);
+		if (p1i >= 0) {
+			p1 = p1.slice(0, p1i) + p1.slice(p1i+2);
+		}
 
-		return str;
+		var p2i = p2.indexOf(S0K0);
+
+		if (p2i >= 0) {
+			p2 = p2.slice(0, p2i) + p2.slice(p2i+2);
+		}
+
+		if (p1 > p2) {
+			return 1;
+		}
+		if (p1 === p2) {
+			return 0;
+		}
+		return -1;
 	},
+
 
 
 
@@ -5131,9 +5148,58 @@ window.c = {
 
 			finalizeMerge: function() {
 
-				// TODO :: we here exchange # and #_0, we would otherwise get the wrong result
-				//         for merging C with ACTG|,1,C,4
-				BWT = window.c.exchangeInString(BWT, BWT.indexOf(window.c.DK), BWT.indexOf(window.c.DK_1));
+				var loc, i;
+				var DS_1 = window.c.DS_1;
+				var DK_1 = window.c.DK_1;
+
+				// cut out $_0 from BWT and F
+				for (i=0; i < BWT.length; i++) {
+					if (BWT[i] === DS_1) {
+						loc = i;
+						break;
+					}
+				}
+				BWT  =  BWT.slice(0, loc) +  BWT.slice(loc+1);
+				F    =    F.slice(0, loc) +    F.slice(loc+1);
+
+				// cut out $_0 from FiC and M
+				for (i=0; i < BWT.length; i++) {
+					if (char[i] === DS_1) {
+						loc = i;
+						break;
+					}
+				}
+				char = char.slice(0, loc) + char.slice(loc+1);
+				M    =    M.slice(0, loc) +    M.slice(loc+1);
+
+				// cut out #_0 from BWT and F
+				for (i=0; i < BWT.length; i++) {
+					if (BWT[i] === DK_1) {
+						loc = i;
+						break;
+					}
+				}
+				BWT  =  BWT.slice(0, loc) +  BWT.slice(loc+1);
+				F    =    F.slice(0, loc) +    F.slice(loc+1);
+
+				// cut out #_0 from FiC and M
+				for (i=0; i < BWT.length; i++) {
+					if (char[i] === DK_1) {
+						loc = i;
+						break;
+					}
+				}
+				char = char.slice(0, loc) + char.slice(loc+1);
+				M    =    M.slice(0, loc) +    M.slice(loc+1);
+
+				recalculate(true);
+
+				return;
+
+				// TODO :: we stopped using the rest here, so have another look, and if all is good,
+				// delete it... =)
+
+
 
 				var mergeFrom, mergeTo;
 
@@ -5211,7 +5277,11 @@ window.c = {
 			// bwtInsteadOfFiC .. boolean [optional, default: false]
 			//           (if true, the prefix is a special kind of the BWT and F comparison
 			//           as opposed to the regular kind for the FiC and M comparison)
-			_publishPrefix: function(pref_cur_i, strict, length, bwtInsteadOfFiC) {
+			// spillover .. boolean [optional, default: false]
+			//           (if true, when a $_0 is encountered, increase length by 2 and
+			//           and #_0 and first node from H_2;
+			//           if false, encountering $_0 ends the prefix creation just like $)
+			_publishPrefix: function(pref_cur_i, strict, length, bwtInsteadOfFiC, spillover) {
 
 				var pref = '';
 
@@ -5318,9 +5388,12 @@ window.c = {
 							//        but thinking through this here a bit more would
 							//        actually be quite necessary. =)
 
+							// TODO :: should there also be a +1 within this rank?
 							var subtract = rank('0', F, pref_copy_is[j]) + 1;
 
-							pref_copy_is[j] += rank('0', M, pref_copy_is[j]) + 1;
+							// 4th Dec 2015 - added a +1 within the rank, as otherwise
+							// example H_1: C, H_2: ACTG|,2,,4 would fail
+							pref_copy_is[j] += rank('0', M, pref_copy_is[j]+1) + 1;
 
 							while (M[pref_copy_is[j]] == '0') {
 								pref_copy_is[j]++;
@@ -5387,6 +5460,12 @@ window.c = {
 						}
 
 						pref += char_to_add_now;
+
+						if (spillover) {
+							if (char_to_add_now == window.c.DS_1) {
+								pref += window.c.DK_1 + 'A'; // EMRG - go on here!
+							}
+						}
 					}
 
 					if ((char_to_add_now == window.c.DS) || (char_to_add_now == window.c.DS_1)) {
@@ -5419,9 +5498,6 @@ window.c = {
 				last_high_2_fic = -1;
 				last_high_2_bwt = -1;
 
-				var otherNode_fic;
-				var otherNode_bwt;
-
 				var pEC = window.c.prefixErrorChar;
 
 
@@ -5449,15 +5525,17 @@ window.c = {
 						// as they are both different, and therefore we would necessarily
 						// reach a difference between the prefixes, which we ARE already
 						// checking for anyway =)
-						while ((i < window.c.overflow_ceiling) && (pref_1_fic == pref_2_fic) &&
-								(pref_1_fic[pref_1_fic.length-1] != pEC) && (pref_2_fic[pref_2_fic.length-1] != pEC)) {
+						while ((i < window.c.overflow_ceiling) &&
+								(window.c.comparePrefixes(pref_1_fic, pref_2_fic) === 0) &&
+								(pref_1_fic[pref_1_fic.length-1] != pEC) &&
+								(pref_2_fic[pref_2_fic.length-1] != pEC)) {
 
 							// TODO NOW :: build prefixes char-by-char and keep last pref in memory
 							//             instead of in every cycle building again from the very
 							//             beginning
 
-							pref_1_fic = this._publishPrefix(multi_cur_1_fic, true, i, false);
-							pref_2_fic = otherXBW._publishPrefix(multi_cur_2_fic, true, i, false);
+							pref_1_fic = this._publishPrefix(multi_cur_1_fic, true, i, false, true);
+							pref_2_fic = otherXBW._publishPrefix(multi_cur_2_fic, true, i, false, false);
 
 							i++;
 						}
@@ -5468,7 +5546,7 @@ window.c = {
 						sout += 'The first-column-based prefix of ' + window.c.DH_2 + '[' + multi_cur_2_fic + '] is ' +
 								pref_2_fic + '.' + window.c.nlnl;
 
-						takeNode2_fic = pref_1_fic > pref_2_fic;
+						takeNode2_fic = window.c.comparePrefixes(pref_1_fic, pref_2_fic);
 					}
 				}
 
@@ -5497,15 +5575,17 @@ window.c = {
 						// as they are both different, and therefore we would necessarily
 						// reach a difference between the prefixes, which we ARE already
 						// checking for anyway =)
-						while ((i < window.c.overflow_ceiling) && (pref_1_bwt == pref_2_bwt) &&
-								(pref_1_bwt[pref_1_bwt.length-1] != pEC) && (pref_2_bwt[pref_2_bwt.length-1] != pEC)) {
+						while ((i < window.c.overflow_ceiling) &&
+								(window.c.comparePrefixes(pref_1_bwt, pref_2_bwt) === 0) &&
+								(pref_1_bwt[pref_1_bwt.length-1] != pEC) &&
+								(pref_2_bwt[pref_2_bwt.length-1] != pEC)) {
 
 							// TODO NOW :: build prefixes char-by-char and keep last pref in memory
 							//             instead of in every cycle building again from the very
 							//             beginning
 
-							pref_1_bwt = this._publishPrefix(multi_cur_1_bwt, true, i, true);
-							pref_2_bwt = otherXBW._publishPrefix(multi_cur_2_bwt, true, i, true);
+							pref_1_bwt = this._publishPrefix(multi_cur_1_bwt, true, i, true, true);
+							pref_2_bwt = otherXBW._publishPrefix(multi_cur_2_bwt, true, i, true, false);
 
 							i++;
 						}
@@ -5516,13 +5596,13 @@ window.c = {
 						sout += 'The BWT-based prefix of ' + window.c.DH_2 + '[' + multi_cur_2_bwt + '] is ' +
 								pref_2_bwt + '.' + window.c.nlnl;
 
-						takeNode2_bwt = pref_1_bwt > pref_2_bwt;
+						takeNode2_bwt = window.c.comparePrefixes(pref_1_bwt, pref_2_bwt);
 					}
 				}
 
 
 
-				return [sout, takeNode2_fic, takeNode2_bwt, otherNode_fic, otherNode_bwt,
+				return [sout, takeNode2_fic, takeNode2_bwt,
 						pref_1_fic, pref_2_fic, pref_1_bwt, pref_2_bwt];
 			},
 
@@ -5530,21 +5610,21 @@ window.c = {
 
 				var p = this._constructBothPrefixes();
 
-				var sout = p[0];
+				var sout = p[0] + window.c.nlnl;
 				var takeNode2_fic = p[1];
 				var takeNode2_bwt = p[2];
-				var otherNode_fic = p[3];
-				var otherNode_bwt = p[4];
+				var otherNode_fic;
+				var otherNode_bwt;
 
 
 
-				if (takeNode2_fic) {
+				if (takeNode2_fic > 0) {
 
 					last_high_2_fic = multi_cur_2_fic;
 
 					sout += 'We take the first column and <i>M</i> from node ' +
 							multi_cur_2_fic + ' from ' + window.c.DH_2 +
-							' and insert it into the merged table.' + window.c.nlnlnl;
+							' and insert it into the merged table.' + window.c.nlnl;
 
 					// insert node from the other XBW at multi_cur_2 into the merged XBW
 					otherNode_fic = otherXBW._publishNode(multi_cur_2_fic);
@@ -5557,7 +5637,7 @@ window.c = {
 
 					sout += 'We take the first column and <i>M</i> from node ' +
 							multi_cur_1_fic + ' from ' + window.c.DH_1 +
-							' and insert it into the merged table.' + window.c.nlnlnl;
+							' and insert it into the merged table.' + window.c.nlnl;
 
 					// insert node from this XBW at multi_cur_1 into the merged XBW
 					otherNode_fic = this._publishNode(multi_cur_1_fic);
@@ -5567,7 +5647,7 @@ window.c = {
 
 
 
-				if (takeNode2_bwt) {
+				if (takeNode2_bwt > 0) {
 
 					last_high_2_bwt = multi_cur_2_bwt;
 
@@ -5610,14 +5690,14 @@ window.c = {
 				var sout = p[0];
 				var takeNode2_fic = p[1];
 				var takeNode2_bwt = p[2];
-				var otherNode_fic = p[3];
-				var otherNode_bwt = p[4];
-				var pref_1_fic = p[5];
-				var pref_2_fic = p[6];
-				var pref_1_bwt = p[7];
-				var pref_2_bwt = p[8];
+				var pref_1_fic = p[3];
+				var pref_2_fic = p[4];
+				var pref_1_bwt = p[5];
+				var pref_2_bwt = p[6];
 
 				var pEC = window.c.prefixErrorChar;
+
+				sout = window.c.makeVisualsNice(sout);
 
 
 
@@ -5653,13 +5733,13 @@ window.c = {
 
 				// do the regular update if nothing changed
 				if (splitnodes.length < 1) {
-					if (takeNode2_fic) {
+					if (takeNode2_fic > 0) {
 						multi_cur_2_fic++;
 					} else {
 						multi_cur_1_fic++;
 					}
 
-					if (takeNode2_bwt) {
+					if (takeNode2_bwt > 0) {
 						multi_cur_2_bwt++;
 					} else {
 						multi_cur_1_bwt++;

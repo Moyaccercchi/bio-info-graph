@@ -4696,24 +4696,15 @@ window.c = {
 
 		var S0K0 = this.DS_1 + this.DK_1;
 
-		// We only take out $_0#_0 if it is in a position after the first,
-		// so A$_0#_0C => AC, but $_0#_0A => $_0#_0A
-		// The reason for this is that the prefix starting with $_0#_0 is
-		// a very special case - it in fact does not really exist (and will
-		// be taken out later on), and it would try to compare prefixes across
-		// ALL of H_2, as its prefix is essentially the same as that of the
-		// first node in H_2, so that they would add more and more characters
-		// and never reach a difference.
-
 		var p1i = p1.indexOf(S0K0);
 
-		if (p1i >= 1) {
+		if (p1i >= 0) {
 			p1 = p1.slice(0, p1i) + p1.slice(p1i+2);
 		}
 
 		var p2i = p2.indexOf(S0K0);
 
-		if (p2i >= 1) {
+		if (p2i >= 0) {
 			p2 = p2.slice(0, p2i) + p2.slice(p2i+2);
 		}
 
@@ -5324,16 +5315,11 @@ window.c = {
 			//           as previously described)
 			// length .. maximum length of prefix reported [optional]
 			//           (if given, result can be shorter, but not longer)
-			// bwtInsteadOfFiC .. boolean [optional, default: false]
-			//           (if true, the prefix is a special kind of the BWT and F comparison
-			//           as opposed to the regular kind for the FiC and M comparison)
 			// spillover .. boolean [optional, default: false]
 			//           (if true, when a $_0 is encountered, increase length by 2 and
 			//           and #_0 and first node from H_2;
 			//           if false, encountering $_0 ends the prefix creation just like $)
-			_publishPrefix: function(pref_cur_i, strict, length, bwtInsteadOfFiC, spillover) {
-
-				bwtInsteadOfFiC = false; // emrg override
+			_publishPrefix: function(pref_cur_i, strict, length, spillover) {
 
 				var pref = '';
 
@@ -5396,15 +5382,6 @@ window.c = {
 						}
 					}
 
-					// we copy from pref_cur_is to pref_copy_is explicitly
-					// deep so that we can play around with it in case of
-					// bwtInsteadOfFiC being true while still being able to
-					// retrieve the old values afterwards =)
-					var pref_copy_is = [];
-					for (var j=0; j<pref_cur_is.length; j++) {
-						pref_copy_is.push(pref_cur_is[j]);
-					}
-
 					// get node i
 					for (var j=0; j<pref_cur_is.length; j++) {
 						pref_cur_is[j] = psi(pref_cur_is[j], 1);
@@ -5413,85 +5390,23 @@ window.c = {
 					var char_to_add_now = '.';
 					var not_all_chars_are_the_same = false;
 
-					if (bwtInsteadOfFiC) {
-						for (var j=0; j<pref_copy_is.length; j++) {
+					if (BWT[pref_cur_is[0]]) {
+						char_to_add_now = BWT[pref_cur_is[0]];
+					}
 
-							// TODO :: look into whether this here is totally correct
-							//         Basically, what we want to do within one cycle
-							//         of the for-loop is:
-							//           pref_copy_is[j] += rank('0', M, pref_copy_is[j]) + 1;
-							//           pref_copy_is[j] -= rank('0', F, pref_copy_is[j]) + 1;
-							//
-							//        However, when we tried this with the merging of
-							//          H_1: ACEG|,1,,3;,2,TB,4  and  H_2: BDFK|,2,,4
-							//        then we noticed that there was a B and C inversed
-							//        in the final BWT; further investigation showed that
-							//        the C was sorted wrongly because its prefix_bwt was
-							//        wrongly given as C when it should have been E,
-							//        caused by a zero in the adjacent column on the right
-							//        which is ignored by the naive way that is shown above;
-							//        the answer to that was the clusterfun that follows
-							//        (where we basically stash the subtraction, then
-							//        do the main addition, then iterate over further
-							//        additions as long as they are directly adjacent,
-							//        and then finally carry out the subtraction);
-							//        our example indicates that now everything is fine,
-							//        but thinking through this here a bit more would
-							//        actually be quite necessary. =)
-
-							// TODO :: should there also be a +1 within this rank?
-							var subtract = rank('0', F, pref_copy_is[j]) + 1;
-
-							// 4th Dec 2015 - added a +1 within the rank, as otherwise
-							// example H_1: C, H_2: ACTG|,2,,4 would fail
-							pref_copy_is[j] += rank('0', M, pref_copy_is[j]+1) + 1;
-
-							while (M[pref_copy_is[j]] == '0') {
-								pref_copy_is[j]++;
+					for (var j=0; j<pref_cur_is.length; j++) {
+						if (BWT[pref_cur_is[j]]) {
+							if (char_to_add_now != BWT[pref_cur_is[j]]) {
+								not_all_chars_are_the_same = true;
 							}
-
-							pref_copy_is[j] -= subtract;
-						}
-
-						if (char[pref_copy_is[0]]) {
-							char_to_add_now = char[pref_copy_is[0]];
-						}
-
-						for (var j=0; j<pref_copy_is.length; j++) {
-							if (char[pref_copy_is[j]]) {
-								if (char_to_add_now != char[pref_copy_is[j]]) {
-									not_all_chars_are_the_same = true;
-								}
-							} else {
-								if (char_to_add_now != '.') {
-									not_all_chars_are_the_same = true;
-								}
-							}
-						}
-					} else {
-						pref_copy_is = [];
-						for (var j=0; j<pref_cur_is.length; j++) {
-							pref_copy_is.push(pref_cur_is[j]);
-						}
-
-						if (BWT[pref_copy_is[0]]) {
-							char_to_add_now = BWT[pref_copy_is[0]];
-						}
-
-						for (var j=0; j<pref_copy_is.length; j++) {
-							if (BWT[pref_copy_is[j]]) {
-								if (char_to_add_now != BWT[pref_copy_is[j]]) {
-									not_all_chars_are_the_same = true;
-								}
-							} else {
-								if (char_to_add_now != '.') {
-									not_all_chars_are_the_same = true;
-								}
+						} else {
+							if (char_to_add_now != '.') {
+								not_all_chars_are_the_same = true;
 							}
 						}
 					}
 
-					if (bwt_not_all_last_round || ((!bwtInsteadOfFiC) && not_all_chars_are_the_same)) {
+					if (bwt_not_all_last_round || not_all_chars_are_the_same) {
 
 						// add error char '!' to the prefix
 						pref += window.c.prefixErrorChar;
@@ -5513,11 +5428,24 @@ window.c = {
 						pref += char_to_add_now;
 
 						if (spillover) {
+
+							// We only spillover if we are in a position after the first,
+							// so A$_0 => A$_0#_0C, but $_0 => $_0
+							// The reason for this is that the prefix starting with $_0 is
+							// a very special case - it in fact does not really exist (and will
+							// be taken out later on), and we would try to compare prefixes across
+							// ALL of H_2, as its prefix is essentially the same as that of the
+							// first node in H_2, so that they would add more and more characters
+							// and never reach a difference.
+							// We could instead also change the comparison routine, but this here
+							// wants to be done anyway for nicer display, so we may as well leave
+							// it out of the comparison routine.
+
 							if ((pref.length > 1) && (char_to_add_now == window.c.DS_1)) {
 
 								// find #_0 node in H_2 - which is necessarily the very last node, lucky us!
 								var pref_cur_i = otherXBW._publishBWTlen() - 1;
-								var pref_in_h2 = otherXBW._publishPrefix(pref_cur_i, strict, length + 2 - pref.length, bwtInsteadOfFiC, false);
+								var pref_in_h2 = otherXBW._publishPrefix(pref_cur_i, strict, length + 2 - pref.length, false);
 
 								return pref + pref_in_h2;
 							}
@@ -5552,7 +5480,6 @@ window.c = {
 				var sout = '';
 
 				var takeNode2_fic;
-				var takeNode2_bwt;
 
 				last_high_1_fic = -1;
 				last_high_1_bwt = -1;
@@ -5560,56 +5487,6 @@ window.c = {
 				last_high_2_bwt = -1;
 
 				var pEC = window.c.prefixErrorChar;
-
-
-
-				// construct prefixes for BWT and F comparison
-
-				// 1 is overshooting? - take 2!
-				if (multi_cur_1_bwt > BWT.length-1) {
-					takeNode2_bwt = true;
-				} else {
-					// 2 is overshooting? - take 1!
-					if (multi_cur_2_bwt > otherXBW._publishBWTlen()-1) {
-						takeNode2_bwt = false;
-					} else {
-
-						// TODO NOW :: keep previous results in memory (so if we generated the
-						//             prefix for this here in the previous step, then we do not
-						//             need to create it again)
-
-						var i = 1;
-						var pref_1_bwt = '';
-						var pref_2_bwt = '';
-
-						// we here do not need to explicitly check for reaching $ or $_1,
-						// as they are both different, and therefore we would necessarily
-						// reach a difference between the prefixes, which we ARE already
-						// checking for anyway =)
-						while ((i < window.c.overflow_ceiling) &&
-								(window.c.comparePrefixes(pref_1_bwt, pref_2_bwt) === 0) &&
-								(pref_1_bwt[pref_1_bwt.length-1] != pEC) &&
-								(pref_2_bwt[pref_2_bwt.length-1] != pEC)) {
-
-							// TODO NOW :: build prefixes char-by-char and keep last pref in memory
-							//             instead of in every cycle building again from the very
-							//             beginning
-
-							pref_1_bwt = this._publishPrefix(multi_cur_1_bwt, true, i, true, true);
-							pref_2_bwt = otherXBW._publishPrefix(multi_cur_2_bwt, true, i, true, false);
-
-							i++;
-						}
-
-						sout += '<span class="halfwidth">The BWT-based prefix of ' + window.c.DH_1 + '[' + multi_cur_1_bwt + '] is ' +
-								pref_1_bwt + '.</span>';
-
-						sout += 'The BWT-based prefix of ' + window.c.DH_2 + '[' + multi_cur_2_bwt + '] is ' +
-								pref_2_bwt + '.' + window.c.nlnl;
-
-						takeNode2_bwt = window.c.comparePrefixes(pref_1_bwt, pref_2_bwt);
-					}
-				}
 
 
 
@@ -5645,16 +5522,16 @@ window.c = {
 							//             instead of in every cycle building again from the very
 							//             beginning
 
-							pref_1_fic = this._publishPrefix(multi_cur_1_fic, true, i, false, true);
-							pref_2_fic = otherXBW._publishPrefix(multi_cur_2_fic, true, i, false, false);
+							pref_1_fic = this._publishPrefix(multi_cur_1_fic, true, i, true);
+							pref_2_fic = otherXBW._publishPrefix(multi_cur_2_fic, true, i, false);
 
 							i++;
 						}
 
-						sout += '<span class="halfwidth">The first-column-based prefix of ' + window.c.DH_1 + '[' + multi_cur_1_fic + '] is ' +
+						sout += '<span class="halfwidth">The prefix of ' + window.c.DH_1 + '[' + multi_cur_1_fic + '] is ' +
 								pref_1_fic + '.</span>';
 
-						sout += 'The first-column-based prefix of ' + window.c.DH_2 + '[' + multi_cur_2_fic + '] is ' +
+						sout += 'The prefix of ' + window.c.DH_2 + '[' + multi_cur_2_fic + '] is ' +
 								pref_2_fic + '.' + window.c.nlnl;
 
 						takeNode2_fic = window.c.comparePrefixes(pref_1_fic, pref_2_fic);
@@ -5663,8 +5540,7 @@ window.c = {
 
 
 
-				return [sout, takeNode2_fic, takeNode2_bwt,
-						pref_1_fic, pref_2_fic, pref_1_bwt, pref_2_bwt];
+				return [sout, takeNode2_fic, pref_1_fic, pref_2_fic];
 			},
 
 			mergeOneMore: function() {
@@ -5673,76 +5549,8 @@ window.c = {
 
 				var sout = '';
 				var takeNode2_fic = p[1];
-				var takeNode2_bwt = p[2];
 				var fic_o, fic_i, bwt_o, bwt_i;
 
-
-
-				/*
-				if (takeNode2_fic > 0) {
-
-					last_high_2_fic = multi_cur_2_fic;
-
-					sout += 'That is, we take the first column and <i>M</i> from node ' +
-							multi_cur_2_fic + ' from ' + window.c.DH_2 +
-							' and insert it into the merged table.' + window.c.nlnl;
-
-					// insert node from the other XBW at multi_cur_2 into the merged XBW
-					fic_i = multi_cur_2_fic;
-					fic_o = 2;
-
-
-					multi_cur_2_fic++;
-				
-				} else {
-
-					last_high_1_fic = multi_cur_1_fic;
-
-					sout += 'That is, we take the first column and <i>M</i> from node ' +
-							multi_cur_1_fic + ' from ' + window.c.DH_1 +
-							' and insert it into the merged table.' + window.c.nlnl;
-
-					// insert node from this XBW at multi_cur_1 into the merged XBW
-					fic_i = multi_cur_1_fic;
-					fic_o = 1;
-
-					multi_cur_1_fic++;
-				}
-
-
-
-				if (takeNode2_bwt > 0) {
-
-					last_high_2_bwt = multi_cur_2_bwt;
-
-					sout += 'We also take the BWT and <i>F</i> from node ' +
-							multi_cur_2_bwt + ' from ' + window.c.DH_2 +
-							' and insert it into the merged table.' + window.c.nlnlnl;
-
-					// insert node from the other XBW at multi_cur_2 into the merged XBW
-					bwt_i = multi_cur_2_bwt;
-					bwt_o = 2;
-
-					multi_cur_2_bwt++;
-				
-				} else {
-
-					last_high_1_bwt = multi_cur_1_bwt;
-
-					sout += 'We also take the BWT and <i>F</i> from node ' +
-							multi_cur_1_bwt + ' from ' + window.c.DH_1 +
-							' and insert it into the merged table.' + window.c.nlnlnl;
-
-					// insert node from this XBW at multi_cur_1 into the merged XBW
-					bwt_i = multi_cur_1_bwt;
-					bwt_o = 1;
-
-					multi_cur_1_bwt++;
-				}
-				*/
-
-				// emrg :: we took out the stuff above, in which BWT and FiC are handled
-				// separately, and instead added this here, which handles them both at once:
 
 
 				if (takeNode2_fic > 0) {
@@ -5827,11 +5635,8 @@ window.c = {
 
 				var sout = p[0];
 				var takeNode2_fic = p[1];
-				var takeNode2_bwt = p[2];
-				var pref_1_fic = p[3];
-				var pref_2_fic = p[4];
-				var pref_1_bwt = p[5];
-				var pref_2_bwt = p[6];
+				var pref_1_fic = p[2];
+				var pref_2_fic = p[3];
 
 				var pEC = window.c.prefixErrorChar;
 
@@ -5858,28 +5663,14 @@ window.c = {
 					return sout;
 				}
 
-				if (pref_1_bwt && (pref_1_bwt[pref_1_bwt.length-1] === pEC)) {
-					splitnodes.push({o: 1, sn_i: multi_cur_1_bwt});
-					return sout;
-				}
-
-				if (pref_2_bwt && (pref_2_bwt[pref_2_bwt.length-1] === pEC)) {
-					splitnodes.push({o: 2, sn_i: multi_cur_2_bwt});
-					return sout;
-				}
-
 
 				// do the regular update if nothing changed
 				if (splitnodes.length < 1) {
 					if (takeNode2_fic > 0) {
 						multi_cur_2_fic++;
-					} else {
-						multi_cur_1_fic++;
-					}
-
-					if (takeNode2_bwt > 0) {
 						multi_cur_2_bwt++;
 					} else {
+						multi_cur_1_fic++;
 						multi_cur_1_bwt++;
 					}
 				}
@@ -6229,7 +6020,7 @@ window.c = {
 				sout += '<div class="input-info-container">' +
 						'<input id="in-string-' + tab + '-xbw-find" onkeypress="window.xbw.in_func = window.xbw.findHTML; window.xbw.in_tab = ' + tab + '; window.xbw.inputEnter(event);" type="text" value="AC" style="display: inline-block; width: 21%;"></input>' +
 						'<div class="button" onclick="window.xbw.findHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">find()</div>' +
-						'<input id="in-string-' + tab + '-xbw-pref" onkeypress="window.xbw.in_func = window.xbw.prefHTML; window.xbw.in_tab = ' + tab + '; window.xbw.inputEnter(event);" type="text" value="2,false" style="display: inline-block; width: 21%; margin-left:2%;"></input>' +
+						'<input id="in-string-' + tab + '-xbw-pref" onkeypress="window.xbw.in_func = window.xbw.prefHTML; window.xbw.in_tab = ' + tab + '; window.xbw.inputEnter(event);" type="text" value="2" style="display: inline-block; width: 21%; margin-left:2%;"></input>' +
 						'<div class="button" onclick="window.xbw.prefHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">prefix()</div>' +
 						'<div class="button" onclick="window.xbw.splitNodeHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">split node()</div>' +
 						'<input id="in-string-' + tab + '-xbw-split-node" onkeypress="window.xbw.in_func = window.xbw.splitNodeHTML; window.xbw.in_tab = ' + tab + '; window.xbw.inputEnter(event);" type="text" value="2" style="float:right; display: inline-block; width: 21%;"></input>' +
@@ -6438,16 +6229,9 @@ window.c = {
 
 				var pref_i = document.getElementById('in-string-' + tab + '-xbw-pref').value;
 
-				var bwtInsteadOfFiC = false;
-
-				if (pref_i.indexOf(',') > 0) {
-					bwtInsteadOfFiC = pref_i.slice(pref_i.indexOf(',')+1).toLowerCase() === 'true';
-					pref_i = pref_i.slice(0, pref_i.indexOf(','));
-				}
-
 				pref_i = parseInt(pref_i, 10);
 
-				var prefix = this._publishPrefix(pref_i, false, undefined, bwtInsteadOfFiC, false);
+				var prefix = this._publishPrefix(pref_i);
 
 				// replace '^' with '#' before output
 				prefix = prefix.split('^').join('#');

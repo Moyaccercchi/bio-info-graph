@@ -4696,15 +4696,24 @@ window.c = {
 
 		var S0K0 = this.DS_1 + this.DK_1;
 
+		// We only take out $_0#_0 if it is in a position after the first,
+		// so A$_0#_0C => AC, but $_0#_0A => $_0#_0A
+		// The reason for this is that the prefix starting with $_0#_0 is
+		// a very special case - it in fact does not really exist (and will
+		// be taken out later on), and it would try to compare prefixes across
+		// ALL of H_2, as its prefix is essentially the same as that of the
+		// first node in H_2, so that they would add more and more characters
+		// and never reach a difference.
+
 		var p1i = p1.indexOf(S0K0);
 
-		if (p1i >= 0) {
+		if (p1i >= 1) {
 			p1 = p1.slice(0, p1i) + p1.slice(p1i+2);
 		}
 
 		var p2i = p2.indexOf(S0K0);
 
-		if (p2i >= 0) {
+		if (p2i >= 1) {
 			p2 = p2.slice(0, p2i) + p2.slice(p2i+2);
 		}
 
@@ -4715,6 +4724,21 @@ window.c = {
 			return 0;
 		}
 		return -1;
+	},
+
+
+
+	// takes in a string and two positions
+	// gives out the same string, but with the characters in the two positions exchanged
+	exchangeInString: function(str, pos1, pos2) {
+
+		var char1 = str[pos1];
+		var char2 = str[pos2];
+
+		str = str.slice(0, pos1) + char2 + str.slice(pos1+1);
+		str = str.slice(0, pos2) + char1 + str.slice(pos2+1);
+
+		return str;
 	},
 
 
@@ -5154,6 +5178,30 @@ window.c = {
 				var DS_1 = window.c.DS_1;
 				var DK_1 = window.c.DK_1;
 
+				// exchange
+				//   BWT in position where FiC == $_0
+				// and
+				//   BWT in position where BWT == #_0
+
+				var pos1, pos2;
+				for (i=0; i < BWT.length; i++) {
+					if (char[i] === DS_1) {
+						pos1 = i;
+						break;
+					}
+				}
+				for (i=0; i < BWT.length; i++) {
+					if (BWT[i] === DK_1) {
+						pos2 = i;
+						break;
+					}
+				}
+
+				// TODO EMRG :: do we need to transform pos1 in some part?
+				// (as we want to actually go for the node, not just the column,
+				// and we are switching from FiC-indexing to BWT-indexing...)
+				BWT = window.c.exchangeInString(BWT, pos1, pos2);
+
 				// cut out $_0 from BWT and F
 				for (i=0; i < BWT.length; i++) {
 					if (BWT[i] === DS_1) {
@@ -5165,7 +5213,7 @@ window.c = {
 				F    =    F.slice(0, loc) +    F.slice(loc+1);
 
 				// cut out $_0 from FiC and M
-				for (i=0; i < BWT.length; i++) {
+				for (i=0; i < char.length; i++) {
 					if (char[i] === DS_1) {
 						loc = i;
 						break;
@@ -5185,7 +5233,7 @@ window.c = {
 				F    =    F.slice(0, loc) +    F.slice(loc+1);
 
 				// cut out #_0 from FiC and M
-				for (i=0; i < BWT.length; i++) {
+				for (i=0; i < char.length; i++) {
 					if (char[i] === DK_1) {
 						loc = i;
 						break;
@@ -5285,6 +5333,8 @@ window.c = {
 			//           if false, encountering $_0 ends the prefix creation just like $)
 			_publishPrefix: function(pref_cur_i, strict, length, bwtInsteadOfFiC, spillover) {
 
+				bwtInsteadOfFiC = false; // emrg override
+
 				var pref = '';
 
 				// used for the BWT mode, in which we want to go one extra cycle before
@@ -5333,7 +5383,6 @@ window.c = {
 								}
 							}
 
-							// add '!' iff we are at a node with more than one outgoing edge
 							var k = 1;
 							while (M[pref_cur_is[j]+k] == '0') {
 								pref_cur_is.push(pref_cur_is[j]+k);
@@ -5464,8 +5513,13 @@ window.c = {
 						pref += char_to_add_now;
 
 						if (spillover) {
-							if (char_to_add_now == window.c.DS_1) {
-								pref += window.c.DK_1 + 'A'; // EMRG - go on here!
+							if ((pref.length > 1) && (char_to_add_now == window.c.DS_1)) {
+
+								// find #_0 node in H_2 - which is necessarily the very last node, lucky us!
+								var pref_cur_i = otherXBW._publishBWTlen() - 1;
+								var pref_in_h2 = otherXBW._publishPrefix(pref_cur_i, strict, length + 2 - pref.length, bwtInsteadOfFiC, false);
+
+								return pref + pref_in_h2;
 							}
 						}
 					}
@@ -5509,56 +5563,6 @@ window.c = {
 
 
 
-				// construct prefixes for first column and M comparison
-
-				// 1 is overshooting? - take 2!
-				if (multi_cur_1_fic > BWT.length-1) {
-					takeNode2_fic = true;
-				} else {
-					// 2 is overshooting? - take 1!
-					if (multi_cur_2_fic > otherXBW._publishBWTlen()-1) {
-						takeNode2_fic = false;
-					} else {
-
-						// TODO NOW :: keep previous results in memory (so if we generated the
-						//             prefix for this here in the previous step, then we do not
-						//             need to create it again)
-
-						var i = 1;
-						var pref_1_fic = '';
-						var pref_2_fic = '';
-
-						// we here do not need to explicitly check for reaching $ or $_1,
-						// as they are both different, and therefore we would necessarily
-						// reach a difference between the prefixes, which we ARE already
-						// checking for anyway =)
-						while ((i < window.c.overflow_ceiling) &&
-								(window.c.comparePrefixes(pref_1_fic, pref_2_fic) === 0) &&
-								(pref_1_fic[pref_1_fic.length-1] != pEC) &&
-								(pref_2_fic[pref_2_fic.length-1] != pEC)) {
-
-							// TODO NOW :: build prefixes char-by-char and keep last pref in memory
-							//             instead of in every cycle building again from the very
-							//             beginning
-
-							pref_1_fic = this._publishPrefix(multi_cur_1_fic, true, i, false, true);
-							pref_2_fic = otherXBW._publishPrefix(multi_cur_2_fic, true, i, false, false);
-
-							i++;
-						}
-
-						sout += 'The first-column-based prefix of ' + window.c.DH_1 + '[' + multi_cur_1_fic + '] is ' +
-								pref_1_fic + '.' + window.c.nlnl;
-
-						sout += 'The first-column-based prefix of ' + window.c.DH_2 + '[' + multi_cur_2_fic + '] is ' +
-								pref_2_fic + '.' + window.c.nlnl;
-
-						takeNode2_fic = window.c.comparePrefixes(pref_1_fic, pref_2_fic);
-					}
-				}
-
-
-
 				// construct prefixes for BWT and F comparison
 
 				// 1 is overshooting? - take 2!
@@ -5597,13 +5601,63 @@ window.c = {
 							i++;
 						}
 
-						sout += 'The BWT-based prefix of ' + window.c.DH_1 + '[' + multi_cur_1_bwt + '] is ' +
-								pref_1_bwt + '.' + window.c.nlnl;
+						sout += '<span class="halfwidth">The BWT-based prefix of ' + window.c.DH_1 + '[' + multi_cur_1_bwt + '] is ' +
+								pref_1_bwt + '.</span>';
 
 						sout += 'The BWT-based prefix of ' + window.c.DH_2 + '[' + multi_cur_2_bwt + '] is ' +
 								pref_2_bwt + '.' + window.c.nlnl;
 
 						takeNode2_bwt = window.c.comparePrefixes(pref_1_bwt, pref_2_bwt);
+					}
+				}
+
+
+
+				// construct prefixes for first column and M comparison
+
+				// 1 is overshooting? - take 2!
+				if (multi_cur_1_fic > BWT.length-1) {
+					takeNode2_fic = true;
+				} else {
+					// 2 is overshooting? - take 1!
+					if (multi_cur_2_fic > otherXBW._publishBWTlen()-1) {
+						takeNode2_fic = false;
+					} else {
+
+						// TODO NOW :: keep previous results in memory (so if we generated the
+						//             prefix for this here in the previous step, then we do not
+						//             need to create it again)
+
+						var i = 1;
+						var pref_1_fic = '';
+						var pref_2_fic = '';
+
+						// we here do not need to explicitly check for reaching $ or $_1,
+						// as they are both different, and therefore we would necessarily
+						// reach a difference between the prefixes, which we ARE already
+						// checking for anyway =)
+						while ((i < window.c.overflow_ceiling) &&
+								(window.c.comparePrefixes(pref_1_fic, pref_2_fic) === 0) &&
+								(pref_1_fic[pref_1_fic.length-1] != pEC) &&
+								(pref_2_fic[pref_2_fic.length-1] != pEC)) {
+
+							// TODO NOW :: build prefixes char-by-char and keep last pref in memory
+							//             instead of in every cycle building again from the very
+							//             beginning
+
+							pref_1_fic = this._publishPrefix(multi_cur_1_fic, true, i, false, true);
+							pref_2_fic = otherXBW._publishPrefix(multi_cur_2_fic, true, i, false, false);
+
+							i++;
+						}
+
+						sout += '<span class="halfwidth">The first-column-based prefix of ' + window.c.DH_1 + '[' + multi_cur_1_fic + '] is ' +
+								pref_1_fic + '.</span>';
+
+						sout += 'The first-column-based prefix of ' + window.c.DH_2 + '[' + multi_cur_2_fic + '] is ' +
+								pref_2_fic + '.' + window.c.nlnl;
+
+						takeNode2_fic = window.c.comparePrefixes(pref_1_fic, pref_2_fic);
 					}
 				}
 
@@ -5617,18 +5671,19 @@ window.c = {
 
 				var p = this._constructBothPrefixes();
 
-				var sout = p[0] + window.c.nlnl;
+				var sout = '';
 				var takeNode2_fic = p[1];
 				var takeNode2_bwt = p[2];
 				var fic_o, fic_i, bwt_o, bwt_i;
 
 
 
+				/*
 				if (takeNode2_fic > 0) {
 
 					last_high_2_fic = multi_cur_2_fic;
 
-					sout += 'We take the first column and <i>M</i> from node ' +
+					sout += 'That is, we take the first column and <i>M</i> from node ' +
 							multi_cur_2_fic + ' from ' + window.c.DH_2 +
 							' and insert it into the merged table.' + window.c.nlnl;
 
@@ -5643,7 +5698,7 @@ window.c = {
 
 					last_high_1_fic = multi_cur_1_fic;
 
-					sout += 'We take the first column and <i>M</i> from node ' +
+					sout += 'That is, we take the first column and <i>M</i> from node ' +
 							multi_cur_1_fic + ' from ' + window.c.DH_1 +
 							' and insert it into the merged table.' + window.c.nlnl;
 
@@ -5660,7 +5715,7 @@ window.c = {
 
 					last_high_2_bwt = multi_cur_2_bwt;
 
-					sout += 'We take the BWT and <i>F</i> from node ' +
+					sout += 'We also take the BWT and <i>F</i> from node ' +
 							multi_cur_2_bwt + ' from ' + window.c.DH_2 +
 							' and insert it into the merged table.' + window.c.nlnlnl;
 
@@ -5674,7 +5729,66 @@ window.c = {
 
 					last_high_1_bwt = multi_cur_1_bwt;
 
-					sout += 'We take the BWT and <i>F</i> from node ' +
+					sout += 'We also take the BWT and <i>F</i> from node ' +
+							multi_cur_1_bwt + ' from ' + window.c.DH_1 +
+							' and insert it into the merged table.' + window.c.nlnlnl;
+
+					// insert node from this XBW at multi_cur_1 into the merged XBW
+					bwt_i = multi_cur_1_bwt;
+					bwt_o = 1;
+
+					multi_cur_1_bwt++;
+				}
+				*/
+
+				// emrg :: we took out the stuff above, in which BWT and FiC are handled
+				// separately, and instead added this here, which handles them both at once:
+
+
+				if (takeNode2_fic > 0) {
+
+					last_high_2_fic = multi_cur_2_fic;
+
+					sout += 'That is, we take the first column and <i>M</i> from node ' +
+							multi_cur_2_fic + ' from ' + window.c.DH_2 +
+							' and insert it into the merged table.' + window.c.nlnl;
+
+					// insert node from the other XBW at multi_cur_2 into the merged XBW
+					fic_i = multi_cur_2_fic;
+					fic_o = 2;
+
+
+					multi_cur_2_fic++;
+				
+					last_high_2_bwt = multi_cur_2_bwt;
+
+					sout += 'We also take the BWT and <i>F</i> from node ' +
+							multi_cur_2_bwt + ' from ' + window.c.DH_2 +
+							' and insert it into the merged table.' + window.c.nlnlnl;
+
+					// insert node from the other XBW at multi_cur_2 into the merged XBW
+					bwt_i = multi_cur_2_bwt;
+					bwt_o = 2;
+
+					multi_cur_2_bwt++;
+				
+				} else {
+
+					last_high_1_fic = multi_cur_1_fic;
+
+					sout += 'That is, we take the first column and <i>M</i> from node ' +
+							multi_cur_1_fic + ' from ' + window.c.DH_1 +
+							' and insert it into the merged table.' + window.c.nlnl;
+
+					// insert node from this XBW at multi_cur_1 into the merged XBW
+					fic_i = multi_cur_1_fic;
+					fic_o = 1;
+
+					multi_cur_1_fic++;
+
+					last_high_1_bwt = multi_cur_1_bwt;
+
+					sout += 'We also take the BWT and <i>F</i> from node ' +
 							multi_cur_1_bwt + ' from ' + window.c.DH_1 +
 							' and insert it into the merged table.' + window.c.nlnlnl;
 
@@ -5689,7 +5803,20 @@ window.c = {
 
 				mergedXBW._addNodeBasedOnTwo(fic_o, fic_i, bwt_o, bwt_i, this, otherXBW);
 
-				sout = window.c.makeVisualsNice(sout);
+
+				var sstep = 'We add the following red cells to the merged table:' + window.c.nlnl;
+
+				var shide = '<div class="table_box">' + this.generateBothTables() + '</div>';
+				sstep += window.c.hideWrap(shide, 'Tables') + window.c.nlnl;
+
+				last_high_1_bwt = -1;
+				last_high_1_fic = -1;
+				last_high_2_bwt = -1;
+				last_high_2_fic = -1;
+				mergedXBW._clear_last_high_arrs();
+
+				sout = window.c.makeVisualsNice(p[0]) + window.c.nlnl + sstep + window.c.makeVisualsNice(sout);
+
 
 				return sout;
 			},
@@ -5990,6 +6117,11 @@ window.c = {
 				recalculate(true);
 			},
 
+			_clear_last_high_arrs: function() {
+				last_high_bwt_arr = [];
+				last_high_fic_arr = [];
+			},
+
 			_publish_last_high_arrs: function() {
 				return [
 					last_high_bwt_arr,
@@ -6097,7 +6229,7 @@ window.c = {
 				sout += '<div class="input-info-container">' +
 						'<input id="in-string-' + tab + '-xbw-find" onkeypress="window.xbw.in_func = window.xbw.findHTML; window.xbw.in_tab = ' + tab + '; window.xbw.inputEnter(event);" type="text" value="AC" style="display: inline-block; width: 21%;"></input>' +
 						'<div class="button" onclick="window.xbw.findHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">find()</div>' +
-						'<input id="in-string-' + tab + '-xbw-pref" onkeypress="window.xbw.in_func = window.xbw.prefHTML; window.xbw.in_tab = ' + tab + '; window.xbw.inputEnter(event);" type="text" value="2" style="display: inline-block; width: 21%; margin-left:2%;"></input>' +
+						'<input id="in-string-' + tab + '-xbw-pref" onkeypress="window.xbw.in_func = window.xbw.prefHTML; window.xbw.in_tab = ' + tab + '; window.xbw.inputEnter(event);" type="text" value="2,false" style="display: inline-block; width: 21%; margin-left:2%;"></input>' +
 						'<div class="button" onclick="window.xbw.prefHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">prefix()</div>' +
 						'<div class="button" onclick="window.xbw.splitNodeHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">split node()</div>' +
 						'<input id="in-string-' + tab + '-xbw-split-node" onkeypress="window.xbw.in_func = window.xbw.splitNodeHTML; window.xbw.in_tab = ' + tab + '; window.xbw.inputEnter(event);" type="text" value="2" style="float:right; display: inline-block; width: 21%;"></input>' +
@@ -6306,9 +6438,16 @@ window.c = {
 
 				var pref_i = document.getElementById('in-string-' + tab + '-xbw-pref').value;
 
+				var bwtInsteadOfFiC = false;
+
+				if (pref_i.indexOf(',') > 0) {
+					bwtInsteadOfFiC = pref_i.slice(pref_i.indexOf(',')+1).toLowerCase() === 'true';
+					pref_i = pref_i.slice(0, pref_i.indexOf(','));
+				}
+
 				pref_i = parseInt(pref_i, 10);
 
-				var prefix = this._publishPrefix(pref_i);
+				var prefix = this._publishPrefix(pref_i, false, undefined, bwtInsteadOfFiC, false);
 
 				// replace '^' with '#' before output
 				prefix = prefix.split('^').join('#');

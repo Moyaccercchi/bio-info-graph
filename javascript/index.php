@@ -247,6 +247,11 @@
 			width: 25px;
 		}
 
+		span.halfwidth {
+			width:50%;
+			display:inline-block;
+		}
+
 
 
 		/* SVG */

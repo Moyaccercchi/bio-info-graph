@@ -4774,6 +4774,8 @@ window.c = {
 		var last_high_1_bwt = -1;
 		var last_high_2_fic = -1;
 		var last_high_2_bwt = -1;
+		var last_high_fic_arr = [];
+		var last_high_bwt_arr = [];
 
 
 
@@ -5486,6 +5488,11 @@ window.c = {
 				return [BWT[i], char[i], M[i], F[i]];
 			},
 
+			_publishAllNodes: function() {
+
+				return [BWT, char, M, F];
+			},
+
 			_constructBothPrefixes: function() {
 
 				var sout = '';
@@ -5613,8 +5620,7 @@ window.c = {
 				var sout = p[0] + window.c.nlnl;
 				var takeNode2_fic = p[1];
 				var takeNode2_bwt = p[2];
-				var otherNode_fic;
-				var otherNode_bwt;
+				var fic_o, fic_i, bwt_o, bwt_i;
 
 
 
@@ -5627,7 +5633,9 @@ window.c = {
 							' and insert it into the merged table.' + window.c.nlnl;
 
 					// insert node from the other XBW at multi_cur_2 into the merged XBW
-					otherNode_fic = otherXBW._publishNode(multi_cur_2_fic);
+					fic_i = multi_cur_2_fic;
+					fic_o = 2;
+
 
 					multi_cur_2_fic++;
 				
@@ -5640,7 +5648,8 @@ window.c = {
 							' and insert it into the merged table.' + window.c.nlnl;
 
 					// insert node from this XBW at multi_cur_1 into the merged XBW
-					otherNode_fic = this._publishNode(multi_cur_1_fic);
+					fic_i = multi_cur_1_fic;
+					fic_o = 1;
 
 					multi_cur_1_fic++;
 				}
@@ -5656,7 +5665,8 @@ window.c = {
 							' and insert it into the merged table.' + window.c.nlnlnl;
 
 					// insert node from the other XBW at multi_cur_2 into the merged XBW
-					otherNode_bwt = otherXBW._publishNode(multi_cur_2_bwt);
+					bwt_i = multi_cur_2_bwt;
+					bwt_o = 2;
 
 					multi_cur_2_bwt++;
 				
@@ -5669,14 +5679,15 @@ window.c = {
 							' and insert it into the merged table.' + window.c.nlnlnl;
 
 					// insert node from this XBW at multi_cur_1 into the merged XBW
-					otherNode_bwt = this._publishNode(multi_cur_1_bwt);
+					bwt_i = multi_cur_1_bwt;
+					bwt_o = 1;
 
 					multi_cur_1_bwt++;
 				}
 
 
 
-				mergedXBW._addNodeBasedOnTwo(otherNode_fic, otherNode_bwt);
+				mergedXBW._addNodeBasedOnTwo(fic_o, fic_i, bwt_o, bwt_i, this, otherXBW);
 
 				sout = window.c.makeVisualsNice(sout);
 
@@ -5774,12 +5785,67 @@ window.c = {
 				return sout;
 			},
 
-			_addNodeBasedOnTwo: function(otherNode_fic, otherNode_bwt) {
+			_inc_multi_cur_fic: function(origin) {
+				if (origin == 1) {
+					multi_cur_1_fic++;
+				} else {
+					multi_cur_2_fic++;
+				}
+			},
 
-				BWT  += otherNode_bwt[0];
-				char += otherNode_fic[1];
-				M    += otherNode_fic[2];
-				F    += otherNode_bwt[3];
+			_inc_multi_cur_bwt: function(origin) {
+				if (origin == 1) {
+					multi_cur_1_bwt++;
+				} else {
+					multi_cur_2_bwt++;
+				}
+			},
+
+			// _addNodeBasedOnTwo is called inside H12 - that is, inside the merged XBW.
+			// We call it from H1, where we have "this" and "otherXBW" pointing towards
+			// H1 and H2, respectively.
+			// To be able to use "this" and "otherXBW" onside H12 as well, we need to
+			// therefore supply them here explicitly.
+			_addNodeBasedOnTwo: function(fic_o, fic_i, bwt_o, bwt_i, thisXBW, otherXBW) {
+
+				var node_fic, node_bwt, i;
+
+				last_high_fic_arr = [];
+				last_high_bwt_arr = [];
+
+				if (fic_o == 1) {
+					node_fic = thisXBW._publishAllNodes();
+				} else {
+					node_fic = otherXBW._publishAllNodes();
+				}
+				last_high_fic_arr.push(char.length);
+				char += node_fic[1][fic_i];
+				M    += node_fic[2][fic_i];
+				i = 1;
+				while (node_fic[2][fic_i + i] === '0') {
+					last_high_fic_arr.push(char.length);
+					char += node_fic[1][fic_i + i];
+					M    += node_fic[2][fic_i + i];
+					thisXBW._inc_multi_cur_fic(fic_o);
+					i++;
+				}
+
+				if (bwt_o == 1) {
+					node_bwt = thisXBW._publishAllNodes();
+				} else {
+					node_bwt = otherXBW._publishAllNodes();
+				}
+				last_high_bwt_arr.push(BWT.length);
+				BWT  += node_bwt[0][bwt_i];
+				F    += node_bwt[3][bwt_i];
+				i = 1;
+				while (node_fic[3][bwt_i + i] === '0') {
+					last_high_bwt_arr.push(BWT.length);
+					BWT  += node_bwt[0][bwt_i + i];
+					F    += node_bwt[3][bwt_i + i];
+					thisXBW._inc_multi_cur_bwt(bwt_o);
+					i++;
+				}
 
 				// TODO :: do not recalculate everything here,
 				// but instead just update what needs to be updated!
@@ -5922,6 +5988,13 @@ window.c = {
 
 				// TODO :: apply directly to char, ord etc., so that no recalculation is necessary
 				recalculate(true);
+			},
+
+			_publish_last_high_arrs: function() {
+				return [
+					last_high_bwt_arr,
+					last_high_fic_arr,
+				];
 			},
 
 
@@ -6078,13 +6151,37 @@ window.c = {
 					extra_highlight_arr = [];
 				}
 
+
+
+				var pBWT = BWT;
+				var pchar = char;
+				var pM = M;
+				var pF = F;
+
+				var longlen = Math.max(pBWT.length, pchar.length, pM.length, pF.length);
+
+				while (pBWT.length < longlen) {
+					pBWT += ' ';
+				}
+				while (pchar.length < longlen) {
+					pchar += ' ';
+				}
+				while (pM.length < longlen) {
+					pM += ' ';
+				}
+				while (pF.length < longlen) {
+					pF += ' ';
+				}
+
+
+
 				var sout = '';
 
 				sout += '<table><tbody class="vbars">';
 
 				sout += '<tr>';
 				sout += window.c.arr_to_extra_high_str(
-					window.c.count_up_array(BWT.length),
+					window.c.count_up_array(longlen),
 					highlight_arr[0],
 					extra_highlight_arr[0]
 				);
@@ -6093,21 +6190,21 @@ window.c = {
 				sout += '</td></tr>';
 
 				sout += '<tr>';
-				sout += window.c.arr_to_extra_high_str(BWT, highlight_arr[1], extra_highlight_arr[1]);
+				sout += window.c.arr_to_extra_high_str(pBWT, highlight_arr[1], extra_highlight_arr[1]);
 				sout += '<td>BWT</td></tr>';
 
 				sout += '<tr>';
-				sout += window.c.arr_to_extra_high_str(char, highlight_arr[2], extra_highlight_arr[2]);
+				sout += window.c.arr_to_extra_high_str(pchar, highlight_arr[2], extra_highlight_arr[2]);
 				sout += '<td>First Column</td></tr>';
 
 				sout += '<tr class="barless">';
-				sout += window.c.arr_to_extra_high_str(M, highlight_arr[3], extra_highlight_arr[3]);
+				sout += window.c.arr_to_extra_high_str(pM, highlight_arr[3], extra_highlight_arr[3]);
 				sout += '<td>';
 				sout += window.c.DM;
 				sout += '</td></tr>';
 
 				sout += '<tr class="barless">';
-				sout += window.c.arr_to_extra_high_str(F, highlight_arr[4], extra_highlight_arr[4]);
+				sout += window.c.arr_to_extra_high_str(pF, highlight_arr[4], extra_highlight_arr[4]);
 				sout += '<td>';
 				sout += window.c.DF;
 				sout += '</td></tr>';
@@ -6121,13 +6218,45 @@ window.c = {
 			},
 			generateBothTables: function(hideMergedTable) {
 
-				var l = mergedXBW._publishBWTlen()-1;
+				var h1_high_bwt = [];
+				var h1_high_fic = [];
+				var h2_high_bwt = [];
+				var h2_high_fic = [];
 
-				var r = this.generateTable([[], [multi_cur_1_bwt], [multi_cur_1_fic], [multi_cur_1_fic], [multi_cur_1_bwt]], [[], [last_high_1_bwt], [last_high_1_fic], [last_high_1_fic], [last_high_1_bwt]]) + '&nbsp;&nbsp;&nbsp;' +
-				    otherXBW.generateTable([[], [multi_cur_2_bwt], [multi_cur_2_fic], [multi_cur_2_fic], [multi_cur_2_bwt]], [[], [last_high_2_bwt], [last_high_2_fic], [last_high_2_fic], [last_high_2_bwt]]);
+				if (last_high_1_bwt > -1) {
+					h1_high_bwt = [last_high_1_bwt];
+					for (var i=last_high_1_bwt+1; i < multi_cur_1_bwt; i++) {
+						h1_high_bwt.push(i);
+					}
+				}
+				if (last_high_1_fic > -1) {
+					h1_high_fic = [last_high_1_fic];
+					for (var i=last_high_1_fic+1; i < multi_cur_1_fic; i++) {
+						h1_high_fic.push(i);
+					}
+				}
+				if (last_high_2_bwt > -1) {
+					h2_high_bwt = [last_high_2_bwt];
+					for (var i=last_high_2_bwt+1; i < multi_cur_2_bwt; i++) {
+						h2_high_bwt.push(i);
+					}
+				}
+				if (last_high_2_fic > -1) {
+					h2_high_fic = [last_high_2_fic];
+					for (var i=last_high_2_fic+1; i < multi_cur_2_fic; i++) {
+						h2_high_fic.push(i);
+					}
+				}
+
+				var r = this.generateTable([[], [multi_cur_1_bwt], [multi_cur_1_fic], [multi_cur_1_fic], [multi_cur_1_bwt]], [[], h1_high_bwt, h1_high_fic, h1_high_fic, h1_high_bwt]) + '&nbsp;&nbsp;&nbsp;' +
+				    otherXBW.generateTable([[], [multi_cur_2_bwt], [multi_cur_2_fic], [multi_cur_2_fic], [multi_cur_2_bwt]], [[], h2_high_bwt, h2_high_fic, h2_high_fic, h2_high_bwt]);
 
 				if (!hideMergedTable) {
-					r += '<br>' + mergedXBW.generateTable([], [[], [l], [l], [l], [l]]);
+					var last_high_arrs = mergedXBW._publish_last_high_arrs();
+					var last_high_bwt_arr = last_high_arrs[0];
+					var last_high_fic_arr = last_high_arrs[1];
+
+					r += '<br>' + mergedXBW.generateTable([], [[], last_high_bwt_arr, last_high_fic_arr, last_high_fic_arr, last_high_bwt_arr]);
 				}
 
 				return r;

@@ -471,7 +471,9 @@
 			Here, you can enter two graphs. <a id="a-jump-5-1" href="#in-jump-5-1" style="display:none">Go there</a><br>
 			They will both be converted into prefix-sorted automata. <a id="a-jump-5-2" href="#div-out-5" style="display:none">Go there</a><br>
 			The automata will then be used to initialize XBW environments. <a id="a-jump-5-3" href="#in-jump-5-3" style="display:none">Go there</a><br>
-			These individual XBW environments will then be merged. <a id="a-jump-5-4" href="#in-jump-5-4" style="display:none">Go there</a>
+			Nodes within these individual XBW environments will then be split up if necessary. <a id="a-jump-5-4" href="#in-jump-5-4" style="display:none">Go there</a><br>
+			The individual XBW environments will then be merged. <a id="a-jump-5-5" href="#in-jump-5-5" style="display:none">Go there</a><br>
+			In the merged XBW environment, path queries and substring searches can finally be executed. <a id="a-jump-5-6" href="#div-xbw-5" style="display:none">Go there</a>
 		</div>
 		<div id="in-jump-5-1">
 			Please enter the two strings that you are interested in:
@@ -492,10 +494,13 @@
 	<div id="div-out-5" class="mainbox" style="display:none">
 	</div>
 
+	<div id="div-xbw-5" class="mainbox" style="display:none">
+	</div>
+
 
 
 	<span class="creditline absleft">
-		Version: 0.0.1.3
+		Version: 0.0.1.4
 	</span>
 	<span class="creditline absright">
 		Moyaccercchi (tws@hi.is), University of Iceland, 1<span class="u">st</span> Sep 2014 - 25<span class="u">th</span> Nov 2015
@@ -656,7 +661,7 @@
 		*/
 
 		function mergeGraphXBWs() {
-			var el = activateDivOut(5, false, true);
+			var el = activateDivOut(5, true, true);
 			el.innerHTML = '<div>' + c.merge_XBWs(
 				document.getElementById('in-string-5-1').value.toUpperCase(),
 				document.getElementById('in-string-5-2').value.toUpperCase()) + '</div>';

@@ -95,6 +95,9 @@
 	printKeyValArr: function(keys, values);
 	count_up_array: function(i);
 	makeVisualsNice: function(sout);
+	comparePrefixes: function(p1, p2);
+	prunePrefixes: function(prefix_arr);
+	exchangeInString: function(str, pos1, pos2);
 	make_xbw_environment: function();
 	example: function();
 	xbw_example: function();
@@ -1645,7 +1648,7 @@ window.c = {
 
 		// start splitting
 
-		sout += 'We now need to split nodes in order to ensure that the generated ' +
+		sout += '<span id="in-jump-5-4">We</span> now need to split nodes in order to ensure that the generated ' +
 				'structure will be prefix-sorted. For that, we go pretend to merge ' + 
 				'by comparing the prefixes one by one, and if we cannot make a decision, ' +
 				'we split the node and remember that we will have to do the entire process ' +
@@ -1701,7 +1704,7 @@ window.c = {
 
 
 
-		sout += '<span id="in-jump-5-4">We</span> can now merge ' + this.DH_1 + ' and ' +
+		sout += '<span id="in-jump-5-5">We</span> can now merge ' + this.DH_1 + ' and ' +
 				this.DH_2 + ' just based on their XBW data: BWT, ' + this.DM + ', ' + this.DF +
 				' and <i>C</i>.' + this.nlnlnl;
 
@@ -1778,6 +1781,13 @@ window.c = {
 
 		console.log('xbw12 findex:');
 		console.log(xbw12._publishFindex());
+
+
+
+		// start up control center for merged XBW
+		window.xbw = xbw12;
+		window.xbw.init(xbw12._publishFindex());
+		window.xbw.generateHTML(5);
 
 
 
@@ -4719,6 +4729,49 @@ window.c = {
 
 
 
+	// takes in an array of prefixes
+	// gives out the same array of prefixes, but with each prefix being cut as short as acceptable
+	prunePrefixes: function(prefix_arr) {
+
+		for (var i=0; i < prefix_arr.length; i++) {
+
+			var keepuntil = -1;
+
+			if (i > 0) {
+				var len = Math.min(prefix_arr[i].length, prefix_arr[i-1].length);
+
+				for (var k=0; k < len; k++) {
+					if (prefix_arr[i][k] !== prefix_arr[i-1][k]) {
+						keepuntil = k;
+						break;
+					}
+				}
+			}
+
+
+			if (i < prefix_arr.length - 1) {
+				var len = Math.min(prefix_arr[i].length, prefix_arr[i+1].length);
+
+				for (var k=0; k < len; k++) {
+					if (prefix_arr[i][k] !== prefix_arr[i+1][k]) {
+						if (keepuntil < k) {
+							keepuntil = k;
+							break;
+						}
+					}
+				}
+			}
+
+			if (keepuntil >= 0) {
+				prefix_arr[i] = prefix_arr[i].slice(0, keepuntil+1);
+			}
+		}
+
+		return prefix_arr;
+	},
+
+
+
 	// takes in a string and two positions
 	// gives out the same string, but with the characters in the two positions exchanged
 	exchangeInString: function(str, pos1, pos2) {
@@ -5103,6 +5156,9 @@ window.c = {
 				}
 
 
+				p12 = window.c.prunePrefixes(p12);
+
+
 				findex = [p12, pBWT, pM, pF];
 
 				return findex;
@@ -5232,68 +5288,6 @@ window.c = {
 				}
 				char = char.slice(0, loc) + char.slice(loc+1);
 				M    =    M.slice(0, loc) +    M.slice(loc+1);
-
-				recalculate(true);
-
-				return;
-
-				// TODO :: we stopped using the rest here, so have another look, and if all is good,
-				// delete it... =)
-
-
-
-				var mergeFrom, mergeTo;
-
-				// TODO :: should this also work for several DS_1 nodes?
-				for (var i=0; i < char.length; i++) {
-					if (char[i] == window.c.DS_1) {
-						mergeFrom = i;
-						break;
-					}
-				}
-
-				for (var i=0; i < BWT.length; i++) {
-					if (BWT[i] == window.c.DK_1) {
-						mergeTo = i;
-						break;
-					}
-				}
-
-
-				// replace #_1 with the predecessor of $_1
-				BWT = BWT.slice(0, mergeTo) + BWT[mergeFrom] + BWT.slice(mergeTo+1);
-
-
-				// delete $_1
-
-				BWT = BWT.slice(0, mergeFrom) + BWT.slice(mergeFrom+1);
-				char = char.slice(0, mergeFrom) + char.slice(mergeFrom+1);
-				M = M.slice(0, mergeFrom) + M.slice(mergeFrom+1);
-				F = F.slice(0, mergeFrom) + F.slice(mergeFrom+1);
-
-
-				// now unify the $_1, $, #, #_1 madness
-
-				for (var i=char.length-1; i > -1; i--) {
-					if (char[i] == window.c.DK_1) {
-						mergeFrom = i;
-						break;
-					}
-				}
-
-				for (var i=BWT.length-1; i > -1; i--) {
-					if (BWT[i] == window.c.DS_1) {
-						mergeTo = i;
-						break;
-					}
-				}
-
-				BWT = BWT.slice(0, mergeTo) + BWT[mergeFrom] + BWT.slice(mergeTo+1);
-
-				BWT = BWT.slice(0, mergeFrom) + BWT.slice(mergeFrom+1);
-				char = char.slice(0, mergeFrom) + char.slice(mergeFrom+1);
-				M = M.slice(0, mergeFrom) + M.slice(mergeFrom+1);
-				F = F.slice(0, mergeFrom) + F.slice(mergeFrom+1);
 
 				recalculate(true);
 			},

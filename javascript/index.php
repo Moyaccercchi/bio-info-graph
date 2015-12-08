@@ -239,13 +239,27 @@
 		}
 
 		.our_checkbox {
-			display: inline-block;
-			box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.8);
-			border-radius: 4px;
-			border: 1px solid rgb(0, 0, 0);
-			text-align: center;
-			margin-right: 5px;
-			width: 25px;
+			text-align:center;
+			width:25px;
+		}
+
+		.our_slider {
+			width:25%;
+		}
+
+		.our_checkbox, .our_slider {
+			display:inline-block;
+			box-shadow:0px 0px 5px 0px rgba(0, 0, 0, 0.8);
+			border-radius:4px;
+			border:1px solid rgb(0, 0, 0);
+			margin-right:5px;
+		}
+
+		.our_slider > span {
+			display:inline-block;
+			box-shadow:-50px 0px 50px -5px rgba(0, 0, 0, 0.5) inset;
+			background:#EEE none repeat scroll 0% 0%;
+			border-radius:3px;
 		}
 
 		span.halfwidth {
@@ -476,8 +490,14 @@
 			<input id="in-options-index-1" type="text" value="0" class="md-2"></input>
 			<input id="in-options-index-2" type="text" value="1" class="md-2"></input>
 		</div>
+		<div>
+			<span onmousedown="changeOptions_verbosity_mouse(event, true)" onmouseup="changeOptions_verbosity_mouse(false)" onmousemove="changeOptions_verbosity_move(event)" id="in-options-verbosity" style="cursor:pointer" class="our_slider"><span id="in-options-verbosity-inner" style="width:100%">&nbsp;</span></span> Verbosity: <span id="verbosity-out">tell me everything</span></b>
+		</div>
+		<div onclick="changeOptions_hide_xbw_envs()" style="cursor:pointer">
+			<span id="in-options-hide-xbw-envs" class="our_checkbox">&nbsp;</span> Hide XBW environments (recommended to speed up the calculations)</b>
+		</div>
 		<div onclick="changeOptions_show_graph()" style="cursor:pointer">
-			<span id="in-options-show-graph" class="our_checkbox">&nbsp;</span> Show tab for na&iuml;ve graph functionality
+			<span id="in-options-show-graph" class="our_checkbox">&nbsp;</span> Show tab for na&iuml;ve graph functionality <b id="show-graph-info-text" style="display:none">(which has been discontinued)</b>
 		</div>
 		<div onclick="changeOptions_show_autoi()" style="cursor:pointer">
 			<span id="in-options-show-autoi" class="our_checkbox">&nbsp;</span> Show auto <i>i</i> above automaton nodes
@@ -581,9 +601,11 @@
 			document.getElementById('div-in-' + nexttab).style.display = 'block';
 			if (div_out_visibility[nexttab]) {
 				document.getElementById('div-out-' + nexttab).style.display = 'block';
-				var el = document.getElementById('div-xbw-' + nexttab);
-				if (el) {
-					el.style.display = 'block';
+				if (!GML.hideXBWenvironments) {
+					var el = document.getElementById('div-xbw-' + nexttab);
+					if (el) {
+						el.style.display = 'block';
+					}
 				}
 			}
 		}
@@ -610,7 +632,7 @@
 
 			var el = document.getElementById('div-xbw-' + i);
 			if (el) {
-				if (showXBWenv) {
+				if (showXBWenv && !GML.hideXBWenvironments) {
 					el.style.display = 'block';
 				} else {
 					el.style.display = 'none';
@@ -906,14 +928,93 @@
 
 
 
-		function changeOptions_show_graph() {
+		changeOptions_verbosity_capture = false;
+		changeOptions_verbosity_compwidth = 100;
 
-			var el = document.getElementById('in-options-show-graph');
+		document.onmouseup = function(e) {
+			changeOptions_verbosity_capture = false;
+		};
+
+		function changeOptions_verbosity_mouse(e, down) {
+			changeOptions_verbosity_capture = down;
+
+			if (down) {
+				changeOptions_verbosity_move(e);
+			}
+		}
+
+		function changeOptions_verbosity_move(e) {
+			if (changeOptions_verbosity_capture) {
+				var rect = document.getElementById('in-options-verbosity').getBoundingClientRect();
+				var compwidth = ((100 * (e.clientX - rect.x)) / rect.width);
+
+				changeOptions_verbosity_compwidth = compwidth;
+
+				changeOptions_verbosity_update();
+			}
+		}
+
+		function changeOptions_verbosity_update() {
+
+				if (changeOptions_verbosity_compwidth > 99) {
+					changeOptions_verbosity_compwidth = 100;
+				}
+				if (changeOptions_verbosity_compwidth < 1) {
+					changeOptions_verbosity_compwidth = 0;
+				}
+
+				document.getElementById('in-options-verbosity-inner').style.width =
+					changeOptions_verbosity_compwidth + '%';
+
+				var verbosity = Math.round((changeOptions_verbosity_compwidth + 5) / 10);
+				if (verbosity < 1) {
+					verbosity = 1;
+				}
+				if (verbosity > 10) {
+					verbosity = 10;
+				}
+
+				var verbToStr = [
+					'tell me nothing', // 0
+					'the results and nothing else please', // 1
+					'low', // 2
+					'below medium', // 3
+					'slightly below medium', // 4
+					'medium', // 5
+					'slightly above medium', // 6
+					'above medium', // 7
+					'high', // 8
+					'very high', // 9
+					'tell me everything', // 10
+				];
+
+				document.getElementById('verbosity-out').innerHTML = verbToStr[verbosity];
+
+				GML.verbosity = verbosity;
+		}
+
+		function changeOptions_hide_xbw_envs() {
+
+			var el = document.getElementById('in-options-hide-xbw-envs');
 
 			if (el.innerHTML == 'X') {
 				el.innerHTML = '&nbsp;';
 			} else {
 				el.innerHTML = 'X';
+			}
+		}
+
+		function changeOptions_show_graph() {
+
+			var el = document.getElementById('in-options-show-graph');
+			var it = document.getElementById('show-graph-info-text');
+
+			if (el.innerHTML == 'X') {
+				el.innerHTML = '&nbsp;';
+				it.style.display = 'none';
+			} else {
+				el.innerHTML = 'X';
+				it.style.display = 'inline';
 			}
 		}
 
@@ -945,8 +1046,11 @@
 
 			document.getElementById('in-options-array-offset').value = '0';
 
+			document.getElementById('in-options-hide-xbw-envs').innerHTML = '&nbsp;';
 			document.getElementById('in-options-show-graph').innerHTML = '&nbsp;';
 			document.getElementById('in-options-show-autoi').innerHTML = '&nbsp;';
+
+			changeOptions_verbosity_compwidth = 100;
 
 			applyOptions();
 		}
@@ -957,6 +1061,8 @@
 				div_out_visibility[i] = false;
 				setJumpDispStyle(i, false);
 			}
+
+			GML.hideXBWenvironments = document.getElementById('in-options-hide-xbw-envs').innerHTML == 'X';
 
 			GML.set_to_HTML();
 
@@ -973,7 +1079,7 @@
 
 			var env_links = document.getElementsByClassName('xbw-env-link');
 
-			if (GML.hideXBWenvironment) {
+			if (GML.hideXBWenvironments) {
 				for (var i=0; i < env_links.length; i++) {
 					env_links[i].style.display = 'none';
 				}
@@ -982,6 +1088,8 @@
 					env_links[i].style.display = 'block';
 				}
 			}
+
+			changeOptions_verbosity_update();
 		};
 
 

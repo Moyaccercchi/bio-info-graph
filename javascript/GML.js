@@ -123,7 +123,7 @@ window.GML = {
 						   // stop when reaching this iteration
 
 	verbosity: 10, // integer, 10 .. tell us about EVERYTHING, 1 .. only give us the results
-	hideXBWenvironment: false, // do not show XBW environments - used if we are only interested in the results
+	hideXBWenvironments: false, // do not show XBW environments - used if we are only interested in the results
 
 	ao: 0, // global array offset - used whenever we show stuff on the GUI / accept data from there
 
@@ -6051,7 +6051,7 @@ window.GML = {
 
 			generateHTML: function(tab) {
 
-				if (GML.hideXBWenvironment) {
+				if (GML.hideXBWenvironments) {
 					document.getElementById('div-xbw-' + tab).style.display = 'none';
 					return;
 				}

@@ -1,7 +1,11 @@
 /*
+	***************************************************************
+		GML - Graph Merging Library
+	***************************************************************
+
 	Flow through the program:
 
-	The outside world calls "set_to_DaTeX" or "set_to_HTML" (if not, DaTeX is default.)
+	The outside world calls "set_to_DaTeX" or "set_to_HTML" (if not, HTML is default.)
 	The outside world calls "merge_BWTs_naively".
 		It calls "build_BWTs_naively" which generates the BWT if necessary (if parameters since last execution changed.)
 			It calls "prepare_BWTs_naively" if necessary.
@@ -30,7 +34,7 @@
 	TODO :: add a check against this that runs before work is started =) (and print out an error
 	message just in case)
 
-	Index of functions in window.c:
+	Index of functions in GML:
 	set_to_DaTeX: function();
 	set_to_HTML: function();
 	build_BWTs_naively: function(h1, h2);
@@ -112,11 +116,14 @@
 	table i .. index of column in flat table
 */
 
-window.c = {
+window.GML = {
 
 	overflow_ceiling: 100, // general overflow protection: whereever it is likely that through
 						   // weird input or ridiculous bugs we could run into an inifinite loop,
 						   // stop when reaching this iteration
+
+	verbosity: 10, // integer, 10 .. tell us about EVERYTHING, 1 .. only give us the results
+	hideXBWenvironment: false, // do not show XBW environments - used if we are only interested in the results
 
 	ao: 0, // global array offset - used whenever we show stuff on the GUI / accept data from there
 
@@ -826,17 +833,20 @@ window.c = {
 			sout += "¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯" + this.nl;
 		}
 
-		sout += "We are looking at " + this.DH_1 + ":" + this.nlnl;
+		if (this.verbosity > 1) {
 
-		sout += this.visualize(auto1, false);
+			sout += "We are looking at " + this.DH_1 + ":" + this.nlnl;
 
-		sout += "and " + this.DH_2 + ":" + this.nlnl;
+			sout += this.visualize(auto1, false);
 
-		sout += this.visualize(auto2, false);
+			sout += "and " + this.DH_2 + ":" + this.nlnl;
 
-		sout += "We are also interested in the intended merging result " + this.DH + ":" + this.nlnl;
+			sout += this.visualize(auto2, false);
 
-		sout += this.visualize(auto, false);
+			sout += "We are also interested in the intended merging result " + this.DH + ":" + this.nlnl;
+
+			sout += this.visualize(auto, false);
+		}
 
 
 
@@ -878,8 +888,10 @@ window.c = {
 
 		if (!abortDueToRevDet) {
 
-			sout += "We need to convert these into reverse deterministic and then " +
-					"into prefix-sorted automata. This gives us for " + this.DH_1 + ":" + this.nlnl;
+			if (this.verbosity > 2) {
+				sout += "We need to convert these into reverse deterministic and then " +
+						"into prefix-sorted automata.";
+			}
 
 			auto = this.computePrefixes(auto);
 			auto1 = this.computePrefixes(auto1);
@@ -913,47 +925,59 @@ window.c = {
 				}
 			}
 
-			sout += this.visualize(auto1, true);
-			sout += "and for " + this.DH_2 + ":" + this.nl;
-			sout += this.visualize(auto2, true);
-			sout += "as well as for " + this.DH + ":" + this.nl;
-			sout += this.visualize(auto, true);
+			if (this.verbosity > 1) {
+				sout += "This gives us for " + this.DH_1 + ":" + this.nlnl;
+				sout += this.visualize(auto1, true);
+				sout += "and for " + this.DH_2 + ":" + this.nl;
+				sout += this.visualize(auto2, true);
+				sout += "as well as for " + this.DH + ":" + this.nl;
+				sout += this.visualize(auto, true);
+			}
 
 
 
 			// BWT and pos for H
 
-			sout += "We can now generate the BWT of the graph, ";
-			sout += "together with the ";
-			if (generate_F) {
-				sout += "vectors " + this.DM + ' and ' + this.DF;
-			} else {
-				sout += "vector " + this.DM;
+			if (this.verbosity > 2) {
+				sout += "We can now generate the BWT of the graph, ";
+				sout += "together with the ";
+				if (generate_F) {
+					sout += "vectors " + this.DM + ' and ' + this.DF;
+				} else {
+					sout += "vector " + this.DM;
+				}
+				sout += "." + this.nlnl;
 			}
-			sout += "." + this.nlnl;
-			sout += "For " + this.DH_1 + " we get:" + this.nlnl;
 
 			var findex1 = this.getFindexFromAutomaton(auto1);
 			if (generate_F) {
 				findex1[3] = this.generateFfromPrefixesBWTM(findex1[0], findex1[1], findex1[2]);
 			}
-			sout += this.fe_findexToTable(findex1, true, generate_F);
 
-			sout += "And for " + this.DH_2 + " we have:" + this.nlnl;
+			if (this.verbosity > 1) {
+				sout += "For " + this.DH_1 + " we get:" + this.nlnl;
+				sout += this.fe_findexToTable(findex1, true, generate_F);
+			}
 
 			var findex2 = this.getFindexFromAutomaton(auto2);
 			if (generate_F) {
 				findex2[3] = this.generateFfromPrefixesBWTM(findex2[0], findex2[1], findex2[2]);
 			}
-			sout += this.fe_findexToTable(findex2, true, generate_F);
 
-			sout += "As well as for " + this.DH + ":" + this.nlnl;
+			if (this.verbosity > 1) {
+				sout += "And for " + this.DH_2 + " we have:" + this.nlnl;
+				sout += this.fe_findexToTable(findex2, true, generate_F);
+			}
 
 			var findex = this.getFindexFromAutomaton(auto);
 			if (generate_F) {
 				findex[3] = this.generateFfromPrefixesBWTM(findex[0], findex[1], findex[2]);
 			}
-			sout += this.fe_findexToTable(findex, true, generate_F);
+
+			if (this.verbosity > 1) {
+				sout += "As well as for " + this.DH + ":" + this.nlnl;
+				sout += this.fe_findexToTable(findex, true, generate_F);
+			}
 		}
 
 		return [sout, findex, findex1, findex2];
@@ -1614,12 +1638,18 @@ window.c = {
 		var m2 = findex2[2];
 
 
-		sout += '<span id="in-jump-5-3">We</span> now want to find the XBW data of ' + this.DH +
-				' just based on the ' +
-				'XBW data we have for ' + this.DH_1 + ' and ' + this.DH_2 + '.' + this.nlnl;
+		sout += '<span id="in-jump-5-3"></span>';
 
-		sout += 'We need to flatten the BWTs and drop the prefixes.' +
-				this.nlnl;
+		if (this.verbosity > 1) {
+			sout += 'We now want to find the XBW data of ' + this.DH +
+					' just based on the ' +
+					'XBW data we have for ' + this.DH_1 + ' and ' + this.DH_2 + '.' + this.nlnl;
+		}
+
+		if (this.verbosity > 2) {
+			sout += 'We need to flatten the BWTs and drop the prefixes.' +
+					this.nlnl;
+		}
 
 		// initialize XBW environment
 		var xbw1 = this.make_xbw_environment();
@@ -1629,30 +1659,40 @@ window.c = {
 		xbw2.init(findex2);
 		xbw.init(findex);
 
-		sout += "For " + this.DH_1 + " we get:" + this.nlnl;
+		if (this.verbosity > 3) {
+			sout += "For " + this.DH_1 + " we get:" + this.nlnl;
 
-		shide = '<div class="table_box">' + xbw1.generateTable([]) + '</div>';
-		sout += this.hideWrap(shide, 'Table') + this.nlnl;
+			shide = '<div class="table_box">' + xbw1.generateTable([]) + '</div>';
+			sout += this.hideWrap(shide, 'Table') + this.nlnl;
 
-		sout += "And for " + this.DH_2 + " we have:" + this.nlnl;
+			sout += "And for " + this.DH_2 + " we have:" + this.nlnl;
 
-		shide = '<div class="table_box">' + xbw2.generateTable([]) + '</div>';
-		sout += this.hideWrap(shide, 'Table') + this.nlnl;
+			shide = '<div class="table_box">' + xbw2.generateTable([]) + '</div>';
+			sout += this.hideWrap(shide, 'Table') + this.nlnl;
 
-		sout += "As well as for " + this.DH + ":" + this.nlnl;
+			sout += "As well as for " + this.DH + ":" + this.nlnl;
 
-		shide = '<div class="table_box">' + xbw.generateTable([]) + '</div>';
-		sout += this.hideWrap(shide, 'Table') + this.nlnl;
+			shide = '<div class="table_box">' + xbw.generateTable([]) + '</div>';
+			sout += this.hideWrap(shide, 'Table') + this.nlnl;
+		}
 
 
 
 		// start splitting
 
-		sout += '<span id="in-jump-5-4">We</span> now need to split nodes in order to ensure that the generated ' +
-				'structure will be prefix-sorted. For that, we go pretend to merge ' + 
-				'by comparing the prefixes one by one, and if we cannot make a decision, ' +
-				'we split the node and remember that we will have to do the entire process ' +
-				'another time.' + this.nlnl;
+		sout += '<span id="in-jump-5-4"></span>';
+
+		if (this.verbosity > 1) {
+			sout += 'We now need to split nodes in order to ensure that the generated ' +
+					'structure will be prefix-sorted.' + this.nlnl;
+		}
+
+		if (this.verbosity > 2) {
+			sout += 'For that, we go pretend to merge ' + 
+					'by comparing the prefixes one by one, and if we cannot make a decision, ' +
+					'we split the node and remember that we will have to do the entire process ' +
+					'another time.' + this.nlnl;
+		}
 
 		var xbw12 = xbw1.startToMergeWith(xbw2);
 
@@ -1664,14 +1704,16 @@ window.c = {
 			round++;
 			doAnotherRound = false;
 
-			sround = '<div>' + this.nlnl + 'We start round ' + round + ':' + this.nlnl;
+			xbw1.startNewSplitRound();
 
-			shide = '<div class="table_box">' + xbw1.generateBothTables(true) + '</div>';
-			sround += this.hideWrap(shide, 'Tables') + this.nlnl;
+			if (this.verbosity > 4) {
+				sround = '<div>' + this.nlnl + 'We start round ' + round + ':' + this.nlnl;
+
+				shide = '<div class="table_box">' + xbw1.generateBothTables(true) + '</div>';
+				sround += this.hideWrap(shide, 'Tables') + this.nlnl;
+			}
 
 			var i = 0;
-
-			xbw1.startNewSplitRound();
 
 			while (xbw1.notFullyMerged() && (i < this.overflow_ceiling)) {
 
@@ -1685,40 +1727,53 @@ window.c = {
 					doAnotherRound = true;
 				}
 
-				sstep += this.nlnl + 'We now have:' + this.nlnl;
+				if (this.verbosity > 8) {
+					sstep += this.nlnl + 'We now have:' + this.nlnl;
 
-				shide = '<div class="table_box">' + xbw1.generateBothTables(true) + '</div>';
-				sstep += this.hideWrap(shide, 'Tables') + this.nlnl;
+					shide = '<div class="table_box">' + xbw1.generateBothTables(true) + '</div>';
+					sstep += this.hideWrap(shide, 'Tables') + this.nlnl;
 
-				sstep += '</div>';
+					sstep += '</div>';
 
-				sround += this.hideWrap(sstep, 'Step ' + i) + this.nlnl;
+					sround += this.hideWrap(sstep, 'Step ' + i) + this.nlnl;
+				}
 			}
 
-			sround += '</div>';
-			
-			sout += this.hideWrap(sround, 'Round ' + round) + this.nlnl;
+			if (this.verbosity > 4) {
+				sround += '</div>';
+				
+				sout += this.hideWrap(sround, 'Round ' + round) + this.nlnl;
+			}
 		}
 
 		// end splitting
 
 
 
-		sout += '<span id="in-jump-5-5">We</span> can now merge ' + this.DH_1 + ' and ' +
-				this.DH_2 + ' just based on their XBW data: BWT, ' + this.DM + ', ' + this.DF +
-				' and <i>C</i>.' + this.nlnlnl;
+		sout += '<span id="in-jump-5-5"></span>';
 
-		sout += 'To do so, we add nodes from the ' + this.DH_2 + ' table on the right ' +
-				'one by one to the ' + this.DH_1 + ' table on the left, keeping track of ' +
-				'our position within each table. We never need to go left in either table, ' +
-				'as we know that both are already sorted within themselves; so if we get an ' +
-				'entry from table ' + this.DH_2 + ' into ' + this.DH_1 + ' at position 9, ' +
-				'then we know that the next entry from table ' + this.DH_2 + ' must be put ' +
-				'into ' + this.DH_1 + ' at position 9 or greater, not lower than 9.' +
-				this.nlnl;
+		if (this.verbosity > 1) {
+			sout += 'We can now merge ' + this.DH_1 + ' and ' +
+					this.DH_2 + ' just based on their XBW data: BWT, ' + this.DM + ', ' + this.DF +
+					' and <i>C</i>.' + this.nlnl;
+		}
 
-		shide = '<div class="table_box">' + xbw1.generateBothTables() + '</div>';
-		sout += this.hideWrap(shide, 'Tables') + this.nlnl;
+		if (this.verbosity > 2) {
+			sout += this.nlnl;
+			sout += 'To do so, we add nodes from the ' + this.DH_2 + ' table on the right ' +
+					'one by one to the ' + this.DH_1 + ' table on the left, keeping track of ' +
+					'our position within each table. We never need to go left in either table, ' +
+					'as we know that both are already sorted within themselves; so if we get an ' +
+					'entry from table ' + this.DH_2 + ' into ' + this.DH_1 + ' at position 9, ' +
+					'then we know that the next entry from table ' + this.DH_2 + ' must be put ' +
+					'into ' + this.DH_1 + ' at position 9 or greater, not lower than 9.' +
+					this.nlnl;
+		}
+
+		if (this.verbosity > 1) {
+			shide = '<div class="table_box">' + xbw1.generateBothTables() + '</div>';
+			sout += this.hideWrap(shide, 'Tables') + this.nlnl;
+		}
 
 		var i = 0;
 
@@ -1728,23 +1783,34 @@ window.c = {
 
 			i++;
 
-			var sstep = '<div>' + xbw1.mergeOneMore();
+			if (this.verbosity > 5) {
 
-			sstep += 'We now have:' + this.nlnl;
+				var sstep = '<div>' + xbw1.mergeOneMore(true);
 
-			shide = '<div class="table_box">' + xbw1.generateBothTables() + '</div>';
-			sstep += this.hideWrap(shide, 'Tables') + this.nlnl;
+				if (this.verbosity > 9) {
+					sstep += 'We now have:' + this.nlnl;
 
-			sstep += '</div>';
+					shide = '<div class="table_box">' + xbw1.generateBothTables() + '</div>';
+					sstep += this.hideWrap(shide, 'Tables') + this.nlnl;
+				}
 
-			sout += this.hideWrap(sstep, 'Step ' + i) + this.nlnl;
+				sstep += '</div>';
+
+				sout += this.hideWrap(sstep, 'Step ' + i) + this.nlnl;
+
+			} else {
+
+				xbw1.mergeOneMore(false);
+			}
 		}
 
-		sout += 'The main part of the merging algorithm has now finished, but we should still ' +
-				'join the ' + this.DS_1_o + ' and ' + this.DK_1_o + ' nodes.';
+		if (this.verbosity > 1) {
+			sout += 'The main part of the merging algorithm has now finished, but we should still ' +
+					'join the ' + this.DS_1_o + ' and ' + this.DK_1_o + ' nodes.';
 
-		shide = '<div class="table_box">' + xbw12.generateTable([]) + '</div>';
-		sout += this.hideWrap(shide, 'Table') + this.nlnl;
+			shide = '<div class="table_box">' + xbw12.generateTable([]) + '</div>';
+			sout += this.hideWrap(shide, 'Table') + this.nlnl;
+		}
 
 		xbw12.finalizeMerge();
 
@@ -1754,8 +1820,12 @@ window.c = {
 		// (If that is ever necessary: set multiOrigin = false in xbw1, and replace the
 		// #_1 and $_1 back to their original forms.)
 
-		sout += 'Having joined the ' + this.DS_1_o + ' and ' + this.DK_1_o + ' nodes, ' +
-				'the merging has now been completed:';
+		if (this.verbosity > 1) {
+			sout += 'Having joined the ' + this.DS_1_o + ' and ' + this.DK_1_o + ' nodes, ' +
+					'the merging has now been completed:';
+		} else {
+			sout += 'The merging result is:';
+		}
 
 		shide = '<div class="table_box">' + xbw12.generateTable([]) + '</div>';
 		sout += this.hideWrap(shide, 'Table') + this.nlnl;
@@ -2001,17 +2071,17 @@ window.c = {
 			// BUT do leave them in if they are on position 0 - that is,
 			// "$_1" and "#_1" should be left intact =) (that's why we have
 			// the indexOf-comparisons all over the place here)
-			if (af.indexOf(c.DS_1_o+c.DK_1_o) > 0) {
-				af = af.replace(c.DS_1_o+c.DK_1_o, '');
+			if (af.indexOf(GML.DS_1_o+GML.DK_1_o) > 0) {
+				af = af.replace(GML.DS_1_o+GML.DK_1_o, '');
 			}
-			if (af.indexOf(c.DS_1_o) > 0) {
-				af = af.replace(c.DS_1_o, '');
+			if (af.indexOf(GML.DS_1_o) > 0) {
+				af = af.replace(GML.DS_1_o, '');
 			}
-			if (bf.indexOf(c.DS_1_o+c.DK_1_o) > 0) {
-				bf = bf.replace(c.DS_1_o+c.DK_1_o, '');
+			if (bf.indexOf(GML.DS_1_o+GML.DK_1_o) > 0) {
+				bf = bf.replace(GML.DS_1_o+GML.DK_1_o, '');
 			}
-			if (bf.indexOf(c.DS_1_o) > 0) {
-				bf = bf.replace(c.DS_1_o, '');
+			if (bf.indexOf(GML.DS_1_o) > 0) {
+				bf = bf.replace(GML.DS_1_o, '');
 			}
 
 			var ac = af;   // a cropped
@@ -2212,7 +2282,7 @@ window.c = {
 	//   or not) and optionally an array (containing all prefixes for which the
 	//   nodes with these prefixes should be highlighted) and optionally the
 	//   boolean parameter show_vis_hl (default: false), which tells us whether
-	//   the nodes in window.c.vis_highlight_nodes should be highlighted too
+	//   the nodes in GML.vis_highlight_nodes should be highlighted too
 	// gives out a string containing a graph visualization of the input
 	visualize: function(auto, showPrefixes, highlight_p12, show_vis_hl) {
 
@@ -3396,7 +3466,7 @@ window.c = {
 		}
 
 		// just used for later visualization purposes
-		window.c.vis_p12ToAuto = p12ToAuto;
+		GML.vis_p12ToAuto = p12ToAuto;
 
 		return auto;
 	},
@@ -4683,13 +4753,13 @@ window.c = {
 	makeVisualsNice: function(sout) {
 
 		// replace the internal representation of '#_1' with the actual visual representation
-		while (sout.indexOf(window.c.DK_1) > -1) {
-			sout = sout.replace(window.c.DK_1, window.c.DK_1_o);
+		while (sout.indexOf(GML.DK_1) > -1) {
+			sout = sout.replace(GML.DK_1, GML.DK_1_o);
 		}
 
 		// replace the internal representation of '$_1' with the actual visual representation
-		while (sout.indexOf(window.c.DS_1) > -1) {
-			sout = sout.replace(window.c.DS_1, window.c.DS_1_o);
+		while (sout.indexOf(GML.DS_1) > -1) {
+			sout = sout.replace(GML.DS_1, GML.DS_1_o);
 		}
 
 		// replace '^' with '#' before printout
@@ -5029,7 +5099,7 @@ window.c = {
 			var i = P.length;
 
 			// just for visualization
-			window.c.vis_highlight_nodes = [];
+			GML.vis_highlight_nodes = [];
 
 			while (i--) {
 				spep = lf(spep, P[i], i > 0);
@@ -5043,11 +5113,11 @@ window.c = {
 			var vis_int = [];
 			for (var j=spep[0]; j < spep[1]+1; j++) {
 				window.xbw._publishPrefix(j, false, P.length);
-				for (var k=0; k < window.c.vis_highlight_nodes.length; k++) {
-					vis_int.push(window.c.vis_highlight_nodes[k]);
+				for (var k=0; k < GML.vis_highlight_nodes.length; k++) {
+					vis_int.push(GML.vis_highlight_nodes[k]);
 				}
 			}
-			window.c.vis_highlight_nodes = vis_int;
+			GML.vis_highlight_nodes = vis_int;
 
 			return spep;
 		}
@@ -5065,8 +5135,8 @@ window.c = {
 				multiOrigin = false;
 
 				if (findex) {
-					auto = window.c.getAutomatonFromFindex(findex);
-					auto = window.c.computePrefixes(auto);
+					auto = GML.getAutomatonFromFindex(findex);
+					auto = GML.computePrefixes(auto);
 
 					prefixes = [];
 					for (var i=0; i < auto.length; i++) {
@@ -5101,7 +5171,7 @@ window.c = {
 						}
 						tableToP12.push(cur_ttop12);
 					}
-					window.c.vis_tableToP12 = tableToP12;
+					GML.vis_tableToP12 = tableToP12;
 				}
 
 				recalculate(true);
@@ -5156,7 +5226,7 @@ window.c = {
 				}
 
 
-				p12 = window.c.prunePrefixes(p12);
+				p12 = GML.prunePrefixes(p12);
 
 
 				findex = [p12, pBWT, pM, pF];
@@ -5182,11 +5252,11 @@ window.c = {
 				multi_cur_2_fic = 0;
 				multi_cur_2_bwt = 0;
 
-				mergedXBW = window.c.make_xbw_environment();
+				mergedXBW = GML.make_xbw_environment();
 				mergedXBW.init();
 
-				this._replaceSpecialChar(window.c.DS, window.c.DS_1);
-				otherXBW._replaceSpecialChar(window.c.DK, window.c.DK_1);
+				this._replaceSpecialChar(GML.DS, GML.DS_1);
+				otherXBW._replaceSpecialChar(GML.DK, GML.DK_1);
 
 				return mergedXBW;
 			},
@@ -5222,8 +5292,8 @@ window.c = {
 			finalizeMerge: function() {
 
 				var loc, i;
-				var DS_1 = window.c.DS_1;
-				var DK_1 = window.c.DK_1;
+				var DS_1 = GML.DS_1;
+				var DK_1 = GML.DK_1;
 
 				// exchange
 				//   BWT in position where FiC == $_0
@@ -5247,7 +5317,7 @@ window.c = {
 				// TODO EMRG :: do we need to transform pos1 in some part?
 				// (as we want to actually go for the node, not just the column,
 				// and we are switching from FiC-indexing to BWT-indexing...)
-				BWT = window.c.exchangeInString(BWT, pos1, pos2);
+				BWT = GML.exchangeInString(BWT, pos1, pos2);
 
 				// cut out $_0 from BWT and F
 				for (i=0; i < BWT.length; i++) {
@@ -5323,10 +5393,10 @@ window.c = {
 				// ARE granted!)
 				var bwt_not_all_last_round = false;
 
-				window.c.vis_highlight_nodes = [[]];
+				GML.vis_highlight_nodes = [[]];
 
 				if (length === undefined) {
-					length = window.c.overflow_ceiling;
+					length = GML.overflow_ceiling;
 				}
 
 				var pref_cur_is = [pref_cur_i];
@@ -5334,7 +5404,7 @@ window.c = {
 				for (var i=0; i<length; i++) {
 
 					for (var j=0; j<pref_cur_is.length; j++) {
-						window.c.vis_highlight_nodes[j].push(pref_cur_is[j]);
+						GML.vis_highlight_nodes[j].push(pref_cur_is[j]);
 					}
 
 					// ignore this all if we are in the first iteration
@@ -5367,10 +5437,10 @@ window.c = {
 							while (M[pref_cur_is[j]+k] == '0') {
 								pref_cur_is.push(pref_cur_is[j]+k);
 								var new_vis_high = [];
-								for (var l=0; l<window.c.vis_highlight_nodes[0].length; l++) {
-									new_vis_high.push(window.c.vis_highlight_nodes[0][l]);
+								for (var l=0; l<GML.vis_highlight_nodes[0].length; l++) {
+									new_vis_high.push(GML.vis_highlight_nodes[0][l]);
 								}
-								window.c.vis_highlight_nodes.push(new_vis_high);
+								GML.vis_highlight_nodes.push(new_vis_high);
 								k++;
 							}
 						}
@@ -5403,11 +5473,11 @@ window.c = {
 					if (bwt_not_all_last_round || not_all_chars_are_the_same) {
 
 						// add error char '!' to the prefix
-						pref += window.c.prefixErrorChar;
+						pref += GML.prefixErrorChar;
 
 						// remove last highlighted node
-						for (var j=0; j < window.c.vis_highlight_nodes.length; j++) {
-							window.c.vis_highlight_nodes[j].splice(window.c.vis_highlight_nodes[j].length-1, 1);
+						for (var j=0; j < GML.vis_highlight_nodes.length; j++) {
+							GML.vis_highlight_nodes[j].splice(GML.vis_highlight_nodes[j].length-1, 1);
 						}
 
 						// abandon all hope / leave function
@@ -5435,7 +5505,7 @@ window.c = {
 							// wants to be done anyway for nicer display, so we may as well leave
 							// it out of the comparison routine.
 
-							if ((pref.length > 1) && (char_to_add_now == window.c.DS_1)) {
+							if ((pref.length > 1) && (char_to_add_now == GML.DS_1)) {
 
 								// find #_0 node in H_2 - which is necessarily the very last node, lucky us!
 								var pref_cur_i = otherXBW._publishBWTlen() - 1;
@@ -5446,7 +5516,7 @@ window.c = {
 						}
 					}
 
-					if ((char_to_add_now == window.c.DS) || (char_to_add_now == window.c.DS_1)) {
+					if ((char_to_add_now == GML.DS) || (char_to_add_now == GML.DS_1)) {
 						break;
 					}
 
@@ -5480,7 +5550,7 @@ window.c = {
 				last_high_2_fic = -1;
 				last_high_2_bwt = -1;
 
-				var pEC = window.c.prefixErrorChar;
+				var pEC = GML.prefixErrorChar;
 
 
 
@@ -5507,8 +5577,8 @@ window.c = {
 						// as they are both different, and therefore we would necessarily
 						// reach a difference between the prefixes, which we ARE already
 						// checking for anyway =)
-						while ((i < window.c.overflow_ceiling) &&
-								(window.c.comparePrefixes(pref_1_fic, pref_2_fic) === 0) &&
+						while ((i < GML.overflow_ceiling) &&
+								(GML.comparePrefixes(pref_1_fic, pref_2_fic) === 0) &&
 								(pref_1_fic[pref_1_fic.length-1] != pEC) &&
 								(pref_2_fic[pref_2_fic.length-1] != pEC)) {
 
@@ -5522,13 +5592,13 @@ window.c = {
 							i++;
 						}
 
-						sout += '<span class="halfwidth">The prefix of ' + window.c.DH_1 + '[' + multi_cur_1_fic + '] is ' +
+						sout += '<span class="halfwidth">The prefix of ' + GML.DH_1 + '[' + multi_cur_1_fic + '] is ' +
 								pref_1_fic + '.</span>';
 
-						sout += 'The prefix of ' + window.c.DH_2 + '[' + multi_cur_2_fic + '] is ' +
-								pref_2_fic + '.' + window.c.nlnl;
+						sout += 'The prefix of ' + GML.DH_2 + '[' + multi_cur_2_fic + '] is ' +
+								pref_2_fic + '.' + GML.nlnl;
 
-						takeNode2_fic = window.c.comparePrefixes(pref_1_fic, pref_2_fic);
+						takeNode2_fic = GML.comparePrefixes(pref_1_fic, pref_2_fic);
 					}
 				}
 
@@ -5537,11 +5607,13 @@ window.c = {
 				return [sout, takeNode2_fic, pref_1_fic, pref_2_fic];
 			},
 
-			mergeOneMore: function() {
+			// verbose .. [boolean] (default: false)
+			//            if true, give out fancy explanatory HTML,
+			//            if false, just do the work and do not give out anything
+			mergeOneMore: function(verbose) {
 
 				var p = this._constructBothPrefixes();
 
-				var sout = '';
 				var takeNode2_fic = p[1];
 				var fic_o, fic_i, bwt_o, bwt_i;
 
@@ -5551,10 +5623,6 @@ window.c = {
 
 					last_high_2_fic = multi_cur_2_fic;
 
-					sout += 'That is, we take the first column and <i>M</i> from node ' +
-							multi_cur_2_fic + ' from ' + window.c.DH_2 +
-							' and insert it into the merged table.' + window.c.nlnl;
-
 					// insert node from the other XBW at multi_cur_2 into the merged XBW
 					fic_i = multi_cur_2_fic;
 					fic_o = 2;
@@ -5563,10 +5631,6 @@ window.c = {
 					multi_cur_2_fic++;
 				
 					last_high_2_bwt = multi_cur_2_bwt;
-
-					sout += 'We also take the BWT and <i>F</i> from node ' +
-							multi_cur_2_bwt + ' from ' + window.c.DH_2 +
-							' and insert it into the merged table.' + window.c.nlnlnl;
 
 					// insert node from the other XBW at multi_cur_2 into the merged XBW
 					bwt_i = multi_cur_2_bwt;
@@ -5578,10 +5642,6 @@ window.c = {
 
 					last_high_1_fic = multi_cur_1_fic;
 
-					sout += 'That is, we take the first column and <i>M</i> from node ' +
-							multi_cur_1_fic + ' from ' + window.c.DH_1 +
-							' and insert it into the merged table.' + window.c.nlnl;
-
 					// insert node from this XBW at multi_cur_1 into the merged XBW
 					fic_i = multi_cur_1_fic;
 					fic_o = 1;
@@ -5589,10 +5649,6 @@ window.c = {
 					multi_cur_1_fic++;
 
 					last_high_1_bwt = multi_cur_1_bwt;
-
-					sout += 'We also take the BWT and <i>F</i> from node ' +
-							multi_cur_1_bwt + ' from ' + window.c.DH_1 +
-							' and insert it into the merged table.' + window.c.nlnlnl;
 
 					// insert node from this XBW at multi_cur_1 into the merged XBW
 					bwt_i = multi_cur_1_bwt;
@@ -5606,21 +5662,45 @@ window.c = {
 				mergedXBW._addNodeBasedOnTwo(fic_o, fic_i, bwt_o, bwt_i, this, otherXBW);
 
 
-				var sstep = 'We add the following red cells to the merged table:' + window.c.nlnl;
+				if (verbose) {
 
-				var shide = '<div class="table_box">' + this.generateBothTables() + '</div>';
-				sstep += window.c.hideWrap(shide, 'Tables') + window.c.nlnl;
+					var sout = '';
 
-				last_high_1_bwt = -1;
-				last_high_1_fic = -1;
-				last_high_2_bwt = -1;
-				last_high_2_fic = -1;
-				mergedXBW._clear_last_high_arrs();
+					if (takeNode2_fic > 0) {
 
-				sout = window.c.makeVisualsNice(p[0]) + window.c.nlnl + sstep + window.c.makeVisualsNice(sout);
+						sout += 'That is, we take the first column and <i>M</i> from node ' +
+								fic_i + ' from ' + GML.DH_2 +
+								' and insert it into the merged table.' + GML.nlnl;
 
+						sout += 'We also take the BWT and <i>F</i> from node ' +
+								bwt_i + ' from ' + GML.DH_2 +
+								' and insert it into the merged table.' + GML.nlnlnl;
+					} else {
 
-				return sout;
+						sout += 'That is, we take the first column and <i>M</i> from node ' +
+								fic_i + ' from ' + GML.DH_1 +
+								' and insert it into the merged table.' + GML.nlnl;
+
+						sout += 'We also take the BWT and <i>F</i> from node ' +
+								bwt_i + ' from ' + GML.DH_1 +
+								' and insert it into the merged table.' + GML.nlnlnl;
+					}
+
+					var sstep = 'We add the following red cells to the merged table:' + GML.nlnl;
+
+					var shide = '<div class="table_box">' + this.generateBothTables() + '</div>';
+					sstep += GML.hideWrap(shide, 'Tables') + GML.nlnl;
+
+					last_high_1_bwt = -1;
+					last_high_1_fic = -1;
+					last_high_2_bwt = -1;
+					last_high_2_fic = -1;
+					mergedXBW._clear_last_high_arrs();
+
+					sout = GML.makeVisualsNice(p[0]) + GML.nlnl + sstep + GML.makeVisualsNice(sout);
+
+					return sout;
+				}
 			},
 
 			checkIfSplitOneMore: function(splitnodes) {
@@ -5632,9 +5712,9 @@ window.c = {
 				var pref_1_fic = p[2];
 				var pref_2_fic = p[3];
 
-				var pEC = window.c.prefixErrorChar;
+				var pEC = GML.prefixErrorChar;
 
-				sout = window.c.makeVisualsNice(sout);
+				sout = GML.makeVisualsNice(sout);
 
 
 
@@ -5680,15 +5760,15 @@ window.c = {
 
 				for (var i=0; i < nodes.length; i++) {
 
-					sout += 'We observe a ' + window.c.prefixErrorChar + ' in the prefix, ' +
+					sout += 'We observe a ' + GML.prefixErrorChar + ' in the prefix, ' +
 							'and therefore have to split a node in ';
 
 					if (nodes[i].o == 2) {
 						otherXBW._splitNode(nodes[i].sn_i);
-						sout += window.c.DH_2;
+						sout += GML.DH_2;
 					} else {
 						this._splitNode(nodes[i].sn_i);
-						sout += window.c.DH_1;
+						sout += GML.DH_1;
 					}
 
 					sout += '.<br>';
@@ -5938,9 +6018,9 @@ window.c = {
 				console.log('BWT : ' + BWT);
 				console.log('M   : ' + M);
 				console.log('F   : ' + F);
-				console.log('C   : ' + window.c.printKeyValArr(alph, C));
+				console.log('C   : ' + GML.printKeyValArr(alph, C));
 				console.log('alph: {' + alph.join(', ') + '}');
-				console.log('ord : ' + window.c.printKeyValArr(alph, ord));
+				console.log('ord : ' + GML.printKeyValArr(alph, ord));
 				console.log(' ');
 
 				var flag = 0;
@@ -5971,6 +6051,13 @@ window.c = {
 
 			generateHTML: function(tab) {
 
+				if (GML.hideXBWenvironment) {
+					document.getElementById('div-xbw-' + tab).style.display = 'none';
+					return;
+				}
+
+				document.getElementById('div-xbw-' + tab).style.display = 'block';
+
 				if (tab === undefined) {
 					tab = last_tab;
 				} else {
@@ -5986,13 +6073,13 @@ window.c = {
 				sout += 'To start the XBW environment, we first of all flatten the BWT (replacing any ' +
 						'entries with several options by as many single-optioned entries) and add the ' +
 						'first column (the alphabetically sorted BWT.)<br>' +
-						'We will also have a look at the ' + window.c.DM + ' and ' + window.c.DF + ' vectors.' +
+						'We will also have a look at the ' + GML.DM + ' and ' + GML.DF + ' vectors.' +
 						'<br>';
 
 				var shide = '<div class="table_box" id="div-xbw-' + tab + '-env-table">' +
 							'</div>';
 
-				sout += window.c.hideWrap(shide, 'Table') + '<br>';
+				sout += GML.hideWrap(shide, 'Table') + '<br>';
 
 				var alph_and_C_str = this.get_alph_and_C_str();
 
@@ -6057,7 +6144,7 @@ window.c = {
 			},
 			get_alph_and_C_str: function() {
 
-				return ['{' + alph.join(', ') + '}', window.c.printKeyValArr(alph, C)];
+				return ['{' + alph.join(', ') + '}', GML.printKeyValArr(alph, C)];
 			},
 			generateTable: function(highlight_arr, extra_highlight_arr) {
 
@@ -6097,39 +6184,39 @@ window.c = {
 				sout += '<table><tbody class="vbars">';
 
 				sout += '<tr>';
-				sout += window.c.arr_to_extra_high_str(
-					window.c.count_up_array(longlen),
+				sout += GML.arr_to_extra_high_str(
+					GML.count_up_array(longlen),
 					highlight_arr[0],
 					extra_highlight_arr[0]
 				);
 				sout += '<td>';
-				sout += window.c.di;
+				sout += GML.di;
 				sout += '</td></tr>';
 
 				sout += '<tr>';
-				sout += window.c.arr_to_extra_high_str(pBWT, highlight_arr[1], extra_highlight_arr[1]);
+				sout += GML.arr_to_extra_high_str(pBWT, highlight_arr[1], extra_highlight_arr[1]);
 				sout += '<td>BWT</td></tr>';
 
 				sout += '<tr>';
-				sout += window.c.arr_to_extra_high_str(pchar, highlight_arr[2], extra_highlight_arr[2]);
+				sout += GML.arr_to_extra_high_str(pchar, highlight_arr[2], extra_highlight_arr[2]);
 				sout += '<td>First Column</td></tr>';
 
 				sout += '<tr class="barless">';
-				sout += window.c.arr_to_extra_high_str(pM, highlight_arr[3], extra_highlight_arr[3]);
+				sout += GML.arr_to_extra_high_str(pM, highlight_arr[3], extra_highlight_arr[3]);
 				sout += '<td>';
-				sout += window.c.DM;
+				sout += GML.DM;
 				sout += '</td></tr>';
 
 				sout += '<tr class="barless">';
-				sout += window.c.arr_to_extra_high_str(pF, highlight_arr[4], extra_highlight_arr[4]);
+				sout += GML.arr_to_extra_high_str(pF, highlight_arr[4], extra_highlight_arr[4]);
 				sout += '<td>';
-				sout += window.c.DF;
+				sout += GML.DF;
 				sout += '</td></tr>';
 
 				sout += '</tbody></table>';
 
 
-				sout = window.c.makeVisualsNice(sout);
+				sout = GML.makeVisualsNice(sout);
 
 				return sout;
 			},
@@ -6188,7 +6275,7 @@ window.c = {
 					prevdispcaption = outerdiv.childNodes[0].childNodes[0].childNodes[0].innerHTML;
 				}
 
-				var sout = window.c.visualize(auto, true, highnodes, show_vis_hl);
+				var sout = GML.visualize(auto, true, highnodes, show_vis_hl);
 
 				// replace '^' with '#' before printout
 				sout = sout.replace(/\^/g, '#');
@@ -6440,4 +6527,4 @@ window.c = {
 
 };
 
-window.c.set_to_DaTeX();
+GML.set_to_HTML();

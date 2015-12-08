@@ -20,6 +20,7 @@
 			padding:16px;
 			background:rgb(255, 255, 255) none repeat scroll 0% 0%;
 			position:relative;
+			min-width:800px;
 		}
 
 		i, i > span {
@@ -335,11 +336,17 @@
 
 	<div id="div-in-0" class="mainbox" style="display:none">
 		<div>
-			<b>This tab is using the na&iuml;ve graph BWT, which can only handle the very
-			simplest graphs and has been discontinued. Please do not expect anything on this
-			tab to actually work.</b><br><br>
-			Here, you can enter a simple graph in bubble notation. <a id="a-jump-0-1" href="#in-jump-0-1" style="display:none">Go there</a><br>
-			It will be converted into a na&iuml;ve graph BWT. <a id="a-jump-0-2" href="#div-out-0" style="display:none">Go there</a>
+			<div style="margin-bottom:16px;">
+				<b>This tab is using the na&iuml;ve graph BWT, which can only handle the very
+				simplest graphs and has been discontinued. Please do not expect anything on this
+				tab to actually work.</b>
+			</div>
+			<div>
+				Here, you can enter a simple graph in bubble notation. <a id="a-jump-0-1" href="#in-jump-0-1" style="display:none">Go there</a>
+			</div>
+			<div>
+				It will be converted into a na&iuml;ve graph BWT. <a id="a-jump-0-2" href="#div-out-0" style="display:none">Go there</a>
+			</div>
 		</div>
 		<div id="in-jump-0-1">
 			Please enter the string that you are interested in:
@@ -357,12 +364,20 @@
 
 	<div id="div-in-1" class="mainbox" style="display:none">
 		<div>
-			<b>This tab is using the na&iuml;ve graph BWT, which can only handle the very
-			simplest graphs and has been discontinued. Please do not expect anything on this
-			tab to actually work.</b><br><br>
-			Here, you can enter two simple graphs in bubble notation. <a id="a-jump-1-1" href="#in-jump-1-1" style="display:none">Go there</a><br>
-			They will both be converted into na&iuml;ve graph BWTs. <a id="a-jump-1-2" href="#div-out-1" style="display:none">Go there</a><br>
-			These BWTs will then be merged. <a id="a-jump-1-3" href="#in-jump-1-3" style="display:none">Go there</a>
+			<div style="margin-bottom:16px;">
+				<b>This tab is using the na&iuml;ve graph BWT, which can only handle the very
+				simplest graphs and has been discontinued. Please do not expect anything on this
+				tab to actually work.</b>
+			</div>
+			<div>
+				Here, you can enter two simple graphs in bubble notation. <a id="a-jump-1-1" href="#in-jump-1-1" style="display:none">Go there</a>
+			</div>
+			<div>
+				They will both be converted into na&iuml;ve graph BWTs. <a id="a-jump-1-2" href="#div-out-1" style="display:none">Go there</a>
+			</div>
+			<div>
+				These BWTs will then be merged. <a id="a-jump-1-3" href="#in-jump-1-3" style="display:none">Go there</a>
+			</div>
 		</div>
 		<div id="in-jump-1-1">
 			Please enter the two strings that you are interested in:
@@ -387,9 +402,15 @@
 
 	<div id="div-in-2" class="mainbox" style="display:none">
 		<div>
-			Here, you can enter a graph. <a id="a-jump-2-1" href="#in-jump-2-1" style="display:none">Go there</a><br>
-			It will be converted into a prefix-sorted automaton. <a id="a-jump-2-2" href="#div-out-2" style="display:none">Go there</a><br>
-			The automaton will be used to initialize an XBW environment, in which path queries and substring searches can be executed. <a id="a-jump-2-3" href="#div-xbw-2" style="display:none">Go there</a>
+			<div>
+				Here, you can enter a graph. <a id="a-jump-2-1" href="#in-jump-2-1" style="display:none">Go there</a>
+			</div>
+			<div>
+				It will be converted into a prefix-sorted automaton. <a id="a-jump-2-2" href="#div-out-2" style="display:none">Go there</a>
+			</div>
+			<div class="xbw-env-link">
+				The automaton will be used to initialize an XBW environment, in which path queries and substring searches can be executed. <a id="a-jump-2-3" href="#div-xbw-2" style="display:none">Go there</a>
+			</div>
 		</div>
 		<div id="in-jump-2-1">
 			Please enter the string that you are interested in:
@@ -410,10 +431,18 @@
 
 	<div id="div-in-3" class="mainbox" style="display:none">
 		<div>
-			Here, you can enter two graphs. <a id="a-jump-3-1" href="#in-jump-3-1" style="display:none">Go there</a><br>
-			They will both be converted into prefix-sorted automata. <a id="a-jump-3-2" href="#div-out-3" style="display:none">Go there</a><br>
-			The automata will then be merged. <a id="a-jump-3-3" href="#in-jump-3-3" style="display:none">Go there</a><br>
-			The resulting automaton will be used to initialize an XBW environment, in which path queries and substring searches can be executed. <a id="a-jump-3-4" href="#div-xbw-3" style="display:none">Go there</a>
+			<div>
+				Here, you can enter two graphs. <a id="a-jump-3-1" href="#in-jump-3-1" style="display:none">Go there</a>
+			</div>
+			<div>
+				They will both be converted into prefix-sorted automata. <a id="a-jump-3-2" href="#div-out-3" style="display:none">Go there</a>
+			</div>
+			<div>
+				The automata will then be merged. <a id="a-jump-3-3" href="#in-jump-3-3" style="display:none">Go there</a>
+			</div>
+			<div class="xbw-env-link">
+				The resulting automaton will be used to initialize an XBW environment, in which path queries and substring searches can be executed. <a id="a-jump-3-4" href="#div-xbw-3" style="display:none">Go there</a>
+			</div>
 		</div>
 		<div id="in-jump-3-1">
 			Please enter the two strings that you are interested in:
@@ -468,12 +497,24 @@
 
 	<div id="div-in-5" class="mainbox" style="display:none">
 		<div>
-			Here, you can enter two graphs. <a id="a-jump-5-1" href="#in-jump-5-1" style="display:none">Go there</a><br>
-			They will both be converted into prefix-sorted automata. <a id="a-jump-5-2" href="#div-out-5" style="display:none">Go there</a><br>
-			The automata will then be used to initialize XBW environments. <a id="a-jump-5-3" href="#in-jump-5-3" style="display:none">Go there</a><br>
-			Nodes within these individual XBW environments will then be split up if necessary. <a id="a-jump-5-4" href="#in-jump-5-4" style="display:none">Go there</a><br>
-			The individual XBW environments will then be merged. <a id="a-jump-5-5" href="#in-jump-5-5" style="display:none">Go there</a><br>
-			In the merged XBW environment, path queries and substring searches can finally be executed. <a id="a-jump-5-6" href="#div-xbw-5" style="display:none">Go there</a>
+			<div>
+				Here, you can enter two graphs. <a id="a-jump-5-1" href="#in-jump-5-1" style="display:none">Go there</a>
+			</div>
+			<div>
+				They will both be converted into prefix-sorted automata. <a id="a-jump-5-2" href="#div-out-5" style="display:none">Go there</a>
+			</div>
+			<div>
+				The automata will then be used to initialize XBW environments. <a id="a-jump-5-3" href="#in-jump-5-3" style="display:none">Go there</a>
+			</div>
+			<div>
+				Nodes within these individual XBW environments will then be split up if necessary. <a id="a-jump-5-4" href="#in-jump-5-4" style="display:none">Go there</a>
+			</div>
+			<div>
+				The individual XBW environments will then be merged. <a id="a-jump-5-5" href="#in-jump-5-5" style="display:none">Go there</a>
+			</div>
+			<div class="xbw-env-link">
+				In the merged XBW environment, path queries and substring searches can finally be executed. <a id="a-jump-5-6" href="#div-xbw-5" style="display:none">Go there</a>
+			</div>
 		</div>
 		<div id="in-jump-5-1">
 			Please enter the two strings that you are interested in:
@@ -500,14 +541,14 @@
 
 
 	<span class="creditline absleft">
-		Version: 0.0.1.4
+		GML, Version: 0.0.1.4
 	</span>
 	<span class="creditline absright">
-		Moyaccercchi (tws@hi.is), University of Iceland, 1<span class="u">st</span> Sep 2014 - 25<span class="u">th</span> Nov 2015
+		Moyaccercchi (tws@hi.is), University of Iceland, 1<span class="u">st</span> Sep 2014 - 8<span class="u">th</span> Dec 2015
 	</span>
 	
 	<script>
-		c.set_to_HTML();
+		GML.set_to_HTML();
 
 		// stores the visibility of div-out so that we don't reset it when changing tabs
 		div_out_visibility = [false, false, false, false, false, false];
@@ -597,7 +638,7 @@
 
 		function generateNaiveBWT() {
 			var el = activateDivOut(0, false, true);
-			el.innerHTML = '<div>' + c.generate_BWT_naively(
+			el.innerHTML = '<div>' + GML.generate_BWT_naively(
 				document.getElementById('in-string-0').value.toUpperCase()) + '</div>';
 		}
 
@@ -610,14 +651,14 @@
 
 		function generateNaiveBWTs() {
 			var el = activateDivOut(1, false, false);
-			el.innerHTML = '<div>' + c.generate_BWTs_naively(
+			el.innerHTML = '<div>' + GML.generate_BWTs_naively(
 				document.getElementById('in-string-1-1').value.toUpperCase(),
 				document.getElementById('in-string-1-2').value.toUpperCase()) + '</div>';
 		}
 
 		function mergeNaiveBWTs() {
 			var el = activateDivOut(1, false, true);
-			el.innerHTML = '<div>' + c.merge_BWTs_naively(
+			el.innerHTML = '<div>' + GML.merge_BWTs_naively(
 				document.getElementById('in-string-1-1').value.toUpperCase(),
 				document.getElementById('in-string-1-2').value.toUpperCase()) + '</div>';
 		}
@@ -629,7 +670,7 @@
 		*/
 		function generateAdvancedBWT() {
 			var el = activateDivOut(2, true, true);
-			el.innerHTML = '<div>' + c.generate_BWT_advanced(
+			el.innerHTML = '<div>' + GML.generate_BWT_advanced(
 				document.getElementById('in-string-2').value.toUpperCase()) + '</div>';
 		}
 
@@ -642,14 +683,14 @@
 
 		function generateAdvancedBWTs() {
 			var el = activateDivOut(3, false, true);
-			el.innerHTML = '<div>' + c.generate_BWTs_advanced(
+			el.innerHTML = '<div>' + GML.generate_BWTs_advanced(
 				document.getElementById('in-string-3-1').value.toUpperCase(),
 				document.getElementById('in-string-3-2').value.toUpperCase()) + '</div>';
 		}
 
 		function mergeAdvancedBWTs() {
 			var el = activateDivOut(3, true, true);
-			el.innerHTML = '<div>' + c.merge_BWTs_advanced(
+			el.innerHTML = '<div>' + GML.merge_BWTs_advanced(
 				document.getElementById('in-string-3-1').value.toUpperCase(),
 				document.getElementById('in-string-3-2').value.toUpperCase()) + '</div>';
 		}
@@ -662,7 +703,7 @@
 
 		function mergeGraphXBWs() {
 			var el = activateDivOut(5, true, true);
-			el.innerHTML = '<div>' + c.merge_XBWs(
+			el.innerHTML = '<div>' + GML.merge_XBWs(
 				document.getElementById('in-string-5-1').value.toUpperCase(),
 				document.getElementById('in-string-5-2').value.toUpperCase()) + '</div>';
 		}
@@ -712,16 +753,16 @@
 			'</div>';
 
 		var s_input =
-			'Use this field to specify the string ' + c.DH +
+			'Use this field to specify the string ' + GML.DH +
 			' for which the BWT will be generated.<br><br>';
 
 		var s_input1 =
-			'Use this field to specify the first string, ' + c.DH_1 +
-			', which will be merged with ' + c.DH_2 + '.<br><br>';
+			'Use this field to specify the first string, ' + GML.DH_1 +
+			', which will be merged with ' + GML.DH_2 + '.<br><br>';
 
 		var s_input2 =
-			'Use this field to specify the second string, ' + c.DH_2 +
-			', which will be merged with ' + c.DH_1 + '.<br><br>';
+			'Use this field to specify the second string, ' + GML.DH_2 +
+			', which will be merged with ' + GML.DH_1 + '.<br><br>';
 
 		function generateNaiveBWTIn1Info(e) {
 			var el = activateDivOut(0, false, false);
@@ -769,8 +810,8 @@
 			sout += '<u>Na&iuml;ve Graph BWT Merging</u><br><br>';
 			sout += 'Limitations:<br>';
 			sout += '<ul>';
-			sout += '<li>only works with at most one bubble in ' + c.H_1 + ' and ' + c.H_2 + ' each (with each bubble having two alternatives, each being one character long)</li>';
-			sout += '<li>only sorts ' + c.H_1 + ' and ' + c.H_2 + ' by first bubble alternative (so if ' + c.H_1 + ' is sorted before ' + c.H_2 + ', then ' + c.H_1 + ' gets ' + c.DS_1_o + ', even if the alternative path in ' + c.H_1 + ' would be sorted after ' + c.H_2 + ' - it would be better to give ' + c.DS_1_o + ' up to $<span class="d">4</span> to both alternatives of both strings separately, instead of assigning the same $ to each alternative in the string)</li>';
+			sout += '<li>only works with at most one bubble in ' + GML.H_1 + ' and ' + GML.H_2 + ' each (with each bubble having two alternatives, each being one character long)</li>';
+			sout += '<li>only sorts ' + GML.H_1 + ' and ' + GML.H_2 + ' by first bubble alternative (so if ' + GML.H_1 + ' is sorted before ' + GML.H_2 + ', then ' + GML.H_1 + ' gets ' + GML.DS_1_o + ', even if the alternative path in ' + GML.H_1 + ' would be sorted after ' + GML.H_2 + ' - it would be better to give ' + GML.DS_1_o + ' up to $<span class="d">4</span> to both alternatives of both strings separately, instead of assigning the same $ to each alternative in the string)</li>';
 			sout += '</ul>';
 			sout += '</div>';
 
@@ -889,10 +930,10 @@
 
 		function applyOptions() {
 
-			c.origin_1 = document.getElementById('in-options-index-1').value;
-			c.origin_2 = document.getElementById('in-options-index-2').value;
+			GML.origin_1 = document.getElementById('in-options-index-1').value;
+			GML.origin_2 = document.getElementById('in-options-index-2').value;
 
-			c.ao = parseInt(document.getElementById('in-options-array-offset').value, 10);
+			GML.ao = parseInt(document.getElementById('in-options-array-offset').value, 10);
 
 			saveOptions();
 		}
@@ -917,21 +958,36 @@
 				setJumpDispStyle(i, false);
 			}
 
-			c.set_to_HTML();
+			GML.set_to_HTML();
 
 			var dispstyle = 'none';
-			
+
 			if (document.getElementById('in-options-show-graph').innerHTML == 'X') {
 				dispstyle = 'inline-block';
 			}
 
-			window.c.show_auto_i = document.getElementById('in-options-show-autoi').innerHTML == 'X';
+			GML.show_auto_i = document.getElementById('in-options-show-autoi').innerHTML == 'X';
 
 			document.getElementById('tab-btn-0').style.display = dispstyle;
 			document.getElementById('tab-btn-1').style.display = dispstyle;
+
+			var env_links = document.getElementsByClassName('xbw-env-link');
+
+			if (GML.hideXBWenvironment) {
+				for (var i=0; i < env_links.length; i++) {
+					env_links[i].style.display = 'none';
+				}
+			} else {
+				for (var i=0; i < env_links.length; i++) {
+					env_links[i].style.display = 'block';
+				}
+			}
 		};
 
 
+
+		// default to default options ;)
+		saveOptions();
 
 		// default to tab 5
 		showTab(5);

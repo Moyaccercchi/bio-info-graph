@@ -309,7 +309,7 @@
 </head>
 <body>
 
-	<script src="create_BWT_merge.js"></script>
+	<script src="GML.js"></script>
 
 	<div class="tabbox">
 		<div class="tabbutton" id="tab-btn-0" onclick="showTab(0)" style="display:none">

@@ -779,14 +779,14 @@
 			'e.g. "ACA|1,2,3,4;1,2,3,4;1,2,3,4"' +
 			'<ol>' +
 			'<li>the first part is the identifier of the path (it can be empty)</li>' +
-			'<li>the second part is the origin of the path, containing the identifier of the path on which this one originates followed by ":" and the position in that path on which it originates (counting starts at 1 for the first alphabetical character, as the hash tag symbol in the main path is symbol 0) - the identifier of the main path is "0", but in the special case of the main path the identifer and the ":" can be left out together, e.g. "path9:8" for the eigth position in a path with the identifer "path9"</li>' +
+			'<li>the second part is the origin of the path, containing the identifier of the path on which this one originates followed by ":" and the position in that path on which it originates (counting starts at 1 for the first alphabetical character, as the hash tag symbol in the main path is symbol 0) - the identifier of the main path is "0", but in the special case of the main path the identifer and the ":" can be left out together, e.g. "8" for the eighth position on the main path or "path9:8" for the eighth position in a path with the identifer "path9"</li>' +
 			'<li>the third part is the content of the path (it can be empty), e.g. "TGC"</li>' +
-			'<li>the fourth part is the target of the path, containing the identifier of the path on which this one ends followed by ":" and the position in that path on which it ends (counting starts at 1 for the first alphabetical character, as the hash tag symbol in the main path is symbol 0) - the identifier of the main path is "0", but in the special case of the main path the identifer and the ":" can be left out together, e.g. "path9:8" for the eigth position in a path with the identifer "path9"</li>' +
+			'<li>the fourth part is the target of the path, containing the identifier of the path on which this one ends followed by ":" and the position in that path on which it ends (counting starts at 1 for the first alphabetical character, as the hash tag symbol in the main path is symbol 0) - the identifier of the main path is "0", but in the special case of the main path the identifer and the ":" can be left out together, e.g. "8" for the eighth position on the main path or "path9:8" for the eighth position in a path with the identifer "path9"</li>' +
 			'</ol>' +
 			'</li>' +
-			'<li>overall, a valid graph can look like "GACG|p1,1,TGG,3;,p1:1,C,3" - this ' +
+			'<li>overall, a valid graph can look like "GACG|p1,1,TGG,3;,p1:0,C,p1:2" - this ' +
 			'example could in bubble notation be rewritten as G(A|T(G|C)G)CG</li>' +
-			'<li>do neither add a hash tag symbole at the start ' +
+			'<li>do neither add a hash tag symbol at the start ' +
 			'nor a dollar sign at the end of the input, as they will be added automagically</li>' +
 			'</ul>' +
 			'</div>';

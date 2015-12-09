@@ -53,7 +53,8 @@
 	fe_p12ToTableWithHighlights: function(highlight_arr, show_origin, show_f, show_i);
 	visualize: function(auto, showPrefixes, highlight_p12, show_vis_hl);
 	hideWrap: function(sout, kind);
-	graphToAutomaton: function(ha, h_graph);
+	stringToGraph: function(str);
+	graphToAutomaton: function(graph);
 	mergeAutomata: function(auto1, auto2);
 	makeAutomatonReverseDeterministic: function(auto, addToSOut);
 	makeAutomatonReverseDeterministic_int: function(auto, addToSOut);
@@ -607,29 +608,11 @@ window.GML = {
 	// gives out a section in DaTeX or HTML about the generation of its BWT
 	generate_BWT_advanced: function(h) {
 
-		var h_split = h.split('|');
-
-		// insert hashtag character at the beginning of input string
-		// (actually, we are using '^' internally instead of '#', as it has lexicographic
-		// value above all alphabetical characters)
-		h = '^' + h_split[0];
-
-		// graph info appended to h, e.g. in TGA|1,T,2;1,3 the "|1,T,2;1,3" is the graph info
-		var h_graph = [];
-		if (h_split.length > 1) {
-			h_graph = h_split[1].split(';');
-		}
-
-		// create array form of the input string
-		var ha = h.split('');
-
-		// append delimiter character to input array
-		ha[ha.length] = this.DS;
-
-
+		// generate the graph
+		var graph = this.stringToGraph(h);
 
 		// generate the automaton
-		var auto = this.graphToAutomaton(ha, h_graph);
+		var auto = this.graphToAutomaton(graph);
 
 
 
@@ -848,38 +831,15 @@ window.GML = {
 	//   as well as the findexes for the merged H, for H_1 and for H_2
 	generate_BWTs_advanced_int: function(h1, h2, generate_F) {
 
-		var h1_split = h1.split('|');
-		var h2_split = h2.split('|');
-
-		// insert hashtag character at the beginning of input string
-		// (actually, we are using '^' internally instead of '#', as it has lexicographic
-		// value above all alphabetical characters)
-		h1 = '^' + h1_split[0];
-		h2 = '^' + h2_split[0];
-
-		// graph info appended to h, e.g. in TGA|1,T,2;1,3 the "|1,T,2;1,3" is the graph info
-		var h1_graph = [];
-		var h2_graph = [];
-		if (h1_split.length > 1) {
-			h1_graph = h1_split[1].split(';');
-		}
-		if (h2_split.length > 1) {
-			h2_graph = h2_split[1].split(';');
-		}
-
-		// create array form of the input string
-		var h1a = h1.split('');
-		var h2a = h2.split('');
-
-		// append delimiter character to input array
-		h1a[h1a.length] = this.DS;
-		h2a[h2a.length] = this.DS;
-
-
+		// generate the graph
+		var graph1 = this.stringToGraph(h1);
+		var graph2 = this.stringToGraph(h2);
 
 		// generate the automaton
-		var auto1 = this.graphToAutomaton(h1a, h1_graph);
-		var auto2 = this.graphToAutomaton(h2a, h2_graph);
+		var auto1 = this.graphToAutomaton(graph1);
+		var auto2 = this.graphToAutomaton(graph2);
+
+		// merge the automata
 		var auto = this.mergeAutomata(auto1, auto2);
 
 
@@ -2785,14 +2745,67 @@ window.GML = {
 
 
 
-	// takes in an array of characters and the corresponding graph information
+	// takes in a string representing a graph, e.g. TGA|1,T,2;1,3
+	// gives out an array containing the main row and an array containing the infoblocks
+	stringToGraph: function(str) {
+
+		var ssplit = str.split('|');
+
+		// insert hashtag character at the beginning of input string
+		// (actually, we are using '^' internally instead of '#', as it has lexicographic
+		// value above all alphabetical characters)
+		str = '^' + ssplit[0];
+
+		// graph info appended to h, e.g. in TGA|1,T,2;1,3 the "|1,T,2;1,3" is the graph info
+		var infoblocks = [];
+
+		// we here check for ssplit[1] !== '' to allow for someone writing "TGA|", with pipe
+		// but without following it up with infoblocks (according to the standard, a pipe
+		// should ONLY be given if infoblocks are following... but humans are squishy and
+		// we should trust no one)
+
+		if ((ssplit.length > 1) && (ssplit[1] !== '')) {
+			var possible_infoblocks = ssplit[1].split(';');
+
+			// we here check for possible_infoblocks[i] !== '' and in fact go through
+			// the whole trouble of using possible_infoblocks instead of assinging to
+			// infoblocks directly to allow for someone writing "TGA|1,T,2;", with
+			// semicolon in the end without following it up with another infoblock
+			// (according to the standard, a semicomma should ONLY separate infoblocks,
+			// but not be appended at the end... but humans are squishy and we should
+			// trust no one)
+
+			for (var i=0; i < possible_infoblocks.length; i++) {
+				if (possible_infoblocks[i] !== '') {
+					infoblocks.push(possible_infoblocks[i]);
+				}
+			}
+		}
+
+		// create array form of the input string
+		var mainrow = str.split('');
+
+		// append delimiter character to input array
+		mainrow[mainrow.length] = this.DS;
+
+		return [mainrow, infoblocks];
+	},
+
+
+
+	// takes in an array of characters (the main row) and an array of the
+	//   corresponding graph information (the infoblocks), in the form of
+	//   an array containing the first array and the second array
 	// gives out an automaton (an array of objects which correspond to nodes,
 	//   with each node containing is caption c, an array of integers representing
 	//   the in-nodes p and an array of integers representing the out-nodes n)
-	graphToAutomaton: function(ha, h_graph) {
+	graphToAutomaton: function(graph) {
 
 		// array of nodes
 		var auto = [];
+
+		var ha = graph[0];
+		var h_graph = graph[1];
 
 		// first node: hashtag
 		auto.push({c: '^', p: [], n: [1]});
@@ -5668,8 +5681,9 @@ window.GML = {
 				//       > C > E
 				//
 				//     then we should not actually split on either C, but instead we then need
-				//     to split on the A that is before it all... so basically we need to bubble
-				//     up by first going down within the Cs (which is the previous TODO EMRG about),
+				//     to split on the A that is before it all...
+				//     so basically we need to bubble up by first going down within the Cs (which
+				//     is what the beginning of this note is about),
 				//     to find a C that can be split (that has M (or F?) above 1), and if we cannot
 				//     find somesuch, we have to bubble forward, and down, and forward, and down,
 				//     and so on, until we FINALLY find something that can be split!

@@ -1,0 +1,338 @@
+/*
+	************************************************************
+		GML UI - Graph Merging Library User Interface Styles
+	************************************************************
+*/
+
+* {
+	color:#000;
+	font-family:Calibri,Candara,Segoe,Segoe UI,Optima,Arial,sans-serif; 
+	font-size:15px;
+	line-height:22px;
+	font-style:normal;
+	font-weight:500;
+	box-sizing:border-box;
+	text-align:left;
+	text-rendering:optimizeLegibility;
+}
+
+body {
+	padding:16px;
+	background:rgb(255, 255, 255) none repeat scroll 0% 0%;
+	position:relative;
+	min-width:800px;
+}
+
+i, i > span {
+	font-style:italic;
+}
+
+b {
+	font-weight:bold;
+}
+
+span.creditline {
+	position:absolute;
+	bottom:8px;
+}
+
+.absleft {
+	left:16px;
+}
+
+.absright {
+	right:16px;
+}
+
+div.mainbox, div.tabbox > div {
+	border:1px solid #000;
+	border-radius:16px;
+	box-shadow:0px 0px 5px 0px rgba(0, 0, 0, 0.8);
+}
+
+div.tabbox {
+	padding:0px;
+	margin-top:-48px;
+	margin-bottom:84px;
+}
+
+div.tabbox > div {
+	display:inline-block;
+	padding:24px 12px 4px 12px;
+	margin-bottom:8px;
+	margin-right:8px;
+	float:left;
+}
+
+div.mainbox {
+	padding:16px 16px 0px 16px;
+	margin-bottom:32px;
+}
+
+div.mainbox > div, div.mainbox > input, div.mainbox > div.button {
+	display:block;
+	margin-bottom:16px;
+	width:100%;
+}
+
+div.mainbox > div > input {
+	display:block;
+	width:100%;
+}
+
+div.mainbox > div > div.md-2, div.mainbox > div > input.md-2 {
+	display:inline-block;
+	width:49%;
+}
+
+div.mainbox > div > div.md-2:last-child, div.mainbox > div > input.md-2:last-child {
+	float:right;
+}
+
+input, div.button {
+	border:1px solid #000;
+	box-shadow:0px 0px 5px 0px rgba(0, 0, 0, 0.8);
+	border-radius:4px;
+}
+
+input {
+	background: #FFF none repeat scroll 0% 0%;
+	padding:2px 9px;
+}
+
+div.button {
+	padding:2px 0px;
+	text-align:center;
+}
+
+div.button, div.tabbutton, span.infobtn, div.svg_btn {
+	background: #EEE none repeat scroll 0% 0%;
+	cursor:pointer;
+}
+
+div.button:hover, div.tabbutton:hover, span.infobtn:hover, div.svg_btn:hover {
+	background: #DDD none repeat scroll 0% 0%;
+}
+
+div.button:active, div.tabbutton:active, span.infobtn:active, div.svg_btn:active {
+	background: #CCC none repeat scroll 0% 0%;
+}
+
+span.infobtn {
+	float:right;
+	border:1px solid #000;
+	box-shadow:0px 0px 5px 0px rgba(0, 0, 0, 0.8);
+	border-radius:4px;
+	line-height:20px;
+	padding:0px 4px;
+	display:block;
+}
+
+div.input-info-container {
+	position:relative;
+}
+
+div.input-info-container > span.infobtn {
+	position:absolute;
+	right:6px;
+	top:3px;
+}
+
+div.button > span.infobtn {
+	margin-right:5px;
+}
+
+div.tabbox > div.active {
+	padding-top:40px;
+	font-weight:700;
+}
+
+/* subscript */
+span.d {
+	font-size:11px;
+	top:4px;
+	position:relative;
+}
+
+/* superscript */
+span.u {
+	font-size:11px;
+	bottom:4px;
+	position:relative;
+}
+
+/* highlight */
+td.h, td.h > span {
+	color:#FFF;
+	background-color:#F00;
+}
+
+/* extra highlight */
+td.x, td.x > span {
+	color:#FFA;
+	background-color:#A0A;
+}
+
+div.table_box {
+	width:100%;
+	text-align:center;
+}
+
+table {
+	display:inline-block;
+	max-width:100%;
+	border-collapse:collapse;
+	border: 1px solid rgb(0, 0, 0);
+	box-shadow:0px 0px 5px 0px rgba(0, 0, 0, 0.8);
+	margin-top:16px;
+}
+
+/* position texts with indices just like other texts */
+td {
+	vertical-align:super;
+}
+
+tbody.vbars > tr > td, tbody.lastbar > tr > td {
+	text-align:center;
+}
+
+/* vertical bars between all columns */
+tbody.vbars > tr > td {
+	border-right:1px solid #000;
+}
+tbody.vbars > tr > td:last-child {
+	text-align:left;
+}
+
+/* vertical bars only before last column */
+tbody.lastbar > tr > td:last-child {
+	border-left:1px solid #000;
+	text-align:left;
+}
+
+/* td only in existence for vertical bar */
+td.b {
+	padding:1px 1px 0px 0px;
+}
+
+tr > td:last-child {
+	border-right: 0px solid #FFF !important;
+}
+
+th, td {
+	padding:1px 3px 2px 3px;
+}
+
+tr.barless > td {
+	border-left:0px;
+	border-right:0px;
+}
+tr.barless > td:first-child {
+	border-left:1px solid #000;
+}
+tr.barless > td:nth-last-child(2) {
+	border-right:1px solid #000;
+}
+tr.barless > td:last-child {
+	border-left:1px solid #000;
+	border-right:1px solid #000;
+}
+
+.our_checkbox {
+	text-align:center;
+	width:25px;
+}
+
+.our_slider {
+	width:25%;
+}
+
+.our_checkbox, .our_slider {
+	display:inline-block;
+	box-shadow:0px 0px 5px 0px rgba(0, 0, 0, 0.8);
+	border-radius:4px;
+	border:1px solid rgb(0, 0, 0);
+	margin-right:5px;
+}
+
+.our_slider > span {
+	display:inline-block;
+	box-shadow:-50px 0px 50px -5px rgba(0, 0, 0, 0.5) inset;
+	background:#EEE none repeat scroll 0% 0%;
+	border-radius:3px;
+}
+
+span.halfwidth {
+	width:50%;
+	display:inline-block;
+}
+
+div.no_select {
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+div.error {
+	background-color:rgb(255, 0, 0);
+	font-weight:700;
+	margin:48px -16px;
+	color:rgb(255, 255, 255);
+	text-align:center;
+}
+
+
+
+/* SVG */
+
+div.svg_container {
+	position:relative;
+	min-height:10px;
+}
+
+div.svg_btn {
+	position:absolute;
+	right:0px;
+	top:-10px;
+	border:1px solid #000;
+	box-shadow:0px 0px 5px 0px rgba(0, 0, 0, 0.8);
+	border-radius:4px;
+	line-height:20px;
+	padding:0px 4px;
+}
+
+svg {
+	width:100%;
+	height:300px;
+}
+
+.svgheight {
+	max-height:300px;
+}
+
+svg > text, svg > text > tspan {
+	font-size:3px;
+}
+
+svg > text.prefix, svg > text.prefix > tspan {
+	font-size:1.5px;
+}
+
+/* subscript */
+svg > text > tspan.d {
+	font-size:2px;
+}
+svg > text.prefix > tspan.d {
+	font-size:1px;
+}
+
+/* superscript */
+svg > text > tspan.u {
+	font-size:2px;
+}
+svg > text.prefix > tspan.u {
+	font-size:1px;
+}

@@ -267,6 +267,23 @@
 			display:inline-block;
 		}
 
+		div.no_select {
+			-webkit-touch-callout: none;
+			-webkit-user-select: none;
+			-khtml-user-select: none;
+			-moz-user-select: none;
+			-ms-user-select: none;
+			user-select: none;
+		}
+
+		div.error {
+			background-color:rgb(255, 0, 0);
+			font-weight:700;
+			margin-top:48px;
+			color:rgb(255, 255, 255);
+			text-align:center;
+		}
+
 
 
 		/* SVG */
@@ -487,14 +504,14 @@
 			Please enter the two indices that should be used for the two graphs:
 		</div>
 		<div class="input-info-container">
-			<input id="in-options-index-1" type="text" value="0" class="md-2"></input>
-			<input id="in-options-index-2" type="text" value="1" class="md-2"></input>
+			<input id="in-options-index-1" type="text" value="0" onchange="animateApplyBtn(true)" onkeyup="animateApplyBtn(true)" class="md-2"></input>
+			<input id="in-options-index-2" type="text" value="1" onchange="animateApplyBtn(true)" onkeyup="animateApplyBtn(true)" class="md-2"></input>
 		</div>
-		<div>
+		<div class="no_select">
 			<span onmousedown="changeOptions_verbosity_mouse(event, true)" onmouseup="changeOptions_verbosity_mouse(false)" onmousemove="changeOptions_verbosity_move(event)" id="in-options-verbosity" style="cursor:pointer" class="our_slider"><span id="in-options-verbosity-inner" style="width:100%">&nbsp;</span></span> Verbosity: <span id="verbosity-out">tell me everything</span></b>
 		</div>
-		<div onclick="changeOptions_hide_xbw_envs()" style="cursor:pointer">
-			<span id="in-options-hide-xbw-envs" class="our_checkbox">&nbsp;</span> Hide XBW environments (recommended to speed up the calculations)</b>
+		<div onclick="changeOptions_show_xbw_envs()" style="cursor:pointer">
+			<span id="in-options-show-xbw-envs" class="our_checkbox">X</span> Show XBW environments</b>
 		</div>
 		<div onclick="changeOptions_show_graph()" style="cursor:pointer">
 			<span id="in-options-show-graph" class="our_checkbox">&nbsp;</span> Show tab for na&iuml;ve graph functionality <b id="show-graph-info-text" style="display:none">(which has been discontinued)</b>
@@ -503,10 +520,10 @@
 			<span id="in-options-show-autoi" class="our_checkbox">&nbsp;</span> Show auto <i>i</i> above automaton nodes
 		</div>
 		<div>
-			The first element of any string and array is obviously <input id="in-options-array-offset" type="text" value="0" style="display: inline-block; width: 10%; margin-right: 5px; margin-left: 5px;"></input>.
+			The first element of any string and array is obviously <input id="in-options-array-offset" type="text" value="0" style="display: inline-block; width: 10%; margin-right: 5px; margin-left: 5px;" onchange="animateApplyBtn(true)" onkeyup="animateApplyBtn(true)"></input>.
 		</div>
 		<div>
-			<div class="button md-2" onclick="applyOptions()">Apply Options</div>
+			<div class="button md-2" onclick="applyOptions()" id="id-apply-btn">Apply Options</div>
 			<div class="button md-2" onclick="resetOptions()">Reset Options</div>
 		</div>
 	</div>
@@ -561,7 +578,7 @@
 
 
 	<span class="creditline absleft">
-		GML, Version: 0.0.1.4
+		GML, Version: 0.0.1.5
 	</span>
 	<span class="creditline absright">
 		Moyaccercchi (tws@hi.is), University of Iceland, 1<span class="u">st</span> Sep 2014 - 8<span class="u">th</span> Dec 2015
@@ -991,17 +1008,21 @@
 				document.getElementById('verbosity-out').innerHTML = verbToStr[verbosity];
 
 				GML.verbosity = verbosity;
+
+				animateApplyBtn(true);
 		}
 
-		function changeOptions_hide_xbw_envs() {
+		function changeOptions_show_xbw_envs() {
 
-			var el = document.getElementById('in-options-hide-xbw-envs');
+			var el = document.getElementById('in-options-show-xbw-envs');
 
 			if (el.innerHTML == 'X') {
 				el.innerHTML = '&nbsp;';
 			} else {
 				el.innerHTML = 'X';
 			}
+
+			animateApplyBtn(true);
 		}
 
 		function changeOptions_show_graph() {
@@ -1016,6 +1037,8 @@
 				el.innerHTML = 'X';
 				it.style.display = 'inline';
 			}
+
+			animateApplyBtn(true);
 		}
 
 		function changeOptions_show_autoi() {
@@ -1027,6 +1050,48 @@
 			} else {
 				el.innerHTML = 'X';
 			}
+
+			animateApplyBtn(true);
+		}
+
+		applyBtncurrentlyanimated = false;
+		applyBtncurrentlyintervalID = 0;
+		applyBtncurrentlycallint = 0;
+		applyBtncurrentlygoingdown = true;
+
+		// if startanimation is set to false, then we stop the animation instead
+		function animateApplyBtn(startanimation) {
+
+			if (applyBtncurrentlyanimated !== startanimation) {
+				applyBtncurrentlycallint = 0;
+				if (startanimation) {
+					applyBtncurrentlyintervalID = window.setInterval(
+						animateApplyBtnCall, 50);
+				} else {
+					clearInterval(applyBtncurrentlyintervalID);
+					animateApplyBtnCall();
+				}
+				applyBtncurrentlyanimated = startanimation;
+			}
+		}
+
+		function animateApplyBtnCall() {
+			if (applyBtncurrentlygoingdown) {
+				applyBtncurrentlycallint -= 5;
+			} else {
+				applyBtncurrentlycallint += 5;
+			}
+			if (applyBtncurrentlycallint < -17) {
+				applyBtncurrentlygoingdown = false;
+				applyBtncurrentlycallint = -17;
+			}
+			if (applyBtncurrentlycallint > 108) {
+				applyBtncurrentlygoingdown = true;
+				applyBtncurrentlycallint = 108;
+			}
+			var c = 238 - applyBtncurrentlycallint;
+			document.getElementById('id-apply-btn').style.backgroundColor =
+				'rgb(' + c + ',' + c + ',' + c + ')';
 		}
 
 		function applyOptions() {
@@ -1046,7 +1111,7 @@
 
 			document.getElementById('in-options-array-offset').value = '0';
 
-			document.getElementById('in-options-hide-xbw-envs').innerHTML = '&nbsp;';
+			document.getElementById('in-options-show-xbw-envs').innerHTML = 'X';
 			document.getElementById('in-options-show-graph').innerHTML = '&nbsp;';
 			document.getElementById('in-options-show-autoi').innerHTML = '&nbsp;';
 
@@ -1062,7 +1127,7 @@
 				setJumpDispStyle(i, false);
 			}
 
-			GML.hideXBWenvironments = document.getElementById('in-options-hide-xbw-envs').innerHTML == 'X';
+			GML.hideXBWenvironments = document.getElementById('in-options-show-xbw-envs').innerHTML != 'X';
 
 			GML.set_to_HTML();
 
@@ -1090,12 +1155,14 @@
 			}
 
 			changeOptions_verbosity_update();
+
+			animateApplyBtn(false);
 		};
 
 
 
 		// default to default options ;)
-		saveOptions();
+		resetOptions();
 
 		// default to tab 5
 		showTab(5);

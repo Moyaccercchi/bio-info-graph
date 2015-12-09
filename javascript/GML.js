@@ -64,6 +64,7 @@
 	workOnAutomatonPrefixes: function(auto, makePrefixSorted, addToSOut);
 	workOnAutomatonPrefixes_int: function(auto, makePrefixSorted, addToSOut);
 	deep_copy_node: function(node);
+	deep_copy_array: function(arr);
 	isAutomatonPrefixSorted: function(auto);
 	makeAutomatonPrefixSorted: function(auto, addToSOut);
 	getFindexFromAutomaton: function(auto);
@@ -102,6 +103,7 @@
 	comparePrefixes: function(p1, p2);
 	prunePrefixes: function(prefix_arr);
 	exchangeInString: function(str, pos1, pos2);
+	setInString: function(str, pos, chr);
 	make_xbw_environment: function();
 	example: function();
 	xbw_example: function();
@@ -135,12 +137,16 @@ window.GML = {
 	origin_1: '0', // which index to show on H_1 (and to use for origin 1 in general)
 	origin_2: '1', // which index to show on H_2 (and to use for origin 2 in general)
 
-	merge_directly: true, // true: take out $1 and #1 - they should not actually be in the merged graph,
+	merge_directly: true, // (considering the graph merging)
+						  // true: take out $1 and #1 - they should not actually be in the merged graph,
 						  //       and we should jump over them in the individual ones while merging them
 						  //       too =)
-						  // false: actually insert $1 and #1 nodes in between
+						  // false: actually insert $1 and #1 nodes in between (currently not supported)
 
 	show_auto_i: false, // true: show auto i above automaton nodes in the visualize function, false: do not
+
+	error_flag: false, // global flag that can be unset before calling functions within GML, and will
+					   // be set to true if these functions encounter internal errors
 
 	// A note about DaTeX:
 	// In DaTeX, we enclose maths expressions in dollarsigns, and to write an actual dollarsign, we write \S.
@@ -634,29 +640,43 @@ window.GML = {
 			sout += "¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯" + this.nl;
 		}
 
-		sout += "We are looking at" + this.nlnl;
+		if (this.verbosity > 1) {
 
-		sout += this.visualize(auto, false);
+			sout += "We are looking at" + this.nlnl;
+
+			sout += this.visualize(auto, false);
+		}
 
 
 
-		sout += "We first need to convert this into a reverse deterministic automaton." + this.nlnl;
+		if (this.verbosity > 2) {
+
+			sout += "We first need to convert this into a reverse deterministic automaton." + this.nlnl;
+		}
 
 		var isRevDet = this.isAutomatonReverseDeterministic(auto);
 		var abortDueToRevDet = false;
 
 		if (isRevDet) {
 
-			sout += "Luckily, the given automaton is already reverse deterministic." + this.nlnl;
+			if (this.verbosity > 1) {
+
+				sout += "Luckily, the given automaton is already reverse deterministic." + this.nlnl;
+			}
 		
 		} else {
 
-			sout += "To achieve a reverse deterministic automaton, " +
-					"we consider the string alignment that a problematic region in the " +
-					"automaton represents and slide the predecessor characters as far to the right " +
-					"as possible (effectively sliding the gaps to the left.)" + this.nl;
-			sout += "We then reconstruct the automaton, and it will be guaranteed to be reverse " +
-					"deterministic (see Siren 2014.)" + this.nlnlnl;
+			if (this.verbosity > 5) {
+
+				sout += "To achieve a reverse deterministic automaton, " +
+						"we consider the string alignment that a problematic region in the " +
+						"automaton represents and slide the predecessor characters as far to the right " +
+						"as possible (effectively sliding the gaps to the left.)" + this.nl;
+				sout += "We then reconstruct the automaton, and it will be guaranteed to be reverse " +
+						"deterministic (see Siren 2014.)" + this.nlnl;
+			}
+
+			sout += this.nlnl;
 
 			this.sout = '';
 			auto = this.makeAutomatonReverseDeterministic(auto, true);
@@ -681,69 +701,105 @@ window.GML = {
 
 		} else {
 
-			sout += "We now need to convert this reverse deterministic automaton " +
-					"into a prefix-sorted automaton. Let's have a look at the prefixes:" + this.nlnl;
+			if (this.verbosity > 3) {
+
+				sout += "We now need to convert this reverse deterministic automaton " +
+						"into a prefix-sorted automaton.";
+			}
 
 			auto = this.computePrefixes(auto);
 
-			sout += this.visualize(auto, true);
+			if (this.verbosity > 5) {
+
+				sout += "Let's have a look at the prefixes:" + this.nlnl;
+
+				sout += this.visualize(auto, true);
+			}
 
 			var isPrefSort = this.isAutomatonPrefixSorted(auto);
 
 			if (isPrefSort) {
 
-				sout += "Luckily, the given automaton is already prefix sorted." + this.nlnl;
+				if (this.verbosity > 3) {
+					sout += "Luckily, the given automaton is already prefix sorted." + this.nlnl;
+				}
 			
 			} else {
 
-				sout += "To achieve a prefix sorted automaton, " + 
-						"we split all nodes that prohibit this automaton from being prefix sorted " +
-						"into several parts and repeat this process until no more nodes have " +
-						"problematic prefixes (as indicated by the " + this.prefixErrorChar + 
-						" signs within the shown prefixes.)" +
-						this.nlnlnl;
-
 				this.sout = '';
 				auto = this.makeAutomatonPrefixSorted(auto, true);
-				sout += this.sout;
+
+				if (this.verbosity > 3) {
+					sout += "To achieve a prefix sorted automaton, " + 
+							"we split all nodes that prohibit this automaton from being prefix sorted " +
+							"into several parts and repeat this process until no more nodes have " +
+							"problematic prefixes (as indicated by the " + this.prefixErrorChar + 
+							" signs within the shown prefixes.)" +
+							this.nlnlnl;
+
+					sout += this.sout;
+				}
 
 				isPrefSort = this.isAutomatonPrefixSorted(auto);
 
-				if (isPrefSort) {
-					sout += "We now have the following prefix-sorted automaton:" + this.nlnl;
-				} else {
-					sout += "Ooops! We do not have a prefix-sorted automaton:" + this.nlnl;
-				}
+				if (this.verbosity > 3) {
+					if (isPrefSort) {
+						sout += "We now have the following prefix-sorted automaton:" + this.nlnl;
+					} else {
+						sout += "Ooops! We do not have a prefix-sorted automaton:" + this.nlnl;
+					}
 
-				sout += this.visualize(auto, true);
+					sout += this.visualize(auto, true);
+				}
 			}
 
 
 
 			// BWT and pos for H
 
-			sout += "We can now generate the BWT of the graph, ";
-			sout += "together with the vector " + this.DM + "." + this.nlnl;
-			sout += "To do so, we first sort the prefixes alphabetically ";
-			sout += "(being assured that each prefix is unique and therefore the sorting will not ";
-			sout += "be ambiguous).";
+			if (this.verbosity > 3) {
+
+				sout += "We can now generate the BWT of the graph, ";
+				sout += "together with the vector " + this.DM + "." + this.nlnl;
+
+			} else {
+
+				sout += 'We get:' + this.nlnl;
+			}
 
 			var findex = this.getFindexFromAutomaton(auto);
-			sout += this.fe_findexToTable(findex, false);
 
-			sout += "We can now add the labels of the preceding nodes as BWT and the ";
-			sout += "encoded out-degree of each node as vector " + this.DM + ":" + this.nlnl;
+			if (this.verbosity > 6) {
 
-			sout += this.fe_findexToTable(findex, true);
+				sout += "To do so, we first sort the prefixes alphabetically ";
+				sout += "(being assured that each prefix is unique and therefore the sorting will not ";
+				sout += "be ambiguous).";
 
-			sout += 'Converting this table back into an automaton (just to make sure ' +
-					'that everything worked out correctly) yields the following result:' + this.nlnl;
+				sout += this.fe_findexToTable(findex, false);
 
-			var auto = this.getAutomatonFromFindex(findex);
+				sout += "We can now add the labels of the preceding nodes as BWT and the ";
+				sout += "encoded out-degree of each node as vector " + this.DM + ":" + this.nlnl;
+			}
 
-			sout += this.visualize(auto, true);
+			if (this.verbosity > 2) {
 
-			sout += 'We now want to do a bit of work on the table, so we add the ' + this.DF + ' vector:';
+				sout += this.fe_findexToTable(findex, true);
+			}
+
+			if (this.verbosity > 3) {
+
+				var auto = this.getAutomatonFromFindex(findex);
+
+				sout += 'Converting this table back into an automaton (just to make sure ' +
+						'that everything worked out correctly) yields the following result:' + this.nlnl;
+
+				sout += this.visualize(auto, true);
+			}
+
+			if (this.verbosity > 2) {
+
+				sout += 'We now want to do a bit of work on the table, so we add the ' + this.DF + ' vector:';
+			}
 
 			findex[3] = this.generateFfromPrefixesBWTM(findex[0], findex[1], findex[2]);
 
@@ -751,10 +807,12 @@ window.GML = {
 
 
 
-			// initialize XBW environment
-			window.xbw = this.make_xbw_environment();
-			window.xbw.init(findex);
-			window.xbw.generateHTML(2);
+			if (!GML.hideXBWenvironments) {
+				// initialize XBW environment
+				window.xbw = this.make_xbw_environment();
+				window.xbw.init(findex);
+				window.xbw.generateHTML(2);
+			}
 		}
 
 
@@ -890,7 +948,7 @@ window.GML = {
 
 			if (this.verbosity > 2) {
 				sout += "We need to convert these into reverse deterministic and then " +
-						"into prefix-sorted automata.";
+						"into prefix-sorted automata." + this.nlnl;
 			}
 
 			auto = this.computePrefixes(auto);
@@ -1004,14 +1062,20 @@ window.GML = {
 		var m2 = findex2[2];
 
 
-		sout += '<span id="in-jump-3-3">We</span> now want to find this prefix array, BWT and ' +
-				this.DM + ' vector just based on the ' +
-				'data we have for ' + this.DH_1 + ' and ' + this.DH_2 + '.' + this.nlnlnl;
+		sout += '<span id="in-jump-3-3"></span>';
 
-		sout += 'The very first thing that we need to figure out is which letter is the last of ' +
-				this.DH_1 + ' and which letter is the first of ' + this.DH_2 + ', as this information ' +
-				'will be useful later on, and it is much easier to figure it out once and remember it.' +
-				this.nlnl;
+		if (this.verbosity > 1) {
+			sout += 'We now want to find this prefix array, BWT and ' +
+					this.DM + ' vector just based on the ' +
+					'data we have for ' + this.DH_1 + ' and ' + this.DH_2 + '.' + this.nlnlnl;
+		}
+
+		if (this.verbosity > 3) {
+			sout += 'The very first thing that we need to figure out is which letter is the last of ' +
+					this.DH_1 + ' and which letter is the first of ' + this.DH_2 + ', as this information ' +
+					'will be useful later on, and it is much easier to figure it out once and remember it.' +
+					this.nlnl;
+		}
 
 		// find last letter of H_1
 		// (implicitly assuming that there is exactly one edge
@@ -1024,10 +1088,12 @@ window.GML = {
 		for (i=0; i < findex1[0].length; i++) {
 			if (findex1[0][i][0] == this.DS) {
 				this.lastH1Letter = bwt1[i];
-				sout += 'Looking at the prefixes of ' + this.DH_1 + ', we can see that the prefix ' +
-						this.DS + ' has the BWT entry ' + this.lastH1Letter +
-						' associated with it, so the last letter of ' + this.DH_1 +
-						' is ' + this.lastH1Letter + '.' + this.nlnl;
+				if (this.verbosity > 3) {
+					sout += 'Looking at the prefixes of ' + this.DH_1 + ', we can see that the prefix ' +
+							this.DS + ' has the BWT entry ' + this.lastH1Letter +
+							' associated with it, so the last letter of ' + this.DH_1 +
+							' is ' + this.lastH1Letter + '.' + this.nlnl;
+				}
 				break;
 			}
 		}
@@ -1043,18 +1109,22 @@ window.GML = {
 		for (i=0; i < bwt2.length; i++) {
 			if (bwt2[i] == this.DK) {
 				this.firstH2Letter = findex2[0][i][0][0];
-				sout += 'Looking at the BWT of ' + this.DH_2 + ', we can see that ' +
-						this.DK + ' in the BWT has the prefix ' + findex2[0][i][0] +
-						' associated with it, so the first letter of ' + this.DH_2 +
-						' is ' + this.firstH2Letter + '.' + this.nlnlnl;
+				if (this.verbosity > 3) {
+					sout += 'Looking at the BWT of ' + this.DH_2 + ', we can see that ' +
+							this.DK + ' in the BWT has the prefix ' + findex2[0][i][0] +
+							' associated with it, so the first letter of ' + this.DH_2 +
+							' is ' + this.firstH2Letter + '.' + this.nlnlnl;
+				}
 				break;
 			}
 		}
 
 
 
-		sout += "We are now ready to look at all the prefixes, while keeping track of where " +
-				'they are coming from:' + this.nlnl;
+		if (this.verbosity > 2) {
+			sout += 'We are now ready to look at all the prefixes, while keeping track of where ' +
+					'they are coming from:' + this.nlnl;
+		}
 
 
 		var p1 = this.add_index_to_col(findex1[0], this.origin_1);
@@ -1071,19 +1141,13 @@ window.GML = {
 		}
 
 
-		var stab = this.s_table_head;
-		stab += this.arr_to_str_wo_index(this.p12, this.td) + this.td + 'Prefix' + this.tabnl;
-		stab += this.p12_itlv.join(this.td) + this.td + 'Origin' + this.nl;
-		stab += this.endtab;
-		sout += this.hideWrap(stab, 'Table');
-
-
-		sout += 'We actually want to more closely keep track of the ' + this.DK +
-				' and ' + this.DS + ' characters in use.' + this.nlnl +
-				'That is, from now on we will let ' + this.DH_1 + ' start with ' +
-				this.DK + ' and end with ' + this.DS_1_o + ', while ' + this.DH_2 +
-				' will start with ' + this.DK_1_o + ' and end with ' + this.DS + ':' +
-				this.nlnl;
+		if (this.verbosity > 2) {
+			var stab = this.s_table_head;
+			stab += this.arr_to_str_wo_index(this.p12, this.td) + this.td + 'Prefix' + this.tabnl;
+			stab += this.p12_itlv.join(this.td) + this.td + 'Origin' + this.nl;
+			stab += this.endtab;
+			sout += this.hideWrap(stab, 'Table');
+		}
 
 
 		var i;
@@ -1097,25 +1161,21 @@ window.GML = {
 		}
 		this.p12 = p1.concat(p2);
 
-		var stab = this.s_table_head;
-		stab += this.arr_to_str_wo_index(this.p12, this.td) + this.td + 'Prefix' + this.tabnl;
-		stab += this.p12_itlv.join(this.td) + this.td + 'Origin' + this.nl;
-		stab += this.endtab;
-		sout += this.hideWrap(stab, 'Table');
+		if (this.verbosity > 4) {
+			sout += 'We actually want to more closely keep track of the ' + this.DK +
+					' and ' + this.DS + ' characters in use.' + this.nlnl +
+					'That is, from now on we will let ' + this.DH_1 + ' start with ' +
+					this.DK + ' and end with ' + this.DS_1_o + ', while ' + this.DH_2 +
+					' will start with ' + this.DK_1_o + ' and end with ' + this.DS + ':' +
+					this.nlnl;
 
+			var stab = this.s_table_head;
+			stab += this.arr_to_str_wo_index(this.p12, this.td) + this.td + 'Prefix' + this.tabnl;
+			stab += this.p12_itlv.join(this.td) + this.td + 'Origin' + this.nl;
+			stab += this.endtab;
+			sout += this.hideWrap(stab, 'Table');
+		}
 
-		sout += 'It is important to now append ' + this.DK_1_o + ' and the first letter of ' +
-				this.DH_2 + ' (which is ' + this.firstH2Letter + ') to all prefixes that end on ' +
-				this.DS_1_o + ', as ' +
-				this.DS_1_o + ' is not actually in use in the final merged BWT.' + this.nlnl +
-				'(Which means that we are implicitly removing ' + this.DS_1_o + ' here, which ' +
-				'did correspond to a real node when looking at ' + this.DH_1 + ' in isolation.)' +
-				this.nlnl + 'Naturally, we first of all need to find the first node of ' + this.DH_2 +
-				'.' + this.nlnlnl;
-				'Appending the first letter of ' + this.DH_2 + '(which is ' + 
-				this.firstH2Letter + ') as well as ' + this.DK_1_o +
-				' to all prefixes ending with ' +
-				this.DS_1_o + ' gives us:' + this.nlnl;
 
 		for (i=0; i < this.p12.length; i++) {
 			if (this.p12[i][0].indexOf(this.DS_1_o) > -1) {
@@ -1123,18 +1183,26 @@ window.GML = {
 			}
 		}
 
-		var stab = this.s_table_head;
-		stab += this.arr_to_str_wo_index(this.p12, this.td) + this.td + 'Prefix' + this.tabnl;
-		stab += this.p12_itlv.join(this.td) + this.td + 'Origin' + this.nl;
-		stab += this.endtab;
-		sout += this.hideWrap(stab, 'Table');
+		if (this.verbosity > 2) {
+			sout += 'It is important to now append ' + this.DK_1_o + ' and the first letter of ' +
+					this.DH_2 + ' (which is ' + this.firstH2Letter + ') to all prefixes that end on ' +
+					this.DS_1_o + ', as ' +
+					this.DS_1_o + ' is not actually in use in the final merged BWT.' + this.nlnl +
+					'(Which means that we are implicitly removing ' + this.DS_1_o + ' here, which ' +
+					'did correspond to a real node when looking at ' + this.DH_1 + ' in isolation.)' +
+					this.nlnl + 'Naturally, we first of all need to find the first node of ' + this.DH_2 +
+					'.' + this.nlnlnl +
+					'Appending the first letter of ' + this.DH_2 + '(which is ' + 
+					this.firstH2Letter + ') as well as ' + this.DK_1_o +
+					' to all prefixes ending with ' +
+					this.DS_1_o + ' gives us:' + this.nlnl;
 
-
-		sout += 'We now need to sort these prefixes together. If we are really lucky, ' +
-				'all the prefixes are different, we can sort them together, and be done.' +
-				this.nlnl +
-				'If this does not work in a certain position, then this position will be ' +
-				'highlighted.';
+			var stab = this.s_table_head;
+			stab += this.arr_to_str_wo_index(this.p12, this.td) + this.td + 'Prefix' + this.tabnl;
+			stab += this.p12_itlv.join(this.td) + this.td + 'Origin' + this.nl;
+			stab += this.endtab;
+			sout += this.hideWrap(stab, 'Table');
+		}
 
 
 		// add flags to the prefixes for future highlighting
@@ -1151,37 +1219,42 @@ window.GML = {
 		this.bwt = this.merge_with_interleave(bwt1, bwt2, this.p12_itlv);
 		this.m = this.merge_with_interleave(m1, m2, this.p12_itlv);
 
-		var stab = this.s_table_head;
-		if (this.give_out_HTML) {
-			stab = stab.slice(0, -4);
+		if (this.verbosity > 1) {
+			sout += 'We now need to sort these prefixes together. If we are really lucky, ' +
+					'all the prefixes are different, we can sort them together, and be done.' +
+					this.nlnl +
+					'If this does not work in a certain position, then this position will be ' +
+					'highlighted.';
+
+			var stab = this.s_table_head;
+			if (this.give_out_HTML) {
+				stab = stab.slice(0, -4);
+			}
+			stab += this.arr_to_highlighted_str(this.p12, 2) + this.td + 'Prefix' + this.tabnl;
+			stab += this.p12_itlv.join(this.td) + this.td + 'Origin' + this.nl;
+			stab += this.endtab;
+			sout += this.hideWrap(stab, 'Table');
 		}
-		stab += this.arr_to_highlighted_str(this.p12, 2) + this.td + 'Prefix' + this.tabnl;
-		stab += this.p12_itlv.join(this.td) + this.td + 'Origin' + this.nl;
-		stab += this.endtab;
-		sout += this.hideWrap(stab, 'Table');
 
 
-		sout += 'We should also take a look at the BWT and ' + this.DM + ' vector associated ' +
-				'with this preliminary ordering.' + this.nlnl +
-				'Oh, and from now on, we will replace "' +
-				this.DS_1_o + this.DK_1_o + '" with "&#62;", just to indicate that we are ' +
-				'switching from ' + this.DH_1 + ' to ' + this.DH_2 + ', but without having ' +
-				'to write so much all the time.' + this.nlnl +
-				'Finally, we will also rewrite ' + this.DS_1_o + this.DK_1_o + this.firstH2Letter +
-				' as just ' + this.DS_1_o + ' as this node is indeed very special: ' +
-				'We keep it in the table because it will be used whenever we come off ' + this.DH_1 +
-				', but it will not actually be considered (and will indeed be dropped in the very end)' +
-				' as it is equivalent to the node ' + this.DK_1_o + ' (which will also be dropped) ' +
-				'and the node with prefix ' + this.firstH2Letter + ' and origin 2, which in fact will ' +
-				'go on to represent the other two nodes once they are dropped in the end.' + this.nlnl;
+		if (this.verbosity > 4) {
+			sout += 'We should also take a look at the BWT and ' + this.DM + ' vector associated ' +
+					'with this preliminary ordering.' + this.nlnl +
+					'Oh, and from now on, we will replace "' +
+					this.DS_1_o + this.DK_1_o + '" with "&#62;", just to indicate that we are ' +
+					'switching from ' + this.DH_1 + ' to ' + this.DH_2 + ', but without having ' +
+					'to write so much all the time.' + this.nlnl +
+					'Finally, we will also rewrite ' + this.DS_1_o + this.DK_1_o + this.firstH2Letter +
+					' as just ' + this.DS_1_o + ' as this node is indeed very special: ' +
+					'We keep it in the table because it will be used whenever we come off ' + this.DH_1 +
+					', but it will not actually be considered (and will indeed be dropped in the very end)' +
+					' as it is equivalent to the node ' + this.DK_1_o + ' (which will also be dropped) ' +
+					'and the node with prefix ' + this.firstH2Letter + ' and origin 2, which in fact will ' +
+					'go on to represent the other two nodes once they are dropped in the end.' + this.nlnl;
 
-		sout += this.fe_p12ToTableWithHighlights([], true);
+			sout += this.fe_p12ToTableWithHighlights([], true);
+		}
 
-
-		sout += 'However, we need to exchange ' + this.DS + ' and ' + this.DS_1_o +
-				' in the BWT.' + this.nlnl + 'The reason for this is that the predecessor ' +
-				'overflow now occurs across both ' + this.DH_1 + ' and ' + this.DH_2 +
-				', instead of separately for both of them:' + this.nlnl;
 
 		for (i=0; i < p1.length; i++) {
 			bwt1[i] = bwt1[i].replace(this.DS_1_o, this.DS);
@@ -1191,100 +1264,111 @@ window.GML = {
 		}
 		this.bwt = this.merge_with_interleave(bwt1, bwt2, this.p12_itlv);
 
-		sout += this.fe_p12ToTableWithHighlights([], true);
+		if (this.verbosity > 4) {
+			sout += 'However, we need to exchange ' + this.DS + ' and ' + this.DS_1_o +
+					' in the BWT.' + this.nlnl + 'The reason for this is that the predecessor ' +
+					'overflow now occurs across both ' + this.DH_1 + ' and ' + this.DH_2 +
+					', instead of separately for both of them:' + this.nlnl;
+
+			sout += this.fe_p12ToTableWithHighlights([], true);
+		}
 
 
 
-		sout += 'We now think a little bit about how we can navigate through this table, ' +
-				'which we will have to do a lot during the following steps.' + this.nlnl +
-				'Every entry in the table corresponds to one node. ' +
-				'So even though we ' + "don't" + ' explicitly have the two original graphs ' +
-				'(or the fully merged graph), we can still meaningfully think about nodes, ' +
-				'and doing so will make our life much easier.' + this.nlnl +
-				'In particular, instead of the more traditional mappings ' +
-				'(last-to-first and vice versa) we can simply consider the functions ' +
-				'nextNodes(' + this.di + ') and prevNodes(' + this.di + '). ' +
-				'We define both of them to be functions that take in an integer ' +
-				'(the position of the node within the table; that is, the number of the column), ' +
-				'and give out an array of integers (the positions of nodes.)' + this.nlnl +
-				'So, if we call nextNodes(10), ' +
-				'then the result will be an array containing all indicies of nodes ' +
-				'which have in-edges coming from node 10.' + this.nlnl +
-				'Similarly, if we call prevNodes(10), ' +
-				'the result will be an array containing all indicies of nodes ' +
-				'which have out-edges going to node 10.' + this.nlnl +
-				'In practice, we can do this by just looking at the information ' +
-				'given by the prefixes, origin, BWT and ' + this.DM + ' vector.' + this.nlnlnl +
+		if (this.verbosity > 9) {
+			sout += 'We now think a little bit about how we can navigate through this table, ' +
+					'which we will have to do a lot during the following steps.' + this.nlnl +
+					'Every entry in the table corresponds to one node. ' +
+					'So even though we ' + "don't" + ' explicitly have the two original graphs ' +
+					'(or the fully merged graph), we can still meaningfully think about nodes, ' +
+					'and doing so will make our life much easier.' + this.nlnl +
+					'In particular, instead of the more traditional mappings ' +
+					'(last-to-first and vice versa) we can simply consider the functions ' +
+					'nextNodes(' + this.di + ') and prevNodes(' + this.di + '). ' +
+					'We define both of them to be functions that take in an integer ' +
+					'(the position of the node within the table; that is, the number of the column), ' +
+					'and give out an array of integers (the positions of nodes.)' + this.nlnl +
+					'So, if we call nextNodes(10), ' +
+					'then the result will be an array containing all indicies of nodes ' +
+					'which have in-edges coming from node 10.' + this.nlnl +
+					'Similarly, if we call prevNodes(10), ' +
+					'the result will be an array containing all indicies of nodes ' +
+					'which have out-edges going to node 10.' + this.nlnl +
+					'In practice, we can do this by just looking at the information ' +
+					'given by the prefixes, origin, BWT and ' + this.DM + ' vector.' + this.nlnlnl +
 
-				'So to compute prevNodes(' + this.di + '), we look at BWT(' + this.di + '), ' +
-				'and then find any prefix starting with that letter ' +
-				'(if BWT(' + this.di + ') contains several letters, ' +
-				'we consider each of them separately one after the other.)' + this.nlnl +
-				'Of all these prefixes, ' + 
-				'we then only consider the ones having the same origin as node ' + this.di + '.' + this.nlnl +
-				'We finally jump over as many prefixes as there are nodes before ' + this.di + ' ' + 
-				'that contain the same letter in their BWT values, ' +
-				'counting each prefix by its ' + this.DM + ' value.' + this.nlnl +
-				'E.g. if we have the following table ' + 
-				'(just looking at the table and ignoring where it might come from)' + this.nlnl;
+					'So to compute prevNodes(' + this.di + '), we look at BWT(' + this.di + '), ' +
+					'and then find any prefix starting with that letter ' +
+					'(if BWT(' + this.di + ') contains several letters, ' +
+					'we consider each of them separately one after the other.)' + this.nlnl +
+					'Of all these prefixes, ' + 
+					'we then only consider the ones having the same origin as node ' + this.di + '.' + this.nlnl +
+					'We finally jump over as many prefixes as there are nodes before ' + this.di + ' ' + 
+					'that contain the same letter in their BWT values, ' +
+					'counting each prefix by its ' + this.DM + ' value.' + this.nlnl +
+					'E.g. if we have the following table ' + 
+					'(just looking at the table and ignoring where it might come from)' + this.nlnl;
 
-		var ti = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-		var tpref = ['AA', 'AA', 'AB', 'AB', 'AC', 'BA', 'BA', 'BB', 'BB', 'BC'];
-		var torig = [1, 2, 1, 2, 1, 1, 2, 1, 2, 1];
-		var tbwt = ['B', 'A', 'B', 'B', 'B', 'A', 'C', 'D|A', 'A|E', 'A'];
-		var tm = ['10', '1', '1', '1', '10', '10', '1', '10', '10', '1'];
+			var ti = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+			var tpref = ['AA', 'AA', 'AB', 'AB', 'AC', 'BA', 'BA', 'BB', 'BB', 'BC'];
+			var torig = [1, 2, 1, 2, 1, 1, 2, 1, 2, 1];
+			var tbwt = ['B', 'A', 'B', 'B', 'B', 'A', 'C', 'D|A', 'A|E', 'A'];
+			var tm = ['10', '1', '1', '1', '10', '10', '1', '10', '10', '1'];
 
-		var stab = this.s_table_head;
-		stab += ti.join(this.td) + this.td + this.di + this.tabnl;
-		stab += tpref.join(this.td) + this.td + 'Prefix' + this.tabnl;
-		stab += torig.join(this.td) + this.td + 'Origin' + this.tabnl;
-		stab += tbwt.join(this.td) + this.td + 'BWT' + this.tabnl;
-		stab += tm.join(this.td) + this.td + this.DM + this.nl;
-		stab += this.endtab;
+			var stab = this.s_table_head;
+			stab += ti.join(this.td) + this.td + this.di + this.tabnl;
+			stab += tpref.join(this.td) + this.td + 'Prefix' + this.tabnl;
+			stab += torig.join(this.td) + this.td + 'Origin' + this.tabnl;
+			stab += tbwt.join(this.td) + this.td + 'BWT' + this.tabnl;
+			stab += tm.join(this.td) + this.td + this.DM + this.nl;
+			stab += this.endtab;
 
-		sout += this.hideWrap(stab, 'Table');
+			sout += this.hideWrap(stab, 'Table');
 
 
 
-		sout += 'and we are looking for prevNodes(3), ' +
-				'then we can consider all prefixes starting with B - ' +
-				'that is, 6 through 10.' + this.nlnl +
-				'Of these, we drop 7 and 9, as their origin is not 1.' + this.nlnl +
-				'The remaining nodes are 6, 8 and 10, which we will now multiply according to ' +
-				'their ' + this.DM + ' values (as we are interested in how many edges are going ' +
-				'out of them.) This gives us the list 6, 6, 8, 8, 10, as both 6 and 8 have ' +
-				this.DM + ' value 10, and 10 has ' + this.DM + ' value 1.' + this.nlnl +
-				'We then count: Before node 3, we have node 1 which has B in its BWT and origin 1. ' +
-				'We also have node 2, but that one has a different origin, so is ignored.' + this.nlnl +
-				'So of the list 6, 6, 8, 8, 10, we jump over first one, ' +
-				'leaving us with the second one, which is node 6. ' +
-				'So we return the array [6]. ' +
-				'(We ignore the nodes following 6 and only return the first ' +
-				'one that was not jumped over.)' + this.nlnl +
-				'Notice that the returned array of prevNodes(' + this.di + ') ' +
-				'will always contain exactly as many entries ' +
-				'as the BWT of node ' + this.di + ' contains letters.' + this.nlnlnl +
+			sout += 'and we are looking for prevNodes(3), ' +
+					'then we can consider all prefixes starting with B - ' +
+					'that is, 6 through 10.' + this.nlnl +
+					'Of these, we drop 7 and 9, as their origin is not 1.' + this.nlnl +
+					'The remaining nodes are 6, 8 and 10, which we will now multiply according to ' +
+					'their ' + this.DM + ' values (as we are interested in how many edges are going ' +
+					'out of them.) This gives us the list 6, 6, 8, 8, 10, as both 6 and 8 have ' +
+					this.DM + ' value 10, and 10 has ' + this.DM + ' value 1.' + this.nlnl +
+					'We then count: Before node 3, we have node 1 which has B in its BWT and origin 1. ' +
+					'We also have node 2, but that one has a different origin, so is ignored.' + this.nlnl +
+					'So of the list 6, 6, 8, 8, 10, we jump over first one, ' +
+					'leaving us with the second one, which is node 6. ' +
+					'So we return the array [6]. ' +
+					'(We ignore the nodes following 6 and only return the first ' +
+					'one that was not jumped over.)' + this.nlnl +
+					'Notice that the returned array of prevNodes(' + this.di + ') ' +
+					'will always contain exactly as many entries ' +
+					'as the BWT of node ' + this.di + ' contains letters.' + this.nlnlnl +
 
-				'To compute nextNodes(3) within the same table, we look at the first ' +
-				'letter of its prefix AB. That first letter is A.' + this.nlnl +
-				'We now need to find all nodes whose BWTs contain the letter A - these ' +
-				'are 2, 6, 8, 9 and 10.' + this.nlnl +
-				'Of these, the ones with the same origin are 6, 8 and 10, as 2 and 9 have origin 2.' +
-				this.nlnl +
-				'We then count: Before node 3, we have node 1 which starts with A in its prefix ' +
-				'and has origin 1. ' +
-				'It has multiplicity (' + this.DM + ' value) 10, counting for 2. ' +
-				'We also have node 2 which has a prefix starting with A, ' +
-				'but that one has a different origin, so is ignored.' + this.nlnl +
-				'So of the remaining nodes 6, 8 and 10, we jump over first 2 (both for node 1), ' +
-				'leaving us with node 10, so we return the array [10]. ' +
-				'(If node 3 had had a different ' + this.DM + ' value, we would ' +
-				'have returned that many nodes - e.g., for value 10, we would have returned ' +
-				'not just [10], but [10, 11], assuming that node 11 would have been another ' +
-				'remaining node.)' +
-				this.nlnlnl;
+					'To compute nextNodes(3) within the same table, we look at the first ' +
+					'letter of its prefix AB. That first letter is A.' + this.nlnl +
+					'We now need to find all nodes whose BWTs contain the letter A - these ' +
+					'are 2, 6, 8, 9 and 10.' + this.nlnl +
+					'Of these, the ones with the same origin are 6, 8 and 10, as 2 and 9 have origin 2.' +
+					this.nlnl +
+					'We then count: Before node 3, we have node 1 which starts with A in its prefix ' +
+					'and has origin 1. ' +
+					'It has multiplicity (' + this.DM + ' value) 10, counting for 2. ' +
+					'We also have node 2 which has a prefix starting with A, ' +
+					'but that one has a different origin, so is ignored.' + this.nlnl +
+					'So of the remaining nodes 6, 8 and 10, we jump over first 2 (both for node 1), ' +
+					'leaving us with node 10, so we return the array [10]. ' +
+					'(If node 3 had had a different ' + this.DM + ' value, we would ' +
+					'have returned that many nodes - e.g., for value 10, we would have returned ' +
+					'not just [10], but [10, 11], assuming that node 11 would have been another ' +
+					'remaining node.)' +
+					this.nlnlnl;
+		}
 
-		sout += 'We are now ready to work on the highlighted problems.' + this.nlnl;
+		if (this.verbosity > 1) {
+			sout += 'We are now ready to work on the highlighted problems.' + this.nlnl;
+		}
 
 
 
@@ -1295,7 +1379,7 @@ window.GML = {
 
 			var patience = 0;
 
-			while ((patience < 100) && (thereAreProblems)) {
+			while ((patience < this.overflow_ceiling) && (thereAreProblems)) {
 
 				// initialize to an arbitrary big number, which is bigger than
 				// the length of any prefix in the graph (and no prefix should
@@ -1318,9 +1402,11 @@ window.GML = {
 
 
 				// 1 - look at last letter of first red prefix
-				shide += "We want to consider any one of the shortest red prefixes." + this.nlnl;
+				if (this.verbosity > 5) {
+					shide += "We want to consider any one of the shortest red prefixes." + this.nlnl;
+				}
 
-				if (patience === 0) {
+				if ((patience === 0) && (this.verbosity > 7)) {
 					shide += "(Let's arbitrarily pick the first one of the shortest red prefixes, " +
 							"where " + this.DS_1_o + this.DK_1_o + " is not counted. " +
 							"Oh, and it is important that we focus on the shortest prefixes, " +
@@ -1332,18 +1418,22 @@ window.GML = {
 							"seems like a lot of work.)" + this.nlnl;
 				}
 
-				shide += "The prefix is " + firstRedPrefix + " and we jump through the table " +
-						"all the way until we reach its last letter - that is, " + curLetter +
-						'.' + this.nlnl;
+				if (this.verbosity > 5) {
+					shide += "The prefix is " + firstRedPrefix + " and we jump through the table " +
+							"all the way until we reach its last letter - that is, " + curLetter +
+							'.' + this.nlnl;
 
-				shide += this.fe_p12ToTableWithHighlights([[firstRedi]], true);
+					shide += this.fe_p12ToTableWithHighlights([[firstRedi]], true);
+				}
 
 
 				// 2 - check BWT containing the letter with origin being the same the one of the letter
-				shide += "We now look through the BWT that has the same origin and " +
-						"search for the letters one after the other, " +
-						"using the nextNodes(i) function." +
-						this.nlnl;
+				if (this.verbosity > 5) {
+					shide += "We now look through the BWT that has the same origin and " +
+							"search for the letters one after the other, " +
+							"using the nextNodes(i) function." +
+							this.nlnl;
+				}
 
 				var next_nodes = [firstRedi];
 				for (i=0; i < firstRedPrefix.length; i++) {
@@ -1359,30 +1449,39 @@ window.GML = {
 					for (k=0; k < next_nodes.length; k++) {
 						next_nodes[k] = parseInt(next_nodes[k], 10);
 					}
-					shide += this.fe_p12ToTableWithHighlights([[], [], next_nodes], true);
+					if (this.verbosity > 6) {
+						shide += this.fe_p12ToTableWithHighlights([[], [], next_nodes], true);
+					}
 				}
 
 
 				// 3 - look at corresponding prefixes, and append them to the letter
-				shide += 'We now take the corresponding prefixes.' + this.nlnl;
+				if (this.verbosity > 5) {
+					shide += 'We now take the corresponding prefixes.' + this.nlnl;
 
-				shide += this.fe_p12ToTableWithHighlights([next_nodes], true);
-
-				shide += 'These prefixes get added to the original prefix ' + firstRedPrefix +
-						' that we were looking at, producing the following new prefixes:' + this.nlnl;
+					shide += this.fe_p12ToTableWithHighlights([next_nodes], true);
+				}
 
 				var replacement_prefixes = [];
 
 				for (i=0; i < next_nodes.length; i++) {
 					var pref = firstRedPrefix + this.p12[next_nodes[i]][0];
 					replacement_prefixes.push(pref);
-					shide += pref + this.nlnl;
 				}
-				shide += this.nlnl;
+
+				if (this.verbosity > 5) {
+					shide += 'These prefixes get added to the original prefix ' + firstRedPrefix +
+							' that we were looking at, producing the following new prefixes:' + this.nlnl;
+
+					shide += replacement_prefixes.join(this.nlnl);
+					shide += this.nlnlnl;
+				}
 
 				// 4 - insert these new prefixes instead of the original column
-				shide += 'We insert these new prefixes ' +
-						'instead of the original column.' + this.nlnl;
+				if (this.verbosity > 5) {
+					shide += 'We insert these new prefixes ' +
+							'instead of the original column.' + this.nlnl;
+				}
 
 				// calculate prevNodes only if necessary - but do so before actually doing any inserting,
 				// so that we do not calculate them when the table is not in a safe state
@@ -1411,27 +1510,32 @@ window.GML = {
 					ins_arr.push(firstRedi+i);
 					Madd += '0';
 				}
-				shide += this.fe_p12ToTableWithHighlights([ins_arr, ins_arr, ins_arr, ins_arr], true);
 
-				shide += 'We now need to consider the ' + this.DM + ' vector, for which we have set ' +
-						'the correct value for the new columns (taking the one from their origin), ' +
-						'but however have not yet reset the values of the preceding nodes. In this case, ';
+				if (this.verbosity > 5) {
+					shide += this.fe_p12ToTableWithHighlights([ins_arr, ins_arr, ins_arr, ins_arr], true);
+
+					shide += 'We now need to consider the ' + this.DM + ' vector, for which we have set ' +
+							'the correct value for the new columns (taking the one from their origin), ' +
+							'but however have not yet reset the values of the preceding nodes. In this case, ';
+				}
 
 				if (replacement_prefixes.length > 1) {
 
-					shide += 'we replaced 1 column with ' + replacement_prefixes.length +
-							' columns, so we inserted ' + (replacement_prefixes.length - 1) + ' columns.' +
-							this.nlnl;
-					
-					var mrep_arr = [];
+					if (this.verbosity > 5) {
+						shide += 'we replaced 1 column with ' + replacement_prefixes.length +
+								' columns, so we inserted ' + (replacement_prefixes.length - 1) + ' columns.' +
+								this.nlnl;
 
-					shide += 'This means that we have to increase the ' + this.DM +
-							' values of the preceding nodes by that same amount, ' +
-							'as these nodes now have more outgoing edges. ' +
-							'To find these preceding nodes, we used the prevNodes(i) ' + 
-							'function on the table before inserting the new columns, ' +
-							'so as to not use it while the table is in an unsafe or ' +
-							'inconsistent state.' + this.nlnl;
+						shide += 'This means that we have to increase the ' + this.DM +
+								' values of the preceding nodes by that same amount, ' +
+								'as these nodes now have more outgoing edges. ' +
+								'To find these preceding nodes, we used the prevNodes(i) ' + 
+								'function on the table before inserting the new columns, ' +
+								'so as to not use it while the table is in an unsafe or ' +
+								'inconsistent state.' + this.nlnl;
+					}
+
+					var mrep_arr = [];
 
 					for (i=0; i < prev_nodes.length; i++) {
 
@@ -1449,16 +1553,22 @@ window.GML = {
 						this.m[pnode] += Madd;
 					}
 
-					shide += this.fe_p12ToTableWithHighlights([ins_arr,[],[],mrep_arr], true);
+					if (this.verbosity > 5) {
+						shide += this.fe_p12ToTableWithHighlights([ins_arr,[],[],mrep_arr], true);
+					}
 				} else {
-					shide += 'we replaced one column with another one column, so we did not insert ' +
-							'any new columns at all, and no action is required.' + this.nlnlnl;
+					if (this.verbosity > 5) {
+						shide += 'we replaced one column with another one column, so we did not insert ' +
+								'any new columns at all, and no action is required.' + this.nlnlnl;
+					}
 				}
 
 
 				// 5&6 - resort prefixes and recheck problems
-				shide += 'We can now sort the prefixes again alphabetically and ' +
-						'check for further problems.' + this.nlnl;
+				if (this.verbosity > 5) {
+					shide += 'We can now sort the prefixes again alphabetically and ' +
+							'check for further problems.' + this.nlnl;
+				}
 
 				// keep track of the BWT and M vector while sorting
 				// (we cannot just merge afterwards with the interleave vector,
@@ -1475,36 +1585,38 @@ window.GML = {
 				this.bwt = this.get_first_n_from_scr(this.p12, 3);
 				this.m = this.get_first_n_from_scr(this.p12, 4);
 
-				shide += this.fe_p12ToTableWithHighlights([], true);
+				if (this.verbosity > 5) {
+					shide += this.fe_p12ToTableWithHighlights([], true);
+				}
 
 
 				// 7 - repeat approach until no more problems (or run out of patience)
 				patience++;
 
-				sout += this.hideWrap(shide + '</div>', 'Step ' + patience) + this.nlnl;
+				if (this.verbosity > 5) {
+					sout += this.hideWrap(shide + '</div>', 'Step ' + patience) + this.nlnl;
+				}
 			}
 
 			if (thereAreProblems) {
 				sout += 'Sadly, the merging was not successful.' + this.nlnl;
 				unsuccessful = true;
 			} else {
-				sout += 'We have now achieved the fully merged BWT.' + this.nlnl;
+				if (this.verbosity > 1) {
+					sout += 'We have now achieved the fully merged BWT.' + this.nlnl;
+				}
 			}
 		} else {
-			sout += 'We are very lucky, as there are no problems, and we have therefore already ' +
-					'found the fully merged BWT.' + this.nlnl;
+			if (this.verbosity > 1) {
+				sout += 'We are lucky, as there are no problems, and we have therefore already ' +
+						'found the fully merged BWT.' + this.nlnl;
+			}
 		}
 
 
 
 		if (!unsuccessful) {
 			if (this.merge_directly) {
-				sout += 'We can take out the helper nodes ' + this.DS_1_o + ' and ' + this.DK_1_o +
-						' (adding the ' + this.DM + ' value of ' + this.DK_1_o + ' to the last node of ' +
-						this.DH_1 + '), as well as replacing ' + this.DK_1_o + ' in the BWT with ' +
-						this.lastH1Letter +
-						', the last letter of ' + this.DH_1 + ':' + this.nlnl;
-
 				// get M-value of "#_1" node
 				var Madd = '';
 				for (i=0; i < this.p12.length; i++) {
@@ -1543,7 +1655,15 @@ window.GML = {
 					}
 				}
 
-				sout += this.fe_p12ToTableWithHighlights([], true);
+				if (this.verbosity > 4) {
+					sout += 'We can take out the helper nodes ' + this.DS_1_o + ' and ' + this.DK_1_o +
+							' (adding the ' + this.DM + ' value of ' + this.DK_1_o + ' to the last node of ' +
+							this.DH_1 + '), as well as replacing ' + this.DK_1_o + ' in the BWT with ' +
+							this.lastH1Letter +
+							', the last letter of ' + this.DH_1 + ':' + this.nlnl;
+
+					sout += this.fe_p12ToTableWithHighlights([], true);
+				}
 			}
 
 
@@ -1553,9 +1673,6 @@ window.GML = {
 			//     ...$_1#_1..., as e.g. TG vs. T$_1#_1A would be pruned to TG vs. T$ instead of
 			//     the correct TG vs. TA - for now we will just discontinue support for merge_directly
 			//     being false ;)
-
-			sout += 'As we are done with the prefix-doubling, we can now prune the prefixes back down ' +
-					'to the shortest possible lengths that still leave the prefixes unique:' + this.nlnl;
 
 			for (i=1; i < this.p12.length-1; i++) {
 				while ((this.p12[i][0].slice(0, this.p12[i][0].length-1).slice(0, this.p12[i-1][0].length) !==
@@ -1567,15 +1684,30 @@ window.GML = {
 				}
 			}
 
-			sout += this.fe_p12ToTableWithHighlights([], true);
+			if (this.verbosity > 3) {
+				sout += 'As we are done with the prefix-doubling, we can now prune the prefixes back down ' +
+						'to the shortest possible lengths that still leave the prefixes unique:' + this.nlnl;
+
+				sout += this.fe_p12ToTableWithHighlights([], true);
+			}
+		}
+
+		if (this.verbosity > 1) {
+			sout += 'Finally, we take out the origin row, as it is not needed anymore.' + this.nl +
+					'We however do add another row, namely the ' + this.DF + ' bit vector.' + this.nlnl;
+		} else {
+			sout += 'We get:' + this.nlnl;
 		}
 
 		this.f = this.generateFfromPrefixesBWTM(this.p12, this.bwt, this.m);
 
-		sout += 'Finally, we take out the origin row, as it is not needed anymore.' + this.nl +
-				'We however do add another row, namely the ' + this.DF + ' bit vector.' + this.nlnl;
+		var p12_generated = [];
+		for (var i=0; i < this.p12.length; i++) {
+			p12_generated.push(this.p12[i][0]);
+		}
+		var findex_generated = [p12_generated, this.bwt, this.m, this.f];
 
-		sout += this.fe_p12ToTableWithHighlights([], false, true);
+		sout += this.fe_findexToTable(findex_generated, true, true);
 
 
 
@@ -1601,11 +1733,12 @@ window.GML = {
 
 
 
-
-		// initialize XBW environment
-		window.xbw = this.make_xbw_environment();
-		window.xbw.init(findex);
-		window.xbw.generateHTML(3);
+		if (!GML.hideXBWenvironments) {
+			// initialize XBW environment
+			window.xbw = this.make_xbw_environment();
+			window.xbw.init(findex);
+			window.xbw.generateHTML(3);
+		}
 
 
 
@@ -1699,7 +1832,9 @@ window.GML = {
 		var round = 0;
 		var doAnotherRound = true;
 
-		while ((round < this.overflow_ceiling) && (doAnotherRound)) {
+		this.error_flag = false;
+
+		while ((round < this.overflow_ceiling) && doAnotherRound && !this.error_flag) {
 
 			round++;
 			doAnotherRound = false;
@@ -1715,7 +1850,7 @@ window.GML = {
 
 			var i = 0;
 
-			while (xbw1.notFullyMerged() && (i < this.overflow_ceiling)) {
+			while (xbw1.notFullyMerged() && (i < this.overflow_ceiling) && !this.error_flag) {
 
 				i++;
 				var splitnodes = [];
@@ -1728,10 +1863,12 @@ window.GML = {
 				}
 
 				if (this.verbosity > 8) {
-					sstep += this.nlnl + 'We now have:' + this.nlnl;
+					if (!this.error_flag) {
+						sstep += this.nlnl + 'We now have:' + this.nlnl;
 
-					shide = '<div class="table_box">' + xbw1.generateBothTables(true) + '</div>';
-					sstep += this.hideWrap(shide, 'Tables') + this.nlnl;
+						shide = '<div class="table_box">' + xbw1.generateBothTables(true) + '</div>';
+						sstep += this.hideWrap(shide, 'Tables') + this.nlnl;
+					}
 
 					sstep += '</div>';
 
@@ -1747,6 +1884,14 @@ window.GML = {
 		}
 
 		// end splitting
+
+
+		if (this.error_flag) {
+
+			document.getElementById('div-xbw-5').style.display = 'none';
+			sout = sout.replace(/\^/g, '#');
+			return sout;
+		}
 
 
 
@@ -1854,10 +1999,12 @@ window.GML = {
 
 
 
-		// start up control center for merged XBW
-		window.xbw = xbw12;
-		window.xbw.init(xbw12._publishFindex());
-		window.xbw.generateHTML(5);
+		if (!GML.hideXBWenvironments) {
+			// start up control center for merged XBW
+			window.xbw = xbw12;
+			window.xbw.init(xbw12._publishFindex());
+			window.xbw.generateHTML(5);
+		}
 
 
 
@@ -2191,16 +2338,20 @@ window.GML = {
 			sout += "{" + this.repjoin(BWT.length, 'c', ' | ') + " | l}" + this.nl;
 		}
 		if (show_i) {
-			for (var i=0; i < this.p12.length; i++) {
+			for (var i=0; i < findex[0].length; i++) {
 				sout += i + this.td;
 			}
 			sout += this.di + this.tabnl;
 		}
+
+		if (showBWTandM) {
+			sout += findex[1].join(this.td) + this.td + 'BWT' + this.tabnl;
+		}
+
 		sout += findex[0].join(this.td) + this.td + 'Prefix';
 
 		if (showBWTandM) {
 			sout += this.tabnl;
-			sout += findex[1].join(this.td) + this.td + 'BWT' + this.tabnl;
 			sout += findex[2].join(this.td) + this.td + this.DM;
 		}
 
@@ -2994,7 +3145,7 @@ window.GML = {
 		// if this is how Siren2014 defines the F bit vector... we'll see
 
 		var f = [];
-		
+
 		// PUSH
 		var orig_p12 = this.p12;
 		this.p12 = prefixes;
@@ -3244,6 +3395,23 @@ window.GML = {
 		}
 
 		return onode;
+	},
+
+
+
+	// takes in an array
+	// gives out an exact copy of the array, instead of just a pointer to it
+	//   (this only copies the outer layer - if there are pointers within it,
+	//   they will be kept as pointers)
+	deep_copy_array: function(arr) {
+
+		var oarr = [];
+
+		for (var i=0; i < arr.length; i++) {
+			oarr.push(arr[i]);
+		}
+
+		return oarr;
 	},
 
 
@@ -4857,6 +5025,14 @@ window.GML = {
 
 
 
+	// takes in a string, an integer position and a character
+	// gives out the same string, with with the character in position pos replaced by char
+	setInString: function(str, pos, chr) {
+		return str.slice(0, pos) + chr + str.slice(pos+1);
+	},
+
+
+
 
 	// use as:
 	// var xbw = make_xbw_environment();
@@ -5295,11 +5471,15 @@ window.GML = {
 				var DS_1 = GML.DS_1;
 				var DK_1 = GML.DK_1;
 
-				// exchange
-				//   BWT in position where FiC == $_0
-				// and
-				//   BWT in position where BWT == #_0
 
+
+				// We need to exchange
+				//   FiC in position where FiC == #_0
+				// and
+				//   FiC in position where FiC == BWT in position where FiC == $_0
+				// (in GACGT|,2,T,4;,3,,5 vs. ACCTG|,1,,5;,1,,3,
+				// we here exchange three #_0 for one T in FiC, where this T is the first T in FiC)
+				
 				var pos1, pos2;
 				for (i=0; i < BWT.length; i++) {
 					if (char[i] === DS_1) {
@@ -5307,17 +5487,49 @@ window.GML = {
 						break;
 					}
 				}
-				for (i=0; i < BWT.length; i++) {
-					if (BWT[i] === DK_1) {
-						pos2 = i;
-						break;
-					}
-				}
+
+				var BWTatpos = BWT[pos1];
+
+				// we find out the how manieth T this one is
+				loc = rank(BWTatpos, BWT, pos1);
+
+				// we find out where in the first column this is
+				loc = select(BWTatpos, char, loc);
+
+				// now we need to cram every FiC = #_0 into here, and push this to the very end
+				var crossstart = select(DK_1, char, 0);
+
+				char = char.slice(0, loc) +
+					   GML.repeatstr(char.slice(crossstart).length, char[loc]) +
+					   char.slice(loc+1, crossstart) +
+					   DK_1;
+				M = M.slice(0, loc) +
+					M.slice(crossstart) +
+					M.slice(loc+1, crossstart) +
+					M[loc];
+
+
+
+				// We now exchange
+				//   BWT in position where FiC == $_0
+				// and
+				//   BWT in position where BWT == #_0
 
 				// TODO EMRG :: do we need to transform pos1 in some part?
 				// (as we want to actually go for the node, not just the column,
 				// and we are switching from FiC-indexing to BWT-indexing...)
-				BWT = GML.exchangeInString(BWT, pos1, pos2);
+
+				for (i=0; i < BWT.length; i++) {
+					if (BWT[i] === DK_1) {
+						BWT = GML.setInString(BWT, i, BWTatpos);
+						// we do NOT break as we can have several #_0 nodes,
+						// e.g. in GACGT|,2,T,4;,3,,5 vs. ACCTG|,1,,5;,1,,3
+					}
+				}
+
+				BWT = GML.setInString(BWT, pos1, DK_1);
+
+
 
 				// cut out $_0 from BWT and F
 				for (i=0; i < BWT.length; i++) {
@@ -5383,7 +5595,7 @@ window.GML = {
 			//           (if true, when a $_0 is encountered, increase length by 2 and
 			//           and #_0 and first node from H_2;
 			//           if false, encountering $_0 ends the prefix creation just like $)
-			_publishPrefix: function(pref_cur_i, strict, length, spillover) {
+			_publishPrefix: function(pref_cur_i, strict, length, spillover, give_the_split_node) {
 
 				var pref = '';
 
@@ -5400,8 +5612,56 @@ window.GML = {
 				}
 
 				var pref_cur_is = [pref_cur_i];
+				var pref_cur_is_store;
+
+				if (give_the_split_node) {
+					pref_cur_is_store = [];
+				}
 
 				for (var i=0; i<length; i++) {
+
+					// TODO EMRG :: this here assumes that we have just one node that needs to
+					// be split (which is why we take [0]), but if there are several nodes,
+					// then only one will be returned:
+					//
+					// A > C > D < this will be split on C
+					//       > E < this will be split on C
+					//   > C > D < this will be ignored
+					//       > E < this will be ignored
+					//
+					// Indeed, if the one that needs to be split is not the first one, then
+					// all completely breaks down:
+					//
+					// A > C > D < this will be split on C, but it CANNOT be, as C only has one out-edge
+					//   > C > D < this will be ignored
+					//       > E < this will be ignored
+					//
+					// What we need instead is to return the first one with a problem...
+					// (Or ideally return several ones and split all of them, but that would be
+					// hard as during the splitting process the indices change...)
+					// So, yes: return always the FIRST one that has a problem,
+					// so in the first example return like now [0], but when coming around
+					// again the next time this will look like the second example, and we
+					// will return [1].
+					//
+					//
+					// TODO EMRG :: in addition to everything that has just been said, we ALSO
+					// need to consider the following:
+					// when we get something like
+					//
+					// A > C > D
+					//   > C > E
+					//
+					// then we should not actually split on either C, but instead we then need
+					// to split on the A that is before it all... so basically we need to bubble
+					// up by first going down within the Cs (which is the previous TODO EMRG about),
+					// to find a C that can be split (that has M (or F?) above 1), and if we cannot
+					// find somesuch, we have to bubble forward, and down, and forward, and down,
+					// and so on, until we FINALLY find something that can be split!
+
+					if (give_the_split_node) {
+						pref_cur_is_store.push([]);
+					}
 
 					for (var j=0; j<pref_cur_is.length; j++) {
 						GML.vis_highlight_nodes[j].push(pref_cur_is[j]);
@@ -5433,9 +5693,41 @@ window.GML = {
 								}
 							}
 
+							var pcis_len, pcis_len_m;
+							if (give_the_split_node) {
+								pcis_len = pref_cur_is_store.length-1;
+
+								// the i tells us which node we are talking about
+								// the m tells us whether it can be split (m > 1) or not (m == 1)
+								pref_cur_is_store[pcis_len].push({i: pref_cur_is[j], m: 1});
+								pcis_len_m = pref_cur_is_store[pcis_len].length-1;
+							}
 							var k = 1;
+
 							while (M[pref_cur_is[j]+k] == '0') {
 								pref_cur_is.push(pref_cur_is[j]+k);
+
+								if (give_the_split_node) {
+									pref_cur_is_store[pcis_len][pcis_len_m].m++;
+
+									// we say m = 1 here as this node is already represented
+									// in the previous line, getting an m++ there, and there
+									// is no point in splitting the same node twice
+									pref_cur_is_store[pcis_len].push({i: pref_cur_is[j]+k, m: 1});
+
+									// we here can actually keep track of where the pref_cur_is_store
+									// entries come from, and basically clone their history...
+									// however, that data would not really be used right now anyway
+									/*
+									for (var l=0; l < pcis_len; l++) {
+										pref_cur_is_store[l].push({
+											i: pref_cur_is_store[l][j].i,
+											m: pref_cur_is_store[l][j].m
+										});
+									}
+									*/
+								}
+
 								var new_vis_high = [];
 								for (var l=0; l<GML.vis_highlight_nodes[0].length; l++) {
 									new_vis_high.push(GML.vis_highlight_nodes[0][l]);
@@ -5526,6 +5818,19 @@ window.GML = {
 					}
 				}
 
+				if (give_the_split_node) {
+					var i = pref_cur_is_store.length-1;
+					while (i > 0) {
+						i--;
+						for (var j = 0; j < pref_cur_is_store[i].length; j++) {
+							if (pref_cur_is_store[i][j].m > 1) {
+								give_the_split_node.i = pref_cur_is_store[i][j].i;
+								return pref;
+							}
+						}
+					}
+				}
+
 				return pref;
 			},
 
@@ -5544,6 +5849,8 @@ window.GML = {
 				var sout = '';
 
 				var takeNode2_fic;
+				var split_node_1 = 0;
+				var split_node_2 = 0;
 
 				last_high_1_fic = -1;
 				last_high_1_bwt = -1;
@@ -5585,9 +5892,11 @@ window.GML = {
 							// TODO NOW :: build prefixes char-by-char and keep last pref in memory
 							//             instead of in every cycle building again from the very
 							//             beginning
-
-							pref_1_fic = this._publishPrefix(multi_cur_1_fic, true, i, true);
-							pref_2_fic = otherXBW._publishPrefix(multi_cur_2_fic, true, i, false);
+							var gtsn = {i: -1};
+							pref_1_fic = this._publishPrefix(multi_cur_1_fic, true, i, true, gtsn);
+							split_node_1 = gtsn.i;
+							pref_2_fic = otherXBW._publishPrefix(multi_cur_2_fic, true, i, false, gtsn);
+							split_node_2 = gtsn.i;
 
 							i++;
 						}
@@ -5604,7 +5913,7 @@ window.GML = {
 
 
 
-				return [sout, takeNode2_fic, pref_1_fic, pref_2_fic];
+				return [sout, takeNode2_fic, pref_1_fic, pref_2_fic, split_node_1, split_node_2];
 			},
 
 			// verbose .. [boolean] (default: false)
@@ -5712,9 +6021,20 @@ window.GML = {
 				var pref_1_fic = p[2];
 				var pref_2_fic = p[3];
 
+				// split_node_1 and split_node_2 are basically multi_cur_1_fic
+				// and multi_cur_2_fic, however with one important difference:
+				// the multi_cur things are always the beginning, e.g. in AC!,
+				// they point to the A; but what we want to be splitting is not
+				// the A - we want to be splitting the C, the last letter before
+				// the !; so that is where split_node_1 and _2 are pointing to =)
+				var split_node_1 = p[4];
+				var split_node_2 = p[5];
+
 				var pEC = GML.prefixErrorChar;
 
-				sout = GML.makeVisualsNice(sout);
+				if (GML.verbosity > 1) {
+					sout = GML.makeVisualsNice(sout);
+				}
 
 
 
@@ -5728,12 +6048,12 @@ window.GML = {
 				// TODO :: think about reporting several ones at once and handling them all!
 
 				if (pref_1_fic && (pref_1_fic[pref_1_fic.length-1] === pEC)) {
-					splitnodes.push({o: 1, sn_i: multi_cur_1_fic});
+					splitnodes.push({o: 1, sn_i: split_node_1});
 					return sout;
 				}
 
 				if (pref_2_fic && (pref_2_fic[pref_2_fic.length-1] === pEC)) {
-					splitnodes.push({o: 2, sn_i: multi_cur_2_fic});
+					splitnodes.push({o: 2, sn_i: split_node_2});
 					return sout;
 				}
 
@@ -5757,6 +6077,7 @@ window.GML = {
 			splitOneMore: function(nodes) {
 
 				var sout = '';
+				var prevlen, oxbw;
 
 				for (var i=0; i < nodes.length; i++) {
 
@@ -5764,14 +6085,23 @@ window.GML = {
 							'and therefore have to split a node in ';
 
 					if (nodes[i].o == 2) {
-						otherXBW._splitNode(nodes[i].sn_i);
+						oxbw = otherXBW;
 						sout += GML.DH_2;
 					} else {
-						this._splitNode(nodes[i].sn_i);
+						oxbw = this;
 						sout += GML.DH_1;
 					}
 
+					prevlen = oxbw._publishBWTlen();
+					oxbw._splitNode(nodes[i].sn_i);
+					newlen = oxbw._publishBWTlen();
+
 					sout += '.<br>';
+
+					if (prevlen >= newlen) {
+						GML.error_flag = true;
+						sout += '<div class="error">The splitting of the node failed!</div>';
+					}
 				}
 
 				return sout;
@@ -6070,26 +6400,36 @@ window.GML = {
 				
 				sout += '<u>XBW Environment</u><br><br>';
 
-				sout += 'To start the XBW environment, we first of all flatten the BWT (replacing any ' +
-						'entries with several options by as many single-optioned entries) and add the ' +
-						'first column (the alphabetically sorted BWT.)<br>' +
-						'We will also have a look at the ' + GML.DM + ' and ' + GML.DF + ' vectors.' +
-						'<br>';
-
-				var shide = '<div class="table_box" id="div-xbw-' + tab + '-env-table">' +
-							'</div>';
-
-				sout += GML.hideWrap(shide, 'Table') + '<br>';
+				if (GML.verbosity > 7) {
+					sout += 'To start the XBW environment, we first of all flatten the BWT (replacing any ' +
+							'entries with several options by as many single-optioned entries) and add the ' +
+							'first column (the alphabetically sorted BWT.)<br>' +
+							'We will also have a look at the ' + GML.DM + ' and ' + GML.DF + ' vectors.' +
+							'<br>';
+				}
 
 				var alph_and_C_str = this.get_alph_and_C_str();
 
 				sout += 'The alphabet that we are considering is &#931; = ' + alph_and_C_str[0] + ' and ' +
-						'the <i>C</i> array is ' + alph_and_C_str[1] + '.<br>' +
-						'To better keep track of what is happening, we also have a look at the corresponding graph: ' +
-						'<div id="div-xbw-' + tab  + '-env-graph" class="svgheight">' +
-						'</div>' +
-						"Let's use the XBW to search for some string using find(), or go for the navigation functions directly:" +
+						'the <i>C</i> array is ' + alph_and_C_str[1] + '.<br>';
+
+				var shide = '<div class="table_box" id="div-xbw-' + tab + '-env-table">' +
+							'</div>';
+
+				sout += GML.hideWrap(shide, 'Table');
+
+				if (GML.verbosity > 7) {
+					sout += '<br>To better keep track of what is happening, we also have a look at the corresponding graph:';
+				}
+
+				sout += '<div id="div-xbw-' + tab  + '-env-graph" class="svgheight">' +
 						'</div>';
+
+				if (GML.verbosity > 9) {
+					sout += "Let's use the XBW to search for some string using find(), or go for the navigation functions directly:";
+				}
+
+				sout += '</div>';
 
 				/* single input full width template:
 				sout += '<div class="input-info-container">' +
@@ -6121,15 +6461,20 @@ window.GML = {
 						'<input id="in-string-' + tab + '-xbw-rank" onkeypress="window.xbw.in_func = window.xbw.rankHTML; window.xbw.in_tab = ' + tab + '; window.xbw.inputEnter(event);" type="text" value="1,F,13" style="float:right; display: inline-block; width: 38%;"></input>' +
 						'</div>';
 
-				sout += '<div>Result: <span id="span-' + tab + '-xbw-results">(none)</span><br><br>' +
-						'Just in case you are as forgetful as I am:<br>' +
-						'Assume we have position <i>x</i>, then call ' +
-						'LF(<i>x</i>,<i>x</i>,BWT[<i>x</i>],false) ' +
-						'to get the node <b>before</b> <i>x</i>, ' +
-						'and call &#936;(<i>x</i>,<i>x</i>) to get the node <b>after</b> <i>x</i>.<br>' +
-						'To get the prefix of node <i>x</i>, use BWT[&#936;(<i>x</i>,<i>x</i>)] + ' +
-						'BWT[&#936;(&#936;(<i>x</i>,<i>x</i>),&#936;(<i>x</i>,<i>x</i>))] + ...' +
-						'</div>';
+				sout += '<div>Result: <span id="span-' + tab + '-xbw-results">(none)</span>';
+
+				if (GML.verbosity > 9) {
+					sout += '<br><br>' +
+							'Just in case you are as forgetful as I am:<br>' +
+							'Assume we have position <i>x</i>, then call ' +
+							'LF(<i>x</i>,<i>x</i>,BWT[<i>x</i>],false) ' +
+							'to get the node <b>before</b> <i>x</i>, ' +
+							'and call &#936;(<i>x</i>,<i>x</i>) to get the node <b>after</b> <i>x</i>.<br>' +
+							'To get the prefix of node <i>x</i>, use BWT[&#936;(<i>x</i>,<i>x</i>)] + ' +
+							'BWT[&#936;(&#936;(<i>x</i>,<i>x</i>),&#936;(<i>x</i>,<i>x</i>))] + ...';
+				}
+
+				sout += '</div>';
 
 				// replace '^' with '#' before printout
 				sout = sout.replace(/\^/g, '#');

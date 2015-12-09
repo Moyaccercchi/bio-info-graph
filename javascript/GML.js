@@ -1889,6 +1889,9 @@ window.GML = {
 		if (this.error_flag) {
 
 			document.getElementById('div-xbw-5').style.display = 'none';
+			if (sout.indexOf(' class="error"') < 0) {
+				sout += '<div class="error">An error occurred!</div>';
+			}
 			sout = sout.replace(/\^/g, '#');
 			return sout;
 		}
@@ -5595,6 +5598,8 @@ window.GML = {
 			//           (if true, when a $_0 is encountered, increase length by 2 and
 			//           and #_0 and first node from H_2;
 			//           if false, encountering $_0 ends the prefix creation just like $)
+			// give_the_split_node .. object [optional], containing o = 1 or o = 2, the origin
+			//                        see [NOTE 2] to learn more about it
 			_publishPrefix: function(pref_cur_i, strict, length, spillover, give_the_split_node) {
 
 				var pref = '';
@@ -5614,50 +5619,72 @@ window.GML = {
 				var pref_cur_is = [pref_cur_i];
 				var pref_cur_is_store;
 
+
+				// [NOTE 2] ::
+				//     If give_the_split_node is undefined, then don't care about which
+				//     node should be split upon encountering a !. (E.g. if someone just
+				//     wants to hear about the prefix, but doesn't want to work on the
+				//     data structure, then give_the_split_node can be undefined.)
+				//
+				//     If give_the_split_node is actually given, then the caller DOES
+				//     want to know about the split node - that is, a node that could
+				//     be split to help in case of a ! being encountered (this is not
+				//     to say that such a node will always be returned - consider just
+				//     a plain string of data, no graphyness: there, we would never
+				//     encounter a ! while building prefixes, but also we could never
+				//     return a useful splitting node, as for a node to be that, it
+				//     needs to have several outgoing edges that it can be split into.)
+				//
+				//     Previously, we assumed that we have just one node that needs to
+				//     be split (which is why we took [0] of all pref_cur_is), but if
+				//     there are several nodes, then only one will be returned in that case:
+				//
+				//     A > C > D < this will be split on C
+				//           > E < this will be split on C
+				//       > C > D < this will be ignored
+				//           > E < this will be ignored
+				//
+				//     Indeed, if the one that needs to be split is not the first one, then it
+				//     all completely breaks down:
+				//
+				//     A > C > D < this will be split on C, but it CANNOT be, as C only has one out-edge
+				//       > C > D < this will be ignored
+				//           > E < this will be ignored
+				//
+				//     What we need instead is to return the first one with a problem...
+				//     (Or ideally return several ones and split all of them, but that would be
+				//     hard as during the splitting process the indices change...)
+				//     So, yes: what we do here is return always the FIRST one that has a problem,
+				//     so in the first example return like now [0], but when coming around
+				//     again the next time this will look like the second example, and we
+				//     will return [1].
+				//
+				//
+				//     In addition to everything that has just been said, we ALSO
+				//     need to consider the following:
+				//     when we get something like
+				//
+				//     A > C > D
+				//       > C > E
+				//
+				//     then we should not actually split on either C, but instead we then need
+				//     to split on the A that is before it all... so basically we need to bubble
+				//     up by first going down within the Cs (which is the previous TODO EMRG about),
+				//     to find a C that can be split (that has M (or F?) above 1), and if we cannot
+				//     find somesuch, we have to bubble forward, and down, and forward, and down,
+				//     and so on, until we FINALLY find something that can be split!
+				//
+				//     => So, yes, to do all of this magic, we use pref_cur_is_store and give back
+				//        our results via give_the_split_node.
+
 				if (give_the_split_node) {
 					pref_cur_is_store = [];
+
+					// initialize to i = -1, "no node found"
+					give_the_split_node.i = -1;
 				}
 
 				for (var i=0; i<length; i++) {
-
-					// TODO EMRG :: this here assumes that we have just one node that needs to
-					// be split (which is why we take [0]), but if there are several nodes,
-					// then only one will be returned:
-					//
-					// A > C > D < this will be split on C
-					//       > E < this will be split on C
-					//   > C > D < this will be ignored
-					//       > E < this will be ignored
-					//
-					// Indeed, if the one that needs to be split is not the first one, then
-					// all completely breaks down:
-					//
-					// A > C > D < this will be split on C, but it CANNOT be, as C only has one out-edge
-					//   > C > D < this will be ignored
-					//       > E < this will be ignored
-					//
-					// What we need instead is to return the first one with a problem...
-					// (Or ideally return several ones and split all of them, but that would be
-					// hard as during the splitting process the indices change...)
-					// So, yes: return always the FIRST one that has a problem,
-					// so in the first example return like now [0], but when coming around
-					// again the next time this will look like the second example, and we
-					// will return [1].
-					//
-					//
-					// TODO EMRG :: in addition to everything that has just been said, we ALSO
-					// need to consider the following:
-					// when we get something like
-					//
-					// A > C > D
-					//   > C > E
-					//
-					// then we should not actually split on either C, but instead we then need
-					// to split on the A that is before it all... so basically we need to bubble
-					// up by first going down within the Cs (which is the previous TODO EMRG about),
-					// to find a C that can be split (that has M (or F?) above 1), and if we cannot
-					// find somesuch, we have to bubble forward, and down, and forward, and down,
-					// and so on, until we FINALLY find something that can be split!
 
 					if (give_the_split_node) {
 						pref_cur_is_store.push([]);
@@ -5801,7 +5828,16 @@ window.GML = {
 
 								// find #_0 node in H_2 - which is necessarily the very last node, lucky us!
 								var pref_cur_i = otherXBW._publishBWTlen() - 1;
-								var pref_in_h2 = otherXBW._publishPrefix(pref_cur_i, strict, length + 2 - pref.length, false);
+								if (give_the_split_node) {
+									give_the_split_node.o = 2;
+								}
+								var pref_in_h2 = otherXBW._publishPrefix(pref_cur_i, strict, length + 2 - pref.length, false, give_the_split_node);
+
+								// if no split node was found on the other one...
+								if (give_the_split_node && (give_the_split_node.i < 0)) {
+									// ... find one here, maybe? =)
+									this._setSplitNodeBasedOnStore(give_the_split_node, pref_cur_is_store, 0);
+								}
 
 								return pref + pref_in_h2;
 							}
@@ -5819,19 +5855,33 @@ window.GML = {
 				}
 
 				if (give_the_split_node) {
-					var i = pref_cur_is_store.length-1;
-					while (i > 0) {
-						i--;
-						for (var j = 0; j < pref_cur_is_store[i].length; j++) {
-							if (pref_cur_is_store[i][j].m > 1) {
-								give_the_split_node.i = pref_cur_is_store[i][j].i;
-								return pref;
-							}
-						}
-					}
+					// have offset -1, as it does not help splitting the very last node, as that
+					// one is the one where the ! occurred - instead, we want to split a node
+					// before it (or even earlier)
+					// e.g. here with offset 0 we would get the D, which does not help, instead
+					// we need to split on the C =)
+					// 
+					// A > C > D > F			(prefix: AC!, split C to get ACD and ACE)
+					//           > G
+					//       > E
+					this._setSplitNodeBasedOnStore(give_the_split_node, pref_cur_is_store, -1);
 				}
 
 				return pref;
+			},
+
+			_setSplitNodeBasedOnStore: function(give_the_split_node, pref_cur_is_store, offset) {
+
+				var i = pref_cur_is_store.length + offset;
+				while (i > 0) {
+					i--;
+					for (var j = 0; j < pref_cur_is_store[i].length; j++) {
+						if (pref_cur_is_store[i][j].m > 1) {
+							give_the_split_node.i = pref_cur_is_store[i][j].i;
+							return;
+						}
+					}
+				}
 			},
 
 			_publishNode: function(i) {
@@ -5849,8 +5899,8 @@ window.GML = {
 				var sout = '';
 
 				var takeNode2_fic;
-				var split_node_1 = 0;
-				var split_node_2 = 0;
+				var split_node_1 = {sn_i: -1};
+				var split_node_2 = {sn_i: -1};
 
 				last_high_1_fic = -1;
 				last_high_1_bwt = -1;
@@ -5892,11 +5942,12 @@ window.GML = {
 							// TODO NOW :: build prefixes char-by-char and keep last pref in memory
 							//             instead of in every cycle building again from the very
 							//             beginning
-							var gtsn = {i: -1};
+							var gtsn = {o: 1};
 							pref_1_fic = this._publishPrefix(multi_cur_1_fic, true, i, true, gtsn);
-							split_node_1 = gtsn.i;
+							split_node_1 = {sn_i: gtsn.i, o: gtsn.o};
+							gtsn.o = 2;
 							pref_2_fic = otherXBW._publishPrefix(multi_cur_2_fic, true, i, false, gtsn);
-							split_node_2 = gtsn.i;
+							split_node_2 = {sn_i: gtsn.i, o: gtsn.o};
 
 							i++;
 						}
@@ -6027,6 +6078,8 @@ window.GML = {
 				// they point to the A; but what we want to be splitting is not
 				// the A - we want to be splitting the C, the last letter before
 				// the !; so that is where split_node_1 and _2 are pointing to =)
+				// Also, split_node_1 and _2 are not just integers, but are objects,
+				// each containing sn_i (for the position) and o (for the origin.)
 				var split_node_1 = p[4];
 				var split_node_2 = p[5];
 
@@ -6048,12 +6101,12 @@ window.GML = {
 				// TODO :: think about reporting several ones at once and handling them all!
 
 				if (pref_1_fic && (pref_1_fic[pref_1_fic.length-1] === pEC)) {
-					splitnodes.push({o: 1, sn_i: split_node_1});
+					splitnodes.push(split_node_1);
 					return sout;
 				}
 
 				if (pref_2_fic && (pref_2_fic[pref_2_fic.length-1] === pEC)) {
-					splitnodes.push({o: 2, sn_i: split_node_2});
+					splitnodes.push(split_node_2);
 					return sout;
 				}
 
@@ -6092,15 +6145,23 @@ window.GML = {
 						sout += GML.DH_1;
 					}
 
+					sout += '.<br>';
+
+					// The indicated node is the default one (that is, no node for
+					// splitting could be found?) => Error!
+					if (nodes[i].sn_i < 0) {
+						GML.error_flag = true;
+						return sout + '<div class="error">The splitting of the node failed! (No node for splitting found.)</div>';
+					}
+
 					prevlen = oxbw._publishBWTlen();
 					oxbw._splitNode(nodes[i].sn_i);
 					newlen = oxbw._publishBWTlen();
 
-					sout += '.<br>';
-
+					// After splitting, the amount of nodes has not increased? => Error!
 					if (prevlen >= newlen) {
 						GML.error_flag = true;
-						sout += '<div class="error">The splitting of the node failed!</div>';
+						return sout + '<div class="error">The splitting of the node failed! (Splitting did not result in more nodes.)</div>';
 					}
 				}
 

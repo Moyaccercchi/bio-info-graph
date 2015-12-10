@@ -262,7 +262,7 @@ tr.barless > td:last-child {
 	border-radius:3px;
 }
 
-span.halfwidth {
+span.col-6 {
 	width:50%;
 	display:inline-block;
 }

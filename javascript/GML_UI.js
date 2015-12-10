@@ -258,6 +258,19 @@ window.GML_UI = {
 		'Use this field to specify the second graph, ' + GML.DH_2 +
 		', which will be merged with ' + GML.DH_1 + '.<br><br>',
 
+	clickOnXBWInfo: function(e, id) {
+		
+		var el = document.getElementById('xbw-info-box-' + id);
+
+		if (el.style.display == 'block') {
+			el.style.display = 'none';
+		} else {
+			el.style.display = 'block';
+		}
+
+		e.stopPropagation();
+	},
+
 	generateNaiveBWTIn1Info: function(e) {
 		var el = this.activateDivOut(0, false, false);
 		

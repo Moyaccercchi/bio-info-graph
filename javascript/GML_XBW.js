@@ -15,7 +15,7 @@ GML.make_xbw_environment = function() {
 
 	// navigation through XBW
 
-	// the BWT itself (as string, so ['A', 'A|C', 'C'] is here 'AACC')
+	// the BWT (as string, so ['A', 'A|C', 'C'] is here 'AACC')
 	var BWT = '';
 
 	// the M bit-vector (as string)
@@ -197,23 +197,28 @@ GML.make_xbw_environment = function() {
 	}
 
 	// spep is [sp, ep]
-	function lf(spep, c, not_last_round) {
+	function lf(spep, c, do_select, do_rank) {
 
-		var sp = select('1', F, spep[0]);
-		var ep = select('1', F, spep[1]+1) - 1;
+		var sp = spep[0];
+		var ep = spep[1];
+
+		if (do_select) {
+			sp = select('1', F, sp);
+			ep = select('1', F, ep+1) - 1;
+		}
 
 		sp = C[c] + rank(c, BWT, sp-1) + 1;
 		ep = C[c] + rank(c, BWT, ep);
 
-		// if ep < sp, then we want cannot return anything
-		// (this hebre was to be done before the following
+		// if ep < sp, then we cannot return anything
+		// (this here was to be done before the following
 		// rank-rank, as that might bring ep = sp when
 		// ep < sp before!)
 		if (ep < sp) {
 			return [];
 		}
 
-		if (not_last_round) {
+		if (do_rank) {
 			sp = rank('1', M, sp);
 			ep = rank('1', M, ep);
 		}
@@ -233,14 +238,20 @@ GML.make_xbw_environment = function() {
 
 			return select(ch, BWT, i - C[ch])
 	*/
-	function psi(i, j) {
+	function psi(i, j, do_select, do_rank) {
 
-		var c, i;
+		var c = char[i];
 
-		c = char[i];
+		if (do_select) {
+			i = select('1', M, i) + j - 1;
+		}
 
 		// get the next node within the table
 		i = select(c, BWT, i - C[c]);
+
+		if (do_rank) {
+			i = rank('1', F, i);
+		}
 
 		return i;
 	}
@@ -254,7 +265,7 @@ GML.make_xbw_environment = function() {
 		GML.vis_highlight_nodes = [];
 
 		while (i--) {
-			spep = lf(spep, P[i], i > 0);
+			spep = lf(spep, P[i], true, i > 0);
 
 			if ((spep.length < 1) || (spep[1] < spep[0])) {
 				return [];
@@ -784,7 +795,7 @@ GML.make_xbw_environment = function() {
 
 				// get node i
 				for (var j=0; j<pref_cur_is.length; j++) {
-					pref_cur_is[j] = psi(pref_cur_is[j], 1);
+					pref_cur_is[j] = psi(pref_cur_is[j], 1, false, false);
 				}
 
 				var char_to_add_now = '.';
@@ -970,7 +981,7 @@ GML.make_xbw_environment = function() {
 				i++;
 			}
 
-			sout += '<span class="halfwidth">The prefix of ' + GML.DH_1 + '[' + multi_cur_fic[0] + '] is ' +
+			sout += '<span class="col-6">The prefix of ' + GML.DH_1 + '[' + multi_cur_fic[0] + '] is ' +
 					prefixes[0] + '.</span>'; // TE1TE
 
 			sout += 'The prefix of ' + GML.DH_2 + '[' + multi_cur_fic[1] + '] is ' +
@@ -1274,7 +1285,7 @@ GML.make_xbw_environment = function() {
 		_splitNode: function(sn_i) {
 
 			// Thinking about the node table, here is what we want to do:
-			// 1. Take the node itself, and copy it for each 0 in its M node.
+			// 1. Take the node and copy it for each 0 in its M node.
 			//    (Here we basically copy the entire node as it is: BWT, FiC, M, F.)
 			// 2. Set the M value of the original and all copies to 1.
 			// 3. Add as many zeroes to the M of the preceding node as nodes were copied.
@@ -1291,7 +1302,7 @@ GML.make_xbw_environment = function() {
 
 			// However, we here have a flat table, not a node table,
 			// so we need to instead go through the following steps:
-			// 1. Just like before, take the node itself, and copy it for each 0 in its M node.
+			// 1. Just like before, take the node and copy it for each 0 in its M node.
 			//    (We also add ones to the F vector; we do not need to copy FiC, as it is
 			//    just regenerated afterwards, and M will be looked at separately anyway.)
 			// 2. Just like before, set the M value of the original and all copies to 1.
@@ -1303,7 +1314,7 @@ GML.make_xbw_environment = function() {
 			// when we split on node 2 (flat table i 2, counting arrays from 0)
 
 
-			// 1. Take the node itself, and copy it for each 0 in its M node.
+			// 1. Take the node and copy it for each 0 in its M node.
 
 			// get location of this node's M
 			var Mloc = sn_i - (1 + rank('0', F, sn_i));
@@ -1338,7 +1349,7 @@ GML.make_xbw_environment = function() {
 
 			// 3. Add as many zeroes to the M of the preceding node as nodes were copied.
 
-			var prevNode = lf([sn_i, sn_i], BWT[sn_i], false)[0];
+			var prevNode = lf([sn_i, sn_i], BWT[sn_i], true, false)[0];
 
 			var newMn = newM.slice(0, prevNode+1);
 			for (var i=1; i < Mnum; i++) {
@@ -1465,13 +1476,13 @@ GML.make_xbw_environment = function() {
 			sout += '</div>';
 
 			/* single input full width template:
-			sout += '<div class="input-info-container">' +
+			sout += '<div>' +
 					'<input id="in-string-' + tab + '-xbw-find" onkeypress="GML.XBW.in_func = GML.XBW.findHTML; GML.XBW.in_tab = ' + tab + '; GML.XBW.inputEnter(event);" type="text" value="AC" style="display: inline-block; width: 79%;"></input>' +
 					'<div class="button" onclick="GML.XBW.findHTML(' + tab + ')" style="float:right; width:19%;">find()</div>' +
 					'</div>';
 			*/
 
-			sout += '<div class="input-info-container">' +
+			sout += '<div>' +
 					'<input id="in-string-' + tab + '-xbw-find" onkeypress="GML.XBW.in_func = GML.XBW.findHTML; GML.XBW.in_tab = ' + tab + '; GML.XBW.inputEnter(event);" type="text" value="AC" style="display: inline-block; width: 21%;"></input>' +
 					'<div class="button" onclick="GML.XBW.findHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">find()</div>' +
 					'<input id="in-string-' + tab + '-xbw-pref" onkeypress="GML.XBW.in_func = GML.XBW.prefHTML; GML.XBW.in_tab = ' + tab + '; GML.XBW.inputEnter(event);" type="text" value="2" style="display: inline-block; width: 21%; margin-left:2%;"></input>' +
@@ -1480,14 +1491,20 @@ GML.make_xbw_environment = function() {
 					'<input id="in-string-' + tab + '-xbw-split-node" onkeypress="GML.XBW.in_func = GML.XBW.splitNodeHTML; GML.XBW.in_tab = ' + tab + '; GML.XBW.inputEnter(event);" type="text" value="2" style="float:right; display: inline-block; width: 21%;"></input>' +
 					'</div>';
 
-			sout += '<div class="input-info-container">' +
-					'<input id="in-string-' + tab + '-xbw-lf" onkeypress="GML.XBW.in_func = GML.XBW.lfHTML; GML.XBW.in_tab = ' + tab + '; GML.XBW.inputEnter(event);" type="text" value="7,10,A,false" style="display: inline-block; width: 38%;"></input>' +
+			sout += '<div>' +
+					'<div class="input-info-container" style="display: inline-block; width: 38%;">' +
+						'<input id="in-string-' + tab + '-xbw-lf" onkeypress="GML.XBW.in_func = GML.XBW.lfHTML; GML.XBW.in_tab = ' + tab + '; GML.XBW.inputEnter(event);" type="text" value="7,10,A" style="width:100%"></input>' +
+						'<span class="infobtn" onclick="GML_UI.clickOnXBWInfo(event, 1)">Info</span>' +
+					'</div>' +
 					'<div class="button" onclick="GML.XBW.lfHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">LF()</div>' +
 					'<div class="button" onclick="GML.XBW.psiHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">&#936;()</div>' +
-					'<input id="in-string-' + tab + '-xbw-psi" onkeypress="GML.XBW.in_func = GML.XBW.psiHTML; GML.XBW.in_tab = ' + tab + '; GML.XBW.inputEnter(event);" type="text" value="1,4" style="float:right; display: inline-block; width: 38%;"></input>' +
+					'<div class="input-info-container" style="float:right; display: inline-block; width: 38%;">' +
+						'<input id="in-string-' + tab + '-xbw-psi" onkeypress="GML.XBW.in_func = GML.XBW.psiHTML; GML.XBW.in_tab = ' + tab + '; GML.XBW.inputEnter(event);" type="text" value="1,4" style="width:100%"></input>' +
+						'<span class="infobtn" onclick="GML_UI.clickOnXBWInfo(event, 2)">Info</span>' +
+					'</div>' +
 					'</div>';
 
-			sout += '<div class="input-info-container">' +
+			sout += '<div>' +
 					'<input id="in-string-' + tab + '-xbw-select" onkeypress="GML.XBW.in_func = GML.XBW.selectHTML; GML.XBW.in_tab = ' + tab + '; GML.XBW.inputEnter(event);" type="text" value="1,M,13" style="display: inline-block; width: 38%;"></input>' +
 					'<div class="button" onclick="GML.XBW.selectHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">select()</div>' +
 					'<div class="button" onclick="GML.XBW.rankHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">rank()</div>' +
@@ -1496,15 +1513,31 @@ GML.make_xbw_environment = function() {
 
 			sout += '<div>Result: <span id="span-' + tab + '-xbw-results">(none)</span>';
 
+			sout += '<div id="xbw-info-box-1" style="margin-top:20px;display:none;">' +
+					'Optionally, you can add two boolean parameters ' +
+					'in the LF() input, e.g. 7,10,A,true,false.<br>' +
+					'They control whether select() is called before LF() and ' +
+					'whether rank() is called afterwards, respectively.' +
+					'</div>';
+
+			sout += '<div id="xbw-info-box-2" style="margin-top:20px;display:none;">' +
+					'Optionally, you can add two boolean parameters ' +
+					'in the &#936;() input, e.g. 1,4,true,false.<br>' +
+					'They control whether select() is called before &#936;() and ' +
+					'whether rank() is called afterwards, respectively.' +
+					'</div>';
+
+			// TODO :: check if this text actually makes sense
 			if (GML.verbosity > 9) {
-				sout += '<br><br>' +
+				sout += '<div style="margin-top:20px">' +
 						'Just in case you are as forgetful as I am:<br>' +
 						'Assume we have position <i>x</i>, then call ' +
-						'LF(<i>x</i>,<i>x</i>,BWT[<i>x</i>],false) ' +
+						'LF(<i>x</i>,<i>x</i>,BWT[<i>x</i>]) ' +
 						'to get the node <b>before</b> <i>x</i>, ' +
 						'and call &#936;(<i>x</i>,<i>x</i>) to get the node <b>after</b> <i>x</i>.<br>' +
 						'To get the prefix of node <i>x</i>, use BWT[&#936;(<i>x</i>,<i>x</i>)] + ' +
-						'BWT[&#936;(&#936;(<i>x</i>,<i>x</i>),&#936;(<i>x</i>,<i>x</i>))] + ...';
+						'BWT[&#936;(&#936;(<i>x</i>,<i>x</i>),&#936;(<i>x</i>,<i>x</i>))] + ...' +
+						'</div>';
 			}
 
 			sout += '</div>';
@@ -1704,25 +1737,31 @@ GML.make_xbw_environment = function() {
 			// replace '#' with '^' before calculations
 			searchfor = searchfor.toUpperCase().replace(/\#/g, '^').split(',');
 
-			var spep = [parseInt(searchfor[0], 10), parseInt(searchfor[1], 10)];
-
-			searchfor[3] = searchfor[3] === 'TRUE';
-
-			spep = lf(spep, searchfor[2], searchfor[3]);
+			var spep = lf(
+				[parseInt(searchfor[0], 10), parseInt(searchfor[1], 10)],
+				searchfor[2],
+				searchfor[3] !== 'FALSE', // default to true
+				searchfor[4] !== 'FALSE'  // default to true
+			);
 
 			document.getElementById('span-' + tab + '-xbw-results').innerHTML = spep;
 
-			this.show_spep_in_HTML(spep, tab, ['i', 'char'], undefined, undefined);
+			this.show_spep_in_HTML(spep, tab, ['i', 'char']);
 		},
 		psiHTML: function(tab) {
 
 			var searchfor = document.getElementById('in-string-' + tab + '-xbw-psi').value.split(',');
 
-			var i = psi(parseInt(searchfor[0], 10), parseInt(searchfor[1], 10));
+			var i = psi(
+				parseInt(searchfor[0], 10),
+				parseInt(searchfor[1], 10),
+				searchfor[2] !== 'FALSE', // default to true
+				searchfor[3] !== 'FALSE'  // default to true
+			);
 
 			document.getElementById('span-' + tab + '-xbw-results').innerHTML = i;
 
-			this.show_spep_in_HTML([i, i], tab, ['i', 'BWT'], undefined, undefined);
+			this.show_spep_in_HTML([i, i], tab, ['i', 'BWT']);
 		},
 		selectHTML: function(tab) {
 

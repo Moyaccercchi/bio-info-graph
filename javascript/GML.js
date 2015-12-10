@@ -1744,28 +1744,41 @@ window.GML = {
 					this.nlnl;
 		}
 
-		// initialize XBW environment
-		var xbw1 = this.make_xbw_environment();
-		var xbw2 = this.make_xbw_environment();
+
+
+		// initialize XBW environments
+
+		var xbw1  = this.make_xbw_environment();
+		var xbw2  = this.make_xbw_environment();
+		var xbw12 = this.make_xbw_environment();
+
 		var xbw = this.make_xbw_environment();
+
 		xbw1.init(findex1);
 		xbw2.init(findex2);
+
+		xbw12.initAsMergeHost();
+		xbw12.addSubXBW(xbw1);
+		xbw12.addSubXBW(xbw2);
+
 		xbw.init(findex);
+
+
 
 		if (this.verbosity > 3) {
 			sout += "For " + this.DH_1 + " we get:" + this.nlnl;
 
-			shide = '<div class="table_box">' + xbw1.generateTable([]) + '</div>';
+			shide = '<div class="table_box">' + xbw1.generateTable() + '</div>';
 			sout += this.hideWrap(shide, 'Table') + this.nlnl;
 
 			sout += "And for " + this.DH_2 + " we have:" + this.nlnl;
 
-			shide = '<div class="table_box">' + xbw2.generateTable([]) + '</div>';
+			shide = '<div class="table_box">' + xbw2.generateTable() + '</div>';
 			sout += this.hideWrap(shide, 'Table') + this.nlnl;
 
 			sout += "As well as for " + this.DH + ":" + this.nlnl;
 
-			shide = '<div class="table_box">' + xbw.generateTable([]) + '</div>';
+			shide = '<div class="table_box">' + xbw.generateTable() + '</div>';
 			sout += this.hideWrap(shide, 'Table') + this.nlnl;
 		}
 
@@ -1787,8 +1800,6 @@ window.GML = {
 					'another time.' + this.nlnl;
 		}
 
-		var xbw12 = xbw1.startToMergeWith(xbw2);
-
 		var round = 0;
 		var doAnotherRound = true;
 
@@ -1799,26 +1810,26 @@ window.GML = {
 			round++;
 			doAnotherRound = false;
 
-			xbw1.startNewSplitRound();
+			xbw12.startNewSplitRound();
 
 			if (this.verbosity > 4) {
 				sround = '<div>' + this.nlnl + 'We start round ' + round + ':' + this.nlnl;
 
-				shide = '<div class="table_box">' + xbw1.generateBothTables(true) + '</div>';
+				shide = '<div class="table_box">' + xbw12.generateSubTables(true) + '</div>';
 				sround += this.hideWrap(shide, 'Tables') + this.nlnl;
 			}
 
 			var i = 0;
 
-			while (xbw1.notFullyMerged() && (i < this.overflow_ceiling) && !this.error_flag) {
+			while (xbw12.notFullyMerged() && (i < this.overflow_ceiling) && !this.error_flag) {
 
 				i++;
 				var splitnodes = [];
 
-				var sstep = '<div>' + xbw1.checkIfSplitOneMore(splitnodes);
+				var sstep = '<div>' + xbw12.checkIfSplitOneMore(splitnodes);
 
 				if (splitnodes.length > 0) {
-					sstep += xbw1.splitOneMore(splitnodes);
+					sstep += xbw12.splitOneMore(splitnodes);
 					doAnotherRound = true;
 				}
 
@@ -1826,7 +1837,7 @@ window.GML = {
 					if (!this.error_flag) {
 						sstep += this.nlnl + 'We now have:' + this.nlnl;
 
-						shide = '<div class="table_box">' + xbw1.generateBothTables(true) + '</div>';
+						shide = '<div class="table_box">' + xbw12.generateSubTables(true) + '</div>';
 						sstep += this.hideWrap(shide, 'Tables') + this.nlnl;
 					}
 
@@ -1879,26 +1890,28 @@ window.GML = {
 		}
 
 		if (this.verbosity > 1) {
-			shide = '<div class="table_box">' + xbw1.generateBothTables() + '</div>';
+			shide = '<div class="table_box">' + xbw12.generateSubTables() + '</div>';
 			sout += this.hideWrap(shide, 'Tables') + this.nlnl;
 		}
 
 		var i = 0;
 
-		xbw1.startNewSplitRound();
+		xbw12.startNewSplitRound();
 
-		while (xbw1.notFullyMerged() && (i < this.overflow_ceiling)) {
+		while (xbw12.notFullyMerged() && (i < this.overflow_ceiling)) {
+
+			// TODO EMRG :: add error upon reaching overflow_ceiling (and do that everywhere else too!)
 
 			i++;
 
 			if (this.verbosity > 5) {
 
-				var sstep = '<div>' + xbw1.mergeOneMore(true);
+				var sstep = '<div>' + xbw12.mergeOneMore(true);
 
 				if (this.verbosity > 9) {
 					sstep += 'We now have:' + this.nlnl;
 
-					shide = '<div class="table_box">' + xbw1.generateBothTables() + '</div>';
+					shide = '<div class="table_box">' + xbw12.generateSubTables() + '</div>';
 					sstep += this.hideWrap(shide, 'Tables') + this.nlnl;
 				}
 
@@ -1908,7 +1921,7 @@ window.GML = {
 
 			} else {
 
-				xbw1.mergeOneMore(false);
+				xbw12.mergeOneMore(false);
 			}
 		}
 
@@ -1916,7 +1929,7 @@ window.GML = {
 			sout += 'The main part of the merging algorithm has now finished, but we should still ' +
 					'join the ' + this.DS_1_o + ' and ' + this.DK_1_o + ' nodes.';
 
-			shide = '<div class="table_box">' + xbw12.generateTable([]) + '</div>';
+			shide = '<div class="table_box">' + xbw12.generateTable() + '</div>';
 			sout += this.hideWrap(shide, 'Table') + this.nlnl;
 		}
 
@@ -1935,12 +1948,12 @@ window.GML = {
 			sout += 'The merging result is:';
 		}
 
-		shide = '<div class="table_box">' + xbw12.generateTable([]) + '</div>';
+		shide = '<div class="table_box">' + xbw12.generateTable() + '</div>';
 		sout += this.hideWrap(shide, 'Table') + this.nlnl;
 
 		sout += 'To simplify the comparison, here is the table that we wanted to achieve:';
 
-		shide = '<div class="table_box">' + xbw.generateTable([]) + '</div>';
+		shide = '<div class="table_box">' + xbw.generateTable() + '</div>';
 		sout += this.hideWrap(shide, 'Table') + this.nlnl;
 
 		if (xbw.equals(xbw12)) {

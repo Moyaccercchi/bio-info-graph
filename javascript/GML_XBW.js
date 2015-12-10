@@ -1,7 +1,11 @@
 /*
-	******************************************************************************
-		GML XBW - Graph Merging Library :: Extended Burrows-Wheeler Sublibrary
-	******************************************************************************
+	*****************************************************************************
+		GML XBW - Graph Merging Library - Extended Burrows-Wheeler Sublibrary
+	*****************************************************************************
+
+	Note: Functions within the XBW Environment that are starting with an underscore
+		  are used internally. They are not part of the interface to the outside
+		  world and should (usually) not need to be called from the outside.
 */
 
 // use as:
@@ -38,28 +42,30 @@ GML.make_xbw_environment = function() {
 	// i = ord[c]
 	var ord = [];
 
-	// true if this XBW environment keeps track of two XBWs which are in the
-	// process of being merged
-	var multiOrigin = false;
+	// 1 .. this is a regular XBW environment (can be used as sub XBW)
+	// 2 .. this is a host XBW environment for merging several sub XBWs
+	// 3 .. this is a host XBW environment for fusing several sub XBWs
+	var role = 1;
 
-	var otherXBW;
-	var mergedXBW;
+	// array of XBWs stored within this XBW (that is, an XBW can consist of several
+	// XBWs inside, and when functions are called from the outside, then they can
+	// be related through to the inside)
+	var subXBWs = [];
 
-	// current positions in our XBW
-	var multi_cur_1_fic = 0; // first column and M
-	var multi_cur_1_bwt = 0; // BWT and F
+	// if this here is a sub XBW, then prevXBW points to the XBW before this one and next XBW points
+	// to the one after this one (for now, we will assume that all merged / fused XBWs are orderly,
+	// one after the other in here, as this is how it will most likely be in practice anyway)
+	var prevXBW;
+	var nextXBW;
 
-	// current positions in the other XBW
-	var multi_cur_2_fic = 0; // first column and M
-	var multi_cur_2_bwt = 0; // BWT and F
+	var multi_cur_fic = []; // first column and M
+	var multi_cur_bwt = []; // BWT and F
 
 	// keep track from where the last node came to highlight it visually
-	var last_high_1_fic = -1;
-	var last_high_1_bwt = -1;
-	var last_high_2_fic = -1;
-	var last_high_2_bwt = -1;
-	var last_high_fic_arr = [];
-	var last_high_bwt_arr = [];
+	var last_high_fic = []; // the first two contain the last high node
+	var last_high_bwt = []; // for each subXBW
+	var last_high_fic_arr = []; // the second two contain all characters
+	var last_high_bwt_arr = []; // leading up to the very latest high node
 
 
 
@@ -270,15 +276,21 @@ GML.make_xbw_environment = function() {
 
 	return {
 
-		// initialize the XBW to the data from the findex
-		// (the findex should be an array containing a BWT array in position 1,
-		// an M bit vector array in position 2, and an F bit vector array in position 3;
-		// the p12 / prefix array which could be in position 0 is ignored, as the
-		// prefixes are generated on the fly when the graph is generated)
+		// initialize the XBW to the data from the findex (optional)
+		//   (the findex should be an array containing a BWT array in position 1,
+		//   an M bit vector array in position 2, and an F bit vector array in position 3;
+		//   the p12 / prefix array which could be in position 0 is ignored, as the
+		//   prefixes are generated on the fly when the graph is generated)
+		//   If findex is undefined, then the init function simply clears the XBW data.
 
 		init: function(findex) {
 
-			multiOrigin = false;
+			subXBWs = [];
+			role = 1;
+
+			BWT = '';
+			M = '';
+			F = '';
 
 			if (findex) {
 				auto = GML.getAutomatonFromFindex(findex);
@@ -321,6 +333,56 @@ GML.make_xbw_environment = function() {
 			}
 
 			recalculate(true);
+		},
+
+		initAsMergeHost: function() {
+
+			this.init();
+
+			multi_cur_fic = [];
+			multi_cur_bwt = [];
+
+			role = 2;
+		},
+
+		initAsFuseHost: function() {
+
+			this.init();
+
+			multi_cur_fic = [];
+			multi_cur_bwt = [];
+
+			role = 3;
+		},
+
+
+
+		addSubXBW: function(subXBW) {
+
+			if (subXBWs.length > 0) {
+				subXBWs[subXBWs.length-1]._setNextXBW(subXBW);
+				subXBW._setPrevXBW(subXBWs[subXBWs.length-1]);
+
+				subXBWs[subXBWs.length-1]._replaceSpecialChar(GML.DS, GML.DS_1);
+				subXBW._replaceSpecialChar(GML.DK, GML.DK_1);
+			}
+
+			multi_cur_fic.push(0);
+			multi_cur_bwt.push(0);
+
+			subXBWs.push(subXBW);
+		},
+
+		clearSubXBWs: function() {
+			subXBWs = [];
+		},
+
+		_setPrevXBW: function(pXBW) {
+			prevXBW = pXBW;
+		},
+
+		_setNextXBW: function(nXBW) {
+			nextXBW = nXBW;
 		},
 
 
@@ -382,37 +444,14 @@ GML.make_xbw_environment = function() {
 
 
 
-		// interaction between two XBW environments (e.g. used for merging them together)
-		// btw., all functions starting with "_publish" are used internally for the two XBW
-		// environments to communicate with each other, but are not intended to be called
-		// by the outside world
-
-		startToMergeWith: function(potherXBW) {
-
-			multiOrigin = true;
-
-			otherXBW = potherXBW;
-
-			multi_cur_1_fic = 0;
-			multi_cur_1_bwt = 0;
-			multi_cur_2_fic = 0;
-			multi_cur_2_bwt = 0;
-
-			mergedXBW = GML.make_xbw_environment();
-			mergedXBW.init();
-
-			this._replaceSpecialChar(GML.DS, GML.DS_1);
-			otherXBW._replaceSpecialChar(GML.DK, GML.DK_1);
-
-			return mergedXBW;
-		},
-
 		startNewSplitRound: function() {
 
-			multi_cur_1_fic = 0;
-			multi_cur_1_bwt = 0;
-			multi_cur_2_fic = 0;
-			multi_cur_2_bwt = 0;
+			for (var i=0; i < multi_cur_fic.length; i++) {
+				multi_cur_fic[i] = 0;
+			}
+			for (var i=0; i < multi_cur_bwt.length; i++) {
+				multi_cur_bwt[i] = 0;
+			}
 		},
 
 		_replaceSpecialChar: function(oldspecchar, newspecchar) {
@@ -436,6 +475,9 @@ GML.make_xbw_environment = function() {
 		},
 
 		finalizeMerge: function() {
+
+			role = 1;
+			subXBWs = [];
 
 			var loc, i;
 			var DS_1 = GML.DS_1;
@@ -545,7 +587,14 @@ GML.make_xbw_environment = function() {
 		},
 
 		notFullyMerged: function() {
-			return !((multi_cur_1_fic > BWT.length-1) && (multi_cur_2_fic > otherXBW._publishBWTlen()-1));
+
+			for (var i=0; i < subXBWs.length; i++) {
+				if (multi_cur_bwt[i] < subXBWs[i]._publishBWTlen()) {
+					return true;
+				}
+			}
+
+			return false;
 		},
 
 		_publishBWTlen: function() {
@@ -795,11 +844,11 @@ GML.make_xbw_environment = function() {
 						if ((pref.length > 1) && (char_to_add_now == GML.DS_1)) {
 
 							// find #_0 node in H_2 - which is necessarily the very last node, lucky us!
-							var pref_cur_i = otherXBW._publishBWTlen() - 1;
+							var pref_cur_i = nextXBW._publishBWTlen() - 1;
 							if (give_the_split_node) {
-								give_the_split_node.o = 2;
+								give_the_split_node.o++;
 							}
-							var pref_in_h2 = otherXBW._publishPrefix(pref_cur_i, strict, length + 2 - pref.length, false, give_the_split_node);
+							var pref_in_h2 = nextXBW._publishPrefix(pref_cur_i, strict, length + 2 - pref.length, false, give_the_split_node);
 
 							// if no split node was found on the other one...
 							if (give_the_split_node && (give_the_split_node.i < 0)) {
@@ -862,77 +911,87 @@ GML.make_xbw_environment = function() {
 			return [BWT, char, M, F];
 		},
 
-		_constructBothPrefixes: function() {
+		// TODO :: add different runmodes (this function is called twice, but once almost all
+		// its return values are discarded - how sad!)
+		_constructAllPrefixes: function() {
 
 			var sout = '';
 
-			var takeNode2_fic;
-			var split_node_1 = {sn_i: -1};
-			var split_node_2 = {sn_i: -1};
-
-			last_high_1_fic = -1;
-			last_high_1_bwt = -1;
-			last_high_2_fic = -1;
-			last_high_2_bwt = -1;
+			var takeNodeFrom;
+			var split_nodes = [];
+			for (var i=0; i < subXBWs.length; i++) {
+				split_nodes.push({sn_i: -1});
+				last_high_fic[i] = -1;
+				last_high_bwt[i] = -1;
+			}
 
 			var pEC = GML.prefixErrorChar;
 
 
 
-			// construct prefixes for first column and M comparison
+			// construct prefixes
 
-			// 1 is overshooting? - take 2!
-			if (multi_cur_1_fic > BWT.length-1) {
-				takeNode2_fic = true;
-			} else {
-				// 2 is overshooting? - take 1!
-				if (multi_cur_2_fic > otherXBW._publishBWTlen()-1) {
-					takeNode2_fic = false;
-				} else {
+			// TODO NOW :: keep previous results in memory (so if we generated the
+			//             prefix for this here in the previous step, then we do not
+			//             need to create it again)
 
-					// TODO NOW :: keep previous results in memory (so if we generated the
-					//             prefix for this here in the previous step, then we do not
-					//             need to create it again)
+			var i = 1;
+			var prefixes = ['', '']; // TODO EMRG :: the prefixes here are always just two... never more or less
+									 // all lines that need to be changed regarding this have
+									 // been highlighted as TE1TE
 
-					var i = 1;
-					var pref_1_fic = '';
-					var pref_2_fic = '';
+			if (multi_cur_fic[0] > subXBWs[0]._publishBWTlen()-1) { // TE1TE - here we say if H_1 is bad, use H_2, and vice versa - but for three and more this is much more complicated, we need to instead think of a pool of candidates
+				return [1, sout, prefixes, split_nodes]; // TE1TE
+			} // TE1TE
 
-					// we here do not need to explicitly check for reaching $ or $_1,
-					// as they are both different, and therefore we would necessarily
-					// reach a difference between the prefixes, which we ARE already
-					// checking for anyway =)
-					while ((i < GML.overflow_ceiling) &&
-							(GML.comparePrefixes(pref_1_fic, pref_2_fic) === 0) &&
-							(pref_1_fic[pref_1_fic.length-1] != pEC) &&
-							(pref_2_fic[pref_2_fic.length-1] != pEC)) {
+			if (multi_cur_fic[1] > subXBWs[1]._publishBWTlen()-1) { // TE1TE
+				return [0, sout, prefixes, split_nodes]; // TE1TE
+			} // TE1TE
 
-						// TODO NOW :: build prefixes char-by-char and keep last pref in memory
-						//             instead of in every cycle building again from the very
-						//             beginning
-						var gtsn = {o: 1};
-						pref_1_fic = this._publishPrefix(multi_cur_1_fic, true, i, true, gtsn);
-						split_node_1 = {sn_i: gtsn.i, o: gtsn.o};
-						gtsn.o = 2;
-						pref_2_fic = otherXBW._publishPrefix(multi_cur_2_fic, true, i, false, gtsn);
-						split_node_2 = {sn_i: gtsn.i, o: gtsn.o};
+			// we here do not need to explicitly check for reaching $ or $_1,
+			// as they are both different, and therefore we would necessarily
+			// reach a difference between the prefixes, which we ARE already
+			// checking for anyway =)
+			while ((i < GML.overflow_ceiling) &&
+					(GML.comparePrefixes(prefixes[0], prefixes[1]) === 0) && // TE1TE
+					(prefixes[0][prefixes[0].length-1] != pEC) && // TE1TE
+					(prefixes[1][prefixes[1].length-1] != pEC)) { // TE1TE
 
-						i++;
-					}
-
-					sout += '<span class="halfwidth">The prefix of ' + GML.DH_1 + '[' + multi_cur_1_fic + '] is ' +
-							pref_1_fic + '.</span>';
-
-					sout += 'The prefix of ' + GML.DH_2 + '[' + multi_cur_2_fic + '] is ' +
-							pref_2_fic + '.' + GML.nlnl;
-
-					takeNode2_fic = GML.comparePrefixes(pref_1_fic, pref_2_fic);
+				// TODO NOW :: build prefixes char-by-char and keep last pref in memory
+				//             instead of in every cycle building again from the very
+				//             beginning
+				var gtsn = {};
+				for (var j=0; j < subXBWs.length; j++) {
+					gtsn.o = j;
+					prefixes[j] = subXBWs[j]._publishPrefix(multi_cur_fic[j], true, i, true, gtsn);
+					split_nodes[j] = {sn_i: gtsn.i, o: gtsn.o};
 				}
+
+				i++;
+			}
+
+			sout += '<span class="halfwidth">The prefix of ' + GML.DH_1 + '[' + multi_cur_fic[0] + '] is ' +
+					prefixes[0] + '.</span>'; // TE1TE
+
+			sout += 'The prefix of ' + GML.DH_2 + '[' + multi_cur_fic[1] + '] is ' +
+					prefixes[1] + '.' + GML.nlnl; // TE1TE
+
+			var comp = GML.comparePrefixes(prefixes[0], prefixes[1]); // TE1TE
+
+			// TE1TE for the next 9 lines
+			if (comp > 0) {
+				takeNodeFrom = 1;
+			}
+			if (comp < 0) {
+				takeNodeFrom = 0;
+			}
+			if (comp == 0) {
+				takeNodeFrom = -1;
 			}
 
 
 
-			return [sout, takeNode2_fic, pref_1_fic, pref_2_fic, split_node_1, split_node_2];
+			return [takeNodeFrom, sout, prefixes, split_nodes];
 		},
 
 		// verbose .. [boolean] (default: false)
@@ -940,105 +999,80 @@ GML.make_xbw_environment = function() {
 		//            if false, just do the work and do not give out anything
 		mergeOneMore: function(verbose) {
 
-			var p = this._constructBothPrefixes();
+			var p = this._constructAllPrefixes();
 
-			var takeNode2_fic = p[1];
+			var takeNodeFrom = p[0];
 			var fic_o, fic_i, bwt_o, bwt_i;
 
 
-
-			if (takeNode2_fic > 0) {
-
-				last_high_2_fic = multi_cur_2_fic;
-
-				// insert node from the other XBW at multi_cur_2 into the merged XBW
-				fic_i = multi_cur_2_fic;
-				fic_o = 2;
-
-
-				multi_cur_2_fic++;
-			
-				last_high_2_bwt = multi_cur_2_bwt;
-
-				// insert node from the other XBW at multi_cur_2 into the merged XBW
-				bwt_i = multi_cur_2_bwt;
-				bwt_o = 2;
-
-				multi_cur_2_bwt++;
-			
-			} else {
-
-				last_high_1_fic = multi_cur_1_fic;
-
-				// insert node from this XBW at multi_cur_1 into the merged XBW
-				fic_i = multi_cur_1_fic;
-				fic_o = 1;
-
-				multi_cur_1_fic++;
-
-				last_high_1_bwt = multi_cur_1_bwt;
-
-				// insert node from this XBW at multi_cur_1 into the merged XBW
-				bwt_i = multi_cur_1_bwt;
-				bwt_o = 1;
-
-				multi_cur_1_bwt++;
+			if (takeNodeFrom < 0) {
+				// TODO :: throw an error
 			}
 
 
+			last_high_fic[takeNodeFrom] = multi_cur_fic[takeNodeFrom];
+			last_high_bwt[takeNodeFrom] = multi_cur_bwt[takeNodeFrom];
 
-			mergedXBW._addNodeBasedOnTwo(fic_o, fic_i, bwt_o, bwt_i, this, otherXBW);
+			// insert node from the sub XBW at multi_cur into the merged XBW
+			fic_i = multi_cur_fic[takeNodeFrom];
+			fic_o = takeNodeFrom;
+			bwt_i = multi_cur_bwt[takeNodeFrom];
+			bwt_o = takeNodeFrom;
+
+			multi_cur_fic[takeNodeFrom]++;
+			multi_cur_bwt[takeNodeFrom]++;
+
+
+
+			this._addNodeBasedOnTwo(fic_o, fic_i, bwt_o, bwt_i);
 
 
 			if (verbose) {
 
 				var sout = '';
+				var DH;
 
-				if (takeNode2_fic > 0) {
-
-					sout += 'That is, we take the first column and <i>M</i> from node ' +
-							fic_i + ' from ' + GML.DH_2 +
-							' and insert it into the merged table.' + GML.nlnl;
-
-					sout += 'We also take the BWT and <i>F</i> from node ' +
-							bwt_i + ' from ' + GML.DH_2 +
-							' and insert it into the merged table.' + GML.nlnlnl;
+				// TODO EMRG :: make this work for the general n case instead of always 2
+				if (takeNodeFrom == 1) {
+					DH = GML.DH_2;
 				} else {
-
-					sout += 'That is, we take the first column and <i>M</i> from node ' +
-							fic_i + ' from ' + GML.DH_1 +
-							' and insert it into the merged table.' + GML.nlnl;
-
-					sout += 'We also take the BWT and <i>F</i> from node ' +
-							bwt_i + ' from ' + GML.DH_1 +
-							' and insert it into the merged table.' + GML.nlnlnl;
+					DH = GML.DH_1;
 				}
+
+				sout += 'That is, we take the first column and <i>M</i> from node ' +
+						fic_i + ' from ' + DH +
+						' and insert it into the merged table.' + GML.nlnl;
+
+				sout += 'We also take the BWT and <i>F</i> from node ' +
+						bwt_i + ' from ' + DH +
+						' and insert it into the merged table.' + GML.nlnlnl;
 
 				var sstep = 'We add the following red cells to the merged table:' + GML.nlnl;
 
-				var shide = '<div class="table_box">' + this.generateBothTables() + '</div>';
+				var shide = '<div class="table_box">' + this.generateSubTables() + '</div>';
 				sstep += GML.hideWrap(shide, 'Tables') + GML.nlnl;
 
-				last_high_1_bwt = -1;
-				last_high_1_fic = -1;
-				last_high_2_bwt = -1;
-				last_high_2_fic = -1;
-				mergedXBW._clear_last_high_arrs();
+				for (var i=0; i < subXBWs.length; i++) {
+					last_high_bwt[i] = -1;
+					last_high_fic[i] = -1;
+				}
 
-				sout = GML.makeVisualsNice(p[0]) + GML.nlnl + sstep + GML.makeVisualsNice(sout);
+				last_high_bwt_arr = [];
+				last_high_fic_arr = [];
+
+				sout = GML.makeVisualsNice(p[1]) + GML.nlnl + sstep + GML.makeVisualsNice(sout);
 
 				return sout;
 			}
 		},
 
-		checkIfSplitOneMore: function(splitnodes) {
+		checkIfSplitOneMore: function(split_nodes_out) {
 
-			var p = this._constructBothPrefixes();
+			var p = this._constructAllPrefixes();
 
-			var sout = p[0];
-			var takeNode2_fic = p[1];
-			var pref_1_fic = p[2];
-			var pref_2_fic = p[3];
+			var takeNodeFrom = p[0];
+			var sout = p[1];
+			var prefixes = p[2];
 
 			// split_node_1 and split_node_2 are basically multi_cur_1_fic
 			// and multi_cur_2_fic, however with one important difference:
@@ -1048,8 +1082,7 @@ GML.make_xbw_environment = function() {
 			// the !; so that is where split_node_1 and _2 are pointing to =)
 			// Also, split_node_1 and _2 are not just integers, but are objects,
 			// each containing sn_i (for the position) and o (for the origin.)
-			var split_node_1 = p[4];
-			var split_node_2 = p[5];
+			var split_nodes_in = p[3];
 
 			var pEC = GML.prefixErrorChar;
 
@@ -1068,25 +1101,22 @@ GML.make_xbw_environment = function() {
 			// However, to make it simpler, we will just report one for now.
 			// TODO :: think about reporting several ones at once and handling them all!
 
-			if (pref_1_fic && (pref_1_fic[pref_1_fic.length-1] === pEC)) {
-				splitnodes.push(split_node_1);
-				return sout;
-			}
-
-			if (pref_2_fic && (pref_2_fic[pref_2_fic.length-1] === pEC)) {
-				splitnodes.push(split_node_2);
-				return sout;
+			for (var i=0; i < subXBWs.length; i++) {
+				if (prefixes[i][prefixes[i].length-1] === pEC) {
+					split_nodes_out.push(split_nodes_in[i]);
+					return sout;
+				}
 			}
 
 
 			// do the regular update if nothing changed
-			if (splitnodes.length < 1) {
-				if (takeNode2_fic > 0) {
-					multi_cur_2_fic++;
-					multi_cur_2_bwt++;
-				} else {
-					multi_cur_1_fic++;
-					multi_cur_1_bwt++;
+			if (split_nodes_out.length < 1) {
+				// TODO :: throw an error if takeNodeFrom > -1 here is not true
+				// (basically, takeNodeFrom == -1 means that no origin was chosen,
+				// as both prefixes are the same... which should not happen)
+				if (takeNodeFrom > -1) {
+					multi_cur_fic[takeNodeFrom]++;
+					multi_cur_bwt[takeNodeFrom]++;
 				}
 			}
 
@@ -1098,33 +1128,43 @@ GML.make_xbw_environment = function() {
 		splitOneMore: function(nodes) {
 
 			var sout = '';
-			var prevlen, oxbw;
 
-			for (var i=0; i < nodes.length; i++) {
+			// it would be great to here split all the nodes that are given,
+			// but it is much simpler to only split the first node that is given,
+			// and therefore we just go for nodes[0] instead of a nodes-for-loop
+			// (after splitting one node the index of another node might be
+			// screwed up... and yes, even in an adjacent XBW, through spillovers)
+
+			if (nodes.length > 0) {
 
 				sout += 'We observe a ' + GML.prefixErrorChar + ' in the prefix, ' +
 						'and therefore have to split a node in ';
 
-				if (nodes[i].o == 2) {
-					oxbw = otherXBW;
+				var oxbw = subXBWs[nodes[0].o];
+
+				if (nodes[0].o == 2) { // TODO EMRG :: make this more friendly to n subXBWs instead of always assuming two
 					sout += GML.DH_2;
 				} else {
-					oxbw = this;
 					sout += GML.DH_1;
 				}
 
 				sout += '.<br>';
 
+
 				// The indicated node is the default one (that is, no node for
 				// splitting could be found?) => Error!
-				if (nodes[i].sn_i < 0) {
+				if (nodes[0].sn_i < 0) {
 					GML.error_flag = true;
 					return sout + '<div class="error">The splitting of the node failed! (No node for splitting found.)</div>';
 				}
 
-				prevlen = oxbw._publishBWTlen();
-				oxbw._splitNode(nodes[i].sn_i);
-				newlen = oxbw._publishBWTlen();
+
+				var prevlen = oxbw._publishBWTlen();
+
+				oxbw._splitNode(nodes[0].sn_i);
+
+				var newlen = oxbw._publishBWTlen();
+
 
 				// After splitting, the amount of nodes has not increased? => Error!
 				if (prevlen >= newlen) {
@@ -1136,39 +1176,19 @@ GML.make_xbw_environment = function() {
 			return sout;
 		},
 
-		_inc_multi_cur_fic: function(origin) {
-			if (origin == 1) {
-				multi_cur_1_fic++;
-			} else {
-				multi_cur_2_fic++;
-			}
-		},
-
-		_inc_multi_cur_bwt: function(origin) {
-			if (origin == 1) {
-				multi_cur_1_bwt++;
-			} else {
-				multi_cur_2_bwt++;
-			}
-		},
-
 		// _addNodeBasedOnTwo is called inside H12 - that is, inside the merged XBW.
 		// We call it from H1, where we have "this" and "otherXBW" pointing towards
 		// H1 and H2, respectively.
 		// To be able to use "this" and "otherXBW" onside H12 as well, we need to
 		// therefore supply them here explicitly.
-		_addNodeBasedOnTwo: function(fic_o, fic_i, bwt_o, bwt_i, thisXBW, otherXBW) {
+		_addNodeBasedOnTwo: function(fic_o, fic_i, bwt_o, bwt_i) {
 
-			var node_fic, node_bwt, i;
+			var i;
 
 			last_high_fic_arr = [];
 			last_high_bwt_arr = [];
 
-			if (fic_o == 1) {
-				node_fic = thisXBW._publishAllNodes();
-			} else {
-				node_fic = otherXBW._publishAllNodes();
-			}
+			var node_fic = subXBWs[fic_o]._publishAllNodes();
 			last_high_fic_arr.push(char.length);
 			char += node_fic[1][fic_i];
 			M    += node_fic[2][fic_i];
@@ -1177,15 +1197,11 @@ GML.make_xbw_environment = function() {
 				last_high_fic_arr.push(char.length);
 				char += node_fic[1][fic_i + i];
 				M    += node_fic[2][fic_i + i];
-				thisXBW._inc_multi_cur_fic(fic_o);
+				multi_cur_fic[fic_o]++;
 				i++;
 			}
 
-			if (bwt_o == 1) {
-				node_bwt = thisXBW._publishAllNodes();
-			} else {
-				node_bwt = otherXBW._publishAllNodes();
-			}
+			var node_bwt = subXBWs[bwt_o]._publishAllNodes();
 			last_high_bwt_arr.push(BWT.length);
 			BWT  += node_bwt[0][bwt_i];
 			F    += node_bwt[3][bwt_i];
@@ -1194,7 +1210,7 @@ GML.make_xbw_environment = function() {
 				last_high_bwt_arr.push(BWT.length);
 				BWT  += node_bwt[0][bwt_i + i];
 				F    += node_bwt[3][bwt_i + i];
-				thisXBW._inc_multi_cur_bwt(bwt_o);
+				multi_cur_bwt[bwt_o]++;
 				i++;
 			}
 
@@ -1339,18 +1355,6 @@ GML.make_xbw_environment = function() {
 
 			// TODO :: apply directly to char, ord etc., so that no recalculation is necessary
 			recalculate(true);
-		},
-
-		_clear_last_high_arrs: function() {
-			last_high_bwt_arr = [];
-			last_high_fic_arr = [];
-		},
-
-		_publish_last_high_arrs: function() {
-			return [
-				last_high_bwt_arr,
-				last_high_fic_arr,
-			];
 		},
 
 
@@ -1512,7 +1516,7 @@ GML.make_xbw_environment = function() {
 				sout;
 
 			document.getElementById('div-xbw-' + tab + '-env-table').innerHTML =
-				this.generateTable([]);
+				this.generateTable();
 
 			this.generateGraph([], tab);
 		},
@@ -1594,47 +1598,35 @@ GML.make_xbw_environment = function() {
 
 			return sout;
 		},
-		generateBothTables: function(hideMergedTable) {
+		generateSubTables: function(hideMergedTable) {
 
-			var h1_high_bwt = [];
-			var h1_high_fic = [];
-			var h2_high_bwt = [];
-			var h2_high_fic = [];
+			var r = '';
+			for (var i=0; i < subXBWs.length; i++) {
+				if (i > 0) {
+					r += '&nbsp;&nbsp;&nbsp;';
+				}
 
-			if (last_high_1_bwt > -1) {
-				h1_high_bwt = [last_high_1_bwt];
-				for (var i=last_high_1_bwt+1; i < multi_cur_1_bwt; i++) {
-					h1_high_bwt.push(i);
-				}
-			}
-			if (last_high_1_fic > -1) {
-				h1_high_fic = [last_high_1_fic];
-				for (var i=last_high_1_fic+1; i < multi_cur_1_fic; i++) {
-					h1_high_fic.push(i);
-				}
-			}
-			if (last_high_2_bwt > -1) {
-				h2_high_bwt = [last_high_2_bwt];
-				for (var i=last_high_2_bwt+1; i < multi_cur_2_bwt; i++) {
-					h2_high_bwt.push(i);
-				}
-			}
-			if (last_high_2_fic > -1) {
-				h2_high_fic = [last_high_2_fic];
-				for (var i=last_high_2_fic+1; i < multi_cur_2_fic; i++) {
-					h2_high_fic.push(i);
-				}
-			}
+				var high_bwt = [];
+				var high_fic = [];
 
-			var r = this.generateTable([[], [multi_cur_1_bwt], [multi_cur_1_fic], [multi_cur_1_fic], [multi_cur_1_bwt]], [[], h1_high_bwt, h1_high_fic, h1_high_fic, h1_high_bwt]) + '&nbsp;&nbsp;&nbsp;' +
-			    otherXBW.generateTable([[], [multi_cur_2_bwt], [multi_cur_2_fic], [multi_cur_2_fic], [multi_cur_2_bwt]], [[], h2_high_bwt, h2_high_fic, h2_high_fic, h2_high_bwt]);
+				if (last_high_bwt[i] > -1) {
+					high_bwt = [last_high_bwt[i]];
+					for (var j=last_high_bwt[i]+1; j < multi_cur_bwt[i]; j++) {
+						high_bwt.push(j);
+					}
+				}
+				if (last_high_fic[i] > -1) {
+					high_fic = [last_high_fic[i]];
+					for (var j=last_high_fic[i]+1; j < multi_cur_fic[i]; j++) {
+						high_fic.push(j);
+					}
+				}
+
+				r += subXBWs[i].generateTable([[], [multi_cur_bwt[i]], [multi_cur_fic[i]], [multi_cur_fic[i]], [multi_cur_bwt[i]]], [[], high_bwt, high_fic, high_fic, high_bwt]);
+			}
 
 			if (!hideMergedTable) {
-				var last_high_arrs = mergedXBW._publish_last_high_arrs();
-				var last_high_bwt_arr = last_high_arrs[0];
-				var last_high_fic_arr = last_high_arrs[1];
-
-				r += '<br>' + mergedXBW.generateTable([], [[], last_high_bwt_arr, last_high_fic_arr, last_high_fic_arr, last_high_bwt_arr]);
+				r += '<br>' + this.generateTable([], [[], last_high_bwt_arr, last_high_fic_arr, last_high_fic_arr, last_high_bwt_arr]);
 			}
 
 			return r;

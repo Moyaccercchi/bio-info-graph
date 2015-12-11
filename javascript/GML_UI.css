@@ -293,6 +293,10 @@ div.error * {
 	font-weight:700;
 }
 
+div.working {
+	margin-top:44px;
+}
+
 
 
 /* SVG */

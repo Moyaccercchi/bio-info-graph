@@ -90,7 +90,7 @@ window.GML_UI = {
 
 
 		el = document.getElementById('div-out-' + i);
-		el.innerHTML = '<div>... working on your request ...</div>';
+		el.innerHTML = '<div class="working">... working on your request ...</div>';
 		el.style.display = 'block';
 
 		this.div_out_visibility[i] = true;

@@ -168,13 +168,6 @@
 
 
 	<div id="div-in-4" class="mainbox" style="display:none">
-		<div>
-			Please enter the two indices that should be used for the two graphs:
-		</div>
-		<div class="input-info-container">
-			<input id="in-options-index-1" type="text" value="0" onchange="GML_UI.animateApplyBtn(true)" onkeyup="GML_UI.animateApplyBtn(true)" class="md-2"></input>
-			<input id="in-options-index-2" type="text" value="1" onchange="GML_UI.animateApplyBtn(true)" onkeyup="GML_UI.animateApplyBtn(true)" class="md-2"></input>
-		</div>
 		<div class="no_select">
 			<span onmousedown="GML_UI.changeOptions_verbosity_mouse(event, true)" onmouseup="GML_UI.changeOptions_verbosity_mouse(false)" onmousemove="GML_UI.changeOptions_verbosity_move(event)" id="in-options-verbosity" style="cursor:pointer" class="our_slider"><span id="in-options-verbosity-inner" style="width:100%">&nbsp;</span></span> Verbosity: <span id="verbosity-out">tell me everything</span></b>
 		</div>
@@ -187,7 +180,7 @@
 		<div onclick="GML_UI.changeOptions_show_autoi()" style="cursor:pointer">
 			<span id="in-options-show-autoi" class="our_checkbox">&nbsp;</span> Show auto <i>i</i> above automaton nodes
 		</div>
-		<div style="display:none;">
+		<div>
 			The first element of any string and array is obviously <input id="in-options-array-offset" type="text" value="0" style="display: inline-block; width: 10%; margin-right: 5px; margin-left: 5px;" onchange="GML_UI.animateApplyBtn(true)" onkeyup="GML_UI.animateApplyBtn(true)"></input>.
 		</div>
 		<div>
@@ -225,11 +218,11 @@
 			Please enter the two graphs that you are interested in:
 		</div>
 		<div class="input-info-container">
-			<input id="in-string-5-1" type="text" value="C"></input>
+			<input id="in-string-5-1" type="text" value="GACGT|,2,T,4;,3,,5"></input>
 			<span class="infobtn" onclick="GML_UI.mergeGraphXBWsIn1Info(event)">Info</span>
 		</div>
 		<div class="input-info-container">
-			<input id="in-string-5-2" type="text" value="ACTG|,2,,4"></input>
+			<input id="in-string-5-2" type="text" value="ACCTG|,1,,5;,1,,3"></input>
 			<span class="infobtn" onclick="GML_UI.mergeGraphXBWsIn2Info(event)">Info</span>
 		</div>
 		<div>
@@ -266,11 +259,11 @@
 			Please enter the two graphs that you are interested in:
 		</div>
 		<div class="input-info-container">
-			<input id="in-string-6-1" type="text" value="C"></input>
+			<input id="in-string-6-1" type="text" value="GACGT|,2,T,4;,3,,5"></input>
 			<span class="infobtn" onclick="GML_UI.fuseGraphXBWsIn1Info(event)">Info</span>
 		</div>
 		<div class="input-info-container">
-			<input id="in-string-6-2" type="text" value="ACTG|,2,,4"></input>
+			<input id="in-string-6-2" type="text" value="ACCTG|,1,,5;,1,,3"></input>
 			<span class="infobtn" onclick="GML_UI.fuseGraphXBWsIn2Info(event)">Info</span>
 		</div>
 		<div>

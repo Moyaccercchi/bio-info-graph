@@ -304,12 +304,17 @@ GML.make_xbw_environment = function() {
 			F = '';
 
 			if (findex) {
+				// create an automaton and prefixes that will be used later for visualization
 				auto = GML.getAutomatonFromFindex(findex);
 				auto = GML.computePrefixes(auto);
 
 				prefixes = [];
 				for (var i=0; i < auto.length; i++) {
-					prefixes.push(auto[i].f);
+					if (auto[i]) {
+						prefixes.push(auto[i].f);
+					} else {
+						prefixes.push('');
+					}
 				}
 				prefixes.sort();
 
@@ -1041,21 +1046,14 @@ GML.make_xbw_environment = function() {
 			if (verbose) {
 
 				var sout = '';
-				var DH;
-
-				// TODO EMRG :: make this work for the general n case instead of always 2
-				if (takeNodeFrom == 1) {
-					DH = GML.DH_2;
-				} else {
-					DH = GML.DH_1;
-				}
+				var DH = GML.make_DH(takeNodeFrom);
 
 				sout += 'That is, we take the first column and <i>M</i> from node ' +
-						fic_i + ' from ' + DH +
+						(fic_i + GML.ao) + ' from ' + DH +
 						' and insert it into the merged table.' + GML.nlnl;
 
 				sout += 'We also take the BWT and <i>F</i> from node ' +
-						bwt_i + ' from ' + DH +
+						(bwt_i + GML.ao) + ' from ' + DH +
 						' and insert it into the merged table.' + GML.nlnlnl;
 
 				var sstep = 'We add the following red cells to the merged table:' + GML.nlnl;
@@ -1149,17 +1147,8 @@ GML.make_xbw_environment = function() {
 			if (nodes.length > 0) {
 
 				sout += 'We observe a ' + GML.prefixErrorChar + ' in the prefix, ' +
-						'and therefore have to split a node in ';
-
-				var oxbw = subXBWs[nodes[0].o];
-
-				if (nodes[0].o == 2) { // TODO EMRG :: make this more friendly to n subXBWs instead of always assuming two
-					sout += GML.DH_2;
-				} else {
-					sout += GML.DH_1;
-				}
-
-				sout += '.<br>';
+						'and therefore have to split a node in ' +
+						GML.make_DH(nodes[0].o) + '.<br>';
 
 
 				// The indicated node is the default one (that is, no node for
@@ -1169,6 +1158,8 @@ GML.make_xbw_environment = function() {
 					return sout + '<div class="error">The splitting of the node failed! (No node for splitting found.)</div>';
 				}
 
+
+				var oxbw = subXBWs[nodes[0].o];
 
 				var prevlen = oxbw._publishBWTlen();
 
@@ -1392,9 +1383,9 @@ GML.make_xbw_environment = function() {
 			console.log('BWT : ' + BWT);
 			console.log('M   : ' + M);
 			console.log('F   : ' + F);
-			console.log('C   : ' + GML.printKeyValArr(alph, C));
+			console.log('C   : ' + GML.printKeyValArr(alph, C, true));
 			console.log('alph: {' + alph.join(', ') + '}');
-			console.log('ord : ' + GML.printKeyValArr(alph, ord));
+			console.log('ord : ' + GML.printKeyValArr(alph, ord, true));
 			console.log(' ');
 
 			var flag = 0;
@@ -1555,7 +1546,7 @@ GML.make_xbw_environment = function() {
 		},
 		get_alph_and_C_str: function() {
 
-			return ['{' + alph.join(', ') + '}', GML.printKeyValArr(alph, C)];
+			return ['{' + alph.join(', ') + '}', GML.printKeyValArr(alph, C, true)];
 		},
 		generateTable: function(highlight_arr, extra_highlight_arr) {
 
@@ -1701,7 +1692,12 @@ GML.make_xbw_environment = function() {
 
 			var spep = find(searchfor);
 
-			document.getElementById('span-' + tab + '-xbw-results').innerHTML = spep;
+			var res = '[]';
+			if (spep.length > 0) {
+				res = '[' + (spep[0] + GML.ao) + ', ' + (spep[1] + GML.ao) + ']';
+			}
+
+			document.getElementById('span-' + tab + '-xbw-results').innerHTML = res;
 
 			this.show_spep_in_HTML(spep, tab, ['i', 'char'], undefined, undefined, true);
 		},
@@ -1709,7 +1705,7 @@ GML.make_xbw_environment = function() {
 
 			var pref_i = document.getElementById('in-string-' + tab + '-xbw-pref').value;
 
-			pref_i = parseInt(pref_i, 10);
+			pref_i = parseInt(pref_i, 10) - GML.ao;
 
 			var prefix = this._publishPrefix(pref_i);
 
@@ -1724,7 +1720,7 @@ GML.make_xbw_environment = function() {
 
 			var sn_i = document.getElementById('in-string-' + tab + '-xbw-split-node').value;
 
-			sn_i = parseInt(sn_i, 10);
+			sn_i = parseInt(sn_i, 10) - GML.ao;
 
 			this._splitNode(sn_i);
 
@@ -1738,13 +1734,17 @@ GML.make_xbw_environment = function() {
 			searchfor = searchfor.toUpperCase().replace(/\#/g, '^').split(',');
 
 			var spep = lf(
-				[parseInt(searchfor[0], 10), parseInt(searchfor[1], 10)],
+				[parseInt(searchfor[0], 10) - GML.ao, parseInt(searchfor[1], 10) - GML.ao],
 				searchfor[2],
 				searchfor[3] !== 'FALSE', // default to true
 				searchfor[4] !== 'FALSE'  // default to true
 			);
 
-			document.getElementById('span-' + tab + '-xbw-results').innerHTML = spep;
+			var res = '[]';
+			if (spep.length > 0) {
+				res = '[' + (spep[0] + GML.ao) + ', ' + (spep[1] + GML.ao) + ']';
+			}
+			document.getElementById('span-' + tab + '-xbw-results').innerHTML = res;
 
 			this.show_spep_in_HTML(spep, tab, ['i', 'char']);
 		},
@@ -1753,13 +1753,13 @@ GML.make_xbw_environment = function() {
 			var searchfor = document.getElementById('in-string-' + tab + '-xbw-psi').value.split(',');
 
 			var i = psi(
-				parseInt(searchfor[0], 10),
-				parseInt(searchfor[1], 10),
+				parseInt(searchfor[0], 10) - GML.ao,
+				parseInt(searchfor[1], 10) - GML.ao,
 				searchfor[2] !== 'FALSE', // default to true
 				searchfor[3] !== 'FALSE'  // default to true
 			);
 
-			document.getElementById('span-' + tab + '-xbw-results').innerHTML = i;
+			document.getElementById('span-' + tab + '-xbw-results').innerHTML = (i + GML.ao);
 
 			this.show_spep_in_HTML([i, i], tab, ['i', 'BWT']);
 		},
@@ -1771,7 +1771,7 @@ GML.make_xbw_environment = function() {
 			searchfor = searchfor.split(',');
 			searchfor[0] = searchfor[0].toUpperCase().replace(/\#/g, '^');
 
-			var i, j = parseInt(searchfor[2], 10);
+			var i, j = parseInt(searchfor[2], 10) - GML.ao;
 
 			switch (searchfor[1]) {
 				case 'M':
@@ -1788,7 +1788,7 @@ GML.make_xbw_environment = function() {
 					break;
 			}
 
-			document.getElementById('span-' + tab + '-xbw-results').innerHTML = i;
+			document.getElementById('span-' + tab + '-xbw-results').innerHTML = (i + GML.ao);
 
 			this.show_spep_in_HTML([i, i], tab, ['i', searchfor[1]], i, searchfor[0]);
 		},
@@ -1800,7 +1800,7 @@ GML.make_xbw_environment = function() {
 			searchfor = searchfor.split(',');
 			searchfor[0] = searchfor[0].toUpperCase().replace(/\#/g, '^');
 
-			var i, j = parseInt(searchfor[2], 10);
+			var i, j = parseInt(searchfor[2], 10) - GML.ao;
 
 			switch (searchfor[1]) {
 				case 'M':
@@ -1817,7 +1817,7 @@ GML.make_xbw_environment = function() {
 					break;
 			}
 
-			document.getElementById('span-' + tab + '-xbw-results').innerHTML = i;
+			document.getElementById('span-' + tab + '-xbw-results').innerHTML = (i + GML.ao);
 
 			this.show_spep_in_HTML([i, i], tab, ['i', searchfor[1]], j, searchfor[0]);
 		},

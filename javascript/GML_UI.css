@@ -67,6 +67,10 @@ div.tabbox > div {
 div.mainbox {
 	padding:16px 16px 0px 16px;
 	margin-bottom:32px;
+
+	/* when verbosity = 1, and we get an error (and nothing else),
+	   then the padding looks stupid unless we specify this min-height here */
+	min-height:152px;
 }
 
 div.mainbox > div, div.mainbox > input, div.mainbox > div.button {
@@ -282,6 +286,11 @@ div.error {
 	margin:48px -16px;
 	color:rgb(255, 255, 255);
 	text-align:center;
+}
+
+div.error * {
+	color:rgb(255, 255, 255);
+	font-weight:700;
 }
 
 

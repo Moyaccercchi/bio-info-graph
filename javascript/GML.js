@@ -37,6 +37,7 @@
 	Index of functions in GML:
 	set_to_DaTeX: function();
 	set_to_HTML: function();
+	make_DH: function(o);
 	build_BWTs_naively: function(h1, h2);
 	prepare_BWTs_naively: function();
 	generate_BWT_naively: function(h);
@@ -58,10 +59,14 @@
 	mergeAutomata: function(auto1, auto2);
 	makeAutomatonReverseDeterministic: function(auto, addToSOut);
 	makeAutomatonReverseDeterministic_int: function(auto, addToSOut);
-	rebaseGraphForRevDet: function(i, newchar, auto, addToSOut);
+	reverseDeterminizer: function(i, newchar, auto, addToSOut);
+	mergeNodesInAutomaton: function(auto, node_1, node_2);
+	splitNodeInAutomaton: function(auto, node_i);
 	isAutomatonReverseDeterministic: function(auto);
-	computePrefixes: function(auto);
+	arraysContainSameEls: function(a1, a2);
+	arrayContainsOtherArraysEls: function(a1, a2);
 	generateFfromPrefixesBWTM: function(prefixes, bwt, m);
+	computePrefixes: function(auto);
 	workOnAutomatonPrefixes: function(auto, makePrefixSorted, addToSOut);
 	workOnAutomatonPrefixes_int: function(auto, makePrefixSorted, addToSOut);
 	deep_copy_node: function(node);
@@ -98,7 +103,7 @@
 	did_itlvs_change: function(itlv1, itlv2);
 	expand_pos: function(pos, bwt);
 	pos_equals_pos: function(pos1, pos2);
-	printKeyValArr: function(keys, values);
+	printKeyValArr: function(keys, values, use_ao);
 	count_up_array: function(i);
 	makeVisualsNice: function(sout);
 	comparePrefixes: function(p1, p2);
@@ -117,6 +122,22 @@
 	 auto i .. index of node in automaton
 	 node i .. index of column in node table (table representing automaton 1:1)
 	table i .. index of column in flat table
+
+	Specifications:
+	An automaton is an array containing objects as nodes and "false" nodes.
+	Each object contains:
+		the array n (containing the indices of the next nodes)
+		the array p (containing the indices of the preceding nodes)
+		the string c (the label of the node)
+	An object may contain:
+		the string f (the prefix of the node)
+	The automaton MUST have an object in position 0, which is the entry node
+	(e.g. with label '#'.)
+	"False" nodes, which are allowed in any position above 0, are array elements
+	that are just the boolean false value. Any iteration over the automaton
+	nodes should just jump over them. (They usually arise as remnants of deleted
+	nodes, when it would be unnecessary to change the indices across the entire
+	automaton by actually splicing the automaton array.)
 */
 
 window.GML = {
@@ -129,14 +150,12 @@ window.GML = {
 	hideXBWenvironments: false, // do not show XBW environments - used if we are only interested in the results
 
 	ao: 0, // global array offset - used whenever we show stuff on the GUI / accept data from there
+	origins: [0, 1], // which index to show on H_i (and to use for origin i in general)
 
 	last_h1: '', // h1 that was used on last call
 	last_h2: '', // h2 that was used on last call
 	last_mode: 'none', // 'naive' or 'advanced', init to 'none'
 	last_give_out_HTML: -1, // true or false, init as -1
-
-	origin_1: '0', // which index to show on H_1 (and to use for origin 1 in general)
-	origin_2: '1', // which index to show on H_2 (and to use for origin 2 in general)
 
 	merge_directly: true, // (considering the graph merging)
 						  // true: take out $1 and #1 - they should not actually be in the merged graph,
@@ -159,23 +178,27 @@ window.GML = {
 
 		this.give_out_HTML = false;
 
+		this.origins = [this.ao, this.ao+1];
+
 		this.nl = "\n"; // newline character in code
 		this.nlnl = "\n\n"; // newline character in print
 		this.nlnlnl = "\n\n\n"; // double newline character in print
 		this.DS = "$ \\$ $"; // $
 		this.DS_1 = '%'; // $_1 internally
-		this.DS_1_o = '$ \\$_' + this.origin_1 + ' $'; // $_1
-		this.DS_1_t = '$ \\$_' + this.origin_1 + ' $'; // $_1 in SVG
-		this.DS_2_o = '$ \\$_' + this.origin_2 + ' $'; // $_2
+		this.DS_1_o = '$ \\$_' + this.origins[0] + ' $'; // $_1
+		this.DS_1_t = '$ \\$_' + this.origins[0] + ' $'; // $_1 in SVG
+		this.DS_2_o = '$ \\$_' + this.origins[1] + ' $'; // $_2
 		this.DK = '$ # $'; // #
 		this.DK_1 = '_'; // #_1 internally
-		this.DK_1_o = '$ #_' + this.origin_1 + ' $'; // #_1
-		this.DK_1_t = '$ #_' + this.origin_1 + ' $'; // #_1 in SVG
-		this.H_1 = 'H_' + this.origin_1; // string H_1 while in mathmode
-		this.H_2 = 'H_' + this.origin_2; // string H_2 while in mathmode
+		this.DK_1_o = '$ #_' + this.origins[0] + ' $'; // #_1
+		this.DK_1_t = '$ #_' + this.origins[0] + ' $'; // #_1 in SVG
+		this.H_1 = 'H_' + this.origins[0]; // string H_1 while in mathmode
+		this.H_2 = 'H_' + this.origins[1]; // string H_2 while in mathmode
 		this.DH = '$ H $'; // string H
-		this.DH_1 = '$ H_' + this.origin_1 + ' $'; // string H_1
-		this.DH_2 = '$ H_' + this.origin_2 + ' $'; // string H_2
+		this.DH_s = '$ H_{';
+		this.DH_e = '} $';
+		this.DH_1 = this.DH_s + this.origins[0] + this.DH_e; // string H_1
+		this.DH_2 = this.DH_s + this.origins[1] + this.DH_e; // string H_2
 		this.DM = '$ M $'; // vector M
 		this.DF = '$ F $'; // vector F
 		this.di = '$ i $'; // integer i
@@ -196,23 +219,27 @@ window.GML = {
 
 		this.give_out_HTML = true;
 
+		this.origins = [this.ao, this.ao+1];
+
 		this.nl = '\n'; // newline character in code
 		this.nlnl = '<br>\n'; // newline character in print
 		this.nlnlnl = '<br><br>\n'; // double newline character in print
 		this.DS = '$'; // $
 		this.DS_1 = '%'; // $_1 internally
-		this.DS_1_o = '$<span class="d">' + this.origin_1 + '</span>'; // $_1
-		this.DS_1_t = '<tspan>$</tspan><tspan class="d" dy="0.2">' + this.origin_1 + '</tspan>'; // $_1 in SVG
-		this.DS_2_o = '$<span class="d">' + this.origin_2 + '</span>'; // $_2
+		this.DS_1_o = '$<span class="d">' + this.origins[0] + '</span>'; // $_1
+		this.DS_1_t = '<tspan>$</tspan><tspan class="d" dy="0.2">' + this.origins[0] + '</tspan>'; // $_1 in SVG
+		this.DS_2_o = '$<span class="d">' + this.origins[1] + '</span>'; // $_2
 		this.DK = '^'; // #
 		this.DK_1 = '_'; // #_1 internally
-		this.DK_1_o = '^<span class="d">' + this.origin_1 + '</span>'; // #_1
-		this.DK_1_t = '<tspan>^</tspan><tspan class="d" dy="0.2">' + this.origin_1 + '</tspan>'; // #_1 in SVG
-		this.H_1 = 'H<span class="d">' + this.origin_1 + '</span>'; // string H_1 while in mathmode
-		this.H_2 = 'H<span class="d">' + this.origin_2 + '</span>'; // string H_2 while in mathmode
+		this.DK_1_o = '^<span class="d">' + this.origins[0] + '</span>'; // #_1
+		this.DK_1_t = '<tspan>^</tspan><tspan class="d" dy="0.2">' + this.origins[0] + '</tspan>'; // #_1 in SVG
+		this.H_1 = 'H<span class="d">' + this.origins[0] + '</span>'; // string H_1 while in mathmode
+		this.H_2 = 'H<span class="d">' + this.origins[1] + '</span>'; // string H_2 while in mathmode
 		this.DH = '<i>H</i>'; // string H
-		this.DH_1 = '<i>H<span class="d">' + this.origin_1 + '</span></i>'; // string H_1
-		this.DH_2 = '<i>H<span class="d">' + this.origin_2 + '</span></i>'; // string H_2
+		this.DH_s = '<i>H<span class="d">';
+		this.DH_e = '</span></i>';
+		this.DH_1 = this.DH_s + this.origins[0] + this.DH_e; // string H_1
+		this.DH_2 = this.DH_s + this.origins[1] + this.DH_e; // string H_2
 		this.DM = '<i>M</i>'; // vector M
 		this.DF = '<i>F</i>'; // vector F
 		this.di = '<i>i</i>'; // integer i
@@ -224,6 +251,12 @@ window.GML = {
 		this.endtab = '</td></tr></tbody></table></div>' + this.nlnl; // end table
 		this.tabchar = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'; // a tab (horizontal space)
 		this.s_end_document = ''; // the last line of the document
+	},
+
+	// takes in an origin, e.g. 5
+	// gives out H_5 styled for display and with the correct offset
+	make_DH: function(o) {
+		return this.DH_s + (o + this.ao) + this.DH_e;
 	},
 
 
@@ -608,8 +641,14 @@ window.GML = {
 	// gives out a section in DaTeX or HTML about the generation of its BWT
 	generate_BWT_advanced: function(h) {
 
+		this.error_flag = false;
+
 		// generate the graph
 		var graph = this.stringToGraph(h);
+
+		if (this.error_flag) {
+			return this.errorWrap('An infoblock in the input is wrongly formatted.');
+		}
 
 		// generate the automaton
 		var auto = this.graphToAutomaton(graph);
@@ -657,37 +696,45 @@ window.GML = {
 						"as possible (effectively sliding the gaps to the left.)" + this.nl;
 				sout += "We then reconstruct the automaton, and it will be guaranteed to be reverse " +
 						"deterministic (see Siren 2014.)" + this.nlnl;
+				sout += 'As a safeguard against malformed input we also merge nodes that have the ' +
+						'same labels and lead into the same nodes.' + this.nlnl;
 			}
-
-			sout += this.nlnl;
 
 			this.sout = '';
 			auto = this.makeAutomatonReverseDeterministic(auto, true);
-			sout += this.sout;
+
+			if (this.verbosity > 5) {
+				sout += this.nlnl + this.sout;
+			}
 
 			isRevDet = this.isAutomatonReverseDeterministic(auto);
 
-			if (isRevDet) {
-				sout += "We now have the following reverse deterministic automaton:" + this.nlnl;
-			} else {
-				sout += "Ooops! We do not have a reverse deterministic automaton:" + this.nlnl;
-				abortDueToRevDet = true;
-			}
+			abortDueToRevDet = !isRevDet;
 
-			sout += this.visualize(auto, false);
+
+			if (this.verbosity > 3) {
+				if (abortDueToRevDet) {
+					sout += "Ooops! We do not have a reverse deterministic automaton:" + this.nlnl;
+				} else {
+					sout += "We now have the following reverse deterministic automaton:" + this.nlnl;
+				}
+
+				sout += this.visualize(auto, false);
+			}
 		}
 
 
 		if (abortDueToRevDet) {
 
-			sout += "As we failed to generate a reverse deterministic automaton, we stop here." + this.nlnl;
+			sout += this.errorWrap('As we failed to generate a reverse deterministic automaton, ' +
+								   'we stop here.');
 
 		} else {
 
 			if (this.verbosity > 3) {
 
 				sout += "We now need to convert this reverse deterministic automaton " +
-						"into a prefix-sorted automaton.";
+						"into a prefix-sorted automaton." + this.nlnl;
 			}
 
 			auto = this.computePrefixes(auto);
@@ -831,9 +878,15 @@ window.GML = {
 	//   as well as the findexes for the merged H, for H_1 and for H_2
 	generate_BWTs_advanced_int: function(h1, h2, generate_F) {
 
+		this.error_flag = false;
+
 		// generate the graph
 		var graph1 = this.stringToGraph(h1);
 		var graph2 = this.stringToGraph(h2);
+
+		if (this.error_flag) {
+			return this.errorWrap('An infoblock in the input is wrongly formatted.');
+		}
 
 		// generate the automaton
 		var auto1 = this.graphToAutomaton(graph1);
@@ -871,15 +924,15 @@ window.GML = {
 		var isRevDet = this.isAutomatonReverseDeterministic(auto);
 		var isRevDet1 = this.isAutomatonReverseDeterministic(auto1);
 		var isRevDet2 = this.isAutomatonReverseDeterministic(auto2);
-		var abortDueToRevDet = false;
+
+		var failat;
 
 		if (!isRevDet) {
 			auto = this.makeAutomatonReverseDeterministic(auto, false);
 			isRevDet = this.isAutomatonReverseDeterministic(auto);
 			if (!isRevDet) {
-				sout += "As we failed to generate a reverse deterministic automaton for " + this.DH +
-						", we stop here." + this.nlnl;
-				abortDueToRevDet = true;
+				failat = this.DH;
+				this.error_flag = true;
 			}
 		}
 
@@ -887,9 +940,8 @@ window.GML = {
 			auto1 = this.makeAutomatonReverseDeterministic(auto1, false);
 			isRevDet1 = this.isAutomatonReverseDeterministic(auto1);
 			if (!isRevDet1) {
-				sout += "As we failed to generate a reverse deterministic automaton for " + this.DH_1 +
-						", we stop here." + this.nlnl;
-				abortDueToRevDet = true;
+				failat = this.DH_1;
+				this.error_flag = true;
 			}
 		}
 
@@ -897,14 +949,17 @@ window.GML = {
 			auto2 = this.makeAutomatonReverseDeterministic(auto2, false);
 			isRevDet2 = this.isAutomatonReverseDeterministic(auto2);
 			if (!isRevDet2) {
-				sout += "As we failed to generate a reverse deterministic automaton for " + this.DH_2 +
-						", we stop here." + this.nlnl;
-				abortDueToRevDet = true;
+				failat = this.DH_2;
+				this.error_flag = true;
 			}
 		}
 
 
-		if (!abortDueToRevDet) {
+		if (this.error_flag) {
+
+			sout += this.errorWrap('As we failed to generate a reverse deterministic automaton for ' +
+								   failat + ', we stop here.');
+		} else {
 
 			if (this.verbosity > 2) {
 				sout += "We need to convert these into reverse deterministic and then " +
@@ -1007,697 +1062,700 @@ window.GML = {
 	// gives out a string contain info about the BWT merging for both
 	merge_BWTs_advanced: function(h1, h2) {
 
-		var unsuccessful = false;
 		var ret = this.generate_BWTs_advanced_int(h1, h2, false);
 
 		var sout = ret[0];
 
-		var findex = ret[1];
-		var findex1 = ret[2];
-		var findex2 = ret[3];
+		if (!this.error_flag) {
 
-		var bwt1 = findex1[1];
-		var bwt2 = findex2[1];
-		var m1 = findex1[2];
-		var m2 = findex2[2];
+			var unsuccessful = false;
+			var findex = ret[1];
+			var findex1 = ret[2];
+			var findex2 = ret[3];
+
+			var bwt1 = findex1[1];
+			var bwt2 = findex2[1];
+			var m1 = findex1[2];
+			var m2 = findex2[2];
 
 
-		sout += '<span id="in-jump-3-3"></span>';
+			sout += '<span id="in-jump-3-3"></span>';
 
-		if (this.verbosity > 1) {
-			sout += 'We now want to find this prefix array, BWT and ' +
-					this.DM + ' vector just based on the ' +
-					'data we have for ' + this.DH_1 + ' and ' + this.DH_2 + '.' + this.nlnlnl;
-		}
+			if (this.verbosity > 1) {
+				sout += 'We now want to find this prefix array, BWT and ' +
+						this.DM + ' vector just based on the ' +
+						'data we have for ' + this.DH_1 + ' and ' + this.DH_2 + '.' + this.nlnlnl;
+			}
 
-		if (this.verbosity > 3) {
-			sout += 'The very first thing that we need to figure out is which letter is the last of ' +
-					this.DH_1 + ' and which letter is the first of ' + this.DH_2 + ', as this information ' +
-					'will be useful later on, and it is much easier to figure it out once and remember it.' +
-					this.nlnl;
-		}
+			if (this.verbosity > 3) {
+				sout += 'The very first thing that we need to figure out is which letter is the last of ' +
+						this.DH_1 + ' and which letter is the first of ' + this.DH_2 + ', as this information ' +
+						'will be useful later on, and it is much easier to figure it out once and remember it.' +
+						this.nlnl;
+			}
 
-		// find last letter of H_1
-		// (implicitly assuming that there is exactly one edge
-		// out of #_1, the first node of H_2 - that is, when we
-		// go through the BWT and find any entry for #_1, then
-		// the first letter of the corresponding prefix will be
-		// the label of the node following #_1 in H_2, no matter
-		// what)
-		this.lastH1Letter = '';
-		for (i=0; i < findex1[0].length; i++) {
-			if (findex1[0][i][0] == this.DS) {
-				this.lastH1Letter = bwt1[i];
-				if (this.verbosity > 3) {
-					sout += 'Looking at the prefixes of ' + this.DH_1 + ', we can see that the prefix ' +
-							this.DS + ' has the BWT entry ' + this.lastH1Letter +
-							' associated with it, so the last letter of ' + this.DH_1 +
-							' is ' + this.lastH1Letter + '.' + this.nlnl;
+			// find last letter of H_1
+			// (implicitly assuming that there is exactly one edge
+			// out of #_1, the first node of H_2 - that is, when we
+			// go through the BWT and find any entry for #_1, then
+			// the first letter of the corresponding prefix will be
+			// the label of the node following #_1 in H_2, no matter
+			// what)
+			this.lastH1Letter = '';
+			for (i=0; i < findex1[0].length; i++) {
+				if (findex1[0][i][0] == this.DS) {
+					this.lastH1Letter = bwt1[i];
+					if (this.verbosity > 3) {
+						sout += 'Looking at the prefixes of ' + this.DH_1 + ', we can see that the prefix ' +
+								this.DS + ' has the BWT entry ' + this.lastH1Letter +
+								' associated with it, so the last letter of ' + this.DH_1 +
+								' is ' + this.lastH1Letter + '.' + this.nlnl;
+					}
+					break;
 				}
-				break;
 			}
-		}
 
-		// find first letter of H_2
-		// (implicitly assuming that there is exactly one edge
-		// out of #_1, the first node of H_2 - that is, when we
-		// go through the BWT and find any entry for #_1, then
-		// the first letter of the corresponding prefix will be
-		// the label of the node following #_1 in H_2, no matter
-		// what)
-		this.firstH2Letter = '';
-		for (i=0; i < bwt2.length; i++) {
-			if (bwt2[i] == this.DK) {
-				this.firstH2Letter = findex2[0][i][0][0];
-				if (this.verbosity > 3) {
-					sout += 'Looking at the BWT of ' + this.DH_2 + ', we can see that ' +
-							this.DK + ' in the BWT has the prefix ' + findex2[0][i][0] +
-							' associated with it, so the first letter of ' + this.DH_2 +
-							' is ' + this.firstH2Letter + '.' + this.nlnlnl;
+			// find first letter of H_2
+			// (implicitly assuming that there is exactly one edge
+			// out of #_1, the first node of H_2 - that is, when we
+			// go through the BWT and find any entry for #_1, then
+			// the first letter of the corresponding prefix will be
+			// the label of the node following #_1 in H_2, no matter
+			// what)
+			this.firstH2Letter = '';
+			for (i=0; i < bwt2.length; i++) {
+				if (bwt2[i] == this.DK) {
+					this.firstH2Letter = findex2[0][i][0][0];
+					if (this.verbosity > 3) {
+						sout += 'Looking at the BWT of ' + this.DH_2 + ', we can see that ' +
+								this.DK + ' in the BWT has the prefix ' + findex2[0][i][0] +
+								' associated with it, so the first letter of ' + this.DH_2 +
+								' is ' + this.firstH2Letter + '.' + this.nlnlnl;
+					}
+					break;
 				}
-				break;
 			}
-		}
 
 
 
-		if (this.verbosity > 2) {
-			sout += 'We are now ready to look at all the prefixes, while keeping track of where ' +
-					'they are coming from:' + this.nlnl;
-		}
-
-
-		var p1 = this.add_index_to_col(findex1[0], this.origin_1);
-		var p2 = this.add_index_to_col(findex2[0], this.origin_2);
-		this.p12 = p1.concat(p2); // prefixes
-		this.p12_itlv = this.get_index_from_col(this.p12); // orig / interleave vector
-
-
-		this.s_table_head = this.tab;
-		if (this.give_out_HTML) {
-			this.s_table_head += '<tbody class="vbars"><tr><td>';
-		} else {
-			this.s_table_head += "{" + this.repjoin(this.p12.length, 'c', ' | ') + " | l}" + this.nl;
-		}
-
-
-		if (this.verbosity > 2) {
-			var stab = this.s_table_head;
-			stab += this.arr_to_str_wo_index(this.p12, this.td) + this.td + 'Prefix' + this.tabnl;
-			stab += this.p12_itlv.join(this.td) + this.td + 'Origin' + this.nl;
-			stab += this.endtab;
-			sout += this.hideWrap(stab, 'Table');
-		}
-
-
-		var i;
-		for (i=0; i < p1.length; i++) {
-			p1[i][0] = p1[i][0].replace(this.DS, this.DS_1_o);
-			bwt1[i] = bwt1[i].replace(this.DS, this.DS_1_o);
-		}
-		for (i=0; i < p2.length; i++) {
-			p2[i][0] = p2[i][0].replace(this.DK, this.DK_1_o);
-			bwt2[i] = bwt2[i].replace(this.DK, this.DK_1_o);
-		}
-		this.p12 = p1.concat(p2);
-
-		if (this.verbosity > 4) {
-			sout += 'We actually want to more closely keep track of the ' + this.DK +
-					' and ' + this.DS + ' characters in use.' + this.nlnl +
-					'That is, from now on we will let ' + this.DH_1 + ' start with ' +
-					this.DK + ' and end with ' + this.DS_1_o + ', while ' + this.DH_2 +
-					' will start with ' + this.DK_1_o + ' and end with ' + this.DS + ':' +
-					this.nlnl;
-
-			var stab = this.s_table_head;
-			stab += this.arr_to_str_wo_index(this.p12, this.td) + this.td + 'Prefix' + this.tabnl;
-			stab += this.p12_itlv.join(this.td) + this.td + 'Origin' + this.nl;
-			stab += this.endtab;
-			sout += this.hideWrap(stab, 'Table');
-		}
-
-
-		for (i=0; i < this.p12.length; i++) {
-			if (this.p12[i][0].indexOf(this.DS_1_o) > -1) {
-				this.p12[i][0] += this.DK_1_o + this.firstH2Letter;
+			if (this.verbosity > 2) {
+				sout += 'We are now ready to look at all the prefixes, while keeping track of where ' +
+						'they are coming from:' + this.nlnl;
 			}
-		}
-
-		if (this.verbosity > 2) {
-			sout += 'It is important to now append ' + this.DK_1_o + ' and the first letter of ' +
-					this.DH_2 + ' (which is ' + this.firstH2Letter + ') to all prefixes that end on ' +
-					this.DS_1_o + ', as ' +
-					this.DS_1_o + ' is not actually in use in the final merged BWT.' + this.nlnl +
-					'(Which means that we are implicitly removing ' + this.DS_1_o + ' here, which ' +
-					'did correspond to a real node when looking at ' + this.DH_1 + ' in isolation.)' +
-					this.nlnl + 'Naturally, we first of all need to find the first node of ' + this.DH_2 +
-					'.' + this.nlnlnl +
-					'Appending the first letter of ' + this.DH_2 + '(which is ' + 
-					this.firstH2Letter + ') as well as ' + this.DK_1_o +
-					' to all prefixes ending with ' +
-					this.DS_1_o + ' gives us:' + this.nlnl;
-
-			var stab = this.s_table_head;
-			stab += this.arr_to_str_wo_index(this.p12, this.td) + this.td + 'Prefix' + this.tabnl;
-			stab += this.p12_itlv.join(this.td) + this.td + 'Origin' + this.nl;
-			stab += this.endtab;
-			sout += this.hideWrap(stab, 'Table');
-		}
 
 
-		// add flags to the prefixes for future highlighting
-		for (i=0; i < this.p12.length; i++) {
-			this.p12[i] = [
-				this.p12[i][0], // prefix - string
-				this.p12[i][1], // origin - 1 or 2
-				false,     // problem here - true or false
-			];
-		}
+			var p1 = this.add_index_to_col(findex1[0], this.origins[0]);
+			var p2 = this.add_index_to_col(findex2[0], this.origins[1]);
+			this.p12 = p1.concat(p2); // prefixes
+			this.p12_itlv = this.get_index_from_col(this.p12); // orig / interleave vector
 
-		var thereAreProblems = this.sortp12andFindProblems();
-		this.p12_itlv = this.get_index_from_col(this.p12);
-		this.bwt = this.merge_with_interleave(bwt1, bwt2, this.p12_itlv);
-		this.m = this.merge_with_interleave(m1, m2, this.p12_itlv);
 
-		if (this.verbosity > 1) {
-			sout += 'We now need to sort these prefixes together. If we are really lucky, ' +
-					'all the prefixes are different, we can sort them together, and be done.' +
-					this.nlnl +
-					'If this does not work in a certain position, then this position will be ' +
-					'highlighted.';
-
-			var stab = this.s_table_head;
+			this.s_table_head = this.tab;
 			if (this.give_out_HTML) {
-				stab = stab.slice(0, -4);
+				this.s_table_head += '<tbody class="vbars"><tr><td>';
+			} else {
+				this.s_table_head += "{" + this.repjoin(this.p12.length, 'c', ' | ') + " | l}" + this.nl;
 			}
-			stab += this.arr_to_highlighted_str(this.p12, 2) + this.td + 'Prefix' + this.tabnl;
-			stab += this.p12_itlv.join(this.td) + this.td + 'Origin' + this.nl;
-			stab += this.endtab;
-			sout += this.hideWrap(stab, 'Table');
-		}
 
 
-		if (this.verbosity > 4) {
-			sout += 'We should also take a look at the BWT and ' + this.DM + ' vector associated ' +
-					'with this preliminary ordering.' + this.nlnl +
-					'Oh, and from now on, we will replace "' +
-					this.DS_1_o + this.DK_1_o + '" with "&#62;", just to indicate that we are ' +
-					'switching from ' + this.DH_1 + ' to ' + this.DH_2 + ', but without having ' +
-					'to write so much all the time.' + this.nlnl +
-					'Finally, we will also rewrite ' + this.DS_1_o + this.DK_1_o + this.firstH2Letter +
-					' as just ' + this.DS_1_o + ' as this node is indeed very special: ' +
-					'We keep it in the table because it will be used whenever we come off ' + this.DH_1 +
-					', but it will not actually be considered (and will indeed be dropped in the very end)' +
-					' as it is equivalent to the node ' + this.DK_1_o + ' (which will also be dropped) ' +
-					'and the node with prefix ' + this.firstH2Letter + ' and origin 2, which in fact will ' +
-					'go on to represent the other two nodes once they are dropped in the end.' + this.nlnl;
-
-			sout += this.fe_p12ToTableWithHighlights([], true);
-		}
-
-
-		for (i=0; i < p1.length; i++) {
-			bwt1[i] = bwt1[i].replace(this.DS_1_o, this.DS);
-		}
-		for (i=0; i < p2.length; i++) {
-			bwt2[i] = bwt2[i].replace(this.DS, this.DS_1_o);
-		}
-		this.bwt = this.merge_with_interleave(bwt1, bwt2, this.p12_itlv);
-
-		if (this.verbosity > 4) {
-			sout += 'However, we need to exchange ' + this.DS + ' and ' + this.DS_1_o +
-					' in the BWT.' + this.nlnl + 'The reason for this is that the predecessor ' +
-					'overflow now occurs across both ' + this.DH_1 + ' and ' + this.DH_2 +
-					', instead of separately for both of them:' + this.nlnl;
-
-			sout += this.fe_p12ToTableWithHighlights([], true);
-		}
-
-
-
-		if (this.verbosity > 9) {
-			sout += 'We now think a little bit about how we can navigate through this table, ' +
-					'which we will have to do a lot during the following steps.' + this.nlnl +
-					'Every entry in the table corresponds to one node. ' +
-					'So even though we ' + "don't" + ' explicitly have the two original graphs ' +
-					'(or the fully merged graph), we can still meaningfully think about nodes, ' +
-					'and doing so will make our life much easier.' + this.nlnl +
-					'In particular, instead of the more traditional mappings ' +
-					'(last-to-first and vice versa) we can simply consider the functions ' +
-					'nextNodes(' + this.di + ') and prevNodes(' + this.di + '). ' +
-					'We define both of them to be functions that take in an integer ' +
-					'(the position of the node within the table; that is, the number of the column), ' +
-					'and give out an array of integers (the positions of nodes.)' + this.nlnl +
-					'So, if we call nextNodes(10), ' +
-					'then the result will be an array containing all indicies of nodes ' +
-					'which have in-edges coming from node 10.' + this.nlnl +
-					'Similarly, if we call prevNodes(10), ' +
-					'the result will be an array containing all indicies of nodes ' +
-					'which have out-edges going to node 10.' + this.nlnl +
-					'In practice, we can do this by just looking at the information ' +
-					'given by the prefixes, origin, BWT and ' + this.DM + ' vector.' + this.nlnlnl +
-
-					'So to compute prevNodes(' + this.di + '), we look at BWT(' + this.di + '), ' +
-					'and then find any prefix starting with that letter ' +
-					'(if BWT(' + this.di + ') contains several letters, ' +
-					'we consider each of them separately one after the other.)' + this.nlnl +
-					'Of all these prefixes, ' + 
-					'we then only consider the ones having the same origin as node ' + this.di + '.' + this.nlnl +
-					'We finally jump over as many prefixes as there are nodes before ' + this.di + ' ' + 
-					'that contain the same letter in their BWT values, ' +
-					'counting each prefix by its ' + this.DM + ' value.' + this.nlnl +
-					'E.g. if we have the following table ' + 
-					'(just looking at the table and ignoring where it might come from)' + this.nlnl;
-
-			var ti = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-			var tpref = ['AA', 'AA', 'AB', 'AB', 'AC', 'BA', 'BA', 'BB', 'BB', 'BC'];
-			var torig = [1, 2, 1, 2, 1, 1, 2, 1, 2, 1];
-			var tbwt = ['B', 'A', 'B', 'B', 'B', 'A', 'C', 'D|A', 'A|E', 'A'];
-			var tm = ['10', '1', '1', '1', '10', '10', '1', '10', '10', '1'];
-
-			var stab = this.s_table_head;
-			stab += ti.join(this.td) + this.td + this.di + this.tabnl;
-			stab += tpref.join(this.td) + this.td + 'Prefix' + this.tabnl;
-			stab += torig.join(this.td) + this.td + 'Origin' + this.tabnl;
-			stab += tbwt.join(this.td) + this.td + 'BWT' + this.tabnl;
-			stab += tm.join(this.td) + this.td + this.DM + this.nl;
-			stab += this.endtab;
-
-			sout += this.hideWrap(stab, 'Table');
-
-
-
-			sout += 'and we are looking for prevNodes(3), ' +
-					'then we can consider all prefixes starting with B - ' +
-					'that is, 6 through 10.' + this.nlnl +
-					'Of these, we drop 7 and 9, as their origin is not 1.' + this.nlnl +
-					'The remaining nodes are 6, 8 and 10, which we will now multiply according to ' +
-					'their ' + this.DM + ' values (as we are interested in how many edges are going ' +
-					'out of them.) This gives us the list 6, 6, 8, 8, 10, as both 6 and 8 have ' +
-					this.DM + ' value 10, and 10 has ' + this.DM + ' value 1.' + this.nlnl +
-					'We then count: Before node 3, we have node 1 which has B in its BWT and origin 1. ' +
-					'We also have node 2, but that one has a different origin, so is ignored.' + this.nlnl +
-					'So of the list 6, 6, 8, 8, 10, we jump over first one, ' +
-					'leaving us with the second one, which is node 6. ' +
-					'So we return the array [6]. ' +
-					'(We ignore the nodes following 6 and only return the first ' +
-					'one that was not jumped over.)' + this.nlnl +
-					'Notice that the returned array of prevNodes(' + this.di + ') ' +
-					'will always contain exactly as many entries ' +
-					'as the BWT of node ' + this.di + ' contains letters.' + this.nlnlnl +
-
-					'To compute nextNodes(3) within the same table, we look at the first ' +
-					'letter of its prefix AB. That first letter is A.' + this.nlnl +
-					'We now need to find all nodes whose BWTs contain the letter A - these ' +
-					'are 2, 6, 8, 9 and 10.' + this.nlnl +
-					'Of these, the ones with the same origin are 6, 8 and 10, as 2 and 9 have origin 2.' +
-					this.nlnl +
-					'We then count: Before node 3, we have node 1 which starts with A in its prefix ' +
-					'and has origin 1. ' +
-					'It has multiplicity (' + this.DM + ' value) 10, counting for 2. ' +
-					'We also have node 2 which has a prefix starting with A, ' +
-					'but that one has a different origin, so is ignored.' + this.nlnl +
-					'So of the remaining nodes 6, 8 and 10, we jump over first 2 (both for node 1), ' +
-					'leaving us with node 10, so we return the array [10]. ' +
-					'(If node 3 had had a different ' + this.DM + ' value, we would ' +
-					'have returned that many nodes - e.g., for value 10, we would have returned ' +
-					'not just [10], but [10, 11], assuming that node 11 would have been another ' +
-					'remaining node.)' +
-					this.nlnlnl;
-		}
-
-		if (this.verbosity > 1) {
-			sout += 'We are now ready to work on the highlighted problems.' + this.nlnl;
-		}
-
-
-
-		if (thereAreProblems) {
-
-			// prevent endlessly hanging script if something doesn't work out and
-			// we accidentally produced and infinite loop
-
-			var patience = 0;
-
-			while ((patience < this.overflow_ceiling) && (thereAreProblems)) {
-
-				// initialize to an arbitrary big number, which is bigger than
-				// the length of any prefix in the graph (and no prefix should
-				// need to be longer than the amount of nodes, but just to be
-				// sure, let's multiply by 100)
-				var shortestRedLength = 100 * this.p12.length;
-				var rep = this.DS_1_o + this.DK_1_o;
-
-				for (i=0; i < this.p12.length; i++) {
-					if (this.p12[i][2] && (this.p12[i][0].replace(rep, '').length < shortestRedLength)) {
-						firstRedi = i;
-						shortestRedLength = this.p12[i][0].replace(rep, '').length;
-					}
-				}
-
-				var firstRedPrefix = this.p12[firstRedi][0];
-				var curLetter = firstRedPrefix[firstRedPrefix.length-1];
-
-				var shide = '<div>';
-
-
-				// 1 - look at last letter of first red prefix
-				if (this.verbosity > 5) {
-					shide += "We want to consider any one of the shortest red prefixes." + this.nlnl;
-				}
-
-				if ((patience === 0) && (this.verbosity > 7)) {
-					shide += "(Let's arbitrarily pick the first one of the shortest red prefixes, " +
-							"where " + this.DS_1_o + this.DK_1_o + " is not counted. " +
-							"Oh, and it is important that we focus on the shortest prefixes, " +
-							"as we could otherwise get into a situation in which we split " +
-							"a node, but have the node following it still unsplit in the table, " +
-							"which would put the table in an unsafe / inconsistent state unless " +
-							"we included the same BWT letter several times in that other node and " +
-							"always kept track of that until the split of that node happened, which " +
-							"seems like a lot of work.)" + this.nlnl;
-				}
-
-				if (this.verbosity > 5) {
-					shide += "The prefix is " + firstRedPrefix + " and we jump through the table " +
-							"all the way until we reach its last letter - that is, " + curLetter +
-							'.' + this.nlnl;
-
-					shide += this.fe_p12ToTableWithHighlights([[firstRedi]], true);
-				}
-
-
-				// 2 - check BWT containing the letter with origin being the same the one of the letter
-				if (this.verbosity > 5) {
-					shide += "We now look through the BWT that has the same origin and " +
-							"search for the letters one after the other, " +
-							"using the nextNodes(i) function." +
-							this.nlnl;
-				}
-
-				var next_nodes = [firstRedi];
-				for (i=0; i < firstRedPrefix.length; i++) {
-					// TODO :: make this more professional
-					//         (currently, we are converting an array to string and back to array
-					//         to do a deep copy rather than a pointer copy - there must a cleaner
-					//         way ^^)
-					var next_s = '';
-					for (var k=0; k < next_nodes.length; k++) {
-						next_s += this.nextNodes(next_nodes[k]).join(',') + ',';
-					}
-					next_nodes = next_s.slice(0, -1).split(',');
-					for (k=0; k < next_nodes.length; k++) {
-						next_nodes[k] = parseInt(next_nodes[k], 10);
-					}
-					if (this.verbosity > 6) {
-						shide += this.fe_p12ToTableWithHighlights([[], [], next_nodes], true);
-					}
-				}
-
-
-				// 3 - look at corresponding prefixes, and append them to the letter
-				if (this.verbosity > 5) {
-					shide += 'We now take the corresponding prefixes.' + this.nlnl;
-
-					shide += this.fe_p12ToTableWithHighlights([next_nodes], true);
-				}
-
-				var replacement_prefixes = [];
-
-				for (i=0; i < next_nodes.length; i++) {
-					var pref = firstRedPrefix + this.p12[next_nodes[i]][0];
-					replacement_prefixes.push(pref);
-				}
-
-				if (this.verbosity > 5) {
-					shide += 'These prefixes get added to the original prefix ' + firstRedPrefix +
-							' that we were looking at, producing the following new prefixes:' + this.nlnl;
-
-					shide += replacement_prefixes.join(this.nlnl);
-					shide += this.nlnlnl;
-				}
-
-				// 4 - insert these new prefixes instead of the original column
-				if (this.verbosity > 5) {
-					shide += 'We insert these new prefixes ' +
-							'instead of the original column.' + this.nlnl;
-				}
-
-				// calculate prevNodes only if necessary - but do so before actually doing any inserting,
-				// so that we do not calculate them when the table is not in a safe state
-				var prev_nodes = [];
-				if (replacement_prefixes.length > 1) {
-					prev_nodes = this.prevNodes(firstRedi);
-				}
-
-				this.p12[firstRedi][0] = replacement_prefixes[0];
-				this.m[firstRedi] = '1';
-				ins_arr = [firstRedi];
-				
-				var Madd = '';
-
-				for (i=1; i < replacement_prefixes.length; i++) {
-					this.p12.splice(firstRedi+i, 0, [replacement_prefixes[i], this.p12[firstRedi][1], false]);
-					this.p12_itlv.splice(firstRedi+i, 0, this.p12_itlv[firstRedi]);
-					this.bwt.splice(firstRedi+i, 0, this.bwt[firstRedi]);
-
-					// set M of the inserted column to 1, as each of these nodes now has exactly one
-					// edge leaving it (which is precisely why we are doing the splitting in the first
-					// place - and we are splitting precisely once for each outedge, so we have exactly
-					// one outedge for each node now!)
-					this.m.splice(firstRedi+i, 0, '1');
-
-					ins_arr.push(firstRedi+i);
-					Madd += '0';
-				}
-
-				if (this.verbosity > 5) {
-					shide += this.fe_p12ToTableWithHighlights([ins_arr, ins_arr, ins_arr, ins_arr], true);
-
-					shide += 'We now need to consider the ' + this.DM + ' vector, for which we have set ' +
-							'the correct value for the new columns (taking the one from their origin), ' +
-							'but however have not yet reset the values of the preceding nodes. In this case, ';
-				}
-
-				if (replacement_prefixes.length > 1) {
-
-					if (this.verbosity > 5) {
-						shide += 'we replaced 1 column with ' + replacement_prefixes.length +
-								' columns, so we inserted ' + (replacement_prefixes.length - 1) + ' columns.' +
-								this.nlnl;
-
-						shide += 'This means that we have to increase the ' + this.DM +
-								' values of the preceding nodes by that same amount, ' +
-								'as these nodes now have more outgoing edges. ' +
-								'To find these preceding nodes, we used the prevNodes(i) ' + 
-								'function on the table before inserting the new columns, ' +
-								'so as to not use it while the table is in an unsafe or ' +
-								'inconsistent state.' + this.nlnl;
-					}
-
-					var mrep_arr = [];
-
-					for (i=0; i < prev_nodes.length; i++) {
-
-						var pnode = prev_nodes[i];
-
-						// ignore the freshly inserted columns
-						if (pnode > firstRedi) {
-							pnode += replacement_prefixes.length - 1;
-						}
-
-						mrep_arr.push(pnode);
-
-						// add replacement_prefixes.length-1 zeroes to their M vectors
-						// (thereby adding as many outgoing edges as columns were inserted)
-						this.m[pnode] += Madd;
-					}
-
-					if (this.verbosity > 5) {
-						shide += this.fe_p12ToTableWithHighlights([ins_arr,[],[],mrep_arr], true);
-					}
-				} else {
-					if (this.verbosity > 5) {
-						shide += 'we replaced one column with another one column, so we did not insert ' +
-								'any new columns at all, and no action is required.' + this.nlnlnl;
-					}
-				}
-
-
-				// 5&6 - resort prefixes and recheck problems
-				if (this.verbosity > 5) {
-					shide += 'We can now sort the prefixes again alphabetically and ' +
-							'check for further problems.' + this.nlnl;
-				}
-
-				// keep track of the BWT and M vector while sorting
-				// (we cannot just merge afterwards with the interleave vector,
-				// as we have inserted columns and therefore one original
-				// column can lead to several merged columns)
-				for (i=0; i < this.p12.length; i++) {
-					this.p12[i][3] = this.bwt[i];
-					this.p12[i][4] = this.m[i];
-				}
-
-				thereAreProblems = this.sortp12andFindProblems();
-
-				this.p12_itlv = this.get_index_from_col(this.p12);
-				this.bwt = this.get_first_n_from_scr(this.p12, 3);
-				this.m = this.get_first_n_from_scr(this.p12, 4);
-
-				if (this.verbosity > 5) {
-					shide += this.fe_p12ToTableWithHighlights([], true);
-				}
-
-
-				// 7 - repeat approach until no more problems (or run out of patience)
-				patience++;
-
-				if (this.verbosity > 5) {
-					sout += this.hideWrap(shide + '</div>', 'Step ' + patience) + this.nlnl;
+			if (this.verbosity > 2) {
+				var stab = this.s_table_head;
+				stab += this.arr_to_str_wo_index(this.p12, this.td) + this.td + 'Prefix' + this.tabnl;
+				stab += this.p12_itlv.join(this.td) + this.td + 'Origin' + this.nl;
+				stab += this.endtab;
+				sout += this.hideWrap(stab, 'Table');
+			}
+
+
+			var i;
+			for (i=0; i < p1.length; i++) {
+				p1[i][0] = p1[i][0].replace(this.DS, this.DS_1_o);
+				bwt1[i] = bwt1[i].replace(this.DS, this.DS_1_o);
+			}
+			for (i=0; i < p2.length; i++) {
+				p2[i][0] = p2[i][0].replace(this.DK, this.DK_1_o);
+				bwt2[i] = bwt2[i].replace(this.DK, this.DK_1_o);
+			}
+			this.p12 = p1.concat(p2);
+
+			if (this.verbosity > 4) {
+				sout += 'We actually want to more closely keep track of the ' + this.DK +
+						' and ' + this.DS + ' characters in use.' + this.nlnl +
+						'That is, from now on we will let ' + this.DH_1 + ' start with ' +
+						this.DK + ' and end with ' + this.DS_1_o + ', while ' + this.DH_2 +
+						' will start with ' + this.DK_1_o + ' and end with ' + this.DS + ':' +
+						this.nlnl;
+
+				var stab = this.s_table_head;
+				stab += this.arr_to_str_wo_index(this.p12, this.td) + this.td + 'Prefix' + this.tabnl;
+				stab += this.p12_itlv.join(this.td) + this.td + 'Origin' + this.nl;
+				stab += this.endtab;
+				sout += this.hideWrap(stab, 'Table');
+			}
+
+
+			for (i=0; i < this.p12.length; i++) {
+				if (this.p12[i][0].indexOf(this.DS_1_o) > -1) {
+					this.p12[i][0] += this.DK_1_o + this.firstH2Letter;
 				}
 			}
+
+			if (this.verbosity > 2) {
+				sout += 'It is important to now append ' + this.DK_1_o + ' and the first letter of ' +
+						this.DH_2 + ' (which is ' + this.firstH2Letter + ') to all prefixes that end on ' +
+						this.DS_1_o + ', as ' +
+						this.DS_1_o + ' is not actually in use in the final merged BWT.' + this.nlnl +
+						'(Which means that we are implicitly removing ' + this.DS_1_o + ' here, which ' +
+						'did correspond to a real node when looking at ' + this.DH_1 + ' in isolation.)' +
+						this.nlnl + 'Naturally, we first of all need to find the first node of ' + this.DH_2 +
+						'.' + this.nlnlnl +
+						'Appending the first letter of ' + this.DH_2 + '(which is ' + 
+						this.firstH2Letter + ') as well as ' + this.DK_1_o +
+						' to all prefixes ending with ' +
+						this.DS_1_o + ' gives us:' + this.nlnl;
+
+				var stab = this.s_table_head;
+				stab += this.arr_to_str_wo_index(this.p12, this.td) + this.td + 'Prefix' + this.tabnl;
+				stab += this.p12_itlv.join(this.td) + this.td + 'Origin' + this.nl;
+				stab += this.endtab;
+				sout += this.hideWrap(stab, 'Table');
+			}
+
+
+			// add flags to the prefixes for future highlighting
+			for (i=0; i < this.p12.length; i++) {
+				this.p12[i] = [
+					this.p12[i][0], // prefix - string
+					this.p12[i][1], // origin - 1 or 2
+					false,     // problem here - true or false
+				];
+			}
+
+			var thereAreProblems = this.sortp12andFindProblems();
+			this.p12_itlv = this.get_index_from_col(this.p12);
+			this.bwt = this.merge_with_interleave(bwt1, bwt2, this.p12_itlv);
+			this.m = this.merge_with_interleave(m1, m2, this.p12_itlv);
+
+			if (this.verbosity > 1) {
+				sout += 'We now need to sort these prefixes together. If we are really lucky, ' +
+						'all the prefixes are different, we can sort them together, and be done.' +
+						this.nlnl +
+						'If this does not work in a certain position, then this position will be ' +
+						'highlighted.';
+
+				var stab = this.s_table_head;
+				if (this.give_out_HTML) {
+					stab = stab.slice(0, -4);
+				}
+				stab += this.arr_to_highlighted_str(this.p12, 2) + this.td + 'Prefix' + this.tabnl;
+				stab += this.p12_itlv.join(this.td) + this.td + 'Origin' + this.nl;
+				stab += this.endtab;
+				sout += this.hideWrap(stab, 'Table');
+			}
+
+
+			if (this.verbosity > 4) {
+				sout += 'We should also take a look at the BWT and ' + this.DM + ' vector associated ' +
+						'with this preliminary ordering.' + this.nlnl +
+						'Oh, and from now on, we will replace "' +
+						this.DS_1_o + this.DK_1_o + '" with "&#62;", just to indicate that we are ' +
+						'switching from ' + this.DH_1 + ' to ' + this.DH_2 + ', but without having ' +
+						'to write so much all the time.' + this.nlnl +
+						'Finally, we will also rewrite ' + this.DS_1_o + this.DK_1_o + this.firstH2Letter +
+						' as just ' + this.DS_1_o + ' as this node is indeed very special: ' +
+						'We keep it in the table because it will be used whenever we come off ' + this.DH_1 +
+						', but it will not actually be considered (and will indeed be dropped in the very end)' +
+						' as it is equivalent to the node ' + this.DK_1_o + ' (which will also be dropped) ' +
+						'and the node with prefix ' + this.firstH2Letter + ' and origin 2, which in fact will ' +
+						'go on to represent the other two nodes once they are dropped in the end.' + this.nlnl;
+
+				sout += this.fe_p12ToTableWithHighlights([], true);
+			}
+
+
+			for (i=0; i < p1.length; i++) {
+				bwt1[i] = bwt1[i].replace(this.DS_1_o, this.DS);
+			}
+			for (i=0; i < p2.length; i++) {
+				bwt2[i] = bwt2[i].replace(this.DS, this.DS_1_o);
+			}
+			this.bwt = this.merge_with_interleave(bwt1, bwt2, this.p12_itlv);
+
+			if (this.verbosity > 4) {
+				sout += 'However, we need to exchange ' + this.DS + ' and ' + this.DS_1_o +
+						' in the BWT.' + this.nlnl + 'The reason for this is that the predecessor ' +
+						'overflow now occurs across both ' + this.DH_1 + ' and ' + this.DH_2 +
+						', instead of separately for both of them:' + this.nlnl;
+
+				sout += this.fe_p12ToTableWithHighlights([], true);
+			}
+
+
+
+			if (this.verbosity > 9) {
+				sout += 'We now think a little bit about how we can navigate through this table, ' +
+						'which we will have to do a lot during the following steps.' + this.nlnl +
+						'Every entry in the table corresponds to one node. ' +
+						'So even though we ' + "don't" + ' explicitly have the two original graphs ' +
+						'(or the fully merged graph), we can still meaningfully think about nodes, ' +
+						'and doing so will make our life much easier.' + this.nlnl +
+						'In particular, instead of the more traditional mappings ' +
+						'(last-to-first and vice versa) we can simply consider the functions ' +
+						'nextNodes(' + this.di + ') and prevNodes(' + this.di + '). ' +
+						'We define both of them to be functions that take in an integer ' +
+						'(the position of the node within the table; that is, the number of the column), ' +
+						'and give out an array of integers (the positions of nodes.)' + this.nlnl +
+						'So, if we call nextNodes(10), ' +
+						'then the result will be an array containing all indicies of nodes ' +
+						'which have in-edges coming from node 10.' + this.nlnl +
+						'Similarly, if we call prevNodes(10), ' +
+						'the result will be an array containing all indicies of nodes ' +
+						'which have out-edges going to node 10.' + this.nlnl +
+						'In practice, we can do this by just looking at the information ' +
+						'given by the prefixes, origin, BWT and ' + this.DM + ' vector.' + this.nlnlnl +
+
+						'So to compute prevNodes(' + this.di + '), we look at BWT(' + this.di + '), ' +
+						'and then find any prefix starting with that letter ' +
+						'(if BWT(' + this.di + ') contains several letters, ' +
+						'we consider each of them separately one after the other.)' + this.nlnl +
+						'Of all these prefixes, ' + 
+						'we then only consider the ones having the same origin as node ' + this.di + '.' + this.nlnl +
+						'We finally jump over as many prefixes as there are nodes before ' + this.di + ' ' + 
+						'that contain the same letter in their BWT values, ' +
+						'counting each prefix by its ' + this.DM + ' value.' + this.nlnl +
+						'E.g. if we have the following table ' + 
+						'(just looking at the table and ignoring where it might come from)' + this.nlnl;
+
+				var ti = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+				var tpref = ['AA', 'AA', 'AB', 'AB', 'AC', 'BA', 'BA', 'BB', 'BB', 'BC'];
+				var torig = [1, 2, 1, 2, 1, 1, 2, 1, 2, 1];
+				var tbwt = ['B', 'A', 'B', 'B', 'B', 'A', 'C', 'D|A', 'A|E', 'A'];
+				var tm = ['10', '1', '1', '1', '10', '10', '1', '10', '10', '1'];
+
+				var stab = this.s_table_head;
+				stab += ti.join(this.td) + this.td + this.di + this.tabnl;
+				stab += tpref.join(this.td) + this.td + 'Prefix' + this.tabnl;
+				stab += torig.join(this.td) + this.td + 'Origin' + this.tabnl;
+				stab += tbwt.join(this.td) + this.td + 'BWT' + this.tabnl;
+				stab += tm.join(this.td) + this.td + this.DM + this.nl;
+				stab += this.endtab;
+
+				sout += this.hideWrap(stab, 'Table');
+
+
+
+				sout += 'and we are looking for prevNodes(3), ' +
+						'then we can consider all prefixes starting with B - ' +
+						'that is, 6 through 10.' + this.nlnl +
+						'Of these, we drop 7 and 9, as their origin is not 1.' + this.nlnl +
+						'The remaining nodes are 6, 8 and 10, which we will now multiply according to ' +
+						'their ' + this.DM + ' values (as we are interested in how many edges are going ' +
+						'out of them.) This gives us the list 6, 6, 8, 8, 10, as both 6 and 8 have ' +
+						this.DM + ' value 10, and 10 has ' + this.DM + ' value 1.' + this.nlnl +
+						'We then count: Before node 3, we have node 1 which has B in its BWT and origin 1. ' +
+						'We also have node 2, but that one has a different origin, so is ignored.' + this.nlnl +
+						'So of the list 6, 6, 8, 8, 10, we jump over first one, ' +
+						'leaving us with the second one, which is node 6. ' +
+						'So we return the array [6]. ' +
+						'(We ignore the nodes following 6 and only return the first ' +
+						'one that was not jumped over.)' + this.nlnl +
+						'Notice that the returned array of prevNodes(' + this.di + ') ' +
+						'will always contain exactly as many entries ' +
+						'as the BWT of node ' + this.di + ' contains letters.' + this.nlnlnl +
+
+						'To compute nextNodes(3) within the same table, we look at the first ' +
+						'letter of its prefix AB. That first letter is A.' + this.nlnl +
+						'We now need to find all nodes whose BWTs contain the letter A - these ' +
+						'are 2, 6, 8, 9 and 10.' + this.nlnl +
+						'Of these, the ones with the same origin are 6, 8 and 10, as 2 and 9 have origin 2.' +
+						this.nlnl +
+						'We then count: Before node 3, we have node 1 which starts with A in its prefix ' +
+						'and has origin 1. ' +
+						'It has multiplicity (' + this.DM + ' value) 10, counting for 2. ' +
+						'We also have node 2 which has a prefix starting with A, ' +
+						'but that one has a different origin, so is ignored.' + this.nlnl +
+						'So of the remaining nodes 6, 8 and 10, we jump over first 2 (both for node 1), ' +
+						'leaving us with node 10, so we return the array [10]. ' +
+						'(If node 3 had had a different ' + this.DM + ' value, we would ' +
+						'have returned that many nodes - e.g., for value 10, we would have returned ' +
+						'not just [10], but [10, 11], assuming that node 11 would have been another ' +
+						'remaining node.)' +
+						this.nlnlnl;
+			}
+
+			if (this.verbosity > 1) {
+				sout += 'We are now ready to work on the highlighted problems.' + this.nlnl;
+			}
+
+
 
 			if (thereAreProblems) {
-				sout += 'Sadly, the merging was not successful.' + this.nlnl;
-				unsuccessful = true;
+
+				// prevent endlessly hanging script if something doesn't work out and
+				// we accidentally produced and infinite loop
+
+				var patience = this.ao;
+
+				while ((patience < this.overflow_ceiling) && (thereAreProblems)) {
+
+					// initialize to an arbitrary big number, which is bigger than
+					// the length of any prefix in the graph (and no prefix should
+					// need to be longer than the amount of nodes, but just to be
+					// sure, let's multiply by 100)
+					var shortestRedLength = 100 * this.p12.length;
+					var rep = this.DS_1_o + this.DK_1_o;
+
+					for (i=0; i < this.p12.length; i++) {
+						if (this.p12[i][2] && (this.p12[i][0].replace(rep, '').length < shortestRedLength)) {
+							firstRedi = i;
+							shortestRedLength = this.p12[i][0].replace(rep, '').length;
+						}
+					}
+
+					var firstRedPrefix = this.p12[firstRedi][0];
+					var curLetter = firstRedPrefix[firstRedPrefix.length-1];
+
+					var shide = '<div>';
+
+
+					// 1 - look at last letter of first red prefix
+					if (this.verbosity > 5) {
+						shide += "We want to consider any one of the shortest red prefixes." + this.nlnl;
+					}
+
+					if ((patience === 0) && (this.verbosity > 7)) {
+						shide += "(Let's arbitrarily pick the first one of the shortest red prefixes, " +
+								"where " + this.DS_1_o + this.DK_1_o + " is not counted. " +
+								"Oh, and it is important that we focus on the shortest prefixes, " +
+								"as we could otherwise get into a situation in which we split " +
+								"a node, but have the node following it still unsplit in the table, " +
+								"which would put the table in an unsafe / inconsistent state unless " +
+								"we included the same BWT letter several times in that other node and " +
+								"always kept track of that until the split of that node happened, which " +
+								"seems like a lot of work.)" + this.nlnl;
+					}
+
+					if (this.verbosity > 5) {
+						shide += "The prefix is " + firstRedPrefix + " and we jump through the table " +
+								"all the way until we reach its last letter - that is, " + curLetter +
+								'.' + this.nlnl;
+
+						shide += this.fe_p12ToTableWithHighlights([[firstRedi]], true);
+					}
+
+
+					// 2 - check BWT containing the letter with origin being the same the one of the letter
+					if (this.verbosity > 5) {
+						shide += "We now look through the BWT that has the same origin and " +
+								"search for the letters one after the other, " +
+								"using the nextNodes(i) function." +
+								this.nlnl;
+					}
+
+					var next_nodes = [firstRedi];
+					for (i=0; i < firstRedPrefix.length; i++) {
+						// TODO :: make this more professional
+						//         (currently, we are converting an array to string and back to array
+						//         to do a deep copy rather than a pointer copy - there must a cleaner
+						//         way ^^)
+						var next_s = '';
+						for (var k=0; k < next_nodes.length; k++) {
+							next_s += this.nextNodes(next_nodes[k]).join(',') + ',';
+						}
+						next_nodes = next_s.slice(0, -1).split(',');
+						for (k=0; k < next_nodes.length; k++) {
+							next_nodes[k] = parseInt(next_nodes[k], 10);
+						}
+						if (this.verbosity > 6) {
+							shide += this.fe_p12ToTableWithHighlights([[], [], next_nodes], true);
+						}
+					}
+
+
+					// 3 - look at corresponding prefixes, and append them to the letter
+					if (this.verbosity > 5) {
+						shide += 'We now take the corresponding prefixes.' + this.nlnl;
+
+						shide += this.fe_p12ToTableWithHighlights([next_nodes], true);
+					}
+
+					var replacement_prefixes = [];
+
+					for (i=0; i < next_nodes.length; i++) {
+						var pref = firstRedPrefix + this.p12[next_nodes[i]][0];
+						replacement_prefixes.push(pref);
+					}
+
+					if (this.verbosity > 5) {
+						shide += 'These prefixes get added to the original prefix ' + firstRedPrefix +
+								' that we were looking at, producing the following new prefixes:' + this.nlnl;
+
+						shide += replacement_prefixes.join(this.nlnl);
+						shide += this.nlnlnl;
+					}
+
+					// 4 - insert these new prefixes instead of the original column
+					if (this.verbosity > 5) {
+						shide += 'We insert these new prefixes ' +
+								'instead of the original column.' + this.nlnl;
+					}
+
+					// calculate prevNodes only if necessary - but do so before actually doing any inserting,
+					// so that we do not calculate them when the table is not in a safe state
+					var prev_nodes = [];
+					if (replacement_prefixes.length > 1) {
+						prev_nodes = this.prevNodes(firstRedi);
+					}
+
+					this.p12[firstRedi][0] = replacement_prefixes[0];
+					this.m[firstRedi] = '1';
+					ins_arr = [firstRedi];
+					
+					var Madd = '';
+
+					for (i=1; i < replacement_prefixes.length; i++) {
+						this.p12.splice(firstRedi+i, 0, [replacement_prefixes[i], this.p12[firstRedi][1], false]);
+						this.p12_itlv.splice(firstRedi+i, 0, this.p12_itlv[firstRedi]);
+						this.bwt.splice(firstRedi+i, 0, this.bwt[firstRedi]);
+
+						// set M of the inserted column to 1, as each of these nodes now has exactly one
+						// edge leaving it (which is precisely why we are doing the splitting in the first
+						// place - and we are splitting precisely once for each outedge, so we have exactly
+						// one outedge for each node now!)
+						this.m.splice(firstRedi+i, 0, '1');
+
+						ins_arr.push(firstRedi+i);
+						Madd += '0';
+					}
+
+					if (this.verbosity > 5) {
+						shide += this.fe_p12ToTableWithHighlights([ins_arr, ins_arr, ins_arr, ins_arr], true);
+
+						shide += 'We now need to consider the ' + this.DM + ' vector, for which we have set ' +
+								'the correct value for the new columns (taking the one from their origin), ' +
+								'but however have not yet reset the values of the preceding nodes. In this case, ';
+					}
+
+					if (replacement_prefixes.length > 1) {
+
+						if (this.verbosity > 5) {
+							shide += 'we replaced 1 column with ' + replacement_prefixes.length +
+									' columns, so we inserted ' + (replacement_prefixes.length - 1) + ' columns.' +
+									this.nlnl;
+
+							shide += 'This means that we have to increase the ' + this.DM +
+									' values of the preceding nodes by that same amount, ' +
+									'as these nodes now have more outgoing edges. ' +
+									'To find these preceding nodes, we used the prevNodes(i) ' + 
+									'function on the table before inserting the new columns, ' +
+									'so as to not use it while the table is in an unsafe or ' +
+									'inconsistent state.' + this.nlnl;
+						}
+
+						var mrep_arr = [];
+
+						for (i=0; i < prev_nodes.length; i++) {
+
+							var pnode = prev_nodes[i];
+
+							// ignore the freshly inserted columns
+							if (pnode > firstRedi) {
+								pnode += replacement_prefixes.length - 1;
+							}
+
+							mrep_arr.push(pnode);
+
+							// add replacement_prefixes.length-1 zeroes to their M vectors
+							// (thereby adding as many outgoing edges as columns were inserted)
+							this.m[pnode] += Madd;
+						}
+
+						if (this.verbosity > 5) {
+							shide += this.fe_p12ToTableWithHighlights([ins_arr,[],[],mrep_arr], true);
+						}
+					} else {
+						if (this.verbosity > 5) {
+							shide += 'we replaced one column with another one column, so we did not insert ' +
+									'any new columns at all, and no action is required.' + this.nlnlnl;
+						}
+					}
+
+
+					// 5&6 - resort prefixes and recheck problems
+					if (this.verbosity > 5) {
+						shide += 'We can now sort the prefixes again alphabetically and ' +
+								'check for further problems.' + this.nlnl;
+					}
+
+					// keep track of the BWT and M vector while sorting
+					// (we cannot just merge afterwards with the interleave vector,
+					// as we have inserted columns and therefore one original
+					// column can lead to several merged columns)
+					for (i=0; i < this.p12.length; i++) {
+						this.p12[i][3] = this.bwt[i];
+						this.p12[i][4] = this.m[i];
+					}
+
+					thereAreProblems = this.sortp12andFindProblems();
+
+					this.p12_itlv = this.get_index_from_col(this.p12);
+					this.bwt = this.get_first_n_from_scr(this.p12, 3);
+					this.m = this.get_first_n_from_scr(this.p12, 4);
+
+					if (this.verbosity > 5) {
+						shide += this.fe_p12ToTableWithHighlights([], true);
+					}
+
+
+					if (this.verbosity > 5) {
+						sout += this.hideWrap(shide + '</div>', 'Step ' + patience) + this.nlnl;
+					}
+
+					// 7 - repeat approach until no more problems (or run out of patience)
+					patience++;
+				}
+
+				if (thereAreProblems) {
+					sout += 'Sadly, the merging was not successful.' + this.nlnl;
+					unsuccessful = true;
+				} else {
+					if (this.verbosity > 1) {
+						sout += 'We have now achieved the fully merged BWT.' + this.nlnl;
+					}
+				}
 			} else {
 				if (this.verbosity > 1) {
-					sout += 'We have now achieved the fully merged BWT.' + this.nlnl;
+					sout += 'We are lucky, as there are no problems, and we have therefore already ' +
+							'found the fully merged BWT.' + this.nlnl;
 				}
 			}
-		} else {
-			if (this.verbosity > 1) {
-				sout += 'We are lucky, as there are no problems, and we have therefore already ' +
-						'found the fully merged BWT.' + this.nlnl;
-			}
-		}
 
 
 
-		if (!unsuccessful) {
-			if (this.merge_directly) {
-				// get M-value of "#_1" node
-				var Madd = '';
-				for (i=0; i < this.p12.length; i++) {
-					if (this.p12[i][0] === this.DK_1_o) {
-						Madd = this.m[i].slice(1);
-					}
-				}
-
-				for (i=0; i < this.p12.length; i++) {
-					// take out the "$_1" and "#_1" nodes
-					if ((this.p12[i][0].indexOf(this.DS_1_o) === 0) ||
-						(this.p12[i][0].indexOf(this.DK_1_o) === 0)) {
-						this.p12.splice(i, 1);
-						this.p12_itlv.splice(i, 1);
-						this.bwt.splice(i, 1);
-						this.m.splice(i, 1);
+			if (!unsuccessful) {
+				if (this.merge_directly) {
+					// get M-value of "#_1" node
+					var Madd = '';
+					for (i=0; i < this.p12.length; i++) {
+						if (this.p12[i][0] === this.DK_1_o) {
+							Madd = this.m[i].slice(1);
+						}
 					}
 
-					// could be broken because of splicing ;)
-					if (i < this.p12.length) {
-						// if there is some M-value of "#_1" node to add...
-						if (Madd !== '') {
-							// ... then add M-value of "#_1" node to M-value of last node of H_1
-							if (this.p12[i][0].indexOf(this.DS_1_o) === 1) {
-								this.m[i] += Madd;
+					for (i=0; i < this.p12.length; i++) {
+						// take out the "$_1" and "#_1" nodes
+						if ((this.p12[i][0].indexOf(this.DS_1_o) === 0) ||
+							(this.p12[i][0].indexOf(this.DK_1_o) === 0)) {
+							this.p12.splice(i, 1);
+							this.p12_itlv.splice(i, 1);
+							this.bwt.splice(i, 1);
+							this.m.splice(i, 1);
+						}
+
+						// could be broken because of splicing ;)
+						if (i < this.p12.length) {
+							// if there is some M-value of "#_1" node to add...
+							if (Madd !== '') {
+								// ... then add M-value of "#_1" node to M-value of last node of H_1
+								if (this.p12[i][0].indexOf(this.DS_1_o) === 1) {
+									this.m[i] += Madd;
+								}
+							}
+
+							// replace a "...$_1#_1..." caption with a "......" caption
+							this.p12[i][0] = this.p12[i][0].replace(this.DS_1_o+this.DK_1_o, '');
+
+							// replace #_1 in BWT with last node of H_1
+							if (this.bwt[i] === this.DK_1_o) {
+								this.bwt[i] = this.lastH1Letter;
 							}
 						}
+					}
 
-						// replace a "...$_1#_1..." caption with a "......" caption
-						this.p12[i][0] = this.p12[i][0].replace(this.DS_1_o+this.DK_1_o, '');
+					if (this.verbosity > 4) {
+						sout += 'We can take out the helper nodes ' + this.DS_1_o + ' and ' + this.DK_1_o +
+								' (adding the ' + this.DM + ' value of ' + this.DK_1_o + ' to the last node of ' +
+								this.DH_1 + '), as well as replacing ' + this.DK_1_o + ' in the BWT with ' +
+								this.lastH1Letter +
+								', the last letter of ' + this.DH_1 + ':' + this.nlnl;
 
-						// replace #_1 in BWT with last node of H_1
-						if (this.bwt[i] === this.DK_1_o) {
-							this.bwt[i] = this.lastH1Letter;
-						}
+						sout += this.fe_p12ToTableWithHighlights([], true);
 					}
 				}
 
-				if (this.verbosity > 4) {
-					sout += 'We can take out the helper nodes ' + this.DS_1_o + ' and ' + this.DK_1_o +
-							' (adding the ' + this.DM + ' value of ' + this.DK_1_o + ' to the last node of ' +
-							this.DH_1 + '), as well as replacing ' + this.DK_1_o + ' in the BWT with ' +
-							this.lastH1Letter +
-							', the last letter of ' + this.DH_1 + ':' + this.nlnl;
+
+
+				// [NOTE 1] ::
+				//     if this.merge_directly is NOT true, then here we can get into trouble with
+				//     ...$_1#_1..., as e.g. TG vs. T$_1#_1A would be pruned to TG vs. T$ instead of
+				//     the correct TG vs. TA - for now we will just discontinue support for merge_directly
+				//     being false ;)
+
+				for (i=1; i < this.p12.length-1; i++) {
+					while ((this.p12[i][0].slice(0, this.p12[i][0].length-1).slice(0, this.p12[i-1][0].length) !==
+						    this.p12[i-1][0].slice(0, this.p12[i][0].length-1)) &&
+						   (this.p12[i][0].slice(0, this.p12[i][0].length-1).slice(0, this.p12[i+1][0].length) !==
+						    this.p12[i+1][0].slice(0, this.p12[i][0].length-1)) &&
+						   (this.p12[i][0] != '')) {
+						this.p12[i][0] = this.p12[i][0].slice(0, this.p12[i][0].length-1);
+					}
+				}
+
+				if (this.verbosity > 3) {
+					sout += 'As we are done with the prefix-doubling, we can now prune the prefixes back down ' +
+							'to the shortest possible lengths that still leave the prefixes unique:' + this.nlnl;
 
 					sout += this.fe_p12ToTableWithHighlights([], true);
 				}
 			}
 
-
-
-			// [NOTE 1] ::
-			//     if this.merge_directly is NOT true, then here we can get into trouble with
-			//     ...$_1#_1..., as e.g. TG vs. T$_1#_1A would be pruned to TG vs. T$ instead of
-			//     the correct TG vs. TA - for now we will just discontinue support for merge_directly
-			//     being false ;)
-
-			for (i=1; i < this.p12.length-1; i++) {
-				while ((this.p12[i][0].slice(0, this.p12[i][0].length-1).slice(0, this.p12[i-1][0].length) !==
-					    this.p12[i-1][0].slice(0, this.p12[i][0].length-1)) &&
-					   (this.p12[i][0].slice(0, this.p12[i][0].length-1).slice(0, this.p12[i+1][0].length) !==
-					    this.p12[i+1][0].slice(0, this.p12[i][0].length-1)) &&
-					   (this.p12[i][0] != '')) {
-					this.p12[i][0] = this.p12[i][0].slice(0, this.p12[i][0].length-1);
-				}
+			if (this.verbosity > 1) {
+				sout += 'Finally, we take out the origin row, as it is not needed anymore.' + this.nl +
+						'We however do add another row, namely the ' + this.DF + ' bit vector.' + this.nlnl;
+			} else {
+				sout += 'We get:' + this.nlnl;
 			}
 
-			if (this.verbosity > 3) {
-				sout += 'As we are done with the prefix-doubling, we can now prune the prefixes back down ' +
-						'to the shortest possible lengths that still leave the prefixes unique:' + this.nlnl;
+			this.f = this.generateFfromPrefixesBWTM(this.p12, this.bwt, this.m);
 
-				sout += this.fe_p12ToTableWithHighlights([], true);
+			var p12_generated = [];
+			for (var i=0; i < this.p12.length; i++) {
+				p12_generated.push(this.p12[i][0]);
 			}
-		}
+			var findex_generated = [p12_generated, this.bwt, this.m, this.f];
 
-		if (this.verbosity > 1) {
-			sout += 'Finally, we take out the origin row, as it is not needed anymore.' + this.nl +
-					'We however do add another row, namely the ' + this.DF + ' bit vector.' + this.nlnl;
-		} else {
-			sout += 'We get:' + this.nlnl;
-		}
-
-		this.f = this.generateFfromPrefixesBWTM(this.p12, this.bwt, this.m);
-
-		var p12_generated = [];
-		for (var i=0; i < this.p12.length; i++) {
-			p12_generated.push(this.p12[i][0]);
-		}
-		var findex_generated = [p12_generated, this.bwt, this.m, this.f];
-
-		sout += this.fe_findexToTable(findex_generated, true, true);
+			sout += this.fe_findexToTable(findex_generated, true, true);
 
 
 
-		sout += 'To make the comparison simpler, here are the BWT, ' + this.DM + ' and ' +
-				this.DF + ' vector ' +
-				'again, which we obtained from the merged graph directly:' + this.nlnl;
+			sout += 'To make the comparison simpler, here are the BWT, ' + this.DM + ' and ' +
+					this.DF + ' vector ' +
+					'again, which we obtained from the merged graph directly:' + this.nlnl;
 
-		findex[3] = this.generateFfromPrefixesBWTM(findex[0], findex[1], findex[2]);
+			findex[3] = this.generateFfromPrefixesBWTM(findex[0], findex[1], findex[2]);
 
-		sout += this.fe_findexToTable(findex, true, true);
-
-
-
-		if (this.finalComparison(findex)) {
-			sout += 'We can see that the table found through merging the BWTs and the ' +
-					'table found through merging the graphs and then building one BWT ' +
-					'are exactly the same! Jippey! =)' + this.nlnl;
-		} else {
-			sout += 'We can see that the table found through merging the BWTs and the ' +
-					'table found through merging the graphs and then building one BWT ' +
-					'are not the same... Sad face. =(' + this.nlnl;
-		}
+			sout += this.fe_findexToTable(findex, true, true);
 
 
 
-		if (!GML.hideXBWenvironments) {
-			// initialize XBW environment
-			GML.XBW = this.make_xbw_environment();
-			GML.XBW.init(findex);
-			GML.XBW.generateHTML(3);
+			if (this.finalComparison(findex)) {
+				sout += 'We can see that the table found through merging the BWTs and the ' +
+						'table found through merging the graphs and then building one BWT ' +
+						'are exactly the same! Jippey! =)' + this.nlnl;
+			} else {
+				sout += 'We can see that the table found through merging the BWTs and the ' +
+						'table found through merging the graphs and then building one BWT ' +
+						'are not the same... Sad face. =(' + this.nlnl;
+			}
+
+
+
+			if (!GML.hideXBWenvironments) {
+				// initialize XBW environment
+				GML.XBW = this.make_xbw_environment();
+				GML.XBW.init(findex);
+				GML.XBW.generateHTML(3);
+			}
 		}
 
 
@@ -1716,270 +1774,276 @@ window.GML = {
 	// gives out a string contain info about the XBW merging for both
 	merge_XBWs: function(h1, h2) {
 
-		var unsuccessful = false;
 		var ret = this.generate_BWTs_advanced_int(h1, h2, true);
 
 		var sout = ret[0];
 
-		var findex = ret[1];
-		var findex1 = ret[2];
-		var findex2 = ret[3];
+		if (!this.error_flag) {
 
-		var bwt1 = findex1[1];
-		var bwt2 = findex2[1];
-		var m1 = findex1[2];
-		var m2 = findex2[2];
+			var unsuccessful = false;
 
+			var findex = ret[1];
+			var findex1 = ret[2];
+			var findex2 = ret[3];
 
-		sout += '<span id="in-jump-5-3"></span>';
-
-		if (this.verbosity > 1) {
-			sout += 'We now want to find the XBW data of ' + this.DH +
-					' just based on the ' +
-					'XBW data we have for ' + this.DH_1 + ' and ' + this.DH_2 + '.' + this.nlnl;
-		}
-
-		if (this.verbosity > 2) {
-			sout += 'We need to flatten the BWTs and drop the prefixes.' +
-					this.nlnl;
-		}
+			var bwt1 = findex1[1];
+			var bwt2 = findex2[1];
+			var m1 = findex1[2];
+			var m2 = findex2[2];
 
 
+			sout += '<span id="in-jump-5-3"></span>';
 
-		// initialize XBW environments
+			if (this.verbosity > 1) {
+				sout += 'We now want to find the XBW data of ' + this.DH +
+						' just based on the ' +
+						'XBW data we have for ' + this.DH_1 + ' and ' + this.DH_2 + '.' + this.nlnl;
+			}
 
-		var xbw1  = this.make_xbw_environment();
-		var xbw2  = this.make_xbw_environment();
-		var xbw12 = this.make_xbw_environment();
-
-		var xbw = this.make_xbw_environment();
-
-		xbw1.init(findex1);
-		xbw2.init(findex2);
-
-		xbw12.initAsMergeHost();
-		xbw12.addSubXBW(xbw1);
-		xbw12.addSubXBW(xbw2);
-
-		xbw.init(findex);
+			if (this.verbosity > 2) {
+				sout += 'We need to flatten the BWTs and drop the prefixes.' +
+						this.nlnl;
+			}
 
 
 
-		if (this.verbosity > 3) {
-			sout += "For " + this.DH_1 + " we get:" + this.nlnl;
+			// initialize XBW environments
 
-			shide = '<div class="table_box">' + xbw1.generateTable() + '</div>';
-			sout += this.hideWrap(shide, 'Table') + this.nlnl;
+			var xbw1  = this.make_xbw_environment();
+			var xbw2  = this.make_xbw_environment();
+			var xbw12 = this.make_xbw_environment();
 
-			sout += "And for " + this.DH_2 + " we have:" + this.nlnl;
+			var xbw = this.make_xbw_environment();
 
-			shide = '<div class="table_box">' + xbw2.generateTable() + '</div>';
-			sout += this.hideWrap(shide, 'Table') + this.nlnl;
+			xbw1.init(findex1);
+			xbw2.init(findex2);
 
-			sout += "As well as for " + this.DH + ":" + this.nlnl;
+			xbw12.initAsMergeHost();
+			xbw12.addSubXBW(xbw1);
+			xbw12.addSubXBW(xbw2);
 
-			shide = '<div class="table_box">' + xbw.generateTable() + '</div>';
-			sout += this.hideWrap(shide, 'Table') + this.nlnl;
-		}
+			xbw.init(findex);
 
 
 
-		// start splitting
+			if (this.verbosity > 3) {
+				sout += "For " + this.DH_1 + " we get:" + this.nlnl;
 
-		sout += '<span id="in-jump-5-4"></span>';
+				shide = '<div class="table_box">' + xbw1.generateTable() + '</div>';
+				sout += this.hideWrap(shide, 'Table') + this.nlnl;
 
-		if (this.verbosity > 1) {
-			sout += 'We now need to split nodes in order to ensure that the generated ' +
-					'structure will be prefix-sorted.' + this.nlnl;
-		}
+				sout += "And for " + this.DH_2 + " we have:" + this.nlnl;
 
-		if (this.verbosity > 2) {
-			sout += 'For that, we go pretend to merge ' + 
-					'by comparing the prefixes one by one, and if we cannot make a decision, ' +
-					'we split the node and remember that we will have to do the entire process ' +
-					'another time.' + this.nlnl;
-		}
+				shide = '<div class="table_box">' + xbw2.generateTable() + '</div>';
+				sout += this.hideWrap(shide, 'Table') + this.nlnl;
 
-		var round = 0;
-		var doAnotherRound = true;
+				sout += "As well as for " + this.DH + ":" + this.nlnl;
 
-		this.error_flag = false;
+				shide = '<div class="table_box">' + xbw.generateTable() + '</div>';
+				sout += this.hideWrap(shide, 'Table') + this.nlnl;
+			}
 
-		while ((round < this.overflow_ceiling) && doAnotherRound && !this.error_flag) {
 
-			round++;
-			doAnotherRound = false;
+
+			// start splitting
+
+			sout += '<span id="in-jump-5-4"></span>';
+
+			if (this.verbosity > 1) {
+				sout += 'We now need to split nodes in order to ensure that the generated ' +
+						'structure will be prefix-sorted.' + this.nlnl;
+			}
+
+			if (this.verbosity > 2) {
+				sout += 'For that, we go pretend to merge ' + 
+						'by comparing the prefixes one by one, and if we cannot make a decision, ' +
+						'we split the node and remember that we will have to do the entire process ' +
+						'another time.' + this.nlnl;
+			}
+
+			var round = this.ao;
+			var doAnotherRound = true;
+
+			this.error_flag = false;
+
+			while ((round < this.overflow_ceiling) && doAnotherRound && !this.error_flag) {
+
+				doAnotherRound = false;
+
+				xbw12.startNewSplitRound();
+
+				if (this.verbosity > 4) {
+					sround = '<div>' + this.nlnl + 'We start round ' + round + ':' + this.nlnl;
+
+					shide = '<div class="table_box">' + xbw12.generateSubTables(true) + '</div>';
+					sround += this.hideWrap(shide, 'Tables') + this.nlnl;
+				}
+
+				var i = this.ao;
+
+				while (xbw12.notFullyMerged() && (i < this.overflow_ceiling) && !this.error_flag) {
+
+					var splitnodes = [];
+
+					var sstep = '<div>' + xbw12.checkIfSplitOneMore(splitnodes);
+
+					if (splitnodes.length > 0) {
+						sstep += xbw12.splitOneMore(splitnodes);
+						doAnotherRound = true;
+					}
+
+					if (this.verbosity > 8) {
+						if (!this.error_flag) {
+							sstep += this.nlnl + 'We now have:' + this.nlnl;
+
+							shide = '<div class="table_box">' + xbw12.generateSubTables(true) + '</div>';
+							sstep += this.hideWrap(shide, 'Tables') + this.nlnl;
+						}
+
+						sstep += '</div>';
+
+						sround += this.hideWrap(sstep, 'Step ' + i) + this.nlnl;
+					}
+
+					i++;
+				}
+
+				if (this.verbosity > 4) {
+					sround += '</div>';
+					
+					sout += this.hideWrap(sround, 'Round ' + round) + this.nlnl;
+				}
+
+				round++;
+			}
+
+			// end splitting
+
+
+			if (this.error_flag) {
+
+				document.getElementById('div-xbw-5').style.display = 'none';
+				if (sout.indexOf(' class="error"') < 0) {
+					sout += this.errorWrap('An error occurred!');
+				}
+				sout = sout.replace(/\^/g, '#');
+				return sout;
+			}
+
+
+
+			sout += '<span id="in-jump-5-5"></span>';
+
+			if (this.verbosity > 1) {
+				sout += 'We can now merge ' + this.DH_1 + ' and ' +
+						this.DH_2 + ' just based on their XBW data: BWT, ' + this.DM + ', ' + this.DF +
+						' and <i>C</i>.' + this.nlnl;
+			}
+
+			if (this.verbosity > 2) {
+				sout += this.nlnl;
+				sout += 'To do so, we add nodes from the ' + this.DH_2 + ' table on the right ' +
+						'one by one to the ' + this.DH_1 + ' table on the left, keeping track of ' +
+						'our position within each table. We never need to go left in either table, ' +
+						'as we know that both are already sorted within themselves; so if we get an ' +
+						'entry from table ' + this.DH_2 + ' into ' + this.DH_1 + ' at position 9, ' +
+						'then we know that the next entry from table ' + this.DH_2 + ' must be put ' +
+						'into ' + this.DH_1 + ' at position 9 or greater, not lower than 9.' +
+						this.nlnl;
+			}
+
+			if (this.verbosity > 1) {
+				shide = '<div class="table_box">' + xbw12.generateSubTables() + '</div>';
+				sout += this.hideWrap(shide, 'Tables') + this.nlnl;
+			}
+
+			var i = this.ao;
 
 			xbw12.startNewSplitRound();
 
-			if (this.verbosity > 4) {
-				sround = '<div>' + this.nlnl + 'We start round ' + round + ':' + this.nlnl;
+			while (xbw12.notFullyMerged() && (i < this.overflow_ceiling)) {
 
-				shide = '<div class="table_box">' + xbw12.generateSubTables(true) + '</div>';
-				sround += this.hideWrap(shide, 'Tables') + this.nlnl;
-			}
+				// TODO EMRG :: add error upon reaching overflow_ceiling (and do that everywhere else too!)
 
-			var i = 0;
+				if (this.verbosity > 5) {
 
-			while (xbw12.notFullyMerged() && (i < this.overflow_ceiling) && !this.error_flag) {
+					var sstep = '<div>' + xbw12.mergeOneMore(true);
 
-				i++;
-				var splitnodes = [];
+					if (this.verbosity > 9) {
+						sstep += 'We now have:' + this.nlnl;
 
-				var sstep = '<div>' + xbw12.checkIfSplitOneMore(splitnodes);
-
-				if (splitnodes.length > 0) {
-					sstep += xbw12.splitOneMore(splitnodes);
-					doAnotherRound = true;
-				}
-
-				if (this.verbosity > 8) {
-					if (!this.error_flag) {
-						sstep += this.nlnl + 'We now have:' + this.nlnl;
-
-						shide = '<div class="table_box">' + xbw12.generateSubTables(true) + '</div>';
+						shide = '<div class="table_box">' + xbw12.generateSubTables() + '</div>';
 						sstep += this.hideWrap(shide, 'Tables') + this.nlnl;
 					}
 
 					sstep += '</div>';
 
-					sround += this.hideWrap(sstep, 'Step ' + i) + this.nlnl;
-				}
-			}
+					sout += this.hideWrap(sstep, 'Step ' + i) + this.nlnl;
 
-			if (this.verbosity > 4) {
-				sround += '</div>';
-				
-				sout += this.hideWrap(sround, 'Round ' + round) + this.nlnl;
-			}
-		}
+				} else {
 
-		// end splitting
-
-
-		if (this.error_flag) {
-
-			document.getElementById('div-xbw-5').style.display = 'none';
-			if (sout.indexOf(' class="error"') < 0) {
-				sout += '<div class="error">An error occurred!</div>';
-			}
-			sout = sout.replace(/\^/g, '#');
-			return sout;
-		}
-
-
-
-		sout += '<span id="in-jump-5-5"></span>';
-
-		if (this.verbosity > 1) {
-			sout += 'We can now merge ' + this.DH_1 + ' and ' +
-					this.DH_2 + ' just based on their XBW data: BWT, ' + this.DM + ', ' + this.DF +
-					' and <i>C</i>.' + this.nlnl;
-		}
-
-		if (this.verbosity > 2) {
-			sout += this.nlnl;
-			sout += 'To do so, we add nodes from the ' + this.DH_2 + ' table on the right ' +
-					'one by one to the ' + this.DH_1 + ' table on the left, keeping track of ' +
-					'our position within each table. We never need to go left in either table, ' +
-					'as we know that both are already sorted within themselves; so if we get an ' +
-					'entry from table ' + this.DH_2 + ' into ' + this.DH_1 + ' at position 9, ' +
-					'then we know that the next entry from table ' + this.DH_2 + ' must be put ' +
-					'into ' + this.DH_1 + ' at position 9 or greater, not lower than 9.' +
-					this.nlnl;
-		}
-
-		if (this.verbosity > 1) {
-			shide = '<div class="table_box">' + xbw12.generateSubTables() + '</div>';
-			sout += this.hideWrap(shide, 'Tables') + this.nlnl;
-		}
-
-		var i = 0;
-
-		xbw12.startNewSplitRound();
-
-		while (xbw12.notFullyMerged() && (i < this.overflow_ceiling)) {
-
-			// TODO EMRG :: add error upon reaching overflow_ceiling (and do that everywhere else too!)
-
-			i++;
-
-			if (this.verbosity > 5) {
-
-				var sstep = '<div>' + xbw12.mergeOneMore(true);
-
-				if (this.verbosity > 9) {
-					sstep += 'We now have:' + this.nlnl;
-
-					shide = '<div class="table_box">' + xbw12.generateSubTables() + '</div>';
-					sstep += this.hideWrap(shide, 'Tables') + this.nlnl;
+					xbw12.mergeOneMore(false);
 				}
 
-				sstep += '</div>';
+				i++;
+			}
 
-				sout += this.hideWrap(sstep, 'Step ' + i) + this.nlnl;
+			if (this.verbosity > 1) {
+				sout += 'The main part of the merging algorithm has now finished, but we should still ' +
+						'join the ' + this.DS_1_o + ' and ' + this.DK_1_o + ' nodes.';
 
+				shide = '<div class="table_box">' + xbw12.generateTable() + '</div>';
+				sout += this.hideWrap(shide, 'Table') + this.nlnl;
+			}
+
+			xbw12.finalizeMerge();
+
+			// TODO :: we could here also create finalizeMerge functionality for xbw1 and xbw2,
+			// to restore them to their previous form, if we were inclined to do so... however,
+			// why would we?
+			// (If that is ever necessary: set multiOrigin = false in xbw1, and replace the
+			// #_1 and $_1 back to their original forms.)
+
+			if (this.verbosity > 1) {
+				sout += 'Having joined the ' + this.DS_1_o + ' and ' + this.DK_1_o + ' nodes, ' +
+						'the merging has now been completed:';
 			} else {
-
-				xbw12.mergeOneMore(false);
+				sout += 'The merging result is:';
 			}
-		}
-
-		if (this.verbosity > 1) {
-			sout += 'The main part of the merging algorithm has now finished, but we should still ' +
-					'join the ' + this.DS_1_o + ' and ' + this.DK_1_o + ' nodes.';
 
 			shide = '<div class="table_box">' + xbw12.generateTable() + '</div>';
 			sout += this.hideWrap(shide, 'Table') + this.nlnl;
-		}
 
-		xbw12.finalizeMerge();
+			sout += 'To simplify the comparison, here is the table that we wanted to achieve:';
 
-		// TODO :: we could here also create finalizeMerge functionality for xbw1 and xbw2,
-		// to restore them to their previous form, if we were inclined to do so... however,
-		// why would we?
-		// (If that is ever necessary: set multiOrigin = false in xbw1, and replace the
-		// #_1 and $_1 back to their original forms.)
+			shide = '<div class="table_box">' + xbw.generateTable() + '</div>';
+			sout += this.hideWrap(shide, 'Table') + this.nlnl;
 
-		if (this.verbosity > 1) {
-			sout += 'Having joined the ' + this.DS_1_o + ' and ' + this.DK_1_o + ' nodes, ' +
-					'the merging has now been completed:';
-		} else {
-			sout += 'The merging result is:';
-		}
-
-		shide = '<div class="table_box">' + xbw12.generateTable() + '</div>';
-		sout += this.hideWrap(shide, 'Table') + this.nlnl;
-
-		sout += 'To simplify the comparison, here is the table that we wanted to achieve:';
-
-		shide = '<div class="table_box">' + xbw.generateTable() + '</div>';
-		sout += this.hideWrap(shide, 'Table') + this.nlnl;
-
-		if (xbw.equals(xbw12)) {
-			sout += 'We can see that these are exactly the same, and we are happy!' + this.nlnl;
-		} else {
-			sout += 'We can see that these are different from each other, ' +
-					'so something somewhere went wrong...' + this.nlnl;
-		}
+			if (xbw.equals(xbw12)) {
+				sout += 'We can see that these are exactly the same, and we are happy!' + this.nlnl;
+			} else {
+				sout += 'We can see that these are different from each other, ' +
+						'so something somewhere went wrong...' + this.nlnl;
+			}
 
 
 
-		// TODO :: analyze and use these... and then take them out =)
+			// TODO :: analyze and use these... and then take them out =)
 
-		console.log('xbw findex:');
-		console.log(xbw._publishFindex());
+			console.log('xbw findex:');
+			console.log(xbw._publishFindex());
 
-		console.log('xbw12 findex:');
-		console.log(xbw12._publishFindex());
+			console.log('xbw12 findex:');
+			console.log(xbw12._publishFindex());
 
 
 
-		if (!GML.hideXBWenvironments) {
-			// start up control center for merged XBW
-			GML.XBW = xbw12;
-			GML.XBW.init(xbw12._publishFindex());
-			GML.XBW.generateHTML(5);
+			if (!GML.hideXBWenvironments) {
+				// start up control center for merged XBW
+				GML.XBW = xbw12;
+				GML.XBW.init(xbw12._publishFindex());
+				GML.XBW.generateHTML(5);
+			}
 		}
 
 
@@ -2518,12 +2582,17 @@ window.GML = {
 			sout += '<text x="' + xoff + '" y="51" text-anchor="middle" style="fill:' + highcolor + '">' +
 					auto[i].c + '</text>';
 
-			if (showPrefixes) {
+			if (showPrefixes || this.show_auto_i) {
 				sout += '<text class="prefix" x="' + xoff +
-						'" y="47.8" text-anchor="middle" style="fill:' + highcolor + '">' +
-						auto[i].f;
+						'" y="47.8" text-anchor="middle" style="fill:' + highcolor + '">';
+				if (showPrefixes) {
+					sout += auto[i].f;
+					if (this.show_auto_i) {
+						sout += ', ';
+					}
+				}
 				if (this.show_auto_i) {
-					sout += ' ' + i;
+					sout += (i + this.ao);
 				}
 				sout += '</text>';
 			}
@@ -2636,12 +2705,17 @@ window.GML = {
 								'" text-anchor="middle" style="fill:' + highcolor + '">' +
 								auto[path[i]].c + '</text>';
 
-						if (showPrefixes) {
+						if (showPrefixes || this.show_auto_i) {
 							sout += '<text class="prefix" x="' + xoff + '" y="' + (yoffl-2.2) +
-									'" text-anchor="middle" style="fill:' + highcolor + '">' +
-									auto[path[i]].f;
+									'" text-anchor="middle" style="fill:' + highcolor + '">';
+							if (showPrefixes) {
+								sout += auto[path[i]].f;
+								if (this.show_auto_i) {
+									sout += ', ';
+								}
+							}
 							if (this.show_auto_i) {
-								sout += ' ' + path[i];
+								sout += (path[i] + this.ao);
 							}
 							sout += '</text>';
 						}
@@ -2758,6 +2832,20 @@ window.GML = {
 
 
 
+	// takes in a string containing HTML that wants to be shown as an error message
+	// gives out the string formatted as error message and hides the XBW  environment
+	//   from the current tab
+	errorWrap: function(sout) {
+
+		if (GML_UI) {
+			GML_UI.unShowXBWEnv(GML_UI.cur_tab);
+		}
+
+		return '<div class="error">' + sout + '</div>';
+	},
+
+
+
 	// takes in a string representing a graph, e.g. TGA|1,T,2;1,3
 	// gives out an array containing the main row and an array containing the infoblocks
 	stringToGraph: function(str) {
@@ -2790,7 +2878,13 @@ window.GML = {
 
 			for (var i=0; i < possible_infoblocks.length; i++) {
 				if (possible_infoblocks[i] !== '') {
-					infoblocks.push(possible_infoblocks[i]);
+					var b = possible_infoblocks[i].split(',');
+					if (b.length !== 4) {
+						this.error_flag = true;
+					}
+					b[1] -= this.ao;
+					b[3] -= this.ao;
+					infoblocks.push(b.join(','));
 				}
 			}
 		}
@@ -2903,34 +2997,38 @@ window.GML = {
 
 		// start building auto as copy of auto1
 		for (var i=0; i < auto1.length; i++) {
-			var newNode = this.deep_copy_node(auto1[i]);
-			if (newNode.c == this.DS) {
-				if (this.merge_directly) {
+			if (auto1[i]) {
+				var newNode = this.deep_copy_node(auto1[i]);
+				if (newNode.c == this.DS) {
+					if (this.merge_directly) {
 
-					del_i = i;
-					offset -= 2;
+						del_i = i;
+						offset -= 2;
 
-					// we are here assuming that only one edge goes into $ in H_1
-					outOf1 = newNode.p[0];
+						// we are here assuming that only one edge goes into $ in H_1
+						outOf1 = newNode.p[0];
 
-					continue;
+						continue;
+					}
+					outOf1 = i;
 				}
-				outOf1 = i;
+				auto.push(newNode);
 			}
-			auto.push(newNode);
 		}
 
 		// update counts of other nodes due to deletion of $ at the end of H_1
 		if (this.merge_directly) {
 			for (i=0; i < auto.length; i++) {
-				for (var j=0; j < auto[i].p.length; j++) {
-					if (auto[i].p[j] >= del_i) {
-						auto[i].p[j] -= 1;
+				if (auto[i]) {
+					for (var j=0; j < auto[i].p.length; j++) {
+						if (auto[i].p[j] >= del_i) {
+							auto[i].p[j] -= 1;
+						}
 					}
-				}
-				for (var j=0; j < auto[i].n.length; j++) {
-					if (auto[i].n[j] >= del_i) {
-						auto[i].n[j] -= 1;
+					for (var j=0; j < auto[i].n.length; j++) {
+						if (auto[i].n[j] >= del_i) {
+							auto[i].n[j] -= 1;
+						}
 					}
 				}
 			}
@@ -2949,14 +3047,16 @@ window.GML = {
 
 		// add all nodes from auto2
 		for (var i=i_start; i < auto2.length; i++) {
-			var newNode = this.deep_copy_node(auto2[i]);
-			for (var k=0; k < newNode.p.length; k++) {
-				newNode.p[k] += offset;
+			if (auto2[i]) {
+				var newNode = this.deep_copy_node(auto2[i]);
+				for (var k=0; k < newNode.p.length; k++) {
+					newNode.p[k] += offset;
+				}
+				for (var k=0; k < newNode.n.length; k++) {
+					newNode.n[k] += offset;
+				}
+				auto.push(newNode);
 			}
-			for (var k=0; k < newNode.n.length; k++) {
-				newNode.n[k] += offset;
-			}
-			auto.push(newNode);
 		}
 
 		// fuse them together
@@ -3030,24 +3130,27 @@ window.GML = {
 	makeAutomatonReverseDeterministic_int: function(auto, addToSOut) {
 
 		for (var i=0; i < auto.length; i++) {
-			var prev = auto[i].p;
-			var plen = prev.length;
+			if (auto[i]) {
+				var prev = auto[i].p;
+				var plen = prev.length;
 
-			// if the node has less than 2 predecessors, all is fine anyway
-			if (plen > 1) {
-				var prevchars = [];
-				for (var j=0; j < plen; j++) {
-					var newchar = auto[prev[j]].c;
-					if (prevchars.indexOf(newchar) < 0) {
-						// all is good, the new character has not been seen before
-						prevchars.push(newchar);
-					} else {
-						// the character has been seen before, check if we have a
-						// special case and can do something about it
-						
-						// (only return true to continue if this here is successful,
-						// otherwise return false anyway to not hang in an infinite loop)
-						return this.rebaseGraphForRevDet(i, newchar, auto, addToSOut);
+				// if the node has less than 2 predecessors, all is fine anyway, so
+				// only continue if there are 2 or more predecessors
+				if (plen >= 2) {
+					var prevchars = [];
+					for (var j=0; j < plen; j++) {
+						var newchar = auto[prev[j]].c;
+						if (prevchars.indexOf(newchar) < 0) {
+							// all is good, the new character has not been seen before
+							prevchars.push(newchar);
+						} else {
+							// the character has been seen before, check if we have a
+							// special case and can do something about it
+							
+							// (only return true to continue if this here is successful,
+							// otherwise return false anyway to not hang in an infinite loop)
+							return this.reverseDeterminizer(i, newchar, auto, addToSOut);
+						}
 					}
 				}
 			}
@@ -3061,7 +3164,7 @@ window.GML = {
 	// takes in a position i, a label newchar and an automaton auto
 	// gives out true if it manages to improve reverse determinicism,
 	//   false otherwise
-	rebaseGraphForRevDet: function(i, newchar, auto, addToSOut) {
+	reverseDeterminizer: function(i, newchar, auto, addToSOut) {
 
 		var nodesWithSameLabel = [];
 		var cur_p = auto[i].p;
@@ -3072,6 +3175,95 @@ window.GML = {
 				nodesWithSameLabel.push(cur_p[k]);
 			}
 		}
+
+
+
+		// PLAN 1 :: make reverse deterministic by merging two nodes with same prev or next nodes
+		//
+		//           For this to work, we wish to have:
+		//           1.   two nodes A and B
+		//           2.   that have the same label
+		//           3.1. and both lead to exactly the same nodes OR
+		//           3.2. both are preceded by exactly the same nodes OR
+		//           3.3. all the nodes that A leads to, B also leads to
+		//                all the nodes that A is preceded by, B is also preceded by
+		//
+		//           If all this is fulfilled for any two nodes that
+		//           we can find, then we can merge them.
+		//
+		// A note about 3.2: if both are preceded bz exactly the same nodes then we CAN
+		// merge them, but we do not usually want to do that for any arbitrary nodes (it
+		// will actually be quite detrimental to what we want to achieve, and we will go
+		// on and on splitting and merging in circles forever - usually); however, we are
+		// here not considering arbitrary nodes. Instead, we consider only nodes that lead
+		// into the same node and have the same label. (In no other cases is this whole
+		// function even called.)
+		// Therefore, the merging of the two nodes IN THESE CIRCUMSTANCES is actually
+		// rather helpful, and we will not resort to splitting them again just a second
+		// later. =)
+
+		// 1. check that there actually are at least two nodes that we are working on ;)
+		if (nodesWithSameLabel.length > 1) {
+
+			// 2. is trivially fulfilled as we are given only nodes with the same label,
+			//    so we do not have to worry about checking it
+
+			for (var k=0; k < nodesWithSameLabel.length; k++) {
+				for (var j=0; j < nodesWithSameLabel.length; j++) {
+					if (k !== j) {
+						var n1i = nodesWithSameLabel[k];
+						var n2i = nodesWithSameLabel[j];
+						var n1 = auto[n1i];
+						var n2 = auto[n2i];
+
+						// do they both have exactly the same next nodes?
+						if (this.arraysContainSameEls(n1.n, n2.n)) {
+
+							this.mergeNodesInAutomaton(auto, n1i, n2i);
+							return true;
+						}
+
+						// do they both have exactly the same prev nodes?
+						if (this.arraysContainSameEls(n1.p, n2.p)) {
+
+							this.mergeNodesInAutomaton(auto, n1i, n2i);
+							return true;
+						}
+
+						// is n1 contained in n2?
+						if ((n1.n.length <= n2.n.length) && (n1.p.length <= n2.p.length) &&
+							this.arrayContainsOtherArraysEls(n2.n, n1.n) &&
+							this.arrayContainsOtherArraysEls(n2.p, n1.p)) {
+
+							this.mergeNodesInAutomaton(auto, n1i, n2i);
+							return true;
+						}
+
+						// is n2 contained in n1?
+						if ((n1.n.length >= n2.n.length) && (n1.p.length >= n2.p.length) &&
+							this.arrayContainsOtherArraysEls(n1.n, n2.n) &&
+							this.arrayContainsOtherArraysEls(n1.p, n2.p)) {
+
+							this.mergeNodesInAutomaton(auto, n1i, n2i);
+							return true;
+						}
+					}
+				}
+			}
+		}
+
+
+
+		// PLAN 2 :: make reverse deterministic by moving an edge
+		//
+		//           For this to work, we wish to have:
+		//           1. two nodes B and C that have the same label,
+		//           2. and both have an out-edge leading to the same node D,
+		//           3. and one is the predecessor of the other
+		//
+		//           If all this is fulfilled, we can take out the edge
+		//           from B to D and replace it with an edge from A, the
+		//           predecessor of B, to C.
 
 		// check if these are exactly two nodes
 		if (nodesWithSameLabel.length == 2) {
@@ -3100,8 +3292,8 @@ window.GML = {
 
 				if (addToSOut) {
 					this.sout += 'We take the path from ' + auto[nodeL].c + ' around ' + auto[nodeR].c +
-								' to ' + auto[i].c + ' and move it to the left, ' + 
-								'thereby moving the gap to the left:' + this.nl;
+								 ' to ' + auto[i].c + ' and move it to the left, ' + 
+								 'thereby moving the gap to the left:' + this.nl;
 				}
 
 				// remove i from nodeL.n
@@ -3122,7 +3314,187 @@ window.GML = {
 			}
 		}
 
+
+
+		// PLAN 3 :: split nodes to enable merging in a later step
+		//
+		//           We have now gotten quite desparate, as we cannot find
+		//           a way to improve our situation through merging.
+		//           We shall instead split nodes as wisely as we can to
+		//           make it possible to merge again in the next step,
+		//           and achieve a positive outcome.
+		//
+		//           For this to work, we wish to have:
+		//           1. a node that has several outgoing edges
+		//
+		//           If this is fulfilled, we can split the node.
+		//           (As with point 3.2 in PLAN 1, we can also here see
+		//           that just splitting ANY random node would most likely
+		//           not be particularly helpful. However, splitting one
+		//           of the nodes that are passed into this function when
+		//           it is called is actually quite beneficial, as we know
+		//           that these nodes need to be worked on somehow, and if
+		//           merging cannot achieve anything anymore, and edge
+		//           moving cannot achieve anything anymore, then we need
+		//           to resort to the last thing possible: node splitting!)
+
+		for (var i=0; i < nodesWithSameLabel.length; i++) {
+			if (auto[nodesWithSameLabel[i]].n.length > 1) {
+
+				this.splitNodeInAutomaton(auto, nodesWithSameLabel[i]);
+				return true;
+			}
+		}
+
+
+
 		return false;
+	},
+
+
+
+	// takes in an automaton and two indices for nodes
+	// gives out nothing, but merges the two nodes within the automaton
+	mergeNodesInAutomaton: function(auto, node_1, node_2) {
+
+		// we figure out which of the two nodes is higher
+		var n_high = node_1;
+		var n_low = node_2;
+		if (n_low > n_high) {
+			n_high = node_2;
+			n_low = node_1;
+		}
+
+		// we merge the HIGHER node into the LOWER node,
+		// so that the lower one persists - we do this
+		// because an automaton can have "false" nodes
+		// in any position EXCEPT for position 0, so
+		// by keeping the lower node, we automatically
+		// keep node 0 without having to worry about it
+		var mergeThisNode = auto[n_high];
+		var intoThisNode = auto[n_low];
+
+		// put prevNodes from mergeThisNode intoThisNode
+		for (var k=0; k < mergeThisNode.p.length; k++) {
+
+			var updateNode = auto[mergeThisNode.p[k]];
+
+			// does the merge target already have this preceding node?
+			if (intoThisNode.p.indexOf(mergeThisNode.p[k]) < 0) {
+
+				// insert new preceding node into merge target
+				intoThisNode.p.push(mergeThisNode.p[k]);
+
+				// update the preceding node itself to now point to the merge target node
+				for (var j=0; j < updateNode.n.length; j++) {
+					if (updateNode.n[j] == n_high) {
+						updateNode.n[j] = n_low;
+						break;
+					}
+				}
+			} else {
+				// update the preceding node itself to drop the pointer to the merge origin node
+				// (as it already points to the merge target node, there is no reason for replacing,
+				// instead we really just need to delete)
+				for (var j=0; j < updateNode.n.length; j++) {
+					if (updateNode.n[j] == n_high) {
+						// delete the out-edge at position j
+						updateNode.n.splice(j, 1);
+						break;
+					}
+				}
+			}
+		}
+
+		// put nextNodes from mergeThisNode intoThisNode
+		for (var k=0; k < mergeThisNode.n.length; k++) {
+
+			var updateNode = auto[mergeThisNode.n[k]];
+
+			// does the merge target already have this following node?
+			if (intoThisNode.n.indexOf(mergeThisNode.n[k]) < 0) {
+
+				// insert new following node into merge target
+				intoThisNode.n.push(mergeThisNode.n[k]);
+
+				// update the following node itself to now point to the merge target node
+				for (var j=0; j < updateNode.p.length; j++) {
+					if (updateNode.p[j] == n_high) {
+						updateNode.p[j] = n_low;
+						break;
+					}
+				}
+			} else {
+				// update the following node itself to drop the pointer to the merge origin node
+				// (as it already points to the merge target node, there is no reason for replacing,
+				// instead we really just need to delete)
+				for (var j=0; j < updateNode.p.length; j++) {
+					if (updateNode.p[j] == n_high) {
+						// delete the in-edge at position j
+						updateNode.p.splice(j, 1);
+						break;
+					}
+				}
+			}
+		}
+
+		// We could now do lots and lots of work to
+		// delete mergeThisNode by slicing the array that auto is,
+		// and by updating all indices throughout auto.
+		// However, this may not actually be necessary - instead,
+		// we could just replace the node with nothingness and
+		// trust that no one will ever access it, as an automaton
+		// is not used like an array ("give me nodes 5 through 9"),
+		// but usually more like a graph ("give me all the nodes
+		// preceding node 5.")
+
+		auto[n_high] = false;
+	},
+
+
+
+	// takes in an automaton and an index of a node
+	// gives out nothing, but splits the node within the automaton,
+	//   that is, replaces the node with as many nodes as it has outedges,
+	//   with each replacement having exactly one of the outedges,
+	//   and all the replacements having the same inedges as the original node
+	splitNodeInAutomaton: function(auto, node_i) {
+
+		var node = auto[node_i];
+
+		var listOfNextNodes = node.n;
+		var orig_p = node.p;
+		var orig_c = node.c;
+
+		// update the first node - here we only need to set the nextNodes from all down to this one
+		node.n = [node.n[0]];
+
+		// for all other nodes...
+		for (var i=1; i < listOfNextNodes.length; i++) {
+
+			var this_i = auto.length;
+
+			// ... we push them into the automaton, ...
+			auto.push({
+				p: this.deep_copy_array(orig_p),
+				c: orig_c,
+				n: [listOfNextNodes[i]]
+			});
+
+			// ... we update the preceding nodes (by adding) ...
+			for (var k=0; k < orig_p.length; k++) {
+				auto[orig_p[k]].n.push(this_i);
+			}
+
+			// ... and we update the following node (by updating)
+			var nextNode_p = auto[listOfNextNodes[i]].p;
+			for (var k=0; k < nextNode_p.length; k++) {
+				if (nextNode_p[k] == node_i) {
+					nextNode_p[k] = this_i;
+					break;
+				}
+			}
+		}
 	},
 
 
@@ -3132,22 +3504,24 @@ window.GML = {
 	isAutomatonReverseDeterministic: function(auto) {
 
 		for (var i=0; i < auto.length; i++) {
-			var prev = auto[i].p;
-			var plen = prev.length;
+			if (auto[i]) {
+				var prev = auto[i].p;
+				var plen = prev.length;
 
-			// we want to check if some nodes have several predecessors that have
-			// the same label - so if the node has 0 or 1 predecessors, then we
-			// do not need to check anything ^^
-			if (plen > 1) {
-				var prevchars = [];
-				for (var j=0; j < plen; j++) {
-					var newchar = auto[prev[j]].c;
-					if (prevchars.indexOf(newchar) < 0) {
-						// all is good, the new character has not been seen before
-						prevchars.push(newchar);
-					} else {
-						// oh noooo, all is ruined! - the character has been seen before
-						return false;
+				// we want to check if some nodes have several predecessors that have
+				// the same label - so if the node has 0 or 1 predecessors, then we
+				// do not need to check anything ^^
+				if (plen > 1) {
+					var prevchars = [];
+					for (var j=0; j < plen; j++) {
+						var newchar = auto[prev[j]].c;
+						if (prevchars.indexOf(newchar) < 0) {
+							// all is good, the new character has not been seen before
+							prevchars.push(newchar);
+						} else {
+							// oh noooo, all is ruined! - the character has been seen before
+							return false;
+						}
 					}
 				}
 			}
@@ -3158,10 +3532,32 @@ window.GML = {
 
 
 
-	// takes in an automaton
-	// gives out the automaton with prefixes calculated for each node
-	computePrefixes: function(auto) {
-		return this.workOnAutomatonPrefixes(auto, false, false);
+	// takes in two arrays a1 and a2
+	// gives out true if a1 and a2 contain the same elements, false otherwise
+	arraysContainSameEls: function(a1, a2) {
+
+		return this.arrayContainsOtherArraysEls(a1, a2) && this.arrayContainsOtherArraysEls(a2, a1);
+	},
+
+
+
+	// takes in two arrays a1 and a2
+	// gives out true if all elements of a2 are contained in a1
+	arrayContainsOtherArraysEls: function(a1, a2) {
+
+		// go through all elements of a2
+		for (var i=0; i < a2.length; i++) {
+
+			// is this element of a2 contained in a1?
+			if (a1.indexOf(a2[i]) < 0) {
+
+				// ... no, it is not .__.
+				return false;
+			}
+		}
+
+		// none are missing, so all are there, so we return true =)
+		return true;
 	},
 
 
@@ -3205,6 +3601,14 @@ window.GML = {
 
 
 
+	// takes in an automaton
+	// gives out the automaton with prefixes calculated for each node
+	computePrefixes: function(auto) {
+		return this.workOnAutomatonPrefixes(auto, false, false);
+	},
+
+
+
 	// one character that indicates a problem in a prefix
 	// needs to be different from any input characters, from ^ and from $
 	prefixErrorChar: '!',
@@ -3237,7 +3641,9 @@ window.GML = {
 
 		// start by setting all prefixes just to the labels themselves
 		for (var i=0; i < auto.length; i++) {
-			auto[i].f = auto[i].c;
+			if (auto[i]) {
+				auto[i].f = auto[i].c;
+			}
 		}
 
 		var changed_something = true;
@@ -3249,147 +3655,150 @@ window.GML = {
 		while (changed_something) {
 			changed_something = false;
 
+			// always get a new length, as the length changes ;)
 			var alen = auto.length;
 
 			for (var i=0; i < alen; i++) {
 
-				var cur_auto_f = auto[i].f;
+				if (auto[i]) {
+					var cur_auto_f = auto[i].f;
 
-				// if we are already in a nonsensical position, then going further down the
-				// rabbit hole is not going to achieve anything ;)
-				if (cur_auto_f[cur_auto_f.length - 1] !== this.prefixErrorChar) {
+					// if we are already in a nonsensical position, then going further down the
+					// rabbit hole is not going to achieve anything ;)
+					if (cur_auto_f[cur_auto_f.length - 1] !== this.prefixErrorChar) {
 
-					var same_as = [i];
+						var same_as = [i];
 
-					for (var j=0; j < alen; j++) {
-						if (i !== j) {
-							if (cur_auto_f == auto[j].f) {
-								same_as.push(j);
-								changed_something = 1;
+						for (var j=0; j < alen; j++) {
+							if (i !== j) {
+								if (cur_auto_f == auto[j].f) {
+									same_as.push(j);
+									changed_something = 1;
+								}
 							}
 						}
-					}
 
-					// alright, so we found other nodes with the same prefix...
-					if (same_as.length > 1) {
-						// we know that auto[i].f == auto[j].f for all j in same_as,
-						// so the rec_depth is the same for all, so we can compute it
-						// outside the for loop
-						var rec_depth = auto[i].f.length - 1;
-						for (var j=0; j < same_as.length; j++) {
+						// alright, so we found other nodes with the same prefix...
+						if (same_as.length > 1) {
+							// we know that auto[i].f == auto[j].f for all j in same_as,
+							// so the rec_depth is the same for all, so we can compute it
+							// outside the for loop
+							var rec_depth = auto[i].f.length - 1;
+							for (var j=0; j < same_as.length; j++) {
 
-							// ... so now for each node, we follow along the graph
-							// until rec_depth is reached, and append that node's label
-							// (and if that is impossible as the graph splits into several
-							// nodes with different labels, then we append an exclamation
-							// point, indicating that this is why the automaton is currently
-							// NOT prefix sorted!)
+								// ... so now for each node, we follow along the graph
+								// until rec_depth is reached, and append that node's label
+								// (and if that is impossible as the graph splits into several
+								// nodes with different labels, then we append an exclamation
+								// point, indicating that this is why the automaton is currently
+								// NOT prefix sorted!)
 
-							// we actually keep track of several nodes, as a path could split
-							// and still be acceptable, e.g.
-							//     C -> G
-							//   /
-							// A            <= here, the prefix of A can be ACG without problem
-							//   \
-							//     C -> G
+								// we actually keep track of several nodes, as a path could split
+								// and still be acceptable, e.g.
+								//     C -> G
+								//   /
+								// A            <= here, the prefix of A can be ACG without problem
+								//   \
+								//     C -> G
 
-							var curNodes = [same_as[j]];
-							// for each letter K in the prefix...
-							for (var k=0; k < rec_depth; k++) {
-								var nextNodes = [];
-								// ... we look at each node L on the current node list ...
+								var curNodes = [same_as[j]];
+								// for each letter K in the prefix...
+								for (var k=0; k < rec_depth; k++) {
+									var nextNodes = [];
+									// ... we look at each node L on the current node list ...
+									for (var l=0; l < curNodes.length; l++) {
+										var curNode = auto[curNodes[l]];
+										// ... and look at each node M following that node L
+										for (var m=0; m < curNode.n.length; m++) {
+											nextNodes.push(curNode.n[m]);
+										}
+									}
+									curNodes = nextNodes;
+								}
+
+								var nextNode_confusing = false;
+
+								var firstNodeLabel = auto[auto[curNodes[0]].n[0]].c;
+
+								// check if any nodes on the list have any successors that have labels
+								// different than firstNodeLabel
 								for (var l=0; l < curNodes.length; l++) {
 									var curNode = auto[curNodes[l]];
-									// ... and look at each node M following that node L
 									for (var m=0; m < curNode.n.length; m++) {
-										nextNodes.push(curNode.n[m]);
+										if (firstNodeLabel !== auto[curNode.n[m]].c) {
+											nextNode_confusing = true;
+											break;
+										}
 									}
-								}
-								curNodes = nextNodes;
-							}
-
-							var nextNode_confusing = false;
-
-							var firstNodeLabel = auto[auto[curNodes[0]].n[0]].c;
-
-							// check if any nodes on the list have any successors that have labels
-							// different than firstNodeLabel
-							for (var l=0; l < curNodes.length; l++) {
-								var curNode = auto[curNodes[l]];
-								for (var m=0; m < curNode.n.length; m++) {
-									if (firstNodeLabel !== auto[curNode.n[m]].c) {
-										nextNode_confusing = true;
+									if (nextNode_confusing) {
 										break;
 									}
 								}
+
 								if (nextNode_confusing) {
-									break;
-								}
-							}
+									if (makePrefixSorted) {
+										
+										// we need to actually make it prefix sorted, so we need
+										// to split the current node into n.length nodes
 
-							if (nextNode_confusing) {
-								if (makePrefixSorted) {
-									
-									// we need to actually make it prefix sorted, so we need
-									// to split the current node into n.length nodes
+										// we actually need deep copies, so that we can later
+										// do work on this without getting REALLY confusing problems
+										var orig_node = this.deep_copy_node(auto[same_as[j]]);
 
-									// we actually need deep copies, so that we can later
-									// do work on this without getting REALLY confusing problems
-									var orig_node = this.deep_copy_node(auto[same_as[j]]);
-
-									// update the current node: leave p and c, but only keep the
-									// first of the out-nodes and add their label to the prefix
-									auto[same_as[j]] = {
-										p: orig_node.p, // prev
-										c: orig_node.c, // caption
-										n: [orig_node.n[0]], // next
-										f: orig_node.f + auto[orig_node.n[0]].c, // prefix
-									};
-
-									if (addToSOut) {
-										this.sout += 'We split the node with label ' + orig_node.c +
-													' and prefix ' + orig_node.f + this.prefixErrorChar +
-													' into ' + orig_node.n.length + ' nodes:' + this.nl;
-									}
-
-									// add new nodes to the automaton
-									for (var k=1; k < orig_node.n.length; k++) {
-										orig_node = this.deep_copy_node(orig_node);
-										// add the new node as outnode to its predecessor
-										for (var l=0; l < orig_node.p.length; l++) {
-											auto[orig_node.p[l]].n.push(auto.length);
-										}
-										// update the outgoing node and set its predecessor
-										// to this new node (we update instead of add, as the
-										// node is being split and the other node is not a
-										// predecessor anymore)
-										for (var l=0; l < auto[orig_node.n[k]].p.length; l++) {
-											if (auto[orig_node.n[k]].p[l] == same_as[j]) {
-												auto[orig_node.n[k]].p[l] = auto.length;
-											}
-										}
-										auto.push({
+										// update the current node: leave p and c, but only keep the
+										// first of the out-nodes and add their label to the prefix
+										auto[same_as[j]] = {
 											p: orig_node.p, // prev
 											c: orig_node.c, // caption
-											n: [orig_node.n[k]], // next
-											f: orig_node.f + auto[orig_node.n[k]].c, // prefix
-										});
+											n: [orig_node.n[0]], // next
+											f: orig_node.f + auto[orig_node.n[0]].c, // prefix
+										};
+
+										if (addToSOut) {
+											this.sout += 'We split the node with label ' + orig_node.c +
+														' and prefix ' + orig_node.f + this.prefixErrorChar +
+														' into ' + orig_node.n.length + ' nodes:' + this.nl;
+										}
+
+										// add new nodes to the automaton
+										for (var k=1; k < orig_node.n.length; k++) {
+											orig_node = this.deep_copy_node(orig_node);
+											// add the new node as outnode to its predecessor
+											for (var l=0; l < orig_node.p.length; l++) {
+												auto[orig_node.p[l]].n.push(auto.length);
+											}
+											// update the outgoing node and set its predecessor
+											// to this new node (we update instead of add, as the
+											// node is being split and the other node is not a
+											// predecessor anymore)
+											for (var l=0; l < auto[orig_node.n[k]].p.length; l++) {
+												if (auto[orig_node.n[k]].p[l] == same_as[j]) {
+													auto[orig_node.n[k]].p[l] = auto.length;
+												}
+											}
+											auto.push({
+												p: orig_node.p, // prev
+												c: orig_node.c, // caption
+												n: [orig_node.n[k]], // next
+												f: orig_node.f + auto[orig_node.n[k]].c, // prefix
+											});
+										}
+
+										// ask the calling function to recompute everything - as adding a
+										// node is messy, and it is much simpler to just recaluclate all
+										// prefixes than to keep track of which prefixes where need to be
+										// updated how
+										return true;
+
+									} else {
+										// don't worry about anything, just indicate that an error
+										// occurred
+										auto[same_as[j]].f += this.prefixErrorChar;
 									}
-
-									// ask the calling function to recompute everything - as adding a
-									// node is messy, and it is much simpler to just recaluclate all
-									// prefixes than to keep track of which prefixes where need to be
-									// updated how
-									return true;
-
 								} else {
-									// don't worry about anything, just indicate that an error
-									// occurred
-									auto[same_as[j]].f += this.prefixErrorChar;
+									// don't worry about anything - as actually nothing is wrong
+									auto[same_as[j]].f += auto[auto[curNodes[0]].n[0]].c;
 								}
-							} else {
-								// don't worry about anything - as actually nothing is wrong
-								auto[same_as[j]].f += auto[auto[curNodes[0]].n[0]].c;
 							}
 						}
 					}
@@ -3450,12 +3859,13 @@ window.GML = {
 	isAutomatonPrefixSorted: function(auto) {
 
 		for (var i=0; i < auto.length; i++) {
+			if (auto[i]) {
+				var cur_auto_f = auto[i].f;
 
-			var cur_auto_f = auto[i].f;
-
-			// aha! there is at least one node that does not have a useful prefix!
-			if (cur_auto_f[cur_auto_f.length - 1] == this.prefixErrorChar) {
-				return false;
+				// aha! there is at least one node that does not have a useful prefix!
+				if (cur_auto_f[cur_auto_f.length - 1] == this.prefixErrorChar) {
+					return false;
+				}
 			}
 		}
 
@@ -3480,7 +3890,9 @@ window.GML = {
 		var prefixes = [];
 
 		for (var i=0; i < auto.length; i++) {
-			prefixes.push([auto[i].f, i]);
+			if (auto[i]) {
+				prefixes.push([auto[i].f, i]);
+			}
 		}
 
 		prefixes.sort();
@@ -3529,9 +3941,9 @@ window.GML = {
 
 		// initiate the environment (overwriting this.p12, this.p12_itlv, this.bwt and this.m)
 		this.p12 = [];
-		this.p12_itlv = this.reparr(this.p12.length, this.origin_2);
+		this.p12_itlv = this.reparr(this.p12.length, this.origins[1]);
 		for (i=0; i < findex[0].length; i++) {
-			this.p12.push([findex[0][i], this.origin_2]);
+			this.p12.push([findex[0][i], this.origins[1]]);
 		}
 
 		this.bwt = findex[1];
@@ -3883,12 +4295,12 @@ window.GML = {
 
 		sout += "One method to achieve this sorting, according to Holt2014, is as follows:" + this.nlnl;
 
-		sout += "We create an interleave vector which is " + this.origin_1 + " in each position ";
+		sout += "We create an interleave vector which is " + this.origins[0] + " in each position ";
 		sout += "in which we choose the next element from " + this.DH_1 + " and ";
-		sout += "which is " + this.origin_2 + " in each position in which we choose the ";
+		sout += "which is " + this.origins[1] + " in each position in which we choose the ";
 		sout += "next element from " + this.DH_2;
 
-		if ((this.origin_1 == '0') && (this.origin_2 == '1')) {
+		if ((this.origins[0] == '0') && (this.origins[1] == '1')) {
 			sout += '. ';
 		} else {
 			sout += " (originally it's 0 and 1, but the ";
@@ -3908,21 +4320,21 @@ window.GML = {
 		}
 		sout += this.h1_pos.join(this.td) + this.td + this.h2_pos.join(this.td) + this.td + "Position" + this.tabnl;
 		sout += this.h1_bwt.join(this.td) + this.td + this.h2_bwt.join(this.td) + this.td + "BWT" + this.tabnl;
-		sout += this.repjoin(this.h1_pos.length, this.origin_1, this.td) + this.td;
-		sout += this.repjoin(this.h2_pos.length, this.origin_2, this.td) + this.td + "Interleave" + this.nl;
+		sout += this.repjoin(this.h1_pos.length, this.origins[0], this.td) + this.td;
+		sout += this.repjoin(this.h2_pos.length, this.origins[1], this.td) + this.td + "Interleave" + this.nl;
 		sout += this.endtab;
 
 		sout += "The method that we will be using for the next steps is ";
 		sout += "to use the first column (sorted alphabetically) ";
 		sout += "instead of focusing on the last column (the BWT):" + this.nlnl;
 
-		var h1_col1 = this.add_index_to_col(this.get_first_n_from_scr(this.h1_scr, 0), this.origin_1);
-		var h2_col1 = this.add_index_to_col(this.get_first_n_from_scr(this.h2_scr, 0), this.origin_2);
+		var h1_col1 = this.add_index_to_col(this.get_first_n_from_scr(this.h1_scr, 0), this.origins[0]);
+		var h2_col1 = this.add_index_to_col(this.get_first_n_from_scr(this.h2_scr, 0), this.origins[1]);
 		var h12_cols = this.sort_indexed_col(h1_col1.concat(h2_col1));
 		var h12_itlv = this.get_index_from_col(h12_cols);
 		var itlv_changed =
-			this.repjoin(this.h1_pos.length, this.origin_1, '') +
-			this.repjoin(this.h2_pos.length, this.origin_2, '') !==
+			this.repjoin(this.h1_pos.length, this.origins[0], '') +
+			this.repjoin(this.h2_pos.length, this.origins[1], '') !==
 			h12_itlv.join('');
 
 		var nth;
@@ -4000,8 +4412,8 @@ window.GML = {
 		}
 		sout += this.h1_pos.join(this.td) + this.td + this.h2_pos.join(this.td) + this.td + "Old Position" + this.tabnl;
 		sout += this.h1_bwt.join(this.td) + this.td + this.h2_bwt.join(this.td) + this.td + "Old BWT" + this.tabnl;
-		sout += this.repjoin(this.h1_pos.length, this.origin_1, this.td) + this.td;
-		sout += this.repjoin(this.h2_pos.length, this.origin_2, this.td) + this.td + "Old Interleave" + this.nl;
+		sout += this.repjoin(this.h1_pos.length, this.origins[0], this.td) + this.td;
+		sout += this.repjoin(this.h2_pos.length, this.origins[1], this.td) + this.td + "Old Interleave" + this.nl;
 		sout += this.endtab;
 
 		sout += this.tab;
@@ -4709,7 +5121,7 @@ window.GML = {
 		var i2 = 0;
 
 		for (var i = 0; i < h12_itlv.length; i++) {
-			if (h12_itlv[i] == this.origin_1) {
+			if (h12_itlv[i] == this.origins[0]) {
 				aout.push(h1[i1]);
 				i1++;
 			} else {
@@ -4913,14 +5325,22 @@ window.GML = {
 
 
 	// takes in two arrays, one containing keys and the other one
-	//   containing values for the keys (e.g. ['A', 'B'] and ['A'=>0, 'B'=>2])
+	//   containing values for the keys (e.g. ['A', 'B'] and ['A'=>0, 'B'=>2]),
+	//   and the boolean parameter use_ao (optional, default: false),
+	//   which if true leads to the array offset being added to all values
 	// gives out a php-like string representation of the values
-	printKeyValArr: function(keys, values) {
+	printKeyValArr: function(keys, values, use_ao) {
 
 		var sout = '[';
 
 		for (var i=0; i < keys.length; i++) {
-			sout += keys[i] + ' => ' + values[keys[i]] + ', ';
+			sout += keys[i] + ' => ';
+			if (use_ao) {
+				sout += (values[keys[i]] + GML.ao);
+			} else {
+				sout += values[keys[i]];
+			}
+			sout += ', ';
 		}
 
 		sout = sout.slice(0, -2);
@@ -4933,11 +5353,12 @@ window.GML = {
 
 
 	// takes in an integer i
-	// gives out an array [0, 1, 2, ..., i-1]
+	// gives out an array [0, 1, 2, ..., i-1], plus the general array offset in every element
 	count_up_array: function(i) {
 		aout = [];
+		var ao = this.ao;
 		for (var j=0; j < i; j++) {
-			aout.push(j);
+			aout.push(j + ao);
 		}
 		return aout;
 	},

@@ -26,6 +26,7 @@ window.GML_UI = {
 
 	// stores the visibility of div-out so that we don't reset it when changing tabs
 	div_out_visibility: [false, false, false, false, false, false, false],
+	xbw_visibility:     [false, false, false, false, false, false, false],
 
 	// how many tabs are there?
 	upToTabs: 7,
@@ -48,20 +49,59 @@ window.GML_UI = {
 		}
 	},
 
+	// the tab that is currently open
+	cur_tab: -1,
+
 	showTab: function(nexttab) {
+
+		cur_tab = nexttab;
+
 		this.unShowAllTabs();
 
 		document.getElementById('tab-btn-' + nexttab).className = 'tabbutton active';
 		document.getElementById('div-in-' + nexttab).style.display = 'block';
 		if (this.div_out_visibility[nexttab]) {
 			document.getElementById('div-out-' + nexttab).style.display = 'block';
-			if (!GML.hideXBWenvironments) {
+			if (this.xbw_visibility[nexttab] && !GML.hideXBWenvironments) {
 				var el = document.getElementById('div-xbw-' + nexttab);
 				if (el) {
 					el.style.display = 'block';
 				}
 			}
 		}
+	},
+
+	activateDivOut: function(i, showXBWenv, showAnchors) {
+
+		GML_UI.cur_tab = i;
+
+		var el = document.getElementById('div-xbw-' + i);
+		if (el) {
+			if (showXBWenv && !GML.hideXBWenvironments) {
+				el.style.display = 'block';
+				this.xbw_visibility[i] = true;
+			} else {
+				el.style.display = 'none';
+			}
+		}
+
+
+		this.setJumpDispStyle(i, showAnchors);
+
+
+		el = document.getElementById('div-out-' + i);
+		el.innerHTML = '<div>... working on your request ...</div>';
+		el.style.display = 'block';
+
+		this.div_out_visibility[i] = true;
+
+		return el;
+	},
+
+	unShowXBWEnv: function(tab) {
+
+		this.xbw_visibility[tab] = false;
+		document.getElementById('div-xbw-' + tab).style.display = 'none';
 	},
 
 	setJumpDispStyle: function(i, show) {
@@ -80,30 +120,6 @@ window.GML_UI = {
 			el = document.getElementById('a-jump-' + i + '-' + j);
 			j++;
 		}
-	},
-
-	activateDivOut: function(i, showXBWenv, showAnchors) {
-
-		var el = document.getElementById('div-xbw-' + i);
-		if (el) {
-			if (showXBWenv && !GML.hideXBWenvironments) {
-				el.style.display = 'block';
-			} else {
-				el.style.display = 'none';
-			}
-		}
-
-
-		this.setJumpDispStyle(i, showAnchors);
-
-
-		el = document.getElementById('div-out-' + i);
-		el.innerHTML = '<div>... working on your request ...</div>';
-		el.style.display = 'block';
-
-		this.div_out_visibility[i] = true;
-
-		return el;
 	},
 
 
@@ -194,12 +210,13 @@ window.GML_UI = {
 		var el = this.activateDivOut(6, true, true);
 
 		// TODO EMRG :: actually implement fuse_XBWs within GML
-		el.innerHTML = '<div><div class="error">Sorry, this has not yet been implemented.</div></div>';
-		return;
+		el.innerHTML = '<div>' + GML.errorWrap('Sorry, this has not yet been implemented.') + '</div>';
 
+		/*
 		el.innerHTML = '<div>' + GML.fuse_XBWs(
 			document.getElementById('in-string-6-1').value.toUpperCase(),
 			document.getElementById('in-string-6-2').value.toUpperCase()) + '</div>';
+		*/
 	},
 
 
@@ -570,7 +587,7 @@ window.GML_UI = {
 			if (startanimation) {
 
 				this.applyBtncurrentlyintervalID = window.setInterval(
-					this.animateApplyBtnCall, 50);
+					GML_UI.animateApplyBtnCall, 50);
 
 			} else {
 
@@ -582,31 +599,28 @@ window.GML_UI = {
 
 	animateApplyBtnCall: function() {
 
-		if (this.applyBtncurrentlygoingdown) {
-			this.applyBtncurrentlycallint -= 5;
+		if (GML_UI.applyBtncurrentlygoingdown) {
+			GML_UI.applyBtncurrentlycallint -= 5;
 		} else {
-			this.applyBtncurrentlycallint += 5;
+			GML_UI.applyBtncurrentlycallint += 5;
 		}
 
-		if (this.applyBtncurrentlycallint < -17) {
-			this.applyBtncurrentlygoingdown = false;
-			this.applyBtncurrentlycallint = -17;
+		if (GML_UI.applyBtncurrentlycallint < -17) {
+			GML_UI.applyBtncurrentlygoingdown = false;
+			GML_UI.applyBtncurrentlycallint = -17;
 		}
 
-		if (this.applyBtncurrentlycallint > 108) {
-			this.applyBtncurrentlygoingdown = true;
-			this.applyBtncurrentlycallint = 108;
+		if (GML_UI.applyBtncurrentlycallint > 108) {
+			GML_UI.applyBtncurrentlygoingdown = true;
+			GML_UI.applyBtncurrentlycallint = 108;
 		}
 
-		var c = 238 - this.applyBtncurrentlycallint;
+		var c = 238 - GML_UI.applyBtncurrentlycallint;
 		document.getElementById('id-apply-btn').style.backgroundColor =
 			'rgb(' + c + ',' + c + ',' + c + ')';
 	},
 
 	applyOptions: function() {
-
-		GML.origin_1 = document.getElementById('in-options-index-1').value;
-		GML.origin_2 = document.getElementById('in-options-index-2').value;
 
 		GML.ao = parseInt(document.getElementById('in-options-array-offset').value, 10);
 
@@ -614,9 +628,6 @@ window.GML_UI = {
 	},
 
 	resetOptions: function() {
-
-		document.getElementById('in-options-index-1').value = '0';
-		document.getElementById('in-options-index-2').value = '1';
 
 		document.getElementById('in-options-array-offset').value = '0';
 
@@ -633,6 +644,7 @@ window.GML_UI = {
 
 		for (var i = 0; i < this.upToTabs; i++) {
 			this.div_out_visibility[i] = false;
+			this.xbw_visibility[i] = false;
 			this.setJumpDispStyle(i, false);
 		}
 

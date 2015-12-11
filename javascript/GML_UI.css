@@ -84,6 +84,13 @@ div.mainbox > div > input {
 	width:100%;
 }
 
+div.mainbox > div > input.in-text-input {
+	display:inline-block;
+	width:10%;
+	margin-right:5px;
+	margin-left:5px;
+}
+
 div.mainbox > div > div.md-2, div.mainbox > div > input.md-2 {
 	display:inline-block;
 	width:49%;

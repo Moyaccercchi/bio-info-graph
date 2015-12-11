@@ -181,7 +181,10 @@
 			<span id="in-options-show-autoi" class="our_checkbox">&nbsp;</span> Show auto <i>i</i> above automaton nodes
 		</div>
 		<div>
-			The first element of any string and array is obviously <input id="in-options-array-offset" type="text" value="0" style="display: inline-block; width: 10%; margin-right: 5px; margin-left: 5px;" onchange="GML_UI.animateApplyBtn(true)" onkeyup="GML_UI.animateApplyBtn(true)"></input>.
+			The first element of any string and array is obviously <input id="in-options-array-offset" type="text" value="0" class="in-text-input" onchange="GML_UI.animateApplyBtn(true)" onkeyup="GML_UI.animateApplyBtn(true)"></input>.
+		</div>
+		<div>
+			Stop all loops after going through <input id="in-options-loop-threshold" type="text" value="100" class="in-text-input" onchange="GML_UI.animateApplyBtn(true)" onkeyup="GML_UI.animateApplyBtn(true)"></input> cycles (this value is referred to as &ldquo;loop threshold&rdquo;.)
 		</div>
 		<div>
 			<div class="button md-2" onclick="GML_UI.applyOptions()" id="id-apply-btn">Apply Options</div>

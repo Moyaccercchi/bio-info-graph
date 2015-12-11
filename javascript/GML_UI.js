@@ -623,6 +623,7 @@ window.GML_UI = {
 	applyOptions: function() {
 
 		GML.ao = parseInt(document.getElementById('in-options-array-offset').value, 10);
+		GML.loop_threshold = parseInt(document.getElementById('in-options-loop-threshold').value, 10);
 
 		this.saveOptions();
 	},
@@ -630,6 +631,7 @@ window.GML_UI = {
 	resetOptions: function() {
 
 		document.getElementById('in-options-array-offset').value = '0';
+		document.getElementById('in-options-loop-threshold').value = '100';
 
 		document.getElementById('in-options-show-xbw-envs').innerHTML = 'X';
 		document.getElementById('in-options-show-graph').innerHTML = '&nbsp;';

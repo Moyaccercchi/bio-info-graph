@@ -54,6 +54,8 @@
 	fe_p12ToTableWithHighlights: function(highlight_arr, show_origin, show_f, show_i);
 	visualize: function(auto, showPrefixes, highlight_p12, show_vis_hl);
 	hideWrap: function(sout, kind);
+	errorWrap: function(sout);
+	loopOverflowError: function(sout);
 	stringToGraph: function(str);
 	graphToAutomaton: function(graph);
 	mergeAutomata: function(auto1, auto2);
@@ -142,8 +144,8 @@
 
 window.GML = {
 
-	overflow_ceiling: 100, // general overflow protection: whereever it is likely that through
-						   // weird input or ridiculous bugs we could run into an inifinite loop,
+	loop_threshold: 100, // general overflow protection: whereever it is likely that through
+						   // weird input or ridiculous bugs we could run into an infinite loop,
 						   // stop when reaching this iteration
 
 	verbosity: 10, // integer, 10 .. tell us about EVERYTHING, 1 .. only give us the results
@@ -1396,7 +1398,7 @@ window.GML = {
 
 				var patience = this.ao;
 
-				while ((patience < this.overflow_ceiling) && (thereAreProblems)) {
+				while (thereAreProblems) {
 
 					// initialize to an arbitrary big number, which is bigger than
 					// the length of any prefix in the graph (and no prefix should
@@ -1613,6 +1615,10 @@ window.GML = {
 
 					// 7 - repeat approach until no more problems (or run out of patience)
 					patience++;
+
+					if (patience > this.loop_threshold) {
+						return this.loopOverflowError(sout);
+					}
 				}
 
 				if (thereAreProblems) {
@@ -1866,7 +1872,7 @@ window.GML = {
 
 			this.error_flag = false;
 
-			while ((round < this.overflow_ceiling) && doAnotherRound && !this.error_flag) {
+			while (doAnotherRound && !this.error_flag) {
 
 				doAnotherRound = false;
 
@@ -1879,9 +1885,9 @@ window.GML = {
 					sround += this.hideWrap(shide, 'Tables') + this.nlnl;
 				}
 
-				var i = this.ao;
+				var patience = this.ao;
 
-				while (xbw12.notFullyMerged() && (i < this.overflow_ceiling) && !this.error_flag) {
+				while (xbw12.notFullyMerged() && !this.error_flag) {
 
 					var splitnodes = [];
 
@@ -1902,10 +1908,14 @@ window.GML = {
 
 						sstep += '</div>';
 
-						sround += this.hideWrap(sstep, 'Step ' + i) + this.nlnl;
+						sround += this.hideWrap(sstep, 'Step ' + patience) + this.nlnl;
 					}
 
-					i++;
+					patience++;
+
+					if (patience > this.loop_threshold) {
+						return this.loopOverflowError(sout);
+					}
 				}
 
 				if (this.verbosity > 4) {
@@ -1915,6 +1925,10 @@ window.GML = {
 				}
 
 				round++;
+
+				if (round > this.loop_threshold) {
+					return this.loopOverflowError(sout);
+				}
 			}
 
 			// end splitting
@@ -1957,13 +1971,11 @@ window.GML = {
 				sout += this.hideWrap(shide, 'Tables') + this.nlnl;
 			}
 
-			var i = this.ao;
+			var patience = this.ao;
 
 			xbw12.startNewSplitRound();
 
-			while (xbw12.notFullyMerged() && (i < this.overflow_ceiling)) {
-
-				// TODO EMRG :: add error upon reaching overflow_ceiling (and do that everywhere else too!)
+			while (xbw12.notFullyMerged()) {
 
 				if (this.verbosity > 5) {
 
@@ -1978,14 +1990,18 @@ window.GML = {
 
 					sstep += '</div>';
 
-					sout += this.hideWrap(sstep, 'Step ' + i) + this.nlnl;
+					sout += this.hideWrap(sstep, 'Step ' + patience) + this.nlnl;
 
 				} else {
 
 					xbw12.mergeOneMore(false);
 				}
 
-				i++;
+				patience++;
+
+				if (patience > this.loop_threshold) {
+					return this.loopOverflowError(sout);
+				}
 			}
 
 			if (this.verbosity > 1) {
@@ -2488,28 +2504,26 @@ window.GML = {
 		var extra_high_edges = [];
  
 		if (show_vis_hl && (this.vis_highlight_nodes.length > 0) && (this.vis_highlight_nodes[0].length > 0)) {
-			// convert the first node using tableToP12 from table i to p12 i to auto i
-			extra_high_nodes.push(
-				this.vis_p12ToAuto[
-					this.vis_tableToP12[
-						this.vis_highlight_nodes[0][0]
-					]
-				]
-			);
-
-			// convert all other nodes just from p12 i to auto i
+			
 			for (var j=0; j < this.vis_highlight_nodes.length; j++) {
+				
+				// convert the first node using tableToP12 from table i to p12 i to auto i
+				extra_high_nodes.push(
+					this.vis_p12ToAuto[
+						this.vis_tableToP12[
+							this.vis_highlight_nodes[j][0]
+						]
+					]
+				);
+				
+				// convert all other nodes just from p12 i to auto i
 				for (var i=1; i < this.vis_highlight_nodes[j].length; i++) {
 					extra_high_nodes.push(
 						this.vis_p12ToAuto[
 							this.vis_highlight_nodes[j][i]
 						]
 					);
-					var starti = extra_high_nodes.length-2;
-					if (i < 2) {
-						starti = 0;
-					}
-					extra_high_edges.push(extra_high_nodes[starti] + '_' + extra_high_nodes[extra_high_nodes.length-1]);
+					extra_high_edges.push(extra_high_nodes[extra_high_nodes.length-2] + '_' + extra_high_nodes[extra_high_nodes.length-1]);
 				}
 			}
 		}
@@ -2833,7 +2847,7 @@ window.GML = {
 
 
 	// takes in a string containing HTML that wants to be shown as an error message
-	// gives out the string formatted as error message and hides the XBW  environment
+	// gives out the string formatted as error message and hides the XBW environment
 	//   from the current tab
 	errorWrap: function(sout) {
 
@@ -2842,6 +2856,24 @@ window.GML = {
 		}
 
 		return '<div class="error">' + sout + '</div>';
+	},
+
+
+
+	// takes in a string containing HTML
+	// gives out the finished string, having an overflow error message appended to it,
+	//   and hides the XBW environment from the current tab
+	loopOverflowError: function(sout) {
+
+		sout += this.errorWrap(
+				'The computation has been stopped to prevent an infinite loop.<br>' +
+				'You could retry it with a higher loop threshold - its current value is ' +
+				this.loop_threshold + '.'
+			);
+
+		sout = sout.replace(/\^/g, '#');
+
+		return sout;
 	},
 
 

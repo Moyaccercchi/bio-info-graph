@@ -645,7 +645,7 @@ GML.make_xbw_environment = function() {
 			GML.vis_highlight_nodes = [[]];
 
 			if (length === undefined) {
-				length = GML.overflow_ceiling;
+				length = GML.loop_threshold;
 			}
 
 			var pref_cur_is = [pref_cur_i];
@@ -951,7 +951,6 @@ GML.make_xbw_environment = function() {
 			//             prefix for this here in the previous step, then we do not
 			//             need to create it again)
 
-			var i = 1;
 			var prefixes = ['', '']; // TODO EMRG :: the prefixes here are always just two... never more or less
 									 // all lines that need to be changed regarding this have
 									 // been highlighted as TE1TE
@@ -964,12 +963,13 @@ GML.make_xbw_environment = function() {
 				return [0, sout, prefixes, split_nodes]; // TE1TE
 			} // TE1TE
 
+			var patience = 1;
+
 			// we here do not need to explicitly check for reaching $ or $_1,
 			// as they are both different, and therefore we would necessarily
 			// reach a difference between the prefixes, which we ARE already
 			// checking for anyway =)
-			while ((i < GML.overflow_ceiling) &&
-					(GML.comparePrefixes(prefixes[0], prefixes[1]) === 0) && // TE1TE
+			while ((GML.comparePrefixes(prefixes[0], prefixes[1]) === 0) && // TE1TE
 					(prefixes[0][prefixes[0].length-1] != pEC) && // TE1TE
 					(prefixes[1][prefixes[1].length-1] != pEC)) { // TE1TE
 
@@ -979,11 +979,16 @@ GML.make_xbw_environment = function() {
 				var gtsn = {};
 				for (var j=0; j < subXBWs.length; j++) {
 					gtsn.o = j;
-					prefixes[j] = subXBWs[j]._publishPrefix(multi_cur_fic[j], true, i, true, gtsn);
+					prefixes[j] = subXBWs[j]._publishPrefix(
+						multi_cur_fic[j], true, patience, true, gtsn);
 					split_nodes[j] = {sn_i: gtsn.i, o: gtsn.o};
 				}
 
-				i++;
+				patience++;
+
+				if (patience > GML.loop_threshold) {
+					return [0, GML.loopOverflowError(sout), prefixes, split_nodes];
+				}
 			}
 
 			sout += '<span class="col-6">The prefix of ' + GML.DH_1 + '[' + multi_cur_fic[0] + '] is ' +
@@ -1466,40 +1471,33 @@ GML.make_xbw_environment = function() {
 
 			sout += '</div>';
 
-			/* single input full width template:
 			sout += '<div>' +
-					'<input id="in-string-' + tab + '-xbw-find" onkeypress="GML.XBW.in_func = GML.XBW.findHTML; GML.XBW.in_tab = ' + tab + '; GML.XBW.inputEnter(event);" type="text" value="AC" style="display: inline-block; width: 79%;"></input>' +
-					'<div class="button" onclick="GML.XBW.findHTML(' + tab + ')" style="float:right; width:19%;">find()</div>' +
-					'</div>';
-			*/
-
-			sout += '<div>' +
-					'<input id="in-string-' + tab + '-xbw-find" onkeypress="GML.XBW.in_func = GML.XBW.findHTML; GML.XBW.in_tab = ' + tab + '; GML.XBW.inputEnter(event);" type="text" value="AC" style="display: inline-block; width: 21%;"></input>' +
-					'<div class="button" onclick="GML.XBW.findHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">find()</div>' +
-					'<input id="in-string-' + tab + '-xbw-pref" onkeypress="GML.XBW.in_func = GML.XBW.prefHTML; GML.XBW.in_tab = ' + tab + '; GML.XBW.inputEnter(event);" type="text" value="2" style="display: inline-block; width: 21%; margin-left:2%;"></input>' +
-					'<div class="button" onclick="GML.XBW.prefHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">prefix()</div>' +
-					'<div class="button" onclick="GML.XBW.splitNodeHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">split node()</div>' +
-					'<input id="in-string-' + tab + '-xbw-split-node" onkeypress="GML.XBW.in_func = GML.XBW.splitNodeHTML; GML.XBW.in_tab = ' + tab + '; GML.XBW.inputEnter(event);" type="text" value="2" style="float:right; display: inline-block; width: 21%;"></input>' +
+						'<input id="in-string-' + tab + '-xbw-find" onkeypress="GML.XBW.in_func = GML.XBW.findHTML; GML.XBW.in_tab = ' + tab + '; GML.XBW.inputEnter(event);" type="text" value="AC" style="display: inline-block; width: 21%;"></input>' +
+						'<div class="button" onclick="GML.XBW.findHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">find()</div>' +
+						'<input id="in-string-' + tab + '-xbw-pref" onkeypress="GML.XBW.in_func = GML.XBW.prefHTML; GML.XBW.in_tab = ' + tab + '; GML.XBW.inputEnter(event);" type="text" value="2" style="display: inline-block; width: 21%; margin-left:2%;"></input>' +
+						'<div class="button" onclick="GML.XBW.prefHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">prefix()</div>' +
+						'<div class="button" onclick="GML.XBW.splitNodeHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">split node()</div>' +
+						'<input id="in-string-' + tab + '-xbw-split-node" onkeypress="GML.XBW.in_func = GML.XBW.splitNodeHTML; GML.XBW.in_tab = ' + tab + '; GML.XBW.inputEnter(event);" type="text" value="2" style="float:right; display: inline-block; width: 21%;"></input>' +
 					'</div>';
 
 			sout += '<div>' +
-					'<div class="input-info-container" style="display: inline-block; width: 38%;">' +
-						'<input id="in-string-' + tab + '-xbw-lf" onkeypress="GML.XBW.in_func = GML.XBW.lfHTML; GML.XBW.in_tab = ' + tab + '; GML.XBW.inputEnter(event);" type="text" value="7,10,A" style="width:100%"></input>' +
-						'<span class="infobtn" onclick="GML_UI.clickOnXBWInfo(event, 1)">Info</span>' +
-					'</div>' +
-					'<div class="button" onclick="GML.XBW.lfHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">LF()</div>' +
-					'<div class="button" onclick="GML.XBW.psiHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">&#936;()</div>' +
-					'<div class="input-info-container" style="float:right; display: inline-block; width: 38%;">' +
-						'<input id="in-string-' + tab + '-xbw-psi" onkeypress="GML.XBW.in_func = GML.XBW.psiHTML; GML.XBW.in_tab = ' + tab + '; GML.XBW.inputEnter(event);" type="text" value="1,4" style="width:100%"></input>' +
-						'<span class="infobtn" onclick="GML_UI.clickOnXBWInfo(event, 2)">Info</span>' +
-					'</div>' +
+						'<div class="input-info-container" style="display: inline-block; width: 38%;">' +
+							'<input id="in-string-' + tab + '-xbw-lf" onkeypress="GML.XBW.in_func = GML.XBW.lfHTML; GML.XBW.in_tab = ' + tab + '; GML.XBW.inputEnter(event);" type="text" value="7,10,A" style="width:100%"></input>' +
+							'<span class="infobtn" onclick="GML_UI.clickOnXBWInfo(event, 1)">Info</span>' +
+						'</div>' +
+						'<div class="button" onclick="GML.XBW.lfHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">LF()</div>' +
+						'<div class="button" onclick="GML.XBW.psiHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">&#936;()</div>' +
+						'<div class="input-info-container" style="float:right; display: inline-block; width: 38%;">' +
+							'<input id="in-string-' + tab + '-xbw-psi" onkeypress="GML.XBW.in_func = GML.XBW.psiHTML; GML.XBW.in_tab = ' + tab + '; GML.XBW.inputEnter(event);" type="text" value="1,4" style="width:100%"></input>' +
+							'<span class="infobtn" onclick="GML_UI.clickOnXBWInfo(event, 2)">Info</span>' +
+						'</div>' +
 					'</div>';
 
 			sout += '<div>' +
-					'<input id="in-string-' + tab + '-xbw-select" onkeypress="GML.XBW.in_func = GML.XBW.selectHTML; GML.XBW.in_tab = ' + tab + '; GML.XBW.inputEnter(event);" type="text" value="1,M,13" style="display: inline-block; width: 38%;"></input>' +
-					'<div class="button" onclick="GML.XBW.selectHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">select()</div>' +
-					'<div class="button" onclick="GML.XBW.rankHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">rank()</div>' +
-					'<input id="in-string-' + tab + '-xbw-rank" onkeypress="GML.XBW.in_func = GML.XBW.rankHTML; GML.XBW.in_tab = ' + tab + '; GML.XBW.inputEnter(event);" type="text" value="1,F,13" style="float:right; display: inline-block; width: 38%;"></input>' +
+						'<input id="in-string-' + tab + '-xbw-select" onkeypress="GML.XBW.in_func = GML.XBW.selectHTML; GML.XBW.in_tab = ' + tab + '; GML.XBW.inputEnter(event);" type="text" value="1,M,13" style="display: inline-block; width: 38%;"></input>' +
+						'<div class="button" onclick="GML.XBW.selectHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">select()</div>' +
+						'<div class="button" onclick="GML.XBW.rankHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">rank()</div>' +
+						'<input id="in-string-' + tab + '-xbw-rank" onkeypress="GML.XBW.in_func = GML.XBW.rankHTML; GML.XBW.in_tab = ' + tab + '; GML.XBW.inputEnter(event);" type="text" value="1,F,13" style="float:right; display: inline-block; width: 38%;"></input>' +
 					'</div>';
 
 			sout += '<div>Result: <span id="span-' + tab + '-xbw-results">(none)</span>';

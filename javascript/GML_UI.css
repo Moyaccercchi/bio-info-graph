@@ -31,6 +31,14 @@ b {
 	font-weight:bold;
 }
 
+code {
+	margin:0px 2px;
+	padding:0px 4px;
+	box-shadow:0px 0px 2px rgba(0, 0, 0, 0.15);
+	background:#EEE none repeat scroll 0% 0%;
+	font:16px "Monaco","Menlo","Ubuntu Mono","Consolas","source-code-pro",monospace;
+}
+
 span.creditline {
 	position:absolute;
 	bottom:8px;
@@ -147,6 +155,10 @@ div.input-info-container > span.infobtn {
 	position:absolute;
 	right:6px;
 	top:3px;
+}
+
+div.input-info-container > span.randbtn {
+	right:46px;
 }
 
 div.button > span.infobtn {
@@ -324,35 +336,28 @@ div.svg_btn {
 	padding:0px 4px;
 }
 
-svg {
-	width:100%;
-	height:300px;
-}
-
-.svgheight {
-	max-height:300px;
-}
-
+/*
 svg > text, svg > text > tspan {
-	font-size:3px;
+	font-size:30px;
 }
 
 svg > text.prefix, svg > text.prefix > tspan {
-	font-size:1.5px;
+	font-size:15px;
 }
 
-/* subscript */
+
 svg > text > tspan.d {
-	font-size:2px;
+	font-size:20px;
 }
 svg > text.prefix > tspan.d {
-	font-size:1px;
+	font-size:10px;
 }
 
-/* superscript */
+
 svg > text > tspan.u {
-	font-size:2px;
+	font-size:20px;
 }
 svg > text.prefix > tspan.u {
-	font-size:1px;
+	font-size:10px;
 }
+*/

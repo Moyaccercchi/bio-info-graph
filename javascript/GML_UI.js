@@ -222,44 +222,73 @@ window.GML_UI = {
 
 
 	/*
+		Input Randomization
+	*/
+
+	randomizeGraphInput: function(input_id) {
+
+		document.getElementById(input_id).value = GML.generateRandomGraphString();
+	},
+
+
+
+	/*
 		Info fields
 	*/
 
 	s_naiveInputFormat:
 		'Input format:<br>' +
 		'<ul>' +
-		'<li>in general, all characters are just entered as plain text string, e.g. "ACA"</li>' +
-		'<li>lower case characters will automatically be converted to upper case, ' +
-		'e.g. "aca" to "ACA"</li>' +
-		'<li>to encode a graph, use the bubble notation, ' +
-		'e.g. to encode both "AAA" and "ACA", use "A(A|C)A"</li>' +
-		'<li>do not add a dollar sign at the end of the input, as it will be added automagically</li>' +
+		'<li>In general, all characters are just entered as plain text string, e.g. <code>ACA</code>.</li>' +
+		'<li>Lower case characters will automatically be converted to upper case, ' +
+		'e.g. <code>aca</code> to <code>ACA</code>.</li>' +
+		'<li>To encode a graph, use the bubble notation, ' +
+		'e.g. to encode both <code>AAA</code> and <code>ACA</code>, use <code>A(A|C)A</code>.</li>' +
+		'<li>Do not add a dollar sign at the end of the input, as it will be added automagically.</li>' +
 		'</ul>' +
 		'</div>',
 
 	s_advancedInputFormat:
 		'Input format:<br>' +
 		'<ul>' +
-		'<li>in general, all characters of the main path (from # to $) ' +
-		'are just entered as plain text string, e.g. "ACA"</li>' +
-		'<li>lower case characters will automatically be converted to upper case, ' +
-		'e.g. "aca" to "ACA"</li>' +
-		'<li>to encode a graph, add a single pipe character after the main path, ' +
+		'<li>In general, all characters of the main path (any one path from # to $) ' +
+		'are just entered as plain text string, e.g. <code>ACA</code>.</li>' +
+		'<li>Lower case characters will automatically be converted to upper case, ' +
+		'e.g. <code>aca</code> to <code>ACA</code>.</li>' +
+		'<li>To encode a graph, add a single pipe character after the main path, ' +
 		'followed by infoblocks for each path, separated by semicolons, ' +
-		'e.g. "mainpath|infoblock;infoblock;infoblock</li>' +
-		'<li>each infoblock contains exactly four parts, separated by commas, ' +
-		'e.g. "ACA|1,2,3,4;1,2,3,4;1,2,3,4"' +
+		'e.g. <code>mainpath|infoblock;infoblock;infoblock</code>.</li>' +
+		'<li>Each infoblock contains exactly four parts, separated by commas, ' +
+		'e.g. <code>ACA|1,2,3,4;1,2,3,4;1,2,3,4</code>.' +
 		'<ol>' +
-		'<li>the first part is the identifier of the path (it can be empty)</li>' +
-		'<li>the second part is the origin of the path, containing the identifier of the path on which this one originates followed by ":" and the position in that path on which it originates (counting starts at 1 for the first alphabetical character, as the hash tag symbol in the main path is symbol 0) - the identifier of the main path is "0", but in the special case of the main path the identifer and the ":" can be left out together, e.g. "8" for the eighth position on the main path or "path9:8" for the eighth position in a path with the identifer "path9"</li>' +
-		'<li>the third part is the content of the path (it can be empty), e.g. "TGC"</li>' +
-		'<li>the fourth part is the target of the path, containing the identifier of the path on which this one ends followed by ":" and the position in that path on which it ends (counting starts at 1 for the first alphabetical character, as the hash tag symbol in the main path is symbol 0) - the identifier of the main path is "0", but in the special case of the main path the identifer and the ":" can be left out together, e.g. "8" for the eighth position on the main path or "path9:8" for the eighth position in a path with the identifer "path9"</li>' +
+		'<li>The first part is the identifier of the path (it can be empty).</li>' +
+		'<li>The second part is the origin of the path, containing the identifier of the path ' +
+		'on which this one originates followed by <code>:</code> and the position in that path ' +
+		'on which it originates - the identifier of the main path ' +
+		'is <code>mp</code>, but in the special case of the main path the identifer and the ' +
+		'<code>:</code> can ' +
+		'be left out together, e.g. <code>mp:8</code> or just <code>8</code> for the ' +
+		'eighth position on the main path, ' +
+		'but <code>path9:8</code> for the eighth position on a path with the identifer ' +
+		'<code>path9</code>.<br>' +
+		'(The counting starts at the specified array offset, ' +
+		'so with array offset of 0 the hash tag symbol on the main path would be <code>mp:0</code> ' +
+		'and the first alphabetical character on the main path would be <code>mp:1</code>, ' +
+		'while the first alphabetical character on a path with the identifier <code>path9</code> ' +
+		'would be <code>path9:0</code>.<br>' +
+		'Assuming an array offset of 1, the hash tag symbol on the main path would be <code>mp:1</code> ' +
+		'while the first alphabetical character on the main path would be <code>mp:2</code>)' +
+		'</li>' +
+		'<li>The third part is the content of the path (it can be empty), e.g. <code>TGC</code>.</li>' +
+		'<li>The fourth part is the target of the path, specified according to the same ' +
+		'format as the origin of the path in the second part.</li>' +
 		'</ol>' +
 		'</li>' +
-		'<li>overall, a valid graph can look like "GACG|p1,1,TGG,3;,p1:0,C,p1:2" - this ' +
-		'example could in bubble notation be rewritten as G(A|T(G|C)G)CG</li>' +
-		'<li>do neither add a hash tag symbol at the start ' +
-		'nor a dollar sign at the end of the input, as they will be added automagically</li>' +
+		'<li>Overall, a valid graph can look like <code>GACG|p1,1,TGG,3;,p1:0,C,p1:2</code> - this ' +
+		'example could in bubble notation be rewritten as <code>G(A|T(G|C)G)CG</code>, assuming an ' +
+		'array offset of 0.</li>' +
+		'<li>Do neither add a hash tag symbol at the start ' +
+		'nor a dollar sign at the end of the input, as they will be added automagically.</li>' +
 		'</ul>' +
 		'</div>',
 
@@ -451,7 +480,7 @@ window.GML_UI = {
 		
 		var svg_el = document.getElementById('hide-cont-' + whichOne);
 		var svg_hide_el = document.getElementById('hide-btn-' + whichOne);
-		svg_el = svg_el.childNodes[1];
+		svg_el = svg_el.childNodes[svg_el.childNodes.length-1];
 
 		if (svg_el.style.display == 'none') {
 			svg_el.style.display = 'block';
@@ -460,6 +489,21 @@ window.GML_UI = {
 			svg_el.style.display = 'none';
 			svg_hide_el.innerHTML = 'Show';
 		}
+	},
+
+
+	saveSVG: function(whichOne) {
+
+		var svg = document.getElementById("hide-cont-" + whichOne).getElementsByTagName('svg')[0];
+
+		var serializer = new XMLSerializer();
+		var source = serializer.serializeToString(svg);
+
+		source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
+
+		var url = "data:application/octet-stream,"+encodeURIComponent(source);
+
+		window.open(url, '_blank');
 	},
 
 

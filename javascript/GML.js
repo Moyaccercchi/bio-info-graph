@@ -56,6 +56,7 @@
 	hideWrap: function(sout, kind);
 	errorWrap: function(sout);
 	loopOverflowError: function(sout);
+	generateRandomGraphString: function();
 	stringToGraph: function(str);
 	graphToAutomaton: function(graph);
 	mergeAutomata: function(auto1, auto2);
@@ -2535,22 +2536,16 @@ window.GML = {
 		// TODO :: make this work for DaTeX output as well (e.g. with TikZ)
 		var sout = '';
 
-		sout += '<svg xmlns="http:/' + '/www.w3.org/2000/svg" version="1.1"';
-
-		sout += 'viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">';
-
 		var markerArrow = 'markerArrow' + (this.hide_counter + 1);
 
 		sout += '<defs>';
 		sout += '<marker id="' + markerArrow + '" markerWidth="13" markerHeight="13" refX="4" refY="7" orient="auto">';
-		sout += '<path d="M2,4.5 L2,9.5 L5,7 L2,4.5" style="fill:' + default_color + ';" />';
+		sout += '<path d="M2,7 L2,9.5 L5,7 L2,4.5 L2,7" style="fill:' + default_color + ';" />';
 		sout += '</marker>';
 		sout += '<marker id="' + markerArrow + '_extra" markerWidth="13" markerHeight="13" refX="4" refY="7" orient="auto">';
-		sout += '<path d="M2,4.5 L2,9.5 L5,7 L2,4.5" style="fill:' + extra_color + ';" />';
+		sout += '<path d="M2,7 L2,9.5 L5,7 L2,4.5 L2,7" style="fill:' + extra_color + ';" />';
 		sout += '</marker>';
 		sout += '</defs>';
-
-		sout += '<rect x="0" y="0" width="100" height="100" style="fill:#FFF" />';
 
 		var positions = [];
 
@@ -2576,8 +2571,8 @@ window.GML = {
 		// iterate over main row
 		for (var j = 0; j < hlen; j++) {
 			var i = mainrow[j];
-			xoff = 50+(100*(0.5+j - (hlen / 2))/hlen);
-			xoffnext = 50+(100*(1.5+j - (hlen / 2))/hlen);
+			xoff = 50 + (100 * j);
+			xoffnext = 50 + (100 * (j+1));
 			positions[i] = xoff;
 
 			var highcolor = default_color;
@@ -2591,14 +2586,14 @@ window.GML = {
 				bgcolor = high_bg_color;
 			}
 
-			sout += '<circle cx="' + xoff + '" cy="50" r="2" style="fill:' + highcolor + '" />';
-			sout += '<circle cx="' + xoff + '" cy="50" r="1.8" style="fill:' + bgcolor + '" />';
-			sout += '<text x="' + xoff + '" y="51" text-anchor="middle" style="fill:' + highcolor + '">' +
+			sout += '<circle cx="' + xoff + '" cy="100" r="20" style="fill:' + highcolor + '" />';
+			sout += '<circle cx="' + xoff + '" cy="100" r="18" style="fill:' + bgcolor + '" />';
+			sout += '<text x="' + xoff + '" y="110" text-anchor="middle" style="fill:' + highcolor + '">' +
 					auto[i].c + '</text>';
 
 			if (showPrefixes || this.show_auto_i) {
 				sout += '<text class="prefix" x="' + xoff +
-						'" y="47.8" text-anchor="middle" style="fill:' + highcolor + '">';
+						'" y="78" text-anchor="middle" style="fill:' + highcolor + '">';
 				if (showPrefixes) {
 					sout += auto[i].f;
 					if (this.show_auto_i) {
@@ -2619,8 +2614,8 @@ window.GML = {
 			}
 
 			if (auto[i].c !== this.DS) {
-				sout += '<path d="M' + (xoff + 2.5) + ',50 L' + (xoffnext - 2.5) + ',50" ';
-				sout += 'style="stroke: ' + strokecolor + '; stroke-width: 0.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
+				sout += '<path d="M' + (xoff + 25) + ',100 L' + (xoffnext - 25) + ',100" ';
+				sout += 'style="stroke: ' + strokecolor + '; stroke-width: 2.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
 				sout += '/>';
 			}
 
@@ -2636,9 +2631,9 @@ window.GML = {
 		// alternate yoff between 52.5 and 47.5 (around 50), so that adjacent paths
 		// get put on opposite sides of the main path
 		// TODO :: improve this with an actual space-aware visualization solution
-		var yoff = 52.5; // offset for path starts and ends - small distance from origin
-		var yoffl = 57;  // offset for nodes - large distance from origin
-		var yoffdl = 60; // offset for Bezier curve control points - doubly large distance from origin
+		var yoff = 125; // offset for path starts and ends - small distance from origin
+		var yoffl = 170;  // offset for nodes - large distance from origin
+		var yoffdl = 200; // offset for Bezier curve control points - doubly large distance from origin
 
 
 		while (more_paths.length > 0) {
@@ -2713,14 +2708,14 @@ window.GML = {
 							bgcolor = high_bg_color;
 						}
 
-						sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="2" style="fill:' + highcolor + '" />';
-						sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="1.8" style="fill:' + bgcolor + '" />';
-						sout += '<text x="' + xoff + '" y="' + (yoffl+1) +
+						sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="20" style="fill:' + highcolor + '" />';
+						sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="18" style="fill:' + bgcolor + '" />';
+						sout += '<text x="' + xoff + '" y="' + (yoffl+10) +
 								'" text-anchor="middle" style="fill:' + highcolor + '">' +
 								auto[path[i]].c + '</text>';
 
 						if (showPrefixes || this.show_auto_i) {
-							sout += '<text class="prefix" x="' + xoff + '" y="' + (yoffl-2.2) +
+							sout += '<text class="prefix" x="' + xoff + '" y="' + (yoffl-22) +
 									'" text-anchor="middle" style="fill:' + highcolor + '">';
 							if (showPrefixes) {
 								sout += auto[path[i]].f;
@@ -2742,8 +2737,8 @@ window.GML = {
 								marker_kind = '_extra';
 							}
 
-							sout += '<path d="M' + (xoff_start + 0.3) + ',' + yoff + ' Q' + (xoff_start + 1) + ',' + yoffl + ' ' + (xoff - 2.5) + ',' + yoffl + '" ';
-							sout += 'style="stroke: ' + strokecolor + '; stroke-width: 0.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
+							sout += '<path d="M' + (xoff_start + 3) + ',' + yoff + ' Q' + (xoff_start + 10) + ',' + yoffl + ' ' + (xoff - 25) + ',' + yoffl + '" ';
+							sout += 'style="stroke: ' + strokecolor + '; stroke-width: 2.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
 							sout += '/>';
 						}
 
@@ -2755,8 +2750,8 @@ window.GML = {
 								marker_kind = '_extra';
 							}
 
-							sout += '<path d="M' + (xoff + 2.5) + ',' + yoffl + ' L' + (xoffnext - 2.5) + ',' + yoffl + '" ';
-							sout += 'style="stroke: ' + strokecolor + '; stroke-width: 0.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
+							sout += '<path d="M' + (xoff + 25) + ',' + yoffl + ' L' + (xoffnext - 25) + ',' + yoffl + '" ';
+							sout += 'style="stroke: ' + strokecolor + '; stroke-width: 2.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
 							sout += '/>';
 						} else {
 							var strokecolor = default_color;
@@ -2766,8 +2761,8 @@ window.GML = {
 								marker_kind = '_extra';
 							}
 
-							sout += '<path d="M' + (xoff + 2.5) + ',' + yoffl + ' Q' + (xoff_end - 1) + ',' + yoffl + ' ' + (xoff_end - 0.3) + ',' + yoff + '" ';
-							sout += 'style="stroke: ' + strokecolor + '; stroke-width: 0.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
+							sout += '<path d="M' + (xoff + 25) + ',' + yoffl + ' Q' + (xoff_end - 10) + ',' + yoffl + ' ' + (xoff_end - 3) + ',' + yoff + '" ';
+							sout += 'style="stroke: ' + strokecolor + '; stroke-width: 2.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
 							sout += '/>';
 						}
 					}
@@ -2787,28 +2782,82 @@ window.GML = {
 						marker_kind = '_extra';
 					}
 
-					sout += '<path d="M' + (xoff_start + 1) + ',' + yoff + ' Q' + xoff_mid + ',' + yoffdl + ' ' + (xoff_end - 1) + ',' + yoff + '" ';
-					sout += 'style="stroke: ' + strokecolor + '; stroke-width: 0.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
+					sout += '<path d="M' + (xoff_start + 10) + ',' + yoff + ' Q' + xoff_mid + ',' + yoffdl + ' ' + (xoff_end - 10) + ',' + yoff + '" ';
+					sout += 'style="stroke: ' + strokecolor + '; stroke-width: 2.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
 					sout += '/>';
 				}
 
 				// alternate!
-				if (showPrefixes) {
-					if (yoff < 50) {
-						yoff = 52.5;
-					} else {
-						yoff = 46.25;
-					}
+				if (showPrefixes || this.show_auto_i) {
+					yoff = 190 - yoff;
 				} else {
-					yoff = 100 - yoff;
+					yoff = 200 - yoff;
 				}
-				yoffl = 100 - yoffl;
-				yoffdl = 100 - yoffdl;
+				yoffl = 200 - yoffl;
+				yoffdl = 200 - yoffdl;
 			}
 		}
 
 
+		var vByoff = '0';
+		if (showPrefixes || this.show_auto_i) {
+			vByoff = '-5';
+		}
+
+		var sprev = '<div';
+		sprev += ' style="overflow-x:auto;text-align:center;"';
+		sprev += '>';
+
+		sprev += '<svg ';
+		sprev += 'style="width:' + (mainrow.length * 100) + 'px;height:200px" ';
+		sprev += 'xmlns="http:/' + '/www.w3.org/2000/svg" version="1.1"' +
+				 'viewBox="0 ' + vByoff;
+		sprev += ' ' + (mainrow.length * 100) + ' 200" preserveAspectRatio="xMidYMid slice">';
+
+		sprev += '<style type="text/css">';
+
+		sprev += '* {';
+			sprev += 'color:#000;';
+			sprev += 'font-family:Calibri,Candara,Segoe,Segoe UI,Optima,Arial,sans-serif;';
+			sprev += 'line-height:22px;';
+			sprev += 'font-style:normal;';
+			sprev += 'font-weight:500;';
+		sprev += '}';
+
+		sprev += 'text, text > tspan {';
+			sprev += 'font-size:30px;';
+		sprev += '}';
+
+		sprev += 'text.prefix, text.prefix > tspan {';
+			sprev += 'font-size:15px;';
+		sprev += '}';
+
+		/* subscript */
+		sprev += 'text > tspan.d {';
+		sprev += 'font-size:20px;';
+		sprev += '}';
+		sprev += 'text.prefix > tspan.d {';
+			sprev += 'font-size:10px;';
+		sprev += '}';
+
+		/* superscript */
+		sprev += 'text > tspan.u {';
+			sprev += 'font-size:20px;';
+		sprev += '}';
+		sprev += 'text.prefix > tspan.u {';
+			sprev += 'font-size:10px;';
+		sprev += '}';
+
+		sprev += '</style>';
+
+		sprev += '<rect x="0" y="' + vByoff + '" width="' + (mainrow.length * 100) + '" ' +
+				 'height="200" style="fill:#FFF" />';
+
+		sout = sprev + sout;
+
 		sout += '</svg>';
+
+		sout += '</div>';
 
 
 		while (sout.indexOf(this.DS_1_o) > -1) {
@@ -2817,6 +2866,11 @@ window.GML = {
 		while (sout.indexOf(this.DK_1_o) > -1) {
 			sout = sout.replace(this.DK_1_o, this.DK_1_t);
 		}
+
+		sout = '<div class="svg_btn" style="right:95px" ' +
+			   'onclick="GML_UI.saveSVG(' + (this.hide_counter + 1) + ')">' +
+			   	'<span>Save</span></div>' +
+			   	sout;
 
 		sout = this.hideWrap(sout, 'Graph');
 
@@ -2874,6 +2928,61 @@ window.GML = {
 		sout = sout.replace(/\^/g, '#');
 
 		return sout;
+	},
+
+
+
+	// takes in nothing
+	// gives out a string containing a pseudo-random graph string
+	//   (the graph string is actually not very random at all; instead
+	//   it will only contain very basic graphs)
+	generateRandomGraphString: function() {
+
+		var gstr = '';
+
+		// get a mainrow between 5 and 25 characters in length
+		var mainrow_length = 5 + Math.floor(Math.random() * 20);
+
+		var alphabet = ['A', 'C', 'G', 'T'];
+
+		// add that many random characters
+		for (var i=0; i < mainrow_length; i++) {
+			gstr += alphabet[Math.floor(Math.random() * 4)];
+		}
+
+		// add a random about of infostrings, if any
+		var delimiter = '|';
+
+		// 80% chance to add at least one infoblock
+		var threshold = 0.8;
+
+		while (Math.random() < threshold) {
+
+			// delimiter to previous infoblock (or to main row)
+			gstr += delimiter;
+			delimiter = ';';
+
+			// 50% chance to add another infoblock
+			threshold = 0.5;
+
+			// own designation
+			gstr += ',';
+
+			// origin
+			gstr += (1 + Math.floor(Math.random() * mainrow_length)) + ',';
+
+			// characters along path
+			var path_length = Math.floor(Math.random() * 5);
+			for (var i=0; i < path_length; i++) {
+				gstr += alphabet[Math.floor(Math.random() * 4)];
+			}
+			gstr += ',';
+
+			// target
+			gstr += (1 + Math.floor(Math.random() * mainrow_length));
+		}
+
+		return gstr;
 	},
 
 
@@ -2973,14 +3082,16 @@ window.GML = {
 			var p2 = path[2];
 			var p3 = path[3];
 
+			// if no path identifier is specified for the origin, use the main path
 			if (p1.indexOf(':') < 0) {
-				p1 = '0:' + p1;
+				p1 = 'mp:' + p1;
 			}
 			p1 = p1.split(':');
 			var p11 = parseInt(p1[1], 10);
 
+			// if no path identifier is specified for the target, use the main path
 			if (p3.indexOf(':') < 0) {
-				p3 = '0:' + p3;
+				p3 = 'mp:' + p3;
 			}
 			p3 = p3.split(':');
 			var p31 = parseInt(p3[1], 10);

@@ -1450,8 +1450,9 @@ GML.make_xbw_environment = function() {
 
 			var alph_and_C_str = this.get_alph_and_C_str();
 
-			sout += 'The alphabet that we are considering is &#931; = ' + alph_and_C_str[0] + ' and ' +
-					'the <i>C</i> array is ' + alph_and_C_str[1] + '.<br>';
+			sout += 'The alphabet that we are considering is <code>&#931; = ' + alph_and_C_str[0] +
+					'</code> and ' +
+					'the <i>C</i> array is <code>' + alph_and_C_str[1] + '</code>.<br>';
 
 			var shide = '<div class="table_box" id="div-xbw-' + tab + '-env-table">' +
 						'</div>';
@@ -1466,7 +1467,7 @@ GML.make_xbw_environment = function() {
 					'</div>';
 
 			if (GML.verbosity > 9) {
-				sout += "Let's use the XBW to search for some string using find(), or go for the navigation functions directly:";
+				sout += "Let's use the XBW to search for some string using <code>find()</code>, or go for the navigation functions directly:";
 			}
 
 			sout += '</div>';

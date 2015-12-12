@@ -2969,7 +2969,8 @@ window.GML = {
 			gstr += ',';
 
 			// origin
-			gstr += (1 + Math.floor(Math.random() * mainrow_length)) + ',';
+			var orig = 1 + Math.floor(Math.random() * mainrow_length);
+			gstr += orig + ',';
 
 			// characters along path
 			var path_length = Math.floor(Math.random() * 5);
@@ -2978,8 +2979,12 @@ window.GML = {
 			}
 			gstr += ',';
 
-			// target
-			gstr += (1 + Math.floor(Math.random() * mainrow_length));
+			// target - recalculated until it is not before origin, as we do not handle loops well
+			var targ = -1;
+			while (targ < orig) {
+				targ = 1 + Math.floor(Math.random() * mainrow_length);
+			}
+			gstr += targ;
 		}
 
 		return gstr;

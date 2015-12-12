@@ -208,6 +208,7 @@ table {
 	border: 1px solid rgb(0, 0, 0);
 	box-shadow:0px 0px 5px 0px rgba(0, 0, 0, 0.8);
 	margin-top:16px;
+	overflow-x:auto;
 }
 
 /* position texts with indices just like other texts */
@@ -335,29 +336,3 @@ div.svg_btn {
 	line-height:20px;
 	padding:0px 4px;
 }
-
-/*
-svg > text, svg > text > tspan {
-	font-size:30px;
-}
-
-svg > text.prefix, svg > text.prefix > tspan {
-	font-size:15px;
-}
-
-
-svg > text > tspan.d {
-	font-size:20px;
-}
-svg > text.prefix > tspan.d {
-	font-size:10px;
-}
-
-
-svg > text > tspan.u {
-	font-size:20px;
-}
-svg > text.prefix > tspan.u {
-	font-size:10px;
-}
-*/

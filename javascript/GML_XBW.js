@@ -1600,7 +1600,7 @@ GML.make_xbw_environment = function() {
 
 			sout += '<tr>';
 			sout += GML.arr_to_extra_high_str(pchar, highlight_arr[2], extra_highlight_arr[2]);
-			sout += '<td>First Column</td></tr>';
+			sout += '<td>First&nbsp;Column</td></tr>';
 
 			sout += '<tr class="barless">';
 			sout += GML.arr_to_extra_high_str(pM, highlight_arr[3], extra_highlight_arr[3]);

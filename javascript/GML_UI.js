@@ -261,7 +261,8 @@ window.GML_UI = {
 		'<li>Each infoblock contains exactly four parts, separated by commas, ' +
 		'e.g. <code>ACA|1,2,3,4;1,2,3,4;1,2,3,4</code>.' +
 		'<ol>' +
-		'<li>The first part is the identifier of the path (it can be empty).</li>' +
+		'<li>The first part is the identifier of the path, which can contain letters and underscores, ' +
+		'as well as numbers in any position but the first. The identifier can also be left empty.</li>' +
 		'<li>The second part is the origin of the path, containing the identifier of the path ' +
 		'on which this one originates followed by <code>:</code> and the position in that path ' +
 		'on which it originates - the identifier of the main path ' +
@@ -271,6 +272,12 @@ window.GML_UI = {
 		'eighth position on the main path, ' +
 		'but <code>path9:8</code> for the eighth position on a path with the identifer ' +
 		'<code>path9</code>.<br>' +
+		// TODO :: the following restriction came into place because otherwise
+		// self-referential infoblocks might make it really hard to build the path
+		// as automaton... however, it would be great if we could drop this restriction.
+		'Identifiers need to be defined before they can be used, that is, ' +
+		'<code>AC|a,1,G,2;,a:0,C,3</code> is valid, while ' +
+		'<code>AC|,a:0,C,3;a,1,G,2</code> is not valid.<br>' +
 		'(The counting starts at the specified array offset, ' +
 		'so with array offset of 0 the hash tag symbol on the main path would be <code>mp:0</code> ' +
 		'and the first alphabetical character on the main path would be <code>mp:1</code>, ' +

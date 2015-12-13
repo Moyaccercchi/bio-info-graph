@@ -2988,12 +2988,29 @@ window.GML = {
 
 			for (var i=0; i < possible_infoblocks.length; i++) {
 				if (possible_infoblocks[i] !== '') {
-					var b = possible_infoblocks[i].split(',');
+
+					var sp, b = possible_infoblocks[i].split(',');
+
 					if (b.length !== 4) {
 						this.error_flag = true;
 					}
-					b[1] -= this.ao;
-					b[3] -= this.ao;
+
+					sp = b[1];
+					// if no path identifier is specified for the origin, use the main path
+					if (sp.indexOf(':') < 0) {
+						sp = 'mp:' + sp;
+					}
+					sp = sp.split(':');
+					b[1] = sp[0] + ':' + (sp[1] - this.ao);
+
+					sp = b[3];
+					// if no path identifier is specified for the origin, use the main path
+					if (sp.indexOf(':') < 0) {
+						sp = 'mp:' + sp;
+					}
+					sp = sp.split(':');
+					b[3] = sp[0] + ':' + (sp[1] - this.ao);
+
 					infoblocks.push(b.join(','));
 				}
 			}
@@ -3039,37 +3056,36 @@ window.GML = {
 		// last node: dollarsign
 		auto.push({c: this.DS, p: [ha.length-2], n: []});
 
+		var path_identifiers_to_nodes = {'mp': 0};
+
 		// add paths of the graph
 		for (var i = 0; i < h_graph.length; i++) {
 			var path = h_graph[i].split(',');
 
-			// TODO :: make this work for named paths too
-			// (currently, the name in p0 and before : in p1 and p3 is just ignored
-			// and everything is applied to the main row)
-
+			var p0 = path[0];
 			var p1 = path[1];
 			var p2 = path[2];
 			var p3 = path[3];
 
-			// if no path identifier is specified for the origin, use the main path
-			if (p1.indexOf(':') < 0) {
-				p1 = 'mp:' + p1;
-			}
+			console.log('p1: ' + p1);
 			p1 = p1.split(':');
 			var p11 = parseInt(p1[1], 10);
+			console.log('p11: ' + p11 + ' path_identifiers_to_nodes[p1[0]]: ' + path_identifiers_to_nodes[p1[0]] + ' = ' + (p11 + path_identifiers_to_nodes[p1[0]]));
+			p11 += path_identifiers_to_nodes[p1[0]];
 
-			// if no path identifier is specified for the target, use the main path
-			if (p3.indexOf(':') < 0) {
-				p3 = 'mp:' + p3;
-			}
 			p3 = p3.split(':');
 			var p31 = parseInt(p3[1], 10);
+			p31 += path_identifiers_to_nodes[p3[0]];
 
 			if (path[2].length === 0) {
 				auto[p11].n.push(p31);
 				auto[p31].p.push(p11);
 			} else {
 				var firstNew = auto.length;
+
+				if (p0 !== '') {
+					path_identifiers_to_nodes[p0] = auto.length;
+				}
 
 				for (var j = 0; j < p2.length; j++) {
 					auto.push({
@@ -3086,6 +3102,12 @@ window.GML = {
 				auto[lastNew].n = [p31];
 
 				// update prev and new info for nodes on main row
+				console.log(auto);
+				console.log(path_identifiers_to_nodes);
+				console.log('p1[0]: ' + p1[0]);
+				console.log(path_identifiers_to_nodes[p1[0]]);
+				console.log('p11: ' + p11);
+				console.log('p31: ' + p31);
 				auto[p11].n.push(firstNew);
 				auto[p31].p.push(lastNew);
 			}

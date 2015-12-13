@@ -174,14 +174,17 @@
 		<div class="no_select">
 			<span onmousedown="GML_UI.changeOptions_verbosity_mouse(event, true)" onmouseup="GML_UI.changeOptions_verbosity_mouse(false)" onmousemove="GML_UI.changeOptions_verbosity_move(event)" id="in-options-verbosity" style="cursor:pointer" class="our_slider"><span id="in-options-verbosity-inner" style="width:100%">&nbsp;</span></span> Verbosity: <span id="verbosity-out">tell me everything</span></b>
 		</div>
-		<div onclick="GML_UI.changeOptions_show_xbw_envs()" style="cursor:pointer">
+		<div onclick="GML_UI.changeOptions_checkbox('in-options-show-xbw-envs')" style="cursor:pointer">
 			<span id="in-options-show-xbw-envs" class="our_checkbox">X</span> Show XBW environments</b>
 		</div>
 		<div onclick="GML_UI.changeOptions_show_graph()" style="cursor:pointer">
 			<span id="in-options-show-graph" class="our_checkbox">&nbsp;</span> Show tab for na&iuml;ve graph functionality <b id="show-graph-info-text" style="display:none">(which has been discontinued)</b>
 		</div>
-		<div onclick="GML_UI.changeOptions_show_autoi()" style="cursor:pointer">
+		<div onclick="GML_UI.changeOptions_checkbox('in-options-show-autoi')" style="cursor:pointer">
 			<span id="in-options-show-autoi" class="our_checkbox">&nbsp;</span> Show auto <i>i</i> above automaton nodes
+		</div>
+		<div onclick="GML_UI.changeOptions_checkbox('in-options-svg-font-latex')" style="cursor:pointer">
+			<span id="in-options-svg-font-latex" class="our_checkbox">X</span> When saving SVG files, use Times New Roman as LaTeX-like font</b>
 		</div>
 		<div>
 			The first element of any string and array is obviously <input id="in-options-array-offset" type="text" value="0" class="in-text-input" onchange="GML_UI.animateApplyBtn(true)" onkeyup="GML_UI.animateApplyBtn(true)"></input>.
@@ -290,12 +293,12 @@
 
 
 	<span class="creditline absleft">
-		GML, Version: 0.0.1.8
+		GML, Version: 0.0.1.9
 	</span>
 	<span class="creditline absright">
 		Moyaccercchi (tws@hi.is),
 		University of Iceland,
-		1<span class="u">st</span> Sep 2014 - 11<span class="u">th</span> Dec 2015
+		1<span class="u">st</span> Sep 2014 - 13<span class="u">th</span> Dec 2015
 	</span>
 
 	<script src="GML.js"></script>

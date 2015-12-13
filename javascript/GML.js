@@ -2588,7 +2588,7 @@ window.GML = {
 
 			sout += '<circle cx="' + xoff + '" cy="100" r="20" style="fill:' + highcolor + '" />';
 			sout += '<circle cx="' + xoff + '" cy="100" r="18" style="fill:' + bgcolor + '" />';
-			sout += '<text x="' + xoff + '" y="110" text-anchor="middle" style="fill:' + highcolor + '">' +
+			sout += '<text x="' + xoff + '" y="110" text-anchor="middle" style="fill:' + highcolor + ';">' +
 					auto[i].c + '</text>';
 
 			if (showPrefixes || this.show_auto_i) {
@@ -2711,7 +2711,7 @@ window.GML = {
 						sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="20" style="fill:' + highcolor + '" />';
 						sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="18" style="fill:' + bgcolor + '" />';
 						sout += '<text x="' + xoff + '" y="' + (yoffl+10) +
-								'" text-anchor="middle" style="fill:' + highcolor + '">' +
+								'" text-anchor="middle" style="fill:' + highcolor + ';">' +
 								auto[path[i]].c + '</text>';
 
 						if (showPrefixes || this.show_auto_i) {
@@ -2813,42 +2813,6 @@ window.GML = {
 		sprev += 'xmlns="http:/' + '/www.w3.org/2000/svg" version="1.1"' +
 				 'viewBox="0 ' + vByoff;
 		sprev += ' ' + (mainrow.length * 100) + ' 200" preserveAspectRatio="xMidYMid slice">';
-
-		sprev += '<style type="text/css">';
-
-		sprev += '* {';
-			sprev += 'color:#000;';
-			sprev += 'font-family:Calibri,Candara,Segoe,Segoe UI,Optima,Arial,sans-serif;';
-			sprev += 'line-height:22px;';
-			sprev += 'font-style:normal;';
-			sprev += 'font-weight:500;';
-		sprev += '}';
-
-		sprev += 'text, text > tspan {';
-			sprev += 'font-size:30px;';
-		sprev += '}';
-
-		sprev += 'text.prefix, text.prefix > tspan {';
-			sprev += 'font-size:15px;';
-		sprev += '}';
-
-		/* subscript */
-		sprev += 'text > tspan.d {';
-		sprev += 'font-size:20px;';
-		sprev += '}';
-		sprev += 'text.prefix > tspan.d {';
-			sprev += 'font-size:10px;';
-		sprev += '}';
-
-		/* superscript */
-		sprev += 'text > tspan.u {';
-			sprev += 'font-size:20px;';
-		sprev += '}';
-		sprev += 'text.prefix > tspan.u {';
-			sprev += 'font-size:10px;';
-		sprev += '}';
-
-		sprev += '</style>';
 
 		sprev += '<rect x="0" y="' + vByoff + '" width="' + (mainrow.length * 100) + '" ' +
 				 'height="200" style="fill:#FFF" />';

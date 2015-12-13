@@ -6,7 +6,7 @@
 
 * {
 	color:#000;
-	font-family:Calibri,Candara,Segoe,Segoe UI,Optima,Arial,sans-serif; 
+	font-family:Calibri,Candara,Segoe,Segoe UI,Optima,Arial,sans-serif;
 	font-size:15px;
 	line-height:22px;
 	font-style:normal;
@@ -320,6 +320,30 @@ div.working {
 
 
 /* SVG */
+
+svg > text, svg > text > tspan {
+	font-size:30px;
+}
+
+svg > text.prefix, svg > text.prefix > tspan {
+	font-size:15px;
+}
+
+/* subscript */
+svg > text > tspan.d {
+	font-size:20px;
+}
+svg > text.prefix > tspan.d {
+	font-size:10px;
+}
+
+/* superscript */
+svg > text > tspan.u {
+	font-size:20px;
+}
+svg > text.prefix > tspan.u {
+	font-size:10px;
+}
 
 div.svg_container {
 	position:relative;

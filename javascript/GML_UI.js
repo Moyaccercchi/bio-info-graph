@@ -492,12 +492,75 @@ window.GML_UI = {
 	},
 
 
+
+	svg_font_latex: true,
+
 	saveSVG: function(whichOne) {
 
 		var svg = document.getElementById("hide-cont-" + whichOne).getElementsByTagName('svg')[0];
 
 		var serializer = new XMLSerializer();
 		var source = serializer.serializeToString(svg);
+
+
+
+		// if we use a LaTeX-compatible font (like Times New Roman), then we want to
+		// replace # by bold #, as the regular # in Times New Roman is veeery narrow
+		if (this.svg_font_latex) {
+			while (source.indexOf('">#</text>') > -1) {
+				source = source.replace(
+					'">#</text>',
+					'"><tspan style="font-weight:bold;">#</tspan></text>'
+				);
+			}
+		}
+
+
+		// add CSS so that the SVG file can stand on its own
+
+		var sprev = '<style type="text/css">';
+
+		sprev += '* {';
+			sprev += 'color:#000;';
+			if (this.svg_font_latex) {
+				sprev += 'font-family:Times New Roman,serif;';
+			} else {
+				sprev += 'font-family:Calibri,Candara,Segoe,Segoe UI,Optima,Arial,sans-serif;';
+			}
+			sprev += 'line-height:22px;';
+			sprev += 'font-style:normal;';
+			sprev += 'font-weight:500;';
+		sprev += '}';
+
+		sprev += 'text, text > tspan {';
+			sprev += 'font-size:30px;';
+		sprev += '}';
+
+		sprev += 'text.prefix, text.prefix > tspan {';
+			sprev += 'font-size:15px;';
+		sprev += '}';
+
+		/* subscript */
+		sprev += 'text > tspan.d {';
+		sprev += 'font-size:20px;';
+		sprev += '}';
+		sprev += 'text.prefix > tspan.d {';
+			sprev += 'font-size:10px;';
+		sprev += '}';
+
+		/* superscript */
+		sprev += 'text > tspan.u {';
+			sprev += 'font-size:20px;';
+		sprev += '}';
+		sprev += 'text.prefix > tspan.u {';
+			sprev += 'font-size:10px;';
+		sprev += '}';
+
+		sprev += '</style>';
+
+
+		source = source.slice(0, source.indexOf('>')+1) + sprev + source.slice(source.indexOf('>')+1);
+
 
 		source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
 
@@ -572,9 +635,9 @@ window.GML_UI = {
 			this.animateApplyBtn(true);
 	},
 
-	changeOptions_show_xbw_envs: function() {
+	changeOptions_checkbox: function(checkbox_id) {
 
-		var el = document.getElementById('in-options-show-xbw-envs');
+		var el = document.getElementById(checkbox_id);
 
 		if (el.innerHTML == 'X') {
 			el.innerHTML = '&nbsp;';
@@ -596,19 +659,6 @@ window.GML_UI = {
 		} else {
 			el.innerHTML = 'X';
 			it.style.display = 'inline';
-		}
-
-		this.animateApplyBtn(true);
-	},
-
-	changeOptions_show_autoi: function() {
-
-		var el = document.getElementById('in-options-show-autoi');
-
-		if (el.innerHTML == 'X') {
-			el.innerHTML = '&nbsp;';
-		} else {
-			el.innerHTML = 'X';
 		}
 
 		this.animateApplyBtn(true);
@@ -681,6 +731,8 @@ window.GML_UI = {
 		document.getElementById('in-options-show-graph').innerHTML = '&nbsp;';
 		document.getElementById('in-options-show-autoi').innerHTML = '&nbsp;';
 
+		document.getElementById('in-options-svg-font-latex').innerHTML = 'X';
+
 		this.changeOptions_verbosity_compwidth = 100;
 
 		this.applyOptions();
@@ -719,6 +771,8 @@ window.GML_UI = {
 		for (var i=0; i < env_links.length; i++) {
 			env_links[i].style.display = env_disp;
 		}
+
+		GML_UI.svg_font_latex = document.getElementById('in-options-svg-font-latex').innerHTML == 'X';
 
 		this.changeOptions_verbosity_update();
 

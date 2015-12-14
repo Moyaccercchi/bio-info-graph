@@ -740,6 +740,8 @@ window.GML_UI = {
 		document.getElementById('in-options-show-xbw-envs').innerHTML = 'X';
 		document.getElementById('in-options-show-graph').innerHTML = '&nbsp;';
 		document.getElementById('in-options-show-autoi').innerHTML = '&nbsp;';
+		document.getElementById('in-options-show-hashtag').innerHTML = 'X';
+		document.getElementById('in-options-show-dollarsign').innerHTML = 'X';
 
 		document.getElementById('in-options-svg-font-latex').innerHTML = 'X';
 
@@ -783,6 +785,9 @@ window.GML_UI = {
 		}
 
 		GML_UI.svg_font_latex = document.getElementById('in-options-svg-font-latex').innerHTML == 'X';
+
+		GML.vis_show_hashtag = document.getElementById('in-options-show-hashtag').innerHTML == 'X';
+		GML.vis_show_dollarsign = document.getElementById('in-options-show-dollarsign').innerHTML == 'X';
 
 		this.changeOptions_verbosity_update();
 

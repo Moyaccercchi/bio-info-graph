@@ -2488,6 +2488,10 @@ window.GML = {
 	vis_tableToP12: [],
 	vis_p12ToAuto: [],
 
+	// by changing these values we can hide the first and/or last nodes from the visualization
+	vis_show_hashtag: true,
+	vis_show_dollarsign: true,
+
 
 
 	// takes in an automaton, a boolean parameter (whether to show the prefixes
@@ -2594,60 +2598,62 @@ window.GML = {
 			xoffnext = 50 + (100 * (j+1));
 			positions[i] = xoff;
 
-			var highcolor = default_color;
-			var bgcolor = default_bg_color;
-			if (extra_high_nodes.indexOf(i) >= 0) {
-				highcolor = extra_color;
-				bgcolor = extra_bg_color;
-			}
-			if (highlight_p12.indexOf(auto[i].f) >= 0) {
-				highcolor = high_color;
-				bgcolor = high_bg_color;
-			}
-
-			sout += '<circle cx="' + xoff + '" cy="100" r="' + node_radius_outer + '" style="fill:' + highcolor + '" />';
-			sout += '<circle cx="' + xoff + '" cy="100" r="' + node_radius_inner + '" style="fill:' + bgcolor + '" />';
-			sout += '<text x="' + xoff + '" y="110" text-anchor="middle" style="fill:' + highcolor + ';">' +
-					auto[i].c + '</text>';
-
-			if (showPrefixes || this.show_auto_i) {
-
-				// adjust viewport size to also show the text above the nodes
-				if (y_start_at > y_start_cur - y_text_off) {
-					y_start_at = y_start_cur - y_text_off;
+			if (((j > 0) || (this.vis_show_hashtag)) && ((j < hlen-1) || (this.vis_show_dollarsign))) {
+				var highcolor = default_color;
+				var bgcolor = default_bg_color;
+				if (extra_high_nodes.indexOf(i) >= 0) {
+					highcolor = extra_color;
+					bgcolor = extra_bg_color;
+				}
+				if (highlight_p12.indexOf(auto[i].f) >= 0) {
+					highcolor = high_color;
+					bgcolor = high_bg_color;
 				}
 
-				sout += '<text class="prefix" x="' + xoff +
-						'" y="78" text-anchor="middle" style="fill:' + highcolor + '">';
-				if (showPrefixes) {
-					sout += auto[i].f;
-					if (this.show_auto_i) {
-						sout += ', ';
+				sout += '<circle cx="' + xoff + '" cy="100" r="' + node_radius_outer + '" style="fill:' + highcolor + '" />';
+				sout += '<circle cx="' + xoff + '" cy="100" r="' + node_radius_inner + '" style="fill:' + bgcolor + '" />';
+				sout += '<text x="' + xoff + '" y="110" text-anchor="middle" style="fill:' + highcolor + ';">' +
+						auto[i].c + '</text>';
+
+				if (showPrefixes || this.show_auto_i) {
+
+					// adjust viewport size to also show the text above the nodes
+					if (y_start_at > y_start_cur - y_text_off) {
+						y_start_at = y_start_cur - y_text_off;
 					}
+
+					sout += '<text class="prefix" x="' + xoff +
+							'" y="78" text-anchor="middle" style="fill:' + highcolor + '">';
+					if (showPrefixes) {
+						sout += auto[i].f;
+						if (this.show_auto_i) {
+							sout += ', ';
+						}
+					}
+					if (this.show_auto_i) {
+						sout += (i + this.ao);
+					}
+					sout += '</text>';
 				}
-				if (this.show_auto_i) {
-					sout += (i + this.ao);
+
+				var strokecolor = default_color;
+				var marker_kind = '';
+				if (extra_high_edges.indexOf(i + '_' + mainrow[j+1]) >= 0) {
+					strokecolor = extra_color;
+					marker_kind = '_extra';
 				}
-				sout += '</text>';
-			}
 
-			var strokecolor = default_color;
-			var marker_kind = '';
-			if (extra_high_edges.indexOf(i + '_' + mainrow[j+1]) >= 0) {
-				strokecolor = extra_color;
-				marker_kind = '_extra';
-			}
+				if ((j < hlen-1) && ((j < hlen-2) || this.vis_show_dollarsign)) {
+					sout += '<path d="M' + (xoff + 25) + ',100 L' + (xoffnext - 25) + ',100" ';
+					sout += 'style="stroke: ' + strokecolor + '; stroke-width: 2.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
+					sout += '/>';
+				}
 
-			if (auto[i].c !== this.DS) {
-				sout += '<path d="M' + (xoff + 25) + ',100 L' + (xoffnext - 25) + ',100" ';
-				sout += 'style="stroke: ' + strokecolor + '; stroke-width: 2.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
-				sout += '/>';
-			}
-
-			for (var k = 1; k < auto[i].n.length; k++) {
-				var addPath = auto[i].n[k];
-				if ((done_paths.indexOf(addPath) < 0) && (more_paths.indexOf(addPath) < 0)) {
-					more_paths.push(addPath);
+				for (var k = 1; k < auto[i].n.length; k++) {
+					var addPath = auto[i].n[k];
+					if ((done_paths.indexOf(addPath) < 0) && (more_paths.indexOf(addPath) < 0)) {
+						more_paths.push(addPath);
+					}
 				}
 			}
 		}

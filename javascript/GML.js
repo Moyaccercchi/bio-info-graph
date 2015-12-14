@@ -819,6 +819,9 @@ window.GML = {
 				sout += this.fe_findexToTable(findex, true);
 			}
 
+			/*
+			TODO EMRG :: taken out because it fails for ACGTAGATTTC|,7,,4
+
 			if (this.verbosity > 3) {
 
 				var auto = this.getAutomatonFromFindex(findex);
@@ -828,6 +831,7 @@ window.GML = {
 
 				sout += this.visualize(auto, true);
 			}
+			*/
 
 			if (this.verbosity > 2) {
 
@@ -2503,7 +2507,22 @@ window.GML = {
 
 		var extra_high_nodes = [];
 		var extra_high_edges = [];
- 
+
+		var node_radius_outer = 20; // outer radius of a node
+		var node_radius_inner = node_radius_outer * 0.9; // inner radius - the line itself is 10% wide
+
+		// the height of text displayed above a node is 14
+		var y_text_off = 14;
+
+		// we start showing the mainrow at y = 100, and each node has a radius of 20,
+		// we start with a display window between y = 80 and y = 120
+		var y_start_cur = 80;
+		var y_end_cur = 120;
+
+		// keep track of how much of the output is visible vertically
+		var y_start_at = y_start_cur;
+		var y_end_at = y_end_cur;
+
 		if (show_vis_hl && (this.vis_highlight_nodes.length > 0) && (this.vis_highlight_nodes[0].length > 0)) {
 			
 			for (var j=0; j < this.vis_highlight_nodes.length; j++) {
@@ -2586,12 +2605,18 @@ window.GML = {
 				bgcolor = high_bg_color;
 			}
 
-			sout += '<circle cx="' + xoff + '" cy="100" r="20" style="fill:' + highcolor + '" />';
-			sout += '<circle cx="' + xoff + '" cy="100" r="18" style="fill:' + bgcolor + '" />';
+			sout += '<circle cx="' + xoff + '" cy="100" r="' + node_radius_outer + '" style="fill:' + highcolor + '" />';
+			sout += '<circle cx="' + xoff + '" cy="100" r="' + node_radius_inner + '" style="fill:' + bgcolor + '" />';
 			sout += '<text x="' + xoff + '" y="110" text-anchor="middle" style="fill:' + highcolor + ';">' +
 					auto[i].c + '</text>';
 
 			if (showPrefixes || this.show_auto_i) {
+
+				// adjust viewport size to also show the text above the nodes
+				if (y_start_at > y_start_cur - y_text_off) {
+					y_start_at = y_start_cur - y_text_off;
+				}
+
 				sout += '<text class="prefix" x="' + xoff +
 						'" y="78" text-anchor="middle" style="fill:' + highcolor + '">';
 				if (showPrefixes) {
@@ -2708,13 +2733,27 @@ window.GML = {
 							bgcolor = high_bg_color;
 						}
 
-						sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="20" style="fill:' + highcolor + '" />';
-						sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="18" style="fill:' + bgcolor + '" />';
+						// adjust viewport size
+						if (y_start_at > yoffl - node_radius_outer) {
+							y_start_at = yoffl - node_radius_outer;
+						}
+						if (y_end_at < yoffl + node_radius_outer) {
+							y_end_at = yoffl + node_radius_outer;
+						}
+
+						sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="' + node_radius_outer + '" style="fill:' + highcolor + '" />';
+						sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="' + node_radius_inner + '" style="fill:' + bgcolor + '" />';
 						sout += '<text x="' + xoff + '" y="' + (yoffl+10) +
 								'" text-anchor="middle" style="fill:' + highcolor + ';">' +
 								auto[path[i]].c + '</text>';
 
 						if (showPrefixes || this.show_auto_i) {
+
+							// adjust viewport size to also show the text above the nodes
+							if (y_start_at > yoffl - node_radius_outer - y_text_off) {
+								y_start_at = yoffl - node_radius_outer - y_text_off;
+							}
+
 							sout += '<text class="prefix" x="' + xoff + '" y="' + (yoffl-22) +
 									'" text-anchor="middle" style="fill:' + highcolor + '">';
 							if (showPrefixes) {
@@ -2782,7 +2821,26 @@ window.GML = {
 						marker_kind = '_extra';
 					}
 
-					sout += '<path d="M' + (xoff_start + 10) + ',' + yoff + ' Q' + xoff_mid + ',' + yoffdl + ' ' + (xoff_end - 10) + ',' + yoff + '" ';
+					// is the edge going forward or backwards?
+					if (xoff_end > xoff_start) {
+						xoff_start += 10;
+						xoff_end -= 10;
+					} else {
+						xoff_start -= 10;
+						xoff_end += 10;
+					}
+
+					var yoff_view = (yoff + yoffdl)/2;
+
+					// adjust viewport size
+					if (y_start_at > yoff_view) {
+						y_start_at = yoff_view;
+					}
+					if (y_end_at < yoff_view) {
+						y_end_at = yoff_view;
+					}
+
+					sout += '<path d="M' + xoff_start + ',' + yoff + ' Q' + xoff_mid + ',' + yoffdl + ' ' + xoff_end + ',' + yoff + '" ';
 					sout += 'style="stroke: ' + strokecolor + '; stroke-width: 2.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
 					sout += '/>';
 				}
@@ -2799,23 +2857,24 @@ window.GML = {
 		}
 
 
-		var vByoff = '0';
-		if (showPrefixes || this.show_auto_i) {
-			vByoff = '-5';
-		}
+		y_start_at -= 2;
+		y_end_at += 2;
+
+		var svgheight = y_end_at - y_start_at;
 
 		var sprev = '<div';
-		sprev += ' style="overflow-x:auto;text-align:center;"';
+		sprev += ' style="overflow-x:auto;text-align:center;padding-top:10px;"';
 		sprev += '>';
 
 		sprev += '<svg ';
-		sprev += 'style="width:' + (mainrow.length * 100) + 'px;height:200px" ';
+		sprev += 'style="width:' + (mainrow.length * 100) + 'px;height:' + svgheight + 'px" ';
 		sprev += 'xmlns="http:/' + '/www.w3.org/2000/svg" version="1.1"' +
-				 'viewBox="0 ' + vByoff;
-		sprev += ' ' + (mainrow.length * 100) + ' 200" preserveAspectRatio="xMidYMid slice">';
+				 'viewBox="0 ' + y_start_at;
+		sprev += ' ' + (mainrow.length * 100) + ' ' + svgheight +
+				 '" preserveAspectRatio="xMidYMid slice">';
 
-		sprev += '<rect x="0" y="' + vByoff + '" width="' + (mainrow.length * 100) + '" ' +
-				 'height="200" style="fill:#FFF" />';
+		sprev += '<rect x="0" y="' + y_start_at + '" width="' + (mainrow.length * 100) + '" ' +
+				 'height="' + svgheight + '" style="fill:#FFF" />';
 
 		sout = sprev + sout;
 

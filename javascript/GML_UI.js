@@ -90,7 +90,10 @@ window.GML_UI = {
 
 
 		el = document.getElementById('div-out-' + i);
-		el.innerHTML = '<div class="working">... working on your request ...</div>';
+		el.innerHTML = '<div class="working">Working on your request...<br><br>' +
+					   'If you see this message for a long time, you might want to ' +
+					   'refresh the page, reduce the verbosity in the options, ' +
+					   'and then restart the computation.</div>';
 		el.style.display = 'block';
 
 		this.div_out_visibility[i] = true;
@@ -264,13 +267,13 @@ window.GML_UI = {
 		'<li>The first part is the identifier of the path, which can contain letters and underscores, ' +
 		'as well as numbers in any position but the first. The identifier can also be left empty.</li>' +
 		'<li>The second part is the origin of the path, containing the identifier of the path ' +
-		'on which this one originates followed by <code>:</code> and the position in that path ' +
-		'on which it originates - the identifier of the main path ' +
-		'is <code>mp</code>, but in the special case of the main path the identifer and the ' +
+		'on which this one originates followed by <code>:</code> and the position within that path ' +
+		'at which it originates - the identifier of the main path ' +
+		'is <code>mp</code>, but in the special case of the main path the identifier and the ' +
 		'<code>:</code> can ' +
-		'be left out together, e.g. <code>mp:8</code> or just <code>8</code> for the ' +
-		'eighth position on the main path, ' +
-		'but <code>path9:8</code> for the eighth position on a path with the identifer ' +
+		'be left out together, e.g. <code>mp:8</code> or just <code>8</code> for ' +
+		'position eight on the main path, ' +
+		'but <code>path9:8</code> for position eight on a path with the identifier ' +
 		'<code>path9</code>.<br>' +
 		// TODO :: the following restriction came into place because otherwise
 		// self-referential infoblocks might make it really hard to build the path
@@ -284,7 +287,7 @@ window.GML_UI = {
 		'while the first alphabetical character on a path with the identifier <code>path9</code> ' +
 		'would be <code>path9:0</code>.<br>' +
 		'Assuming an array offset of 1, the hash tag symbol on the main path would be <code>mp:1</code> ' +
-		'while the first alphabetical character on the main path would be <code>mp:2</code>)' +
+		'while the first alphabetical character on the main path would be <code>mp:2</code>.)' +
 		'</li>' +
 		'<li>The third part is the content of the path (it can be empty), e.g. <code>TGC</code>.</li>' +
 		'<li>The fourth part is the target of the path, specified according to the same ' +
@@ -592,7 +595,7 @@ window.GML_UI = {
 	changeOptions_verbosity_move: function(e) {
 		if (this.changeOptions_verbosity_capture) {
 			var rect = document.getElementById('in-options-verbosity').getBoundingClientRect();
-			var compwidth = ((100 * (e.clientX - rect.x)) / rect.width);
+			var compwidth = ((100 * (e.clientX - rect.left)) / rect.width);
 
 			this.changeOptions_verbosity_compwidth = compwidth;
 

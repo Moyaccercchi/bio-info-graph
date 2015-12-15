@@ -2491,6 +2491,7 @@ window.GML = {
 	// by changing these values we can hide the first and/or last nodes from the visualization
 	vis_show_hashtag: true,
 	vis_show_dollarsign: true,
+	vis_alternate: true,
 
 
 
@@ -2528,9 +2529,9 @@ window.GML = {
 		var y_end_at = y_end_cur;
 
 		if (show_vis_hl && (this.vis_highlight_nodes.length > 0) && (this.vis_highlight_nodes[0].length > 0)) {
-			
+
 			for (var j=0; j < this.vis_highlight_nodes.length; j++) {
-				
+
 				// convert the first node using tableToP12 from table i to p12 i to auto i
 				extra_high_nodes.push(
 					this.vis_p12ToAuto[
@@ -2539,7 +2540,7 @@ window.GML = {
 						]
 					]
 				);
-				
+
 				// convert all other nodes just from p12 i to auto i
 				for (var i=1; i < this.vis_highlight_nodes[j].length; i++) {
 					extra_high_nodes.push(
@@ -2589,14 +2590,14 @@ window.GML = {
 		}
 		var hlen = mainrow.length;
 
-		var xoff, xoffnext;
+		var xoff, xoffnext, yoff = 100;
 
 		// iterate over main row
 		for (var j = 0; j < hlen; j++) {
 			var i = mainrow[j];
 			xoff = 50 + (100 * j);
 			xoffnext = 50 + (100 * (j+1));
-			positions[i] = xoff;
+			positions[i] = [xoff, yoff];
 
 			if (((j > 0) || (this.vis_show_hashtag)) && ((j < hlen-1) || (this.vis_show_dollarsign))) {
 				var highcolor = default_color;
@@ -2610,8 +2611,8 @@ window.GML = {
 					bgcolor = high_bg_color;
 				}
 
-				sout += '<circle cx="' + xoff + '" cy="100" r="' + node_radius_outer + '" style="fill:' + highcolor + '" />';
-				sout += '<circle cx="' + xoff + '" cy="100" r="' + node_radius_inner + '" style="fill:' + bgcolor + '" />';
+				sout += '<circle cx="' + xoff + '" cy="' + yoff + '" r="' + node_radius_outer + '" style="fill:' + highcolor + '" />';
+				sout += '<circle cx="' + xoff + '" cy="' + yoff + '" r="' + node_radius_inner + '" style="fill:' + bgcolor + '" />';
 				sout += '<text x="' + xoff + '" y="110" text-anchor="middle" style="fill:' + highcolor + ';">' +
 						auto[i].c + '</text>';
 
@@ -2678,10 +2679,136 @@ window.GML = {
 				j_init = 0;
 			}
 
+			var to = curNode_i;
+
+			if (positions[to] === undefined) {
+
+				// add (at least one) new node
+
+				var path = [curNode_i];
+				var nextNode_i = curNode.n[0];
+
+				while (positions[nextNode_i] === undefined) {
+					path.push(nextNode_i);
+					for (var k=1; k < auto[nextNode_i].n.length; k++) {
+						var addPath = auto[nextNode_i].n[k];
+						if ((done_paths.indexOf(addPath) < 0) && (more_paths.indexOf(addPath) < 0)) {
+							more_paths.push(addPath);
+						}
+					}
+					nextNode_i = auto[nextNode_i].n[0];
+				}
+
+				var plen = path.length;
+				xoff_start = positions[auto[path[0]].p[0]][0];
+				xoff_end = positions[auto[path[plen-1]].n[0]][0];
+				xoff_mid = (xoff_end + xoff_start) / 2;
+				var xoff_width = xoff_end - xoff_start;
+
+				for (var i = 0; i < plen; i++) {
+					xoff = xoff_mid+(xoff_width*(0.5+i - (plen / 2))/plen);
+					xoffnext = xoff_mid+(xoff_width*(1.5+i - (plen / 2))/plen);
+					positions[path[i]] = [xoff, yoffl];
+
+					var highcolor = default_color;
+					var bgcolor = default_bg_color;
+					if (extra_high_nodes.indexOf(path[i]) >= 0) {
+						highcolor = extra_color;
+						bgcolor = extra_bg_color;
+					}
+					if (highlight_p12.indexOf(auto[path[i]].f) >= 0) {
+						highcolor = high_color;
+						bgcolor = high_bg_color;
+					}
+
+					// adjust viewport size
+					if (y_start_at > yoffl - node_radius_outer) {
+						y_start_at = yoffl - node_radius_outer;
+					}
+					if (y_end_at < yoffl + node_radius_outer) {
+						y_end_at = yoffl + node_radius_outer;
+					}
+
+					sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="' + node_radius_outer + '" style="fill:' + highcolor + '" />';
+					sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="' + node_radius_inner + '" style="fill:' + bgcolor + '" />';
+					sout += '<text x="' + xoff + '" y="' + (yoffl+10) +
+							'" text-anchor="middle" style="fill:' + highcolor + ';">' +
+							auto[path[i]].c + '</text>';
+
+					if (showPrefixes || this.show_auto_i) {
+
+						// adjust viewport size to also show the text above the nodes
+						if (y_start_at > yoffl - node_radius_outer - y_text_off) {
+							y_start_at = yoffl - node_radius_outer - y_text_off;
+						}
+
+						sout += '<text class="prefix" x="' + xoff + '" y="' + (yoffl-22) +
+								'" text-anchor="middle" style="fill:' + highcolor + '">';
+						if (showPrefixes) {
+							sout += auto[path[i]].f;
+							if (this.show_auto_i) {
+								sout += ', ';
+							}
+						}
+						if (this.show_auto_i) {
+							sout += (path[i] + this.ao);
+						}
+						sout += '</text>';
+					}
+
+					if (i < plen-1) {
+						// create horizontal edge between members of the path
+						var strokecolor = default_color;
+						var marker_kind = '';
+						if (extra_high_edges.indexOf(path[i] + '_' + path[i+1]) >= 0) {
+							strokecolor = extra_color;
+							marker_kind = '_extra';
+						}
+
+						sout += '<path d="M' + (xoff + 25) + ',' + yoffl + ' L' + (xoffnext - 25) + ',' + yoffl + '" ';
+						sout += 'style="stroke: ' + strokecolor + '; stroke-width: 2.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
+						sout += '/>';
+					} else {
+						// create edge at the end of the path
+						var strokecolor = default_color;
+						var marker_kind = '';
+						if (extra_high_edges.indexOf(path[i] + '_' + auto[path[plen-1]].n[0]) >= 0) {
+							strokecolor = extra_color;
+							marker_kind = '_extra';
+						}
+
+						var xoff_end_for_Q;
+
+						if (xoff_end > xoff_start) {
+							if (xoff_end - xoff < 55) {
+								// increase curvature if there is not much horizontal space,
+								// as we otherwise arrive at a straight line
+								xoff_end_for_Q = xoff_end - 3;
+							} else {
+								xoff_end_for_Q = xoff_end - 10;
+							}
+							xoff += 25;
+							xoff_end -= 3;
+						} else {
+							if (xoff - xoff_end < 55) {
+								xoff_end_for_Q = xoff_end + 3;
+							} else {
+								xoff_end_for_Q = xoff_end + 10;
+							}
+							xoff -= 25;
+							xoff_end += 3;
+						}
+
+						sout += '<path d="M' + xoff + ',' + yoffl + ' Q' + xoff_end_for_Q + ',' + yoffl + ' ' + xoff_end + ',' + yoff + '" ';
+						sout += 'style="stroke: ' + strokecolor + '; stroke-width: 2.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
+						sout += '/>';
+					}
+				}
+			}
+
 			for (j=j_init; j < curNode.p.length; j++) {
 
 				var from = curNode.p[j];
-				var to = curNode_i;
 
 				// if we are on the mainrow, and we get an incoming edge not from the
 				// mainrow, then we ignore it (as the node outside of the mainrow
@@ -2697,145 +2824,35 @@ window.GML = {
 					}
 				}
 
-				var xoff_start, xoff_end, xoff_mid;
+				var xoff_start, xoff_end, xoff_mid,
+					yoff_start, yoff_end;
 
-				if (positions[to] === undefined) {
+				// just add an edge, but do not add a new node
 
-					// add (at least one) new node
+				xoff_start = positions[from][0];
+				xoff_end = positions[to][0];
+				xoff_mid = (xoff_end + xoff_start) / 2;
 
-					var path = [curNode_i];
-					var nextNode_i = curNode.n[0];
+				yoff_start = positions[from][1];
+				yoff_end = positions[to][1];
 
-					while (positions[nextNode_i] === undefined) {
-						path.push(nextNode_i);
-						for (var k=1; k < auto[nextNode_i].n.length; k++) {
-							var addPath = auto[nextNode_i].n[k];
-							if ((done_paths.indexOf(addPath) < 0) && (more_paths.indexOf(addPath) < 0)) {
-								more_paths.push(addPath);
-							}
-						}
-						nextNode_i = auto[nextNode_i].n[0];
-					}
+				var strokecolor = default_color;
+				var marker_kind = '';
+				if (extra_high_edges.indexOf(from + '_' + to) >= 0) {
+					strokecolor = extra_color;
+					marker_kind = '_extra';
+				}
 
-					var plen = path.length;
-					xoff_start = positions[auto[path[0]].p[0]];
-					xoff_end = positions[auto[path[plen-1]].n[0]];
-					xoff_mid = (xoff_end + xoff_start) / 2;
-					var xoff_width = xoff_end - xoff_start;
-
-					for (var i = 0; i < plen; i++) {
-						xoff = xoff_mid+(xoff_width*(0.5+i - (plen / 2))/plen);
-						xoffnext = xoff_mid+(xoff_width*(1.5+i - (plen / 2))/plen);
-						positions[path[i]] = xoff;
-
-						var highcolor = default_color;
-						var bgcolor = default_bg_color;
-						if (extra_high_nodes.indexOf(path[i]) >= 0) {
-							highcolor = extra_color;
-							bgcolor = extra_bg_color;
-						}
-						if (highlight_p12.indexOf(auto[path[i]].f) >= 0) {
-							highcolor = high_color;
-							bgcolor = high_bg_color;
-						}
-
-						// adjust viewport size
-						if (y_start_at > yoffl - node_radius_outer) {
-							y_start_at = yoffl - node_radius_outer;
-						}
-						if (y_end_at < yoffl + node_radius_outer) {
-							y_end_at = yoffl + node_radius_outer;
-						}
-
-						sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="' + node_radius_outer + '" style="fill:' + highcolor + '" />';
-						sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="' + node_radius_inner + '" style="fill:' + bgcolor + '" />';
-						sout += '<text x="' + xoff + '" y="' + (yoffl+10) +
-								'" text-anchor="middle" style="fill:' + highcolor + ';">' +
-								auto[path[i]].c + '</text>';
-
-						if (showPrefixes || this.show_auto_i) {
-
-							// adjust viewport size to also show the text above the nodes
-							if (y_start_at > yoffl - node_radius_outer - y_text_off) {
-								y_start_at = yoffl - node_radius_outer - y_text_off;
-							}
-
-							sout += '<text class="prefix" x="' + xoff + '" y="' + (yoffl-22) +
-									'" text-anchor="middle" style="fill:' + highcolor + '">';
-							if (showPrefixes) {
-								sout += auto[path[i]].f;
-								if (this.show_auto_i) {
-									sout += ', ';
-								}
-							}
-							if (this.show_auto_i) {
-								sout += (path[i] + this.ao);
-							}
-							sout += '</text>';
-						}
-
-						if (i < 1) {
-							var strokecolor = default_color;
-							var marker_kind = '';
-							if (extra_high_edges.indexOf(auto[path[0]].p[0] + '_' + path[i]) >= 0) {
-								strokecolor = extra_color;
-								marker_kind = '_extra';
-							}
-
-							sout += '<path d="M' + (xoff_start + 3) + ',' + yoff + ' Q' + (xoff_start + 10) + ',' + yoffl + ' ' + (xoff - 25) + ',' + yoffl + '" ';
-							sout += 'style="stroke: ' + strokecolor + '; stroke-width: 2.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
-							sout += '/>';
-						}
-
-						if (i < plen-1) {
-							var strokecolor = default_color;
-							var marker_kind = '';
-							if (extra_high_edges.indexOf(path[i] + '_' + path[i+1]) >= 0) {
-								strokecolor = extra_color;
-								marker_kind = '_extra';
-							}
-
-							sout += '<path d="M' + (xoff + 25) + ',' + yoffl + ' L' + (xoffnext - 25) + ',' + yoffl + '" ';
-							sout += 'style="stroke: ' + strokecolor + '; stroke-width: 2.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
-							sout += '/>';
-						} else {
-							var strokecolor = default_color;
-							var marker_kind = '';
-							if (extra_high_edges.indexOf(path[i] + '_' + auto[path[plen-1]].n[0]) >= 0) {
-								strokecolor = extra_color;
-								marker_kind = '_extra';
-							}
-
-							sout += '<path d="M' + (xoff + 25) + ',' + yoffl + ' Q' + (xoff_end - 10) + ',' + yoffl + ' ' + (xoff_end - 3) + ',' + yoff + '" ';
-							sout += 'style="stroke: ' + strokecolor + '; stroke-width: 2.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
-							sout += '/>';
-						}
-					}
-
+				// is the edge going forward or backwards?
+				if (xoff_end > xoff_start) {
+					xoff_start += 10;
+					xoff_end -= 10;
 				} else {
+					xoff_start -= 10;
+					xoff_end += 10;
+				}
 
-					// just add an edge, but do not add a new node
-
-					xoff_start = positions[from];
-					xoff_end = positions[to];
-					xoff_mid = (xoff_end + xoff_start) / 2;
-
-					var strokecolor = default_color;
-					var marker_kind = '';
-					if (extra_high_edges.indexOf(from + '_' + to) >= 0) {
-						strokecolor = extra_color;
-						marker_kind = '_extra';
-					}
-
-					// is the edge going forward or backwards?
-					if (xoff_end > xoff_start) {
-						xoff_start += 10;
-						xoff_end -= 10;
-					} else {
-						xoff_start -= 10;
-						xoff_end += 10;
-					}
-
+				if ((yoff_start === 100) && (yoff_end === 100)) {
 					var yoff_view = (yoff + yoffdl)/2;
 
 					// adjust viewport size
@@ -2849,16 +2866,52 @@ window.GML = {
 					sout += '<path d="M' + xoff_start + ',' + yoff + ' Q' + xoff_mid + ',' + yoffdl + ' ' + xoff_end + ',' + yoff + '" ';
 					sout += 'style="stroke: ' + strokecolor + '; stroke-width: 2.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
 					sout += '/>';
+				} else {
+
+					var xoff_start_for_Q;
+
+					if (xoff_end > xoff_start) {
+						if (xoff_end - xoff_start < 40) {
+							xoff_start_for_Q = xoff_start - 4;
+						} else {
+							xoff_start_for_Q = xoff_start + 7;
+						}
+						xoff_start -= 4;
+						xoff_end -= 16;
+					} else {
+						if (xoff_start - xoff_end < 40) {
+							xoff_start_for_Q = xoff_start + 4;
+						} else {
+							xoff_start_for_Q = xoff_start - 7;
+						}
+						xoff_start += 4;
+						xoff_end += 16;
+					}
+
+					if (yoff_end > 100) {
+						yoff_start += 25;
+					} else {
+						yoff_start -= 25;
+						if (showPrefixes || this.show_auto_i) {
+							yoff_start -= 10;
+						}
+					}
+
+					sout += '<path d="M' + xoff_start + ',' + yoff_start + ' Q' + xoff_start_for_Q + ',' + yoff_end + ' ' + xoff_end + ',' + yoff_end + '" ';
+					sout += 'style="stroke: ' + strokecolor + '; stroke-width: 2.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
+					sout += '/>';
 				}
 
-				// alternate!
-				if (showPrefixes || this.show_auto_i) {
-					yoff = 190 - yoff;
-				} else {
-					yoff = 200 - yoff;
+				if (GML.vis_alternate) {
+					// alternate!
+					if (showPrefixes || this.show_auto_i) {
+						yoff = 190 - yoff;
+					} else {
+						yoff = 200 - yoff;
+					}
+					yoffl = 200 - yoffl;
+					yoffdl = 200 - yoffdl;
 				}
-				yoffl = 200 - yoffl;
-				yoffdl = 200 - yoffdl;
 			}
 		}
 
@@ -3132,10 +3185,8 @@ window.GML = {
 			var p2 = path[2];
 			var p3 = path[3];
 
-			console.log('p1: ' + p1);
 			p1 = p1.split(':');
 			var p11 = parseInt(p1[1], 10);
-			console.log('p11: ' + p11 + ' path_identifiers_to_nodes[p1[0]]: ' + path_identifiers_to_nodes[p1[0]] + ' = ' + (p11 + path_identifiers_to_nodes[p1[0]]));
 			p11 += path_identifiers_to_nodes[p1[0]];
 
 			p3 = p3.split(':');
@@ -3167,12 +3218,6 @@ window.GML = {
 				auto[lastNew].n = [p31];
 
 				// update prev and new info for nodes on main row
-				console.log(auto);
-				console.log(path_identifiers_to_nodes);
-				console.log('p1[0]: ' + p1[0]);
-				console.log(path_identifiers_to_nodes[p1[0]]);
-				console.log('p11: ' + p11);
-				console.log('p31: ' + p31);
 				auto[p11].n.push(firstNew);
 				auto[p31].p.push(lastNew);
 			}

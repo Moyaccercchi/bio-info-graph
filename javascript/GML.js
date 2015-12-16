@@ -3064,7 +3064,7 @@ window.GML = {
 		var saveTableBtn = '';
 
 		if (kind === 'Table') {
-			saveTableBtn = '<div class="svg_btn" style="right:95px" ' +
+			saveTableBtn = '<div class="svg_btn" style="right:90px" ' +
 						   'onclick="GML_UI.saveTable(' + this.hide_counter + ')">' +
 						   '<span>Save</span></div>';
 		}

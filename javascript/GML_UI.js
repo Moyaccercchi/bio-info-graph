@@ -655,9 +655,53 @@ window.GML_UI = {
 
 		this.hideDropdown();
 
-		var table = document.getElementById("hide-cont-" + whichOne).getElementsByTagName('table')[0];
+		// get the tbody
+		var tbody = document.getElementById("hide-cont-" + whichOne).getElementsByTagName('tbody')[0];
 
-		var source = '<table>' + table.innerHTML + '</table>';
+		var source = '';
+
+		source += '\\begin{table}[htb]\n';
+		source += '\\centering\n';
+		source += '\\caption{This is a table from GML.}\n';
+		source += '\\sffamily \\begin{tabularx}{1.0\\textwidth}{ ';
+		
+		// iterate over the cells in the first row and define that many columns in the LaTeX table
+		var rowlen = tbody.children[0].children.length;
+		for (var i=0; i < rowlen; i++) {
+			source += '| c ';
+		}
+		
+		source += '| }\n';
+		source += '\\hline\n';
+
+		// iterate over all rows 
+		var len = tbody.children.length;
+		for (var i=0; i < len; i++) {
+			rowlen = tbody.children[i].children.length;
+
+			// iterate over all cells within all rows
+			for (var j=0; j < rowlen; j++) {
+
+				// append the cell data to the LaTeX table
+				source += tbody.children[i].children[j].innerHTML;
+				if (j < rowlen-1) {
+					source += ' & ';
+				} else {
+					source += ' \\\\ \\hline \n';
+				}
+			}
+		}
+
+		source += '\\end{tabularx} \\normalfont\n';
+		source += '\\label{table:gml_table}\n';
+		source += '\\end{table}';
+
+		// replace some HTML commands with some LaTeX commands which do essentially the same =)
+		source = source.split('$').join('\\$');
+		source = source.split('#').join('\\#');
+		source = source.split('<i>').join('$');
+		source = source.split('</i>').join('$');
+		source = source.split('&nbsp;').join('~');
 
 		var url = "data:text/plain,"+encodeURIComponent(source);
 

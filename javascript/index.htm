@@ -4,6 +4,7 @@
 	<meta charset="utf-8">
 	<title>GML - Graph Merging Library</title>
 	<link type="text/css" rel="stylesheet" href="GML_UI.css" />
+	<link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
 </head>
 <body>
 
@@ -189,19 +190,25 @@
 		<div>
 			The following options all concern the graph visualization:
 		</div>
-		<div onclick="GML_UI.changeOptions_checkbox('in-options-show-autoi')" style="cursor:pointer">
+		<div class="md-2" onclick="GML_UI.changeOptions_checkbox('in-options-show-hashtag')" style="cursor:pointer">
+			<span id="in-options-show-hashtag" class="our_checkbox">X</span> Show &#35; node in graphs
+		</div>
+		<div class="md-2" onclick="GML_UI.changeOptions_checkbox('in-options-show-dollarsign')" style="cursor:pointer">
+			<span id="in-options-show-dollarsign" class="our_checkbox">X</span> Show &#36; node in graphs
+		</div>
+		<div class="md-2" onclick="GML_UI.changeOptions_checkbox('in-options-always-search-path')" style="cursor:pointer">
+			<span id="in-options-always-search-path" class="our_checkbox">&nbsp;</span> Rearrange graphs even when it is not strictly necessary
+		</div>
+		<div class="md-2" onclick="GML_UI.changeOptions_checkbox('in-options-find-shortest-path')" style="cursor:pointer">
+			<span id="in-options-find-shortest-path" class="our_checkbox">&nbsp;</span> Find the shortest path as main row when reorganizing graphs
+		</div>
+		<div class="md-2" onclick="GML_UI.changeOptions_checkbox('in-options-vis-alternate')" style="cursor:pointer">
+			<span id="in-options-vis-alternate" class="our_checkbox">X</span> Alternate sides on which subgraphs are displayed
+		</div>
+		<div class="md-2" onclick="GML_UI.changeOptions_checkbox('in-options-show-autoi')" style="cursor:pointer">
 			<span id="in-options-show-autoi" class="our_checkbox">&nbsp;</span> Show auto <i>i</i> above automaton nodes
 		</div>
-		<div onclick="GML_UI.changeOptions_checkbox('in-options-show-hashtag')" style="cursor:pointer">
-			<span id="in-options-show-hashtag" class="our_checkbox">&nbsp;</span> Show &#35; node in graphs
-		</div>
-		<div onclick="GML_UI.changeOptions_checkbox('in-options-show-dollarsign')" style="cursor:pointer">
-			<span id="in-options-show-dollarsign" class="our_checkbox">&nbsp;</span> Show &#36; node in graphs
-		</div>
-		<div onclick="GML_UI.changeOptions_checkbox('in-options-vis-alternate')" style="cursor:pointer">
-			<span id="in-options-vis-alternate" class="our_checkbox">&nbsp;</span> Alternate sides on which subgraphs are displayed
-		</div>
-		<div onclick="GML_UI.changeOptions_checkbox('in-options-svg-font-latex')" style="cursor:pointer">
+		<div class="md-2" onclick="GML_UI.changeOptions_checkbox('in-options-svg-font-latex')" style="cursor:pointer">
 			<span id="in-options-svg-font-latex" class="our_checkbox">X</span> When saving SVG files, use Times New Roman as LaTeX-like font</b>
 		</div>
 		<div>
@@ -312,6 +319,8 @@
 		University of Iceland,
 		1<span class="u">st</span> Sep 2014 - 13<span class="u">th</span> Dec 2015
 	</span>
+
+	<div id="dropdown" style="display:none;" onmouseleave="document.getElementById('dropdown').style.display = 'none'"></div>
 
 	<script src="GML.js"></script>
 	<script src="GML_XBW.js"></script>

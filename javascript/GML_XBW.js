@@ -1421,18 +1421,18 @@ GML.make_xbw_environment = function() {
 
 		generateHTML: function(tab) {
 
+			if (tab === undefined) {
+				tab = last_tab;
+			} else {
+				last_tab = tab;
+			}
+
 			if (GML.hideXBWenvironments) {
 				document.getElementById('div-xbw-' + tab).style.display = 'none';
 				return;
 			}
 
 			document.getElementById('div-xbw-' + tab).style.display = 'block';
-
-			if (tab === undefined) {
-				tab = last_tab;
-			} else {
-				last_tab = tab;
-			}
 
 			var sout = '';
 
@@ -1452,7 +1452,7 @@ GML.make_xbw_environment = function() {
 
 			sout += 'The alphabet that we are considering is <code>&#931; = ' + alph_and_C_str[0] +
 					'</code> and ' +
-					'the <i>C</i> array is <code>' + alph_and_C_str[1] + '</code>.<br>';
+					'the <i>C</i> array is <code>' + alph_and_C_str[1] + '</code>.<br><br>';
 
 			var shide = '<div class="table_box" id="div-xbw-' + tab + '-env-table">' +
 						'</div>';
@@ -1721,7 +1721,12 @@ GML.make_xbw_environment = function() {
 
 			sn_i = parseInt(sn_i, 10) - GML.ao;
 
+			// TODO :: make it more clear what this sn_i is... e.g. in the standard
+			// merge example, we can enter i = 14 to achieve node splitting,
+			// but why?
 			this._splitNode(sn_i);
+
+			// TODO :: also update the graph (it is still the same graph afterwards!)
 
 			this.generateHTML();
 		},

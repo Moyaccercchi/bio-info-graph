@@ -99,12 +99,12 @@ div.mainbox > div > input.in-text-input {
 	margin-left:5px;
 }
 
-div.mainbox > div > div.md-2, div.mainbox > div > input.md-2 {
+div.mainbox div.md-2, div.mainbox > div > input.md-2 {
 	display:inline-block;
 	width:49%;
 }
 
-div.mainbox > div > div.md-2:last-child, div.mainbox > div > input.md-2:last-child {
+div.mainbox div.md-2:nth-child(2n), div.mainbox > div > input.md-2:last-child {
 	float:right;
 }
 
@@ -315,6 +315,23 @@ div.error * {
 
 div.working {
 	margin-top:24px;
+}
+
+div#dropdown {
+	position:absolute;
+	right:25px;
+	border-radius:10px;
+	box-shadow:0px 0px 5px 0px rgba(0, 0, 0, 0.8);
+	padding:2px;
+	background:white none repeat scroll 0% 0%;
+	border:1px solid black;
+	min-width:150px;
+}
+
+div#dropdown > span.infobtn {
+	float:none;
+	margin:3px;
+	text-align:center;
 }
 
 

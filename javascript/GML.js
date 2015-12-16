@@ -53,6 +53,7 @@
 	fe_findexToTable: function(findex, showBWTandM, show_f, show_i);
 	fe_p12ToTableWithHighlights: function(highlight_arr, show_origin, show_f, show_i);
 	visualize: function(auto, showPrefixes, highlight_p12, show_vis_hl);
+	visualize_edge: function(from, to, straight);
 	hideWrap: function(sout, kind);
 	errorWrap: function(sout);
 	loopOverflowError: function(sout);
@@ -819,9 +820,6 @@ window.GML = {
 				sout += this.fe_findexToTable(findex, true);
 			}
 
-			/*
-			TODO EMRG :: taken out because it fails for ACGTAGATTTC|,7,,4
-
 			if (this.verbosity > 3) {
 
 				var auto = this.getAutomatonFromFindex(findex);
@@ -831,7 +829,6 @@ window.GML = {
 
 				sout += this.visualize(auto, true);
 			}
-			*/
 
 			if (this.verbosity > 2) {
 
@@ -2491,7 +2488,19 @@ window.GML = {
 	// by changing these values we can hide the first and/or last nodes from the visualization
 	vis_show_hashtag: true,
 	vis_show_dollarsign: true,
+
 	vis_alternate: true,
+	vis_cur_alternate: 100,
+	vis_default_color: '#000',
+	vis_extra_color: '#C00',
+	vis_marker_arrow: 'markerArrow0',
+	vis_checkedge: '0_0',
+	vis_extra_high_edges: [],
+	vis_texts_visible: true,
+	vis_always_search_path: false,
+	vis_find_shortest_path: false,
+	vis_displayed_edges: [],
+
 
 
 
@@ -2503,15 +2512,22 @@ window.GML = {
 	// gives out a string containing a graph visualization of the input
 	visualize: function(auto, showPrefixes, highlight_p12, show_vis_hl) {
 
-		var default_color = '#000';
+		this.makeAutomatonPretty(auto);
+
+		this.vis_displayed_edges = [];
+
+		var texts_visible = showPrefixes || this.show_auto_i;
+		this.vis_texts_visible = texts_visible;
+
+		var default_color = this.vis_default_color;
 		var default_bg_color = '#FFF';
-		var extra_color = '#C00';
+		var extra_color = this.vis_extra_color;
 		var extra_bg_color = '#FCF';
 		var high_color = '#A0A';
 		var high_bg_color = '#FFA';
 
 		var extra_high_nodes = [];
-		var extra_high_edges = [];
+		this.vis_extra_high_edges = [];
 
 		var node_radius_outer = 20; // outer radius of a node
 		var node_radius_inner = node_radius_outer * 0.9; // inner radius - the line itself is 10% wide
@@ -2521,8 +2537,9 @@ window.GML = {
 
 		// we start showing the mainrow at y = 100, and each node has a radius of 20,
 		// we start with a display window between y = 80 and y = 120
-		var y_start_cur = 80;
-		var y_end_cur = 120;
+		var y_mainrow = 100;
+		var y_start_cur = y_mainrow - 20;
+		var y_end_cur = y_mainrow + 20;
 
 		// keep track of how much of the output is visible vertically
 		var y_start_at = y_start_cur;
@@ -2548,7 +2565,7 @@ window.GML = {
 							this.vis_highlight_nodes[j][i]
 						]
 					);
-					extra_high_edges.push(extra_high_nodes[extra_high_nodes.length-2] + '_' + extra_high_nodes[extra_high_nodes.length-1]);
+					this.vis_extra_high_edges.push(extra_high_nodes[extra_high_nodes.length-2] + '_' + extra_high_nodes[extra_high_nodes.length-1]);
 				}
 			}
 		}
@@ -2560,13 +2577,13 @@ window.GML = {
 		// TODO :: make this work for DaTeX output as well (e.g. with TikZ)
 		var sout = '';
 
-		var markerArrow = 'markerArrow' + (this.hide_counter + 1);
+		this.vis_marker_arrow = 'markerArrow' + (this.hide_counter + 1);
 
 		sout += '<defs>';
-		sout += '<marker id="' + markerArrow + '" markerWidth="13" markerHeight="13" refX="4" refY="7" orient="auto">';
+		sout += '<marker id="' + this.vis_marker_arrow + '" markerWidth="13" markerHeight="13" refX="4" refY="7" orient="auto">';
 		sout += '<path d="M2,7 L2,9.5 L5,7 L2,4.5 L2,7" style="fill:' + default_color + ';" />';
 		sout += '</marker>';
-		sout += '<marker id="' + markerArrow + '_extra" markerWidth="13" markerHeight="13" refX="4" refY="7" orient="auto">';
+		sout += '<marker id="' + this.vis_marker_arrow + '_extra" markerWidth="13" markerHeight="13" refX="4" refY="7" orient="auto">';
 		sout += '<path d="M2,7 L2,9.5 L5,7 L2,4.5 L2,7" style="fill:' + extra_color + ';" />';
 		sout += '</marker>';
 		sout += '</defs>';
@@ -2590,14 +2607,14 @@ window.GML = {
 		}
 		var hlen = mainrow.length;
 
-		var xoff, xoffnext, yoff = 100;
+		var xoff, xoffnext, yoff = y_mainrow;
 
 		// iterate over main row
 		for (var j = 0; j < hlen; j++) {
 			var i = mainrow[j];
 			xoff = 50 + (100 * j);
 			xoffnext = 50 + (100 * (j+1));
-			positions[i] = [xoff, yoff];
+			positions[i] = [xoff, y_mainrow];
 
 			if (((j > 0) || (this.vis_show_hashtag)) && ((j < hlen-1) || (this.vis_show_dollarsign))) {
 				var highcolor = default_color;
@@ -2611,12 +2628,12 @@ window.GML = {
 					bgcolor = high_bg_color;
 				}
 
-				sout += '<circle cx="' + xoff + '" cy="' + yoff + '" r="' + node_radius_outer + '" style="fill:' + highcolor + '" />';
-				sout += '<circle cx="' + xoff + '" cy="' + yoff + '" r="' + node_radius_inner + '" style="fill:' + bgcolor + '" />';
-				sout += '<text x="' + xoff + '" y="110" text-anchor="middle" style="fill:' + highcolor + ';">' +
+				sout += '<circle cx="' + xoff + '" cy="' + y_mainrow + '" r="' + node_radius_outer + '" style="fill:' + highcolor + '" />';
+				sout += '<circle cx="' + xoff + '" cy="' + y_mainrow + '" r="' + node_radius_inner + '" style="fill:' + bgcolor + '" />';
+				sout += '<text x="' + xoff + '" y="' + (y_mainrow + 10) + '" text-anchor="middle" style="fill:' + highcolor + ';">' +
 						auto[i].c + '</text>';
 
-				if (showPrefixes || this.show_auto_i) {
+				if (texts_visible) {
 
 					// adjust viewport size to also show the text above the nodes
 					if (y_start_at > y_start_cur - y_text_off) {
@@ -2637,17 +2654,14 @@ window.GML = {
 					sout += '</text>';
 				}
 
-				var strokecolor = default_color;
-				var marker_kind = '';
-				if (extra_high_edges.indexOf(i + '_' + mainrow[j+1]) >= 0) {
-					strokecolor = extra_color;
-					marker_kind = '_extra';
-				}
-
 				if ((j < hlen-1) && ((j < hlen-2) || this.vis_show_dollarsign)) {
-					sout += '<path d="M' + (xoff + 25) + ',100 L' + (xoffnext - 25) + ',100" ';
-					sout += 'style="stroke: ' + strokecolor + '; stroke-width: 2.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
-					sout += '/>';
+
+					this.vis_checkedge = i + '_' + mainrow[j+1];
+
+					sout += this.visualize_edge(
+						[xoff, y_mainrow],
+						[xoffnext, y_mainrow],
+						true);
 				}
 
 				for (var k = 1; k < auto[i].n.length; k++) {
@@ -2666,6 +2680,7 @@ window.GML = {
 		var yoff = 125; // offset for path starts and ends - small distance from origin
 		var yoffl = 170;  // offset for nodes - large distance from origin
 		var yoffdl = 200; // offset for Bezier curve control points - doubly large distance from origin
+		this.vis_cur_alternate = 125;
 
 
 		while (more_paths.length > 0) {
@@ -2701,7 +2716,8 @@ window.GML = {
 
 				var plen = path.length;
 				xoff_start = positions[auto[path[0]].p[0]][0];
-				xoff_end = positions[auto[path[plen-1]].n[0]][0];
+				xoff_end = positions[nextNode_i][0];
+				var yoff_end = positions[nextNode_i][1];
 				xoff_mid = (xoff_end + xoff_start) / 2;
 				var xoff_width = xoff_end - xoff_start;
 
@@ -2735,7 +2751,7 @@ window.GML = {
 							'" text-anchor="middle" style="fill:' + highcolor + ';">' +
 							auto[path[i]].c + '</text>';
 
-					if (showPrefixes || this.show_auto_i) {
+					if (texts_visible) {
 
 						// adjust viewport size to also show the text above the nodes
 						if (y_start_at > yoffl - node_radius_outer - y_text_off) {
@@ -2756,53 +2772,21 @@ window.GML = {
 						sout += '</text>';
 					}
 
+					var strokecolor = default_color;
+					var marker_kind = '';
+					var target;
+
 					if (i < plen-1) {
 						// create horizontal edge between members of the path
-						var strokecolor = default_color;
-						var marker_kind = '';
-						if (extra_high_edges.indexOf(path[i] + '_' + path[i+1]) >= 0) {
-							strokecolor = extra_color;
-							marker_kind = '_extra';
-						}
-
-						sout += '<path d="M' + (xoff + 25) + ',' + yoffl + ' L' + (xoffnext - 25) + ',' + yoffl + '" ';
-						sout += 'style="stroke: ' + strokecolor + '; stroke-width: 2.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
-						sout += '/>';
+						this.vis_checkedge = path[i] + '_' + path[i+1];
+						target = [xoffnext, yoffl];
 					} else {
 						// create edge at the end of the path
-						var strokecolor = default_color;
-						var marker_kind = '';
-						if (extra_high_edges.indexOf(path[i] + '_' + auto[path[plen-1]].n[0]) >= 0) {
-							strokecolor = extra_color;
-							marker_kind = '_extra';
-						}
-
-						var xoff_end_for_Q;
-
-						if (xoff_end > xoff_start) {
-							if (xoff_end - xoff < 55) {
-								// increase curvature if there is not much horizontal space,
-								// as we otherwise arrive at a straight line
-								xoff_end_for_Q = xoff_end - 3;
-							} else {
-								xoff_end_for_Q = xoff_end - 10;
-							}
-							xoff += 25;
-							xoff_end -= 3;
-						} else {
-							if (xoff - xoff_end < 55) {
-								xoff_end_for_Q = xoff_end + 3;
-							} else {
-								xoff_end_for_Q = xoff_end + 10;
-							}
-							xoff -= 25;
-							xoff_end += 3;
-						}
-
-						sout += '<path d="M' + xoff + ',' + yoffl + ' Q' + xoff_end_for_Q + ',' + yoffl + ' ' + xoff_end + ',' + yoff + '" ';
-						sout += 'style="stroke: ' + strokecolor + '; stroke-width: 2.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
-						sout += '/>';
+						this.vis_checkedge = path[i] + '_' + auto[path[plen-1]].n[0];
+						target = [xoff_end, yoff_end];
 					}
+
+					sout += this.visualize_edge([xoff, yoffl], target, i < plen-1);
 				}
 			}
 
@@ -2824,87 +2808,26 @@ window.GML = {
 					}
 				}
 
-				var xoff_start, xoff_end, xoff_mid,
-					yoff_start, yoff_end;
-
 				// just add an edge, but do not add a new node
 
-				xoff_start = positions[from][0];
-				xoff_end = positions[to][0];
-				xoff_mid = (xoff_end + xoff_start) / 2;
+				var yoff_view = (yoff + yoffdl)/2;
 
-				yoff_start = positions[from][1];
-				yoff_end = positions[to][1];
-
-				var strokecolor = default_color;
-				var marker_kind = '';
-				if (extra_high_edges.indexOf(from + '_' + to) >= 0) {
-					strokecolor = extra_color;
-					marker_kind = '_extra';
+				// adjust viewport size
+				if (y_start_at > yoff_view) {
+					y_start_at = yoff_view;
+				}
+				if (y_end_at < yoff_view) {
+					y_end_at = yoff_view;
 				}
 
-				// is the edge going forward or backwards?
-				if (xoff_end > xoff_start) {
-					xoff_start += 10;
-					xoff_end -= 10;
-				} else {
-					xoff_start -= 10;
-					xoff_end += 10;
-				}
+				this.vis_checkedge = from + '_' + to;
 
-				if ((yoff_start === 100) && (yoff_end === 100)) {
-					var yoff_view = (yoff + yoffdl)/2;
-
-					// adjust viewport size
-					if (y_start_at > yoff_view) {
-						y_start_at = yoff_view;
-					}
-					if (y_end_at < yoff_view) {
-						y_end_at = yoff_view;
-					}
-
-					sout += '<path d="M' + xoff_start + ',' + yoff + ' Q' + xoff_mid + ',' + yoffdl + ' ' + xoff_end + ',' + yoff + '" ';
-					sout += 'style="stroke: ' + strokecolor + '; stroke-width: 2.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
-					sout += '/>';
-				} else {
-
-					var xoff_start_for_Q;
-
-					if (xoff_end > xoff_start) {
-						if (xoff_end - xoff_start < 40) {
-							xoff_start_for_Q = xoff_start - 4;
-						} else {
-							xoff_start_for_Q = xoff_start + 7;
-						}
-						xoff_start -= 4;
-						xoff_end -= 16;
-					} else {
-						if (xoff_start - xoff_end < 40) {
-							xoff_start_for_Q = xoff_start + 4;
-						} else {
-							xoff_start_for_Q = xoff_start - 7;
-						}
-						xoff_start += 4;
-						xoff_end += 16;
-					}
-
-					if (yoff_end > 100) {
-						yoff_start += 25;
-					} else {
-						yoff_start -= 25;
-						if (showPrefixes || this.show_auto_i) {
-							yoff_start -= 10;
-						}
-					}
-
-					sout += '<path d="M' + xoff_start + ',' + yoff_start + ' Q' + xoff_start_for_Q + ',' + yoff_end + ' ' + xoff_end + ',' + yoff_end + '" ';
-					sout += 'style="stroke: ' + strokecolor + '; stroke-width: 2.25px; fill: none; marker-end: url(#' + markerArrow + marker_kind + ');" ';
-					sout += '/>';
-				}
+				sout += this.visualize_edge(positions[from], positions[to], false);
 
 				if (GML.vis_alternate) {
 					// alternate!
-					if (showPrefixes || this.show_auto_i) {
+					this.vis_cur_alternate = 200 - this.vis_cur_alternate;
+					if (texts_visible) {
 						yoff = 190 - yoff;
 					} else {
 						yoff = 200 - yoff;
@@ -2922,7 +2845,7 @@ window.GML = {
 		var svgheight = y_end_at - y_start_at;
 
 		var sprev = '<div';
-		sprev += ' style="overflow-x:auto;text-align:center;padding-top:10px;"';
+		sprev += ' style="overflow-x:auto;text-align:center;padding-top:15px;"';
 		sprev += '>';
 
 		sprev += '<svg ';
@@ -2951,8 +2874,8 @@ window.GML = {
 
 		sout = '<div class="svg_btn" style="right:95px" ' +
 			   'onclick="GML_UI.saveSVG(' + (this.hide_counter + 1) + ')">' +
-			   	'<span>Save</span></div>' +
-			   	sout;
+			   '<span>Save</span></div>' +
+			   sout;
 
 		sout = this.hideWrap(sout, 'Graph');
 
@@ -2961,6 +2884,171 @@ window.GML = {
 		return sout;
 	},
 
+
+
+	// takes in a coordinate pair from and a coordinate pair to as well as a boolean
+	//   parameter telling us whether small texts above the nodes are visible and
+	//   a boolean parameter telling us whether a straight edge is wanted or a curved one
+	// gives out a path between the two coordinate pairs in SVG text format
+	visualize_edge: function(from, to, straight) {
+
+		// do not visualize anything if we have already shown this edge
+		if (this.vis_displayed_edges.indexOf(this.vis_checkedge) >= 0) {
+			return '';
+		}
+		this.vis_displayed_edges.push(this.vis_checkedge);
+
+		var strokecolor = this.vis_default_color;
+		var marker = this.vis_marker_arrow;
+
+		if (this.vis_extra_high_edges.indexOf(this.vis_checkedge) >= 0) {
+			strokecolor = this.vis_extra_color;
+			marker += '_extra';
+		}
+
+		var x_start = from[0];
+		var y_start = from[1];
+		var x_end = to[0];
+		var y_end = to[1];
+		var x_q, y_q;
+
+		var sout = '';
+
+		if (y_start === y_end) {
+		// oho, we have a horizontal edge!
+
+			if (straight) {
+			// oho, we have a straight horizontal edge!
+
+				if (x_end > x_start) {
+					x_start += 25;
+					x_end -= 25;
+					// if the distance is very small, expand the arrow to the edges of the node
+					// (that is, leave no space between node and edge)
+					if (x_end < x_start+20) {
+						x_start -= 5;
+						x_end += 5;
+					}
+					// if this is still not enough, then rather do not draw the edge, as the
+					// nodes apparently are already overlapping!
+					if (x_end < x_start) {
+						return '';
+					}
+				} else {
+					x_start -= 25;
+					x_end += 25;
+					// if the distance is very small, expand the arrow to the edges of the node
+					// (that is, leave no space between node and edge)
+					if (x_start < x_end+20) {
+						x_start += 5;
+						x_end -= 5;
+					}
+					// if this is still not enough, then rather do not draw the edge, as the
+					// nodes apparently are already overlapping!
+					if (x_start < x_end) {
+						return '';
+					}
+				}
+
+				sout += '<path d="M' + x_start + ',' + y_start +
+						' L' + x_end + ',' + y_end + '" ';
+			} else {
+			// ahh, it is a curved horizontal edge!
+
+				var x_mid = (x_end + x_start) / 2;
+				if (this.vis_cur_alternate > 100) {
+					y_q = y_start + 100;
+					y_start += 25;
+				} else {
+					y_q = y_start - 100;
+					y_start -= 25;
+					if (this.vis_texts_visible) {
+						y_start -= 10;
+					}
+				}
+				y_end = y_start;
+
+				// is the edge going forward or backwards?
+				if (x_end > x_start) {
+					x_start += 10;
+					x_end -= 10;
+				} else {
+					x_start -= 10;
+					x_end += 10;
+				}
+
+				sout += '<path d="M' + x_start + ',' + y_start +
+						' Q' + x_mid + ',' + y_q +
+						' ' + x_end + ',' + y_end + '" ';
+			}
+
+		} else {
+		// this is a very curved edge
+
+			var inverted = false;
+			var copy;
+
+			if (y_start === 100) {
+
+				// well well, this is a very curved edge starting at the main row
+				// as it starts at the main row we handle things a bit differently -
+				// exactly the other way around
+
+				inverted = true;
+
+				copy = x_start
+				x_start = x_end;
+				x_end = copy;
+				copy = y_start
+				y_start = y_end;
+				y_end = copy;
+			}
+
+			if (x_end > x_start) {
+				// increase curvature if there is not much horizontal space,
+				// as we otherwise arrive at a straight line
+				x_q = x_end + 35 - Math.min(x_end - x_start, 45);
+				x_start += 25;
+				x_end -= 3;
+			} else {
+				// increase curvature if there is not much horizontal space,
+				// as we otherwise arrive at a straight line
+				x_q = x_end - 35 + Math.min(x_start - x_end, 45);
+				x_start -= 25;
+				x_end += 3;
+			}
+
+			// check if we come from above or below
+			if (y_start > y_end) {
+				y_end += 25;
+			} else {
+				y_end -= 25;
+				if (this.vis_texts_visible) {
+					y_end -= 10;
+				}
+			}
+			y_q = y_start;
+
+			if (inverted) {
+				copy = x_start
+				x_start = x_end;
+				x_end = copy;
+				copy = y_start
+				y_start = y_end;
+				y_end = copy;
+			}
+
+			sout += '<path d="M' + x_start + ',' + y_start +
+					' Q' + x_q + ',' + y_q +
+					' ' + x_end + ',' + y_end + '" ';
+		}
+
+		sout += 'style="stroke: ' + strokecolor + '; stroke-width: 2.25px; fill: none; ' +
+				'marker-end: url(#' + marker + ');" ' +
+				'/>';
+
+		return sout;
+	},
 
 
 	hide_counter: 0, // keeps track of how many hideable objects we are showing on the page
@@ -2973,9 +3061,18 @@ window.GML = {
 
 		this.hide_counter++;
 
+		var saveTableBtn = '';
+
+		if (kind === 'Table') {
+			saveTableBtn = '<div class="svg_btn" style="right:95px" ' +
+						   'onclick="GML_UI.saveTable(' + this.hide_counter + ')">' +
+						   '<span>Save</span></div>';
+		}
+
 		return '<div id="hide-cont-' + this.hide_counter + '" class="svg_container">' +
 			   '<div class="svg_btn" onclick="GML_UI.hideObject(' + this.hide_counter + ')">' +
 			   '<span id="hide-btn-' + this.hide_counter + '">Hide</span> ' + kind + '</div>' +
+			   saveTableBtn +
 			   sout +
 			   '</div>';
 	},
@@ -3915,6 +4012,10 @@ window.GML = {
 
 						for (var j=0; j < alen; j++) {
 							if (i !== j) {
+								// TODO :: investigate why we here are comparing the one
+								// to the other, instead of comparing the slice of one
+								// to the slice of the other - e.g. comparing CG to C
+								// should bring a same_as, shouldn't it?
 								if (cur_auto_f == auto[j].f) {
 									same_as.push(j);
 									changed_something = 1;
@@ -4029,7 +4130,7 @@ window.GML = {
 										}
 
 										// ask the calling function to recompute everything - as adding a
-										// node is messy, and it is much simpler to just recaluclate all
+										// node is messy, and it is much simpler to just recalculate all
 										// prefixes than to keep track of which prefixes where need to be
 										// updated how
 										return true;
@@ -4041,7 +4142,7 @@ window.GML = {
 									}
 								} else {
 									// don't worry about anything - as actually nothing is wrong
-									auto[same_as[j]].f += auto[auto[curNodes[0]].n[0]].c;
+									auto[same_as[j]].f += firstNodeLabel;
 								}
 							}
 						}
@@ -4276,52 +4377,207 @@ window.GML = {
 			}
 		}
 
-		// take out the next from '$'
-		auto[auto[0].p[0]].n = [];
-		// and take out the prev from '#'
-		auto[0].p = [];
 
-		// This here is not strictly necessary for a valid automaton,
-		// but it being done is an assumption within the visualization
-		// function: basically, we assume that on the main row, .n[0]
-		// contains the next node on the main row (which is trivially
-		// true, as that is how we define the main row ^^), AND that
-		// on the main row, .p[0] contains the previous node on the
-		// main row - which however would not necessarily be true at
-		// this point here!
-		// To circumvent doing A LOT of calculations within the visualization
-		// function over and over again, we just swap entries within .p
-		// over here until .p[0] contains the previous node on the main
-		// row (we now that the previous one is SOMEWHERE in .p anyway,
-		// but without this piece of code it might be in .p[1] or .p[2] etc.)
-		
-		var i = 0;
 
-		// go through the mainrow by going from # always via the first alternative
-		// until we find a node that has no outgoing nodes (which will be $ / $_1,
-		// and here we know that no funny bunnies put an edge from $ to #, as we
-		// just built all the edges ourselves ^^)
-		while (auto[i].n.length > 0) {
-			
-			var next = auto[i].n[0];
+		// Making the automaton pretty is not strictly necessary to achieve
+		// a valid automaton, but it being done will not hurt.
+		// This function would be called in the visualization function anyway,
+		// and in general through GML we kind of assume that our automatons
+		// are pretty. =)
 
-			// now replace auto[next].p = [..., i, ...] with newp = [i, ..., ...],
-			// so that i is always in the beginning of auto[next].p
-			var newp = [i];
-			for (var j=0; j < auto[next].p.length; j++) {
-				if (auto[next].p[j] != i) {
-					newp.push(auto[next].p[j]);
-				}
-			}
-			auto[next].p = newp;
+		this.makeAutomatonPretty(auto);
 
-			i = next;
-		}
+
 
 		// just used for later visualization purposes
 		GML.vis_p12ToAuto = p12ToAuto;
 
 		return auto;
+	},
+
+
+
+	// takes in an automaton
+	// gives out nothing, but makes the automaton pretty by ensuring
+	//   that the $ node has no out-edges, the # node has no in-edges,
+	//   and that taking the first successor from # we always reach $
+	//   as well as that taking the first predecessor from $ we always
+	//   reach #
+	makeAutomatonPretty: function(auto) {
+
+		if (auto[0].p.length > 0) {
+			// take out the next from '$'
+			auto[auto[0].p[0]].n = [];
+
+			// and take out the prev from '#'
+			auto[0].p = [];
+		}
+
+
+
+		// This here is not strictly necessary for a valid automaton,
+		// but it being done is an assumption within the visualization
+		// function: basically, we assume that on the main row, .n[0]
+		// contains the next node on the main row, AND that on the main
+		// row, .p[0] contains the previous node on the main row.
+		// None of that however is in any way shape or form assured - so
+		// this function actually makes it happen!
+
+		// Even though we know that the end node has no outgoing edge (as we just
+		// made sure of that in the previous two lines of code), we cannot
+		// be sure that the end node will be reachable by always following
+		// the next node 0 - it could be that by always following next node 0, we
+		// actually run in an infinite loop. We therefore need to take precautions!
+		
+
+
+		// first of all, we check if simply following nextNode[0] from the # node leads us to $
+
+		var main_row_path = [0];
+		var nextNode = 0;
+		var naive_main_row_works = false;
+
+		if (!this.vis_always_search_path) {
+			while (true) {
+
+				var nextNode = auto[nextNode].n[0];
+
+				if (main_row_path.indexOf(nextNode) > -1) {
+					break;
+				}
+
+				main_row_path.push(nextNode);
+
+				if (auto[nextNode].n.length === 0) {
+					naive_main_row_works = true;
+					break;
+				}
+			}
+		}
+
+
+
+		if (!naive_main_row_works) {
+
+			// as the naive path (following also nextNode[0]) does not lead us to the $ node,
+			// we need to find some other path from # to $, called main_row_path
+			// (in the following algorithm we can choose whether we want to find the shortest
+			// or the longest path from # to $ and use it as main row... finding the shortest
+			// path is quicker and requires less effort, while finding the longest path looks
+			// much nicer in the visualization; which one is chosen is ultimately decided by
+			// the options that the user chose)
+
+			var active_paths = [[0]];
+			var nodes_visited = [];
+			var end_node_has_been_found = false;
+
+			var find_shortest_path = this.vis_find_shortest_path;
+
+			while (!end_node_has_been_found) {
+
+				end_node_has_been_found = true;
+
+				// we here count downwards to not be affected by paths that are added 
+				// while we are within the loop, which might give an unfair advantage 
+				// to certain paths
+				for (var j=active_paths.length-1; j > -1; j--) {
+
+					// the path might have been deleted due to
+					// traversing edges that have already been traversed
+					if (active_paths[j]) {
+
+						end_node_has_been_found = false;
+
+						var cur_in_path = active_paths[j][active_paths[j].length-1];
+
+
+						if (find_shortest_path) {
+							if (nodes_visited.indexOf(cur_in_path) > -1) {
+								active_paths[j] = false;
+								continue;
+							}
+						} else {
+							if (active_paths[j].indexOf(cur_in_path) < active_paths[j].length-1) {
+								active_paths[j] = false;
+								continue;
+							}
+						}
+
+						var next_in_path = auto[cur_in_path].n;
+
+						if (next_in_path.length < 1) {
+							main_row_path = active_paths[j];
+
+							if (find_shortest_path) {
+								end_node_has_been_found = true;
+								break;
+							} else {
+								active_paths[j] = false;
+								continue;
+							}
+						}
+
+						// for all next nodes
+						// (we here count downwards, as we want to get the special case k==0 LAST,
+						// as we will change active_paths[j] in that special case, but we need to
+						// do the deep copies before!)
+						for (var k=next_in_path.length-1; k > -1; k--) {
+
+							if (k == 0) {
+								// append next node to current path
+								active_paths[j].push(next_in_path[k]);
+							} else {
+								// clone current path
+								active_paths.push(this.deep_copy_array(active_paths[j]));
+								// append next node to current path
+								active_paths[active_paths.length-1].push(next_in_path[k]);
+							}
+						}
+
+						nodes_visited.push(cur_in_path);
+					}
+				}
+			}
+		}
+
+
+
+		// now we traverse the main path once more, but actually update .p and .n on our
+		// way to make the automaton nice for future work
+		// (if we noticed that the main path works as it is, that is, if we did not go
+		// into the body of the previous if, then we do not need to update .n - but we
+		// might still need to update .p, and the overhead is rather slim, as we simply
+		// check .n for every node and in every case notice that all is good)
+
+		for (var i=0; i < main_row_path.length-1; i++) {
+
+			var this_node_i = main_row_path[i];
+			var next_node_i = main_row_path[i+1];
+
+			// now replace auto[next].p = [..., this, ...] with newp = [this, ..., ...],
+			// so that this node i is always in the beginning of auto[next].p
+			if (auto[next_node_i].p[0] !== this_node_i) {
+				var newp = [this_node_i];
+				for (var j=0; j < auto[next_node_i].p.length; j++) {
+					if (auto[next_node_i].p[j] !== this_node_i) {
+						newp.push(auto[next_node_i].p[j]);
+					}
+				}
+				auto[next_node_i].p = newp;
+			}
+
+			// also replace auto[this].n = [..., next, ...] with newn = [next, ..., ...],
+			// so that next node i is always in the beginning of auto[this].n
+			if (auto[this_node_i].n[0] !== next_node_i) {
+				var newn = [next_node_i];
+				for (var j=0; j < auto[this_node_i].n.length; j++) {
+					if (auto[this_node_i].n[j] !== next_node_i) {
+						newn.push(auto[this_node_i].n[j]);
+					}
+				}
+				auto[this_node_i].n = newn;
+			}
+		}
 	},
 
 

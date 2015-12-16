@@ -487,10 +487,18 @@ window.GML_UI = {
 
 
 	hideObject: function(whichOne) {
-		
+
 		var svg_el = document.getElementById('hide-cont-' + whichOne);
 		var svg_hide_el = document.getElementById('hide-btn-' + whichOne);
-		svg_el = svg_el.childNodes[svg_el.childNodes.length-1];
+
+		// get the last element within the hide wrapper which is NOT a <br>,
+		// and hide or show it
+		for (var i = svg_el.children.length-1; i > -1; i--) {
+			if (svg_el.children[i].tagName.toUpperCase() !== 'BR') {
+				svg_el = svg_el.children[i];
+				break;
+			}
+		}
 
 		if (svg_el.style.display == 'none') {
 			svg_el.style.display = 'block';
@@ -505,7 +513,45 @@ window.GML_UI = {
 
 	svg_font_latex: true,
 
+	showDropdown: function(whichOne) {
+
+		var bodyRect = document.body.getBoundingClientRect();
+		var dropdown = document.getElementById('dropdown');
+
+		var rect = document.getElementById("hide-cont-" + whichOne).getBoundingClientRect();
+
+		dropdown.style.top = (rect.top - bodyRect.top - 20) + 'px';
+		dropdown.style.display = 'block';
+	},
+
+	hideDropdown: function() {
+		document.getElementById('dropdown').style.display = 'none';
+	},
+
 	saveSVG: function(whichOne) {
+
+		var dropdown = document.getElementById('dropdown');
+
+		dropdown.innerHTML =
+			'<span class="infobtn" onclick="GML_UI.exportSVG(' + whichOne + ')">' +
+				'Export SVG code</span>' +
+			'<span class="infobtn" onclick="GML_UI.downloadSVG(' + whichOne + ')">' +
+				'Download as SVG</span>';
+
+		this.showDropdown(whichOne);
+	},
+
+	downloadSVG: function(whichOne) {
+		this.downloadOrExportSVG(whichOne, 'application/octet-stream');
+	},
+
+	exportSVG: function(whichOne) {
+		this.downloadOrExportSVG(whichOne, 'text/plain');
+	},
+
+	downloadOrExportSVG: function(whichOne, mime) {
+
+		this.hideDropdown();
 
 		var svg = document.getElementById("hide-cont-" + whichOne).getElementsByTagName('svg')[0];
 
@@ -530,7 +576,7 @@ window.GML_UI = {
 
 		var sprev = '<style type="text/css">';
 
-		sprev += '* {';
+		sprev += 'svg * {';
 			sprev += 'color:#000;';
 			if (this.svg_font_latex) {
 				sprev += 'font-family:Times New Roman,serif;';
@@ -542,27 +588,27 @@ window.GML_UI = {
 			sprev += 'font-weight:500;';
 		sprev += '}';
 
-		sprev += 'text, text > tspan {';
+		sprev += 'svg > text, svg > text > tspan {';
 			sprev += 'font-size:30px;';
 		sprev += '}';
 
-		sprev += 'text.prefix, text.prefix > tspan {';
+		sprev += 'svg > text.prefix, svg > text.prefix > tspan {';
 			sprev += 'font-size:15px;';
 		sprev += '}';
 
 		/* subscript */
-		sprev += 'text > tspan.d {';
+		sprev += 'svg > text > tspan.d {';
 		sprev += 'font-size:20px;';
 		sprev += '}';
-		sprev += 'text.prefix > tspan.d {';
+		sprev += 'svg > text.prefix > tspan.d {';
 			sprev += 'font-size:10px;';
 		sprev += '}';
 
 		/* superscript */
-		sprev += 'text > tspan.u {';
+		sprev += 'svg > text > tspan.u {';
 			sprev += 'font-size:20px;';
 		sprev += '}';
-		sprev += 'text.prefix > tspan.u {';
+		sprev += 'svg > text.prefix > tspan.u {';
 			sprev += 'font-size:10px;';
 		sprev += '}';
 
@@ -574,7 +620,46 @@ window.GML_UI = {
 
 		source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
 
-		var url = "data:application/octet-stream,"+encodeURIComponent(source);
+		var url = "data:" + mime + ","+encodeURIComponent(source);
+
+		window.open(url, '_blank');
+	},
+
+	saveTable: function(whichOne) {
+
+		var dropdown = document.getElementById('dropdown');
+
+		dropdown.innerHTML =
+			'<span class="infobtn" onclick="GML_UI.exportHTMLTable(' + whichOne + ')">' +
+				'Export HTML code</span>' +
+			'<span class="infobtn" onclick="GML_UI.exportLaTeXTable(' + whichOne + ')">' +
+				'Export LaTeX code</span>';
+
+		this.showDropdown(whichOne);
+	},
+
+	exportHTMLTable: function(whichOne) {
+
+		this.hideDropdown();
+
+		var table = document.getElementById("hide-cont-" + whichOne).getElementsByTagName('table')[0];
+
+		var source = '<table>' + table.innerHTML + '</table>';
+
+		var url = "data:text/plain,"+encodeURIComponent(source);
+
+		window.open(url, '_blank');
+	},
+
+	exportLaTeXTable: function(whichOne) {
+
+		this.hideDropdown();
+
+		var table = document.getElementById("hide-cont-" + whichOne).getElementsByTagName('table')[0];
+
+		var source = '<table>' + table.innerHTML + '</table>';
+
+		var url = "data:text/plain,"+encodeURIComponent(source);
 
 		window.open(url, '_blank');
 	},
@@ -742,6 +827,8 @@ window.GML_UI = {
 		document.getElementById('in-options-show-autoi').innerHTML = '&nbsp;';
 		document.getElementById('in-options-show-hashtag').innerHTML = 'X';
 		document.getElementById('in-options-show-dollarsign').innerHTML = 'X';
+		document.getElementById('in-options-always-search-path').innerHTML = '&nbsp;';
+		document.getElementById('in-options-find-shortest-path').innerHTML = '&nbsp;';
 		document.getElementById('in-options-vis-alternate').innerHTML = 'X';
 
 		document.getElementById('in-options-svg-font-latex').innerHTML = 'X';
@@ -789,6 +876,8 @@ window.GML_UI = {
 
 		GML.vis_show_hashtag = document.getElementById('in-options-show-hashtag').innerHTML == 'X';
 		GML.vis_show_dollarsign = document.getElementById('in-options-show-dollarsign').innerHTML == 'X';
+		GML.vis_always_search_path = document.getElementById('in-options-always-search-path').innerHTML == 'X';
+		GML.vis_find_shortest_path = document.getElementById('in-options-find-shortest-path').innerHTML == 'X';
 		GML.vis_alternate = document.getElementById('in-options-vis-alternate').innerHTML == 'X';
 
 		this.changeOptions_verbosity_update();

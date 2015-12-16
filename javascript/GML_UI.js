@@ -91,7 +91,8 @@ window.GML_UI = {
 
 		el = document.getElementById('div-out-' + i);
 		el.innerHTML = '<div class="working">Working on your request...<br><br>' +
-					   'If you see this message for a long time, you might want to ' +
+					   'If you see this message for a long time, the page may have crashed.' +
+					   'In that case you could try to ' +
 					   'refresh the page, reduce the verbosity in the options, ' +
 					   'and then restart the computation.</div>';
 		el.style.display = 'block';
@@ -662,8 +663,8 @@ window.GML_UI = {
 
 		source += '\\begin{table}[htb]\n';
 		source += '\\centering\n';
-		source += '\\caption{This is a table from GML.}\n';
-		source += '\\sffamily \\begin{tabularx}{1.0\\textwidth}{ ';
+		source += '\\caption[GML table]{This is a table from GML.}\n';
+		source += '\\begin{tabularx}{1.0\\textwidth}{ ';
 		
 		// iterate over the cells in the first row and define that many columns in the LaTeX table
 		var rowlen = tbody.children[0].children.length;
@@ -682,25 +683,34 @@ window.GML_UI = {
 			// iterate over all cells within all rows
 			for (var j=0; j < rowlen; j++) {
 
+				if (j === rowlen-1) {
+					source += '\\textbf{'
+				}
+
 				// append the cell data to the LaTeX table
 				source += tbody.children[i].children[j].innerHTML;
+
 				if (j < rowlen-1) {
 					source += ' & ';
 				} else {
-					source += ' \\\\ \\hline \n';
+					source += '} \\\\ \\hline \n';
 				}
 			}
 		}
 
-		source += '\\end{tabularx} \\normalfont\n';
+		source += '\\end{tabularx}\n';
 		source += '\\label{table:gml_table}\n';
 		source += '\\end{table}';
 
 		// replace some HTML commands with some LaTeX commands which do essentially the same =)
 		source = source.split('$').join('\\$');
 		source = source.split('#').join('\\#');
+		source = source.split('\\textbf{<i>i</i>}').join('$\\boldsymbol{i}$');
+		source = source.split('\\textbf{<i>M</i>}').join('$\\boldsymbol{M}$');
+		source = source.split('\\textbf{<i>F</i>}').join('$\\boldsymbol{F}$');
 		source = source.split('<i>').join('$');
 		source = source.split('</i>').join('$');
+		source = source.split('First&nbsp;Column').join('FC');
 		source = source.split('&nbsp;').join('~');
 
 		var url = "data:text/plain,"+encodeURIComponent(source);

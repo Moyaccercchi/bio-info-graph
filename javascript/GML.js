@@ -761,7 +761,7 @@ window.GML = {
 			} else {
 
 				this.sout = '';
-				auto = this.makeAutomatonPrefixSorted(auto, true);
+				auto = this.makeAutomatonPrefixSorted(auto, this.verbosity > 3);
 
 				if (this.verbosity > 3) {
 					sout += "To achieve a prefix sorted automaton, " + 
@@ -2842,20 +2842,26 @@ window.GML = {
 		y_start_at -= 2;
 		y_end_at += 2;
 
+		// we display the visible part vertically
 		var svgheight = y_end_at - y_start_at;
+
+		// we display the entire mainrow, but we can cut off 30px of whitespace in the front and back
+		// (but we give it half a pixel on each side to have a little bit of spillover room...
+		// we are not monsters!)
+		var svgwidth = (mainrow.length * 100) - 59;
 
 		var sprev = '<div';
 		sprev += ' style="overflow-x:auto;text-align:center;padding-top:15px;"';
 		sprev += '>';
 
 		sprev += '<svg ';
-		sprev += 'style="width:' + (mainrow.length * 100) + 'px;height:' + svgheight + 'px" ';
+		sprev += 'style="width:' + svgwidth + 'px;height:' + svgheight + 'px" ';
 		sprev += 'xmlns="http:/' + '/www.w3.org/2000/svg" version="1.1"' +
-				 'viewBox="0 ' + y_start_at;
-		sprev += ' ' + (mainrow.length * 100) + ' ' + svgheight +
+				 'viewBox="29.5 ' + y_start_at;
+		sprev += ' ' + svgwidth + ' ' + svgheight +
 				 '" preserveAspectRatio="xMidYMid slice">';
 
-		sprev += '<rect x="0" y="' + y_start_at + '" width="' + (mainrow.length * 100) + '" ' +
+		sprev += '<rect x="29.5" y="' + y_start_at + '" width="' + svgwidth + '" ' +
 				 'height="' + svgheight + '" style="fill:#FFF" />';
 
 		sout = sprev + sout;
@@ -2891,6 +2897,12 @@ window.GML = {
 	//   a boolean parameter telling us whether a straight edge is wanted or a curved one
 	// gives out a path between the two coordinate pairs in SVG text format
 	visualize_edge: function(from, to, straight) {
+
+		// it is slightly suspicious to call the visualizer for edges
+		// without actually providing an edge that needs to be visualized
+		if ((from === undefined) || (to === undefined)) {
+			return '';
+		}
 
 		// do not visualize anything if we have already shown this edge
 		if (this.vis_displayed_edges.indexOf(this.vis_checkedge) >= 0) {
@@ -3132,8 +3144,8 @@ window.GML = {
 		// add a random about of infostrings, if any
 		var delimiter = '|';
 
-		// 80% chance to add at least one infoblock
-		var threshold = 0.8;
+		// 50% chance to add at least one infoblock
+		var threshold = 0.5;
 
 		while (Math.random() < threshold) {
 
@@ -3141,14 +3153,15 @@ window.GML = {
 			gstr += delimiter;
 			delimiter = ';';
 
-			// 50% chance to add another infoblock
-			threshold = 0.5;
+			// 30% chance to add another infoblock
+			threshold = 0.3;
 
 			// own designation
 			gstr += ',';
 
-			// origin
-			var orig = 1 + Math.floor(Math.random() * mainrow_length);
+			// origin - cannot be the last node of the main row
+			// (as we want to generate a finite graph)
+			var orig = 1 + Math.floor(Math.random() * (mainrow_length - 1));
 			gstr += orig + ',';
 
 			// characters along path
@@ -3160,7 +3173,7 @@ window.GML = {
 
 			// target - recalculated until it is not before origin, as we do not handle loops well
 			var targ = -1;
-			while (targ < orig) {
+			while (targ <= orig) {
 				targ = 1 + Math.floor(Math.random() * mainrow_length);
 			}
 			gstr += targ;
@@ -4466,6 +4479,9 @@ window.GML = {
 			// path is quicker and requires less effort, while finding the longest path looks
 			// much nicer in the visualization; which one is chosen is ultimately decided by
 			// the options that the user chose)
+			// when the algorithm is instructed to find one of the longest paths, it will
+			// however still ignore paths including loops, as it might otherwise be trapped
+			// in the loop indefinitely, trying to find yet longer paths
 
 			var active_paths = [[0]];
 			var nodes_visited = [];

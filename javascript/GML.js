@@ -1111,7 +1111,7 @@ window.GML = {
 					this.lastH1Letter = bwt1[i];
 					if (this.verbosity > 3) {
 						sout += 'Looking at the prefixes of ' + this.DH_1 + ', we can see that the prefix ' +
-								this.DS + ' has the BWT entry ' + this.lastH1Letter +
+								' starting with ' + this.DS + ' has the BWT entry ' + this.lastH1Letter +
 								' associated with it, so the last letter of ' + this.DH_1 +
 								' is ' + this.lastH1Letter + '.' + this.nlnl;
 					}
@@ -1211,12 +1211,7 @@ window.GML = {
 						this.DS_1_o + ' is not actually in use in the final merged BWT.' + this.nlnl +
 						'(Which means that we are implicitly removing ' + this.DS_1_o + ' here, which ' +
 						'did correspond to a real node when looking at ' + this.DH_1 + ' in isolation.)' +
-						this.nlnl + 'Naturally, we first of all need to find the first node of ' + this.DH_2 +
-						'.' + this.nlnlnl +
-						'Appending the first letter of ' + this.DH_2 + '(which is ' + 
-						this.firstH2Letter + ') as well as ' + this.DK_1_o +
-						' to all prefixes ending with ' +
-						this.DS_1_o + ' gives us:' + this.nlnl;
+						this.nlnl;
 
 				var stab = this.s_table_head;
 				stab += this.arr_to_str_wo_index(this.p12, this.td) + this.td + 'Prefix' + this.tabnl;
@@ -2701,9 +2696,20 @@ window.GML = {
 				// add (at least one) new node
 
 				var path = [curNode_i];
+				xoff_start = positions[auto[curNode_i].p[0]][0];
 				var nextNode_i = curNode.n[0];
 
 				while (positions[nextNode_i] === undefined) {
+					// we write a coordinate into the position, so that if we are in a loop
+					// (which could happen off the main row, as only the main row is
+					// loop protected through the prettifyAutomaton function), we do
+					// not loop forever - instead, we go through the loop once, until
+					// we reach this position again, then see that it has been drawn,
+					// and all is good (otherwise, this here will simply be overwritten)
+					// the actual coordinates which are chosen here are not exactly perfect
+					// (going from the start node to the right, they might even shoot off the
+					// viewport), but we still prefer them over an infinite loop
+					positions[nextNode_i] = [xoff_start + (path.length * 40), yoffl];
 					path.push(nextNode_i);
 					for (var k=1; k < auto[nextNode_i].n.length; k++) {
 						var addPath = auto[nextNode_i].n[k];
@@ -2715,7 +2721,6 @@ window.GML = {
 				}
 
 				var plen = path.length;
-				xoff_start = positions[auto[path[0]].p[0]][0];
 				xoff_end = positions[nextNode_i][0];
 				var yoff_end = positions[nextNode_i][1];
 				xoff_mid = (xoff_end + xoff_start) / 2;
@@ -4018,18 +4023,26 @@ window.GML = {
 					var cur_auto_f = auto[i].f;
 
 					// if we are already in a nonsensical position, then going further down the
-					// rabbit hole is not going to achieve anything ;)
+					// rabbit hole is not going to achieve anything (as we started this function
+					// by re-setting all the prefixes, if we encounter a ! now, that means that
+					// we already looked at this one WITHIN THIS FUNCTION and did not come up
+					// with a solution for the problem or are currently just building prefixes,
+					// not prefix sorting)
 					if (cur_auto_f[cur_auto_f.length - 1] !== this.prefixErrorChar) {
 
 						var same_as = [i];
 
 						for (var j=0; j < alen; j++) {
-							if (i !== j) {
-								// TODO :: investigate why we here are comparing the one
-								// to the other, instead of comparing the slice of one
-								// to the slice of the other - e.g. comparing CG to C
-								// should bring a same_as, shouldn't it?
-								if (cur_auto_f == auto[j].f) {
+							if ((i !== j) && (auto[j])) {
+								// we can here compare the two labels directly, without
+								// having to worry about them having different lengths,
+								// as we started by resetting all prefixes at the beginning
+								// of the function and since then have always built up
+								// all nodes at the same time which had the same prefixes,
+								// so that we never can be in a state in which one node's
+								// prefix has become longer than another one's, unless their
+								// prefixes are different anyway, in which case we don't care
+								if (cur_auto_f === auto[j].f) {
 									same_as.push(j);
 									changed_something = 1;
 								}
@@ -4060,9 +4073,12 @@ window.GML = {
 								//     C -> G
 
 								var curNodes = [same_as[j]];
+								var allEncounteredNodes = [curNodes];
+
 								// for each letter K in the prefix...
 								for (var k=0; k < rec_depth; k++) {
 									var nextNodes = [];
+
 									// ... we look at each node L on the current node list ...
 									for (var l=0; l < curNodes.length; l++) {
 										var curNode = auto[curNodes[l]];
@@ -4072,6 +4088,7 @@ window.GML = {
 										}
 									}
 									curNodes = nextNodes;
+									allEncounteredNodes.push(nextNodes);
 								}
 
 								var nextNode_confusing = false;
@@ -4097,15 +4114,36 @@ window.GML = {
 									if (makePrefixSorted) {
 										
 										// we need to actually make it prefix sorted, so we need
-										// to split the current node into n.length nodes
+										// to split a node into n.length nodes; however, it is
+										// not incredibly straightforward which node to split -
+										// the node that needs to be split could be very close
+										// to the problematic area, or far away from it; we therefore
+										// just bubble through allEncounteredNodes from the back
+										// to the front, and if we encounter any node with more than
+										// one successor, we split that one
 
-										// we actually need deep copies, so that we can later
-										// do work on this without getting REALLY confusing problems
-										var orig_node = this.deep_copy_node(auto[same_as[j]]);
+										var orig_node = false;
+										var orig_node_i;
+
+										for (var l=allEncounteredNodes.length-1; l > -1; l--) {
+											for (var m=allEncounteredNodes[l].length-1; m > -1; m--) {
+												if (auto[allEncounteredNodes[l][m]].n.length > 1) {
+													// we actually need deep copies, so that we can
+													// later do work on this without getting REALLY
+													// confusing problems
+													orig_node_i = allEncounteredNodes[l][m];
+													orig_node = this.deep_copy_node(auto[orig_node_i]);
+													break;
+												}
+											}
+											if (orig_node) {
+												break;
+											}
+										}
 
 										// update the current node: leave p and c, but only keep the
 										// first of the out-nodes and add their label to the prefix
-										auto[same_as[j]] = {
+										auto[orig_node_i] = {
 											p: orig_node.p, // prev
 											c: orig_node.c, // caption
 											n: [orig_node.n[0]], // next
@@ -4130,7 +4168,7 @@ window.GML = {
 											// node is being split and the other node is not a
 											// predecessor anymore)
 											for (var l=0; l < auto[orig_node.n[k]].p.length; l++) {
-												if (auto[orig_node.n[k]].p[l] == same_as[j]) {
+												if (auto[orig_node.n[k]].p[l] == orig_node_i) {
 													auto[orig_node.n[k]].p[l] = auto.length;
 												}
 											}

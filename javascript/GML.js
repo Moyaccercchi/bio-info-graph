@@ -172,6 +172,8 @@ window.GML = {
 	error_flag: false, // global flag that can be unset before calling functions within GML, and will
 					   // be set to true if these functions encounter internal errors
 
+	XBWs: [], // XBW environments; one for each tab
+
 	// A note about DaTeX:
 	// In DaTeX, we enclose maths expressions in dollarsigns, and to write an actual dollarsign, we write \S.
 	// Just sorting \$ would be a problem as lex(\) > lex(c) for a character c, but sorting $ \$ $ is fine,
@@ -843,9 +845,9 @@ window.GML = {
 
 			if (!GML.hideXBWenvironments) {
 				// initialize XBW environment
-				GML.XBW = this.make_xbw_environment();
-				GML.XBW.init(findex);
-				GML.XBW.generateHTML(2);
+				GML.XBWs[GML_UI.cur_tab] = this.make_xbw_environment();
+				GML.XBWs[GML_UI.cur_tab].init(findex);
+				GML.XBWs[GML_UI.cur_tab].generateHTML();
 			}
 		}
 
@@ -1755,9 +1757,9 @@ window.GML = {
 
 			if (!GML.hideXBWenvironments) {
 				// initialize XBW environment
-				GML.XBW = this.make_xbw_environment();
-				GML.XBW.init(findex);
-				GML.XBW.generateHTML(3);
+				GML.XBWs[GML_UI.cur_tab] = this.make_xbw_environment();
+				GML.XBWs[GML_UI.cur_tab].init(findex);
+				GML.XBWs[GML_UI.cur_tab].generateHTML();
 			}
 		}
 
@@ -2053,9 +2055,9 @@ window.GML = {
 
 			if (!GML.hideXBWenvironments) {
 				// start up control center for merged XBW
-				GML.XBW = xbw12;
-				GML.XBW.init(xbw12._publishFindex());
-				GML.XBW.generateHTML(5);
+				GML.XBWs[GML_UI.cur_tab] = xbw12;
+				GML.XBWs[GML_UI.cur_tab].init(xbw12._publishFindex());
+				GML.XBWs[GML_UI.cur_tab].generateHTML();
 			}
 		}
 

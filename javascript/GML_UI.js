@@ -54,7 +54,7 @@ window.GML_UI = {
 
 	showTab: function(nexttab) {
 
-		cur_tab = nexttab;
+		this.cur_tab = nexttab;
 
 		this.unShowAllTabs();
 
@@ -221,6 +221,48 @@ window.GML_UI = {
 			document.getElementById('in-string-6-1').value.toUpperCase(),
 			document.getElementById('in-string-6-2').value.toUpperCase()) + '</div>';
 		*/
+	},
+
+
+
+	/*
+		Input Enter Key Press
+	*/
+
+	// function called on input enter - can be overwritten by the current input field
+	// (the function is encoded as array, with the first value representing which library
+	// is called - e.g. 'XBW' - and the second one representing the name of the function,
+	// with all further values representing extra parameters which are sent to the function
+	// in addition to the current tab)
+	in_func: [],
+
+	inputEnter: function(e) {
+
+		if (!e) e = window.event;
+		var keyCode = e.keyCode || e.which;
+
+		// Enter pressed?
+		if (keyCode == '13') {
+
+			switch (GML_UI.in_func[0]) {
+
+				case 'XBW':
+					GML.XBWs[GML_UI.cur_tab][GML_UI.in_func[1]](GML_UI.cur_tab);
+					break;
+
+				case 'UI':
+					GML_UI[GML_UI.in_func[1]]();
+					break;
+
+				case 'index':
+					switch (GML_UI.in_func[1]) {
+						case 'jumpto':
+							document.getElementById(GML_UI.in_func[2]).focus();
+							break;
+					}
+					break;
+			}
+		}
 	},
 
 

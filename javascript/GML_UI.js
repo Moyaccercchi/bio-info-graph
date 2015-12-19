@@ -69,6 +69,16 @@ window.GML_UI = {
 				}
 			}
 		}
+
+		// focus first input field on the tab, if the tab contains
+		// the typical input fields (as opposed to e.g. the options tab)
+		var el = document.getElementById('in-string-' + nexttab + '-1');
+		if (!el) {
+			el = document.getElementById('in-string-' + nexttab);
+		}
+		if (el) {
+			el.focus();
+		}
 	},
 
 	activateDivOut: function(i, showXBWenv, showAnchors) {
@@ -91,7 +101,7 @@ window.GML_UI = {
 
 		el = document.getElementById('div-out-' + i);
 		el.innerHTML = '<div class="working">Working on your request...<br><br>' +
-					   'If you see this message for a long time, the page may have crashed.' +
+					   'If you see this message for a long time, the page may have crashed. ' +
 					   'In that case you could try to ' +
 					   'refresh the page, reduce the verbosity in the options, ' +
 					   'and then restart the computation.</div>';

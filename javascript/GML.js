@@ -70,13 +70,13 @@
 	arraysContainSameEls: function(a1, a2);
 	arrayContainsOtherArraysEls: function(a1, a2);
 	generateFfromPrefixesBWTM: function(prefixes, bwt, m);
-	computePrefixes: function(auto);
-	workOnAutomatonPrefixes: function(auto, makePrefixSorted, addToSOut);
-	workOnAutomatonPrefixes_int: function(auto, makePrefixSorted, addToSOut);
+	computePrefixes: function(auto, spillover_into_auto);
+	workOnAutomatonPrefixes: function(auto, makePrefixSorted, addToSOut, spillover_into_auto);
+	workOnAutomatonPrefixes_int: function(auto, makePrefixSorted, addToSOut, spillover_into_auto);
 	deep_copy_node: function(node);
 	deep_copy_array: function(arr);
 	isAutomatonPrefixSorted: function(auto);
-	makeAutomatonPrefixSorted: function(auto, addToSOut);
+	makeAutomatonPrefixSorted: function(auto, addToSOut, spillover_into_auto);
 	getFindexFromAutomaton: function(auto);
 	getAutomatonFromFindex: function(findex);
 	generate_BWTs_naively: function(h1, h2);
@@ -972,9 +972,12 @@ window.GML = {
 						"into prefix-sorted automata." + this.nlnl;
 			}
 
+
+// [TODO P4] - so we need to adjust computePrefixes AND makeAutomatonPrefixSorted?
+
 			auto = this.computePrefixes(auto);
-			auto1 = this.computePrefixes(auto1);
 			auto2 = this.computePrefixes(auto2);
+			auto1 = this.computePrefixes(auto1, auto2);
 
 			var isPrefSort = this.isAutomatonPrefixSorted(auto);
 			var isPrefSort1 = this.isAutomatonPrefixSorted(auto1);
@@ -988,19 +991,19 @@ window.GML = {
 				}
 			}
 
-			if (!isPrefSort1) {
-				auto1 = this.makeAutomatonPrefixSorted(auto1, false);
-				isPrefSort1 = this.isAutomatonPrefixSorted(auto1);
-				if (!isPrefSort1) {
-					sout += "Ooops! We do not have a prefix-sorted automaton for " + this.DH_1 + "!" + this.nlnl;
-				}
-			}
-
 			if (!isPrefSort2) {
 				auto2 = this.makeAutomatonPrefixSorted(auto2, false);
 				isPrefSort2 = this.isAutomatonPrefixSorted(auto2);
 				if (!isPrefSort2) {
 					sout += "Ooops! We do not have a prefix-sorted automaton for " + this.DH_2 + "!" + this.nlnl;
+				}
+			}
+
+			if (!isPrefSort1) {
+				auto1 = this.makeAutomatonPrefixSorted(auto1, false, auto2);
+				isPrefSort1 = this.isAutomatonPrefixSorted(auto1);
+				if (!isPrefSort1) {
+					sout += "Ooops! We do not have a prefix-sorted automaton for " + this.DH_1 + "!" + this.nlnl;
 				}
 			}
 
@@ -1018,7 +1021,7 @@ window.GML = {
 			// BWT and pos for H
 
 			if (this.verbosity > 2) {
-				sout += "We can now generate the BWT of the graph, ";
+				sout += "We can now generate the BWTs of the graphs, ";
 				sout += "together with the ";
 				if (generate_F) {
 					sout += "vectors " + this.DM + ' and ' + this.DF;
@@ -1028,10 +1031,25 @@ window.GML = {
 				sout += "." + this.nlnl;
 			}
 
+// [TODO P3] - auto1 here already has its full prefixes within its .f strings,
+// so we need to adjust these before anything else to get to the bottom of it all =)
+
 			var findex1 = this.getFindexFromAutomaton(auto1);
 			if (generate_F) {
 				findex1[3] = this.generateFfromPrefixesBWTM(findex1[0], findex1[1], findex1[2]);
 			}
+
+/*
+// [TODO P1]
+var ex1 = 2;
+var ex2 = 3;
+for (var i=0; i < 4; i++) {
+if (findex1[i]) {
+var cpy = findex1[i][ex1];
+findex1[i][ex1] = findex1[i][ex2];
+findex1[i][ex2] = cpy;
+}}
+*/
 
 			if (this.verbosity > 1) {
 				sout += "For " + this.DH_1 + " we get:" + this.nlnl;
@@ -1175,7 +1193,9 @@ window.GML = {
 
 			var i;
 			for (i=0; i < p1.length; i++) {
-				p1[i][0] = p1[i][0].replace(this.DS, this.DS_1_o);
+				if (p1[i][0].indexOf(this.DS_1_o) < 0) {
+					p1[i][0] = p1[i][0].replace(this.DS, this.DS_1_o);
+				}
 				bwt1[i] = bwt1[i].replace(this.DS, this.DS_1_o);
 			}
 			for (i=0; i < p2.length; i++) {
@@ -1201,7 +1221,8 @@ window.GML = {
 
 
 			for (i=0; i < this.p12.length; i++) {
-				if (this.p12[i][0].indexOf(this.DS_1_o) > -1) {
+				if ((this.p12[i][0].indexOf(this.DS_1_o) > -1) &&
+					(this.p12[i][0].indexOf(this.DK_1_o) < 0)) {
 					this.p12[i][0] += this.DK_1_o + this.firstH2Letter;
 				}
 			}
@@ -3964,8 +3985,8 @@ window.GML = {
 
 	// takes in an automaton
 	// gives out the automaton with prefixes calculated for each node
-	computePrefixes: function(auto) {
-		return this.workOnAutomatonPrefixes(auto, false, false);
+	computePrefixes: function(auto, spillover_into_auto) {
+		return this.workOnAutomatonPrefixes(auto, false, false, spillover_into_auto);
 	},
 
 
@@ -3980,12 +4001,12 @@ window.GML = {
 	//   stating whether we should be verbose or not
 	// gives out the automaton with prefixes calculated for each node,
 	//   and converted into a prefix sorted automaton if makePrefixSorted is true
-	workOnAutomatonPrefixes: function(auto, makePrefixSorted, addToSOut) {
+	workOnAutomatonPrefixes: function(auto, makePrefixSorted, addToSOut, spillover_into_auto) {
 
 		// while more work is required, do more work
-		while (this.workOnAutomatonPrefixes_int(auto, makePrefixSorted, addToSOut)) {
+		while (this.workOnAutomatonPrefixes_int(auto, makePrefixSorted, addToSOut, spillover_into_auto)) {
 			if (addToSOut) {
-				this.sout += this.visualize(this.computePrefixes(auto), true);
+				this.sout += this.visualize(auto, true);
 			}
 		}
 
@@ -3993,12 +4014,18 @@ window.GML = {
 	},
 
 
-	// takes in an automaton and a boolean parameter
+	// takes in an automaton, a boolean parameter and an optional automaton into which spillovers
+	//   can happen (without it, spillovers will not occur, but a hard cutoff at $ of the main
+	//   automaton will occur instead) - we here assume that this optional spillover automaton
+	//   is already pretty happy itself, or at least not sadder than the thing we are working on;
+	//   that is, we will most likely not start calculating fresh prefixes for it etc.; we just
+	//   take it at face value! (however, we may split a node in the spillover automaton if we
+	//   have to split a node and cannot find any other place... soz)
 	// gives out true if more work on the automaton is required,
 	//   or false if the automaton has been successfully equipped with
 	//   prefixes / has been converted to a prefix sorted one (depending
 	//   on the makePrefixSorted parameter)
-	workOnAutomatonPrefixes_int: function(auto, makePrefixSorted, addToSOut) {
+	workOnAutomatonPrefixes_int: function(auto, makePrefixSorted, addToSOut, spillover_into_auto) {
 
 		// start by setting all prefixes just to the labels themselves
 		for (var i=0; i < auto.length; i++) {
@@ -4036,14 +4063,14 @@ window.GML = {
 
 						for (var j=0; j < alen; j++) {
 							if ((i !== j) && (auto[j])) {
-								// we can here compare the two labels directly, without
+								// We can here compare the two labels directly, without
 								// having to worry about them having different lengths,
 								// as we started by resetting all prefixes at the beginning
 								// of the function and since then have always built up
 								// all nodes at the same time which had the same prefixes,
 								// so that we never can be in a state in which one node's
 								// prefix has become longer than another one's, unless their
-								// prefixes are different anyway, in which case we don't care
+								// prefixes are different anyway, in which case we don't care.
 								if (cur_auto_f === auto[j].f) {
 									same_as.push(j);
 									changed_something = 1;
@@ -4056,7 +4083,7 @@ window.GML = {
 							// we know that auto[i].f == auto[j].f for all j in same_as,
 							// so the rec_depth is the same for all, so we can compute it
 							// outside the for loop
-							var rec_depth = auto[i].f.length - 1;
+							var rec_depth = cur_auto_f.length - 1;
 							for (var j=0; j < same_as.length; j++) {
 
 								// ... so now for each node, we follow along the graph
@@ -4074,7 +4101,9 @@ window.GML = {
 								//   \
 								//     C -> G
 
-								var curNodes = [same_as[j]];
+								// the ,0 here is the origin - that is, H_0 on default, but could
+								// be ,1 if a spillover happened
+								var curNodes = [[same_as[j], 0]];
 								var allEncounteredNodes = [curNodes];
 
 								// for each letter K in the prefix...
@@ -4083,10 +4112,20 @@ window.GML = {
 
 									// ... we look at each node L on the current node list ...
 									for (var l=0; l < curNodes.length; l++) {
-										var curNode = auto[curNodes[l]];
+										var cur_auto;
+										if (curNodes[l][1] === 1) {
+											cur_auto = spillover_into_auto;
+										} else {
+											cur_auto = auto;
+										}
+										var curNode = [cur_auto[curNodes[l][0]], curNodes[l][1]];
 										// ... and look at each node M following that node L
-										for (var m=0; m < curNode.n.length; m++) {
-											nextNodes.push(curNode.n[m]);
+										if (spillover_into_auto && (curNode[0].c === this.DS) && (curNode[1] === 0)) {
+											// let's spill over while reconstructing the existing prefix
+											curNode = [spillover_into_auto[0], 1];
+										}
+										for (var m=0; m < curNode[0].n.length; m++) {
+											nextNodes.push([curNode[0].n[m], curNode[1]]);
 										}
 									}
 									curNodes = nextNodes;
@@ -4095,14 +4134,36 @@ window.GML = {
 
 								var nextNode_confusing = false;
 
-								var firstNodeLabel = auto[auto[curNodes[0]].n[0]].c;
+								var firstNodeLabel;
+								var cur_auto;
+
+								if (spillover_into_auto && (curNodes[0][1] === 1)) {
+									// we already spilled over way back...
+									cur_auto = spillover_into_auto;
+								} else {
+									// no spillover happening
+									cur_auto = auto;
+								}
+								firstNodeLabel = cur_auto[cur_auto[curNodes[0][0]].n[0]].c;
+								var check_for_label = firstNodeLabel;
+
+								if (spillover_into_auto && (firstNodeLabel === this.DS)) {
+									// we actually do the spill over for the first time =)
+									firstNodeLabel = this.DS_1_o + this.DK_1_o + spillover_into_auto[spillover_into_auto[0].n[0]].c;
+									check_for_label = this.DS;
+								}
 
 								// check if any nodes on the list have any successors that have labels
 								// different than firstNodeLabel
 								for (var l=0; l < curNodes.length; l++) {
-									var curNode = auto[curNodes[l]];
+									if (spillover_into_auto && (curNodes[l][1] === 1)) {
+										cur_auto = spillover_into_auto;
+									} else {
+										cur_auto = auto;
+									}
+									var curNode = cur_auto[curNodes[l][0]];
 									for (var m=0; m < curNode.n.length; m++) {
-										if (firstNodeLabel !== auto[curNode.n[m]].c) {
+										if (check_for_label !== cur_auto[curNode.n[m]].c) {
 											nextNode_confusing = true;
 											break;
 										}
@@ -4129,12 +4190,17 @@ window.GML = {
 
 										for (var l=allEncounteredNodes.length-1; l > -1; l--) {
 											for (var m=allEncounteredNodes[l].length-1; m > -1; m--) {
-												if (auto[allEncounteredNodes[l][m]].n.length > 1) {
+												if (allEncounteredNodes[l][m][1] === 1) {
+													cur_auto = spillover_into_auto;
+												} else {
+													cur_auto = auto;
+												}
+												if (cur_auto[allEncounteredNodes[l][m][0]].n.length > 1) {
 													// we actually need deep copies, so that we can
 													// later do work on this without getting REALLY
 													// confusing problems
-													orig_node_i = allEncounteredNodes[l][m];
-													orig_node = this.deep_copy_node(auto[orig_node_i]);
+													orig_node_i = allEncounteredNodes[l][m][0];
+													orig_node = this.deep_copy_node(cur_auto[orig_node_i]);
 													break;
 												}
 											}
@@ -4145,11 +4211,11 @@ window.GML = {
 
 										// update the current node: leave p and c, but only keep the
 										// first of the out-nodes and add their label to the prefix
-										auto[orig_node_i] = {
+										cur_auto[orig_node_i] = {
 											p: orig_node.p, // prev
 											c: orig_node.c, // caption
 											n: [orig_node.n[0]], // next
-											f: orig_node.f + auto[orig_node.n[0]].c, // prefix
+											f: orig_node.f + cur_auto[orig_node.n[0]].c, // prefix
 										};
 
 										if (addToSOut) {
@@ -4163,22 +4229,22 @@ window.GML = {
 											orig_node = this.deep_copy_node(orig_node);
 											// add the new node as outnode to its predecessor
 											for (var l=0; l < orig_node.p.length; l++) {
-												auto[orig_node.p[l]].n.push(auto.length);
+												cur_auto[orig_node.p[l]].n.push(cur_auto.length);
 											}
 											// update the outgoing node and set its predecessor
 											// to this new node (we update instead of add, as the
 											// node is being split and the other node is not a
 											// predecessor anymore)
-											for (var l=0; l < auto[orig_node.n[k]].p.length; l++) {
-												if (auto[orig_node.n[k]].p[l] == orig_node_i) {
-													auto[orig_node.n[k]].p[l] = auto.length;
+											for (var l=0; l < cur_auto[orig_node.n[k]].p.length; l++) {
+												if (cur_auto[orig_node.n[k]].p[l] == orig_node_i) {
+													cur_auto[orig_node.n[k]].p[l] = cur_auto.length;
 												}
 											}
-											auto.push({
+											cur_auto.push({
 												p: orig_node.p, // prev
 												c: orig_node.c, // caption
 												n: [orig_node.n[k]], // next
-												f: orig_node.f + auto[orig_node.n[k]].c, // prefix
+												f: orig_node.f + cur_auto[orig_node.n[k]].c, // prefix
 											});
 										}
 
@@ -4275,8 +4341,8 @@ window.GML = {
 	// takes in an automaton with prefixes and a boolean parameter stating whether we
 	//   should be verbose or not
 	// gives out a prefix sorted automaton recognizing the same language
-	makeAutomatonPrefixSorted: function(auto, addToSOut) {
-		return this.workOnAutomatonPrefixes(auto, true, addToSOut);
+	makeAutomatonPrefixSorted: function(auto, addToSOut, spillover_into_auto) {
+		return this.workOnAutomatonPrefixes(auto, true, addToSOut, spillover_into_auto);
 	},
 
 
@@ -4293,7 +4359,22 @@ window.GML = {
 			}
 		}
 
-		prefixes.sort();
+		// keep > in mind when sorting (that is, take out > for correct spillover sorting)
+		var spillover_str = this.DS_1_o + this.DK_1_o;
+		prefixes.sort(function(a, b) {
+
+			var a_s = a[0].replace(spillover_str, '');
+			var b_s = b[0].replace(spillover_str, '');
+
+			if (a_s < b_s) {
+				return -1;
+			}
+			if (a_s > b_s) {
+				return 1;
+			}
+
+			return 0;
+		});
 
 		var BWT = [];
 		var M = [];

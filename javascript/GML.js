@@ -60,6 +60,7 @@
 	generateRandomGraphString: function();
 	stringToGraph: function(str);
 	graphToAutomaton: function(graph);
+	sanitizeAutomaton: function(auto);
 	mergeAutomata: function(auto1, auto2);
 	makeAutomatonReverseDeterministic: function(auto, addToSOut);
 	makeAutomatonReverseDeterministic_int: function(auto, addToSOut);
@@ -707,7 +708,7 @@ window.GML = {
 			}
 
 			this.sout = '';
-			auto = this.makeAutomatonReverseDeterministic(auto, true);
+			auto = this.makeAutomatonReverseDeterministic(auto, this.verbosity > 5);
 
 			if (this.verbosity > 5) {
 				sout += this.nlnl + this.sout;
@@ -886,9 +887,19 @@ window.GML = {
 
 		this.error_flag = false;
 
-		// generate the graph
-		var graph1 = this.stringToGraph(h1);
-		var graph2 = this.stringToGraph(h2);
+		var graph1, graph2;
+
+		// if someone inputs AC vs. TG into the first input field, then handle it as AC in the first
+		// and TG in the second input field - just a way quicker enter saved input data =)
+		var vs_index = h1.indexOf(' VS. ');
+		if (vs_index >= 0) {
+			graph1 = this.stringToGraph(h1.slice(0, vs_index));
+			graph2 = this.stringToGraph(h1.slice(vs_index + 5));
+		} else {
+			// generate the graph
+			graph1 = this.stringToGraph(h1);
+			graph2 = this.stringToGraph(h2);
+		}
 
 		if (this.error_flag) {
 			return this.errorWrap('An infoblock in the input is wrongly formatted.');
@@ -1477,10 +1488,8 @@ findex1[i][ex2] = cpy;
 					var next_nodes = [firstRedi];
 					var firstRedPrefix_rep = firstRedPrefix.replace(this.DS_1_o + this.DK_1_o, '$#');
 					var preflen = firstRedPrefix_rep.length;
-					console.log('firstRedPrefix:');
-					console.log(firstRedPrefix);
+
 					for (i=0; i < preflen; i++) {
-					console.log(i + ' with ' + next_nodes);
 						// TODO :: make this more professional
 						//         (currently, we are converting an array to string and back to array
 						//         to do a deep copy rather than a pointer copy - there must a cleaner
@@ -1773,10 +1782,16 @@ findex1[i][ex2] = cpy;
 				sout += 'We can see that the table found through merging the BWTs and the ' +
 						'table found through merging the graphs and then building one BWT ' +
 						'are exactly the same! Jippey! =)' + this.nlnl;
+				if (this.verbosity > 1) {
+					document.getElementsByTagName('body')[0].style.backgroundColor = '#FFF';
+				}
 			} else {
 				sout += 'We can see that the table found through merging the BWTs and the ' +
 						'table found through merging the graphs and then building one BWT ' +
 						'are not the same... Sad face. =(' + this.nlnl;
+				if (this.verbosity > 1) {
+					document.getElementsByTagName('body')[0].style.backgroundColor = '#F44';
+				}
 			}
 
 
@@ -2062,9 +2077,15 @@ findex1[i][ex2] = cpy;
 
 			if (xbw.equals(xbw12)) {
 				sout += 'We can see that these are exactly the same, and we are happy!' + this.nlnl;
+				if (this.verbosity > 1) {
+					document.getElementsByTagName('body')[0].style.backgroundColor = '#FFF';
+				}
 			} else {
 				sout += 'We can see that these are different from each other, ' +
 						'so something somewhere went wrong...' + this.nlnl;
+				if (this.verbosity > 1) {
+					document.getElementsByTagName('body')[0].style.backgroundColor = '#F44';
+				}
 			}
 
 
@@ -2634,7 +2655,14 @@ findex1[i][ex2] = cpy;
 		// so we'll not do that ;)
 		var mainrow = [0];
 		var i = 0;
-		while ((auto[i].c !== this.DS) && (auto[i].c !== this.DS_1)) {
+
+		// in a well-formed automaton, the auto[i].n.length > 0 check should be unnecessary, as
+		// we go until $ always following .n[0], which should work out fine... buuut better be
+		// safe than sorry (e.g. right now entering TAATACGCGGGTC|,8,,9 into the generate tables
+		// tab made this fail - we fixed it now by adding the sanitization step into the graph to
+		// automaton conversion when reading out user input, but still, this might happen again,
+		// with other as of yet unknown bugs)
+		while ((auto[i].c !== this.DS) && (auto[i].c !== this.DS_1) && (auto[i].n.length > 0)) {
 			i = auto[i].n[0];
 			mainrow.push(i);
 		}
@@ -3231,6 +3259,9 @@ findex1[i][ex2] = cpy;
 	// gives out an array containing the main row and an array containing the infoblocks
 	stringToGraph: function(str) {
 
+		// get rid of illegal characters in input
+		str = str.split('^').join('').split('#').join('').split('$').join('');
+
 		var ssplit = str.split('|');
 
 		// insert hashtag character at the beginning of input string
@@ -3376,7 +3407,46 @@ findex1[i][ex2] = cpy;
 			}
 		}
 
+		// sanitize the automaton just in case someone entered something real funny...
+		this.sanitizeAutomaton(auto);
+
 		return auto;
+	},
+
+
+
+	// takes in an automaton
+	// gives out nothing, but eliminates multiple edges within the automaton
+	//   (that is, no two edges are allowed to have the same starting and ending nodes)
+	sanitizeAutomaton: function(auto) {
+
+		var i, k, new_arr;
+
+		// for each node in the automaton ...
+		for (i=0; i < auto.length; i++) {
+
+			// ... if it has not been deleted ...
+			if (auto[i]) {
+
+				// ... construct a new .p array without any repeats ...
+				new_arr = [];
+				for (k=0; k < auto[i].p.length; k++) {
+					if (new_arr.indexOf(auto[i].p[k]) < 0) {
+						new_arr.push(auto[i].p[k]);
+					}
+				}
+				auto[i].p = new_arr;
+
+				// ... and construct a new .n array without any repeats
+				new_arr = [];
+				for (k=0; k < auto[i].n.length; k++) {
+					if (new_arr.indexOf(auto[i].n[k]) < 0) {
+						new_arr.push(auto[i].n[k]);
+					}
+				}
+				auto[i].n = new_arr;
+			}
+		}
 	},
 
 
@@ -4064,7 +4134,7 @@ findex1[i][ex2] = cpy;
 			for (var i=0; i < alen; i++) {
 
 				if (auto[i]) {
-					var cur_auto_f = auto[i].f;
+					var cur_auto_f = auto[i].f.replace(this.DS_1_o + this.DK_1_o, '');
 
 					// if we are already in a nonsensical position, then going further down the
 					// rabbit hole is not going to achieve anything (as we started this function
@@ -4086,7 +4156,7 @@ findex1[i][ex2] = cpy;
 								// so that we never can be in a state in which one node's
 								// prefix has become longer than another one's, unless their
 								// prefixes are different anyway, in which case we don't care.
-								if (cur_auto_f === auto[j].f) {
+								if (cur_auto_f === auto[j].f.replace(this.DS_1_o + this.DK_1_o, '')) {
 									same_as.push(j);
 									changed_something = 1;
 								}
@@ -4152,6 +4222,11 @@ findex1[i][ex2] = cpy;
 								var firstNodeLabel;
 								var cur_auto;
 
+								if (spillover_into_auto && (curNodes[0][1] === 0) && (auto[curNodes[0][0]].c === this.DS)) {
+									// let's spill over here (like in the for-loop for the edge case
+									// of having $ as the last thing added within the loop)
+									curNodes[0] = [spillover_into_auto[0].n[0], 1];
+								}
 								if (spillover_into_auto && (curNodes[0][1] === 1)) {
 									// we already spilled over way back...
 									cur_auto = spillover_into_auto;
@@ -4162,7 +4237,7 @@ findex1[i][ex2] = cpy;
 								firstNodeLabel = cur_auto[cur_auto[curNodes[0][0]].n[0]].c;
 								var check_for_label = firstNodeLabel;
 
-								if (spillover_into_auto && (firstNodeLabel === this.DS)) {
+								if (spillover_into_auto && (firstNodeLabel === this.DS) && (curNodes[0][1] === 0)) {
 									// we actually do the spill over for the first time =)
 									firstNodeLabel = this.DS_1_o + this.DK_1_o + spillover_into_auto[spillover_into_auto[0].n[0]].c;
 									check_for_label = this.DS;
@@ -4597,8 +4672,13 @@ findex1[i][ex2] = cpy;
 
 				main_row_path.push(nextNode);
 
+				// we only give green light if we reach a node that has no nextNodes AND that
+				// has the label $ - if we do not reach such a node, then we may break if we
+				// cannot go on, but do not report that the main row works =)
 				if (auto[nextNode].n.length === 0) {
-					naive_main_row_works = true;
+					if (auto[nextNode].c === this.DS) {
+						naive_main_row_works = true;
+					}
 					break;
 				}
 			}

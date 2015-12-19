@@ -75,6 +75,7 @@ div.tabbox > div {
 div.mainbox {
 	padding:16px 16px 0px 16px;
 	margin-bottom:32px;
+	background:rgb(255, 255, 255) none repeat scroll 0% 0%;
 
 	/* when verbosity = 1, and we get an error (and nothing else),
 	   then the padding looks stupid unless we specify this min-height here */

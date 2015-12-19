@@ -139,6 +139,47 @@ window.GML_UI = {
 
 
 	/*
+		Test Data
+	*/
+
+	construct_tests: [
+		'ACEG',
+		'ACEG|,1,,3;,2,TB,4',
+		'GACGTACCTG|,2,T,4;,3,,5;,6,,10;,6,,8',
+		'GACGTACCTG|,4,,2',
+		'ACGTAGATTTC|,7,,4',
+		'TAATACGCGGGTC|,8,,9',
+		'GACGTACTG|,5,C,8;,2,G,5;,5,GT,9',
+		'GCTGGCGAGCAG|,5,T,3;,12,GCTC,5;,5,,7',
+		'GCTGGCGAGCAG|,3,T,5;,5,GCTC,12',
+		'GACGTACCTG|a,2,TAT,6;,a:0,C,a:2',
+		'GACCTAATG|,5,C,8;,2,G,5',
+		'ATTCACCACCAACCCGACATA|,4,CACG,9;,9,TCG,12',
+		'CCACGCGCCATGGC|,1,CTG,14',
+		'GCTGGCGAGCAG|,3,T,5;,5,,7',
+		'GCCGT|,3,,5',
+	],
+
+	merge_tests: [
+		['ACEG', 'BDFK'],
+		['ACEG|,1,,3', 'BDFK'],
+		['ACEG|,1,,3;,2,TB,4', 'BDFK|,2,,4'],
+		['C', 'ACTG|,2,,4'],
+		['C', 'ACATG'],
+		['GACGT|,2,T,4;,3,,5', 'ACCTG|,1,,5;,1,,3'],
+		['C', 'ACTG|,2,T,4'],
+		['GACGT|,2,C,4;,2,T,4;,3,,5', 'ACCTG|,1,,5;,1,,3'],
+		['GACGT|,2,T,4;,1,C,4;,3,,5', 'ACCTG|,1,,5;,1,,3'],
+		['TAT', 'C'],
+		['TT|,1,A,2', 'C'],
+		['TCGTGCGAGG|,1,ACAA,10', 'C'],
+		['TAATACGCGGGTC|,8,,9', 'ACCTG|,1,,5;,1,,3'],
+		['AAGTTTCTTTCGTGCGAGGCCGT|,10,ACAA,19;,16,CGT,20', 'ACCTG'],
+	],
+
+
+
+	/*
 		Tab 0 - Generate One BWT (naively)
 	*/
 
@@ -182,16 +223,12 @@ window.GML_UI = {
 
 	test_generateAdvancedBWT: function() {
 
-		var tests = [
-			'ACEG',
-			'ACEG|,1,,3;,2,TB,4',
-			'TAATACGCGGGTC|,8,,9',
-		];
-
 		var old_verbosity = GML.verbosity;
 		GML.verbosity = 1;
 		var old_hide_xbw_env = GML.hideXBWenvironments;
 		GML.hideXBWenvironments = true;
+
+		var tests = this.construct_tests;
 
 		var el = this.activateDivOut(2, false, false);
 		el.innerHTML = '';
@@ -235,24 +272,12 @@ window.GML_UI = {
 
 	test_mergeAdvancedBWTs: function() {
 
-		var tests = [
-			['ACEG|,1,,3', 'BDFK'],
-			['ACEG|,1,,3;,2,TB,4', 'BDFK|,2,,4'],
-			['C', 'ACTG|,2,,4'],
-			['C', 'ACATG'],
-			['GACGT|,2,T,4;,3,,5', 'ACCTG|,1,,5;,1,,3'],
-			['C', 'ACTG|,2,T,4'],
-			['GACGT|,2,C,4;,2,T,4;,3,,5', 'ACCTG|,1,,5;,1,,3'],
-			['GACGT|,2,T,4;,1,C,4;,3,,5', 'ACCTG|,1,,5;,1,,3'],
-			['TAT', 'C'],
-			['TT|,1,A,2', 'C'],
-			['AAGTTTCTTTCGTGCGAGGCCGT|,10,ACAA,19;,16,CGT,20', 'ACCTG'],
-		];
-
 		var old_verbosity = GML.verbosity;
 		GML.verbosity = 1;
 		var old_hide_xbw_env = GML.hideXBWenvironments;
 		GML.hideXBWenvironments = true;
+
+		var tests = this.merge_tests;
 
 		var el = this.activateDivOut(3, false, false);
 		el.innerHTML = '';
@@ -288,24 +313,12 @@ window.GML_UI = {
 
 	test_mergeGraphXBWs: function() {
 
-		var tests = [
-			['ACEG|,1,,3', 'BDFK'],
-			['ACEG|,1,,3;,2,TB,4', 'BDFK|,2,,4'],
-			['C', 'ACTG|,2,,4'],
-			['C', 'ACATG'],
-			['GACGT|,2,T,4;,3,,5', 'ACCTG|,1,,5;,1,,3'],
-			['C', 'ACTG|,2,T,4'],
-			['GACGT|,2,C,4;,2,T,4;,3,,5', 'ACCTG|,1,,5;,1,,3'],
-			['GACGT|,2,T,4;,1,C,4;,3,,5', 'ACCTG|,1,,5;,1,,3'],
-			['TAT', 'C'],
-			['TT|,1,A,2', 'C'],
-			['AAGTTTCTTTCGTGCGAGGCCGT|,10,ACAA,19;,16,CGT,20', 'ACCTG'],
-		];
-
 		var old_verbosity = GML.verbosity;
 		GML.verbosity = 1;
 		var old_hide_xbw_env = GML.hideXBWenvironments;
 		GML.hideXBWenvironments = true;
+
+		var tests = this.merge_tests;
 
 		var el = this.activateDivOut(5, false, false);
 		el.innerHTML = '';

@@ -16,16 +16,16 @@
 			Merge Na&iuml;ve Graph BWTs
 		</div>
 		<div class="tabbutton" id="tab-btn-2" onclick="GML_UI.showTab(2)">
-			Generate Graph BWT
+			Generate Tables
 		</div>
 		<div class="tabbutton" id="tab-btn-3" onclick="GML_UI.showTab(3)">
-			Merge Graph BWTs
+			Merge Node Tables
 		</div>
 		<div class="tabbutton" id="tab-btn-5" onclick="GML_UI.showTab(5)">
-			Merge Graph XBWs
+			Merge Flat Tables
 		</div>
 		<div class="tabbutton" id="tab-btn-6" onclick="GML_UI.showTab(6)">
-			Fuse Graph XBWs
+			Fuse Flat Tables
 		</div>
 		<div class="tabbutton" id="tab-btn-4" onclick="GML_UI.showTab(4)">
 			Options
@@ -91,8 +91,8 @@
 			<span class="infobtn" onclick="GML_UI.mergeNaiveBWTsIn2Info(event)">Info</span>
 		</div>
 		<div>
-			<div class="button md-2" onclick="GML_UI.generateNaiveBWTs()">Generate na&iuml;ve graph BWTs</div>
-			<div class="button md-2" onclick="GML_UI.mergeNaiveBWTs()">Merge na&iuml;ve graph BWTs <span class="infobtn" onclick="GML_UI.mergeNaiveBWTsInfo(event)">Info</span></div>
+			<div class="button col-6" onclick="GML_UI.generateNaiveBWTs()">Generate na&iuml;ve graph BWTs</div>
+			<div class="button col-6" onclick="GML_UI.mergeNaiveBWTs()">Merge na&iuml;ve graph BWTs <span class="infobtn" onclick="GML_UI.mergeNaiveBWTsInfo(event)">Info</span></div>
 		</div>
 	</div>
 
@@ -120,7 +120,10 @@
 			<span class="infobtn randbtn" onclick="GML_UI.randomizeGraphInput('in-string-2')">Randomize</span>
 			<span class="infobtn" onclick="GML_UI.generateAdvancedBWTIn1Info(event)">Info</span>
 		</div>
-		<div class="button" onclick="GML_UI.generateAdvancedBWT()">Generate graph BWT</div>
+		<div>
+			<div class="button col-6" onclick="GML_UI.generateAdvancedBWT()">Generate tables</div>
+			<div class="button col-6" onclick="GML_UI.test_generateAdvancedBWT()">Run automated tests</div>
+		</div>
 	</div>
 
 	<div id="div-out-2" class="mainbox" style="display:none">
@@ -160,7 +163,8 @@
 		</div>
 		<div>
 			<!-- div class="button" onclick="GML_UI.generateAdvancedBWTs()">Generate graph BWTs</div -->
-			<div class="button" onclick="GML_UI.mergeAdvancedBWTs()">Merge graph BWTs</div>
+			<div class="button col-6" onclick="GML_UI.mergeAdvancedBWTs()">Merge node tables</div>
+			<div class="button col-6" onclick="GML_UI.test_mergeAdvancedBWTs()">Run automated tests</div>
 		</div>
 	</div>
 
@@ -190,30 +194,30 @@
 		<div>
 			The following options all concern the graph visualization:
 		</div>
-		<div class="md-2" onclick="GML_UI.changeOptions_checkbox('in-options-show-hashtag')" style="cursor:pointer">
+		<div class="col-6" onclick="GML_UI.changeOptions_checkbox('in-options-show-hashtag')" style="cursor:pointer">
 			<span id="in-options-show-hashtag" class="our_checkbox">X</span> Show &#35; node in graphs
 		</div>
-		<div class="md-2" onclick="GML_UI.changeOptions_checkbox('in-options-show-dollarsign')" style="cursor:pointer">
+		<div class="col-6" onclick="GML_UI.changeOptions_checkbox('in-options-show-dollarsign')" style="cursor:pointer">
 			<span id="in-options-show-dollarsign" class="our_checkbox">X</span> Show &#36; node in graphs
 		</div>
-		<div class="md-2" onclick="GML_UI.changeOptions_checkbox('in-options-always-search-path')" style="cursor:pointer">
+		<div class="col-6" onclick="GML_UI.changeOptions_checkbox('in-options-always-search-path')" style="cursor:pointer">
 			<span id="in-options-always-search-path" class="our_checkbox">&nbsp;</span> Rearrange graphs even when it is not strictly necessary
 		</div>
-		<div class="md-2" onclick="GML_UI.changeOptions_checkbox('in-options-find-shortest-path')" style="cursor:pointer">
+		<div class="col-6" onclick="GML_UI.changeOptions_checkbox('in-options-find-shortest-path')" style="cursor:pointer">
 			<span id="in-options-find-shortest-path" class="our_checkbox">&nbsp;</span> Find the shortest path as main row when reorganizing graphs
 		</div>
-		<div class="md-2" onclick="GML_UI.changeOptions_checkbox('in-options-vis-alternate')" style="cursor:pointer">
+		<div class="col-6" onclick="GML_UI.changeOptions_checkbox('in-options-vis-alternate')" style="cursor:pointer">
 			<span id="in-options-vis-alternate" class="our_checkbox">X</span> Alternate sides on which subgraphs are displayed
 		</div>
-		<div class="md-2" onclick="GML_UI.changeOptions_checkbox('in-options-show-autoi')" style="cursor:pointer">
+		<div class="col-6" onclick="GML_UI.changeOptions_checkbox('in-options-show-autoi')" style="cursor:pointer">
 			<span id="in-options-show-autoi" class="our_checkbox">&nbsp;</span> Show auto <i>i</i> above automaton nodes
 		</div>
-		<div class="md-2" onclick="GML_UI.changeOptions_checkbox('in-options-svg-font-latex')" style="cursor:pointer">
+		<div class="col-6" onclick="GML_UI.changeOptions_checkbox('in-options-svg-font-latex')" style="cursor:pointer">
 			<span id="in-options-svg-font-latex" class="our_checkbox">X</span> When saving SVG files, use Times New Roman as LaTeX-like font</b>
 		</div>
 		<div>
-			<div class="button md-2" onclick="GML_UI.applyOptions()" id="id-apply-btn">Apply Options</div>
-			<div class="button md-2" onclick="GML_UI.resetOptions()">Reset Options</div>
+			<div class="button col-6" onclick="GML_UI.applyOptions()" id="id-apply-btn">Apply Options</div>
+			<div class="button col-6" onclick="GML_UI.resetOptions()">Reset Options</div>
 		</div>
 	</div>
 
@@ -256,7 +260,8 @@
 			<span class="infobtn" onclick="GML_UI.mergeGraphXBWsIn2Info(event)">Info</span>
 		</div>
 		<div>
-			<div class="button" onclick="GML_UI.mergeGraphXBWs()">Merge graph XBWs</div>
+			<div class="button col-6" onclick="GML_UI.mergeGraphXBWs()">Merge flat tables</div>
+			<div class="button col-6" onclick="GML_UI.test_mergeGraphXBWs()">Run automated tests</div>
 		</div>
 	</div>
 
@@ -299,7 +304,7 @@
 			<span class="infobtn" onclick="GML_UI.fuseGraphXBWsIn2Info(event)">Info</span>
 		</div>
 		<div>
-			<div class="button" onclick="GML_UI.fuseGraphXBWs()">Fuse graph XBWs</div>
+			<div class="button" onclick="GML_UI.fuseGraphXBWs()">Fuse flat tables</div>
 		</div>
 	</div>
 

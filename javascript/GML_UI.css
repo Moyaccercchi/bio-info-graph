@@ -84,7 +84,6 @@ div.mainbox {
 div.mainbox > div, div.mainbox > input, div.mainbox > div.button {
 	display:block;
 	margin-bottom:16px;
-	width:100%;
 }
 
 div.mainbox > div > input {
@@ -99,12 +98,12 @@ div.mainbox > div > input.in-text-input {
 	margin-left:5px;
 }
 
-div.mainbox div.md-2, div.mainbox > div > input.md-2 {
+div.mainbox div.col-6, div.mainbox > div > input.col-6 {
 	display:inline-block;
 	width:49%;
 }
 
-div.mainbox div.md-2:nth-child(2n), div.mainbox > div > input.md-2:last-child {
+div.mainbox div.col-6:nth-child(2n), div.mainbox > div > input.col-6:last-child {
 	float:right;
 }
 

@@ -180,6 +180,38 @@ window.GML_UI = {
 			document.getElementById('in-string-2').value.toUpperCase()) + '</div>';
 	},
 
+	test_generateAdvancedBWT: function() {
+
+		var tests = [
+			'ACEG',
+			'ACEG|,1,,3;,2,TB,4',
+			'TAATACGCGGGTC|,8,,9',
+		];
+
+		var old_verbosity = GML.verbosity;
+		GML.verbosity = 1;
+		var old_hide_xbw_env = GML.hideXBWenvironments;
+		GML.hideXBWenvironments = true;
+
+		var el = this.activateDivOut(2, false, false);
+		el.innerHTML = '';
+
+		for (var i=0; i < tests.length; i++) {
+			el.innerHTML += '<div style="margin-bottom:0px;">Testing to generate table for ' + tests[i] + '.</div>';
+
+			var res = GML.generate_BWT_advanced(tests[i]);
+
+			if (res.indexOf('class="error"') < 0) {
+				el.innerHTML += '<div>Success!</div>';
+			} else {
+				el.innerHTML += '<div class="error" style="margin-top:0px;">Failure...</div>';
+			}
+		}
+
+		GML.verbosity = old_verbosity;
+		GML.hideXBWenvironments = old_hide_xbw_env;
+	},
+
 
 
 
@@ -201,6 +233,46 @@ window.GML_UI = {
 			document.getElementById('in-string-3-2').value.toUpperCase()) + '</div>';
 	},
 
+	test_mergeAdvancedBWTs: function() {
+
+		var tests = [
+			['ACEG|,1,,3', 'BDFK'],
+			['ACEG|,1,,3;,2,TB,4', 'BDFK|,2,,4'],
+			['C', 'ACTG|,2,,4'],
+			['C', 'ACATG'],
+			['GACGT|,2,T,4;,3,,5', 'ACCTG|,1,,5;,1,,3'],
+			['C', 'ACTG|,2,T,4'],
+			['GACGT|,2,C,4;,2,T,4;,3,,5', 'ACCTG|,1,,5;,1,,3'],
+			['GACGT|,2,T,4;,1,C,4;,3,,5', 'ACCTG|,1,,5;,1,,3'],
+			['TAT', 'C'],
+			['TT|,1,A,2', 'C'],
+			['AAGTTTCTTTCGTGCGAGGCCGT|,10,ACAA,19;,16,CGT,20', 'ACCTG'],
+		];
+
+		var old_verbosity = GML.verbosity;
+		GML.verbosity = 1;
+		var old_hide_xbw_env = GML.hideXBWenvironments;
+		GML.hideXBWenvironments = true;
+
+		var el = this.activateDivOut(3, false, false);
+		el.innerHTML = '';
+
+		for (var i=0; i < tests.length; i++) {
+			el.innerHTML += '<div style="margin-bottom:0px;">Testing to merge ' + tests[i][0] + ' and ' + tests[i][1] + '.</div>';
+
+			var res = GML.merge_BWTs_advanced(tests[i][0], tests[i][1]);
+
+			if (res.indexOf('are exactly the same! Jippey! =)') >= 0) {
+				el.innerHTML += '<div>Success!</div>';
+			} else {
+				el.innerHTML += '<div class="error" style="margin-top:0px;">Failure...</div>';
+			}
+		}
+
+		GML.verbosity = old_verbosity;
+		GML.hideXBWenvironments = old_hide_xbw_env;
+	},
+
 
 
 	/*
@@ -212,6 +284,46 @@ window.GML_UI = {
 		el.innerHTML = '<div>' + GML.merge_XBWs(
 			document.getElementById('in-string-5-1').value.toUpperCase(),
 			document.getElementById('in-string-5-2').value.toUpperCase()) + '</div>';
+	},
+
+	test_mergeGraphXBWs: function() {
+
+		var tests = [
+			['ACEG|,1,,3', 'BDFK'],
+			['ACEG|,1,,3;,2,TB,4', 'BDFK|,2,,4'],
+			['C', 'ACTG|,2,,4'],
+			['C', 'ACATG'],
+			['GACGT|,2,T,4;,3,,5', 'ACCTG|,1,,5;,1,,3'],
+			['C', 'ACTG|,2,T,4'],
+			['GACGT|,2,C,4;,2,T,4;,3,,5', 'ACCTG|,1,,5;,1,,3'],
+			['GACGT|,2,T,4;,1,C,4;,3,,5', 'ACCTG|,1,,5;,1,,3'],
+			['TAT', 'C'],
+			['TT|,1,A,2', 'C'],
+			['AAGTTTCTTTCGTGCGAGGCCGT|,10,ACAA,19;,16,CGT,20', 'ACCTG'],
+		];
+
+		var old_verbosity = GML.verbosity;
+		GML.verbosity = 1;
+		var old_hide_xbw_env = GML.hideXBWenvironments;
+		GML.hideXBWenvironments = true;
+
+		var el = this.activateDivOut(5, false, false);
+		el.innerHTML = '';
+
+		for (var i=0; i < tests.length; i++) {
+			el.innerHTML += '<div style="margin-bottom:0px;">Testing to merge ' + tests[i][0] + ' and ' + tests[i][1] + '.</div>';
+
+			var res = GML.merge_XBWs(tests[i][0], tests[i][1]);
+
+			if (res.indexOf('exactly the same, and we are happy!') >= 0) {
+				el.innerHTML += '<div>Success!</div>';
+			} else {
+				el.innerHTML += '<div class="error" style="margin-top:0px;">Failure...</div>';
+			}
+		}
+
+		GML.verbosity = old_verbosity;
+		GML.hideXBWenvironments = old_hide_xbw_env;
 	},
 
 

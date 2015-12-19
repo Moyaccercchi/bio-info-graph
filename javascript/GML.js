@@ -1475,7 +1475,12 @@ findex1[i][ex2] = cpy;
 					}
 
 					var next_nodes = [firstRedi];
-					for (i=0; i < firstRedPrefix.length; i++) {
+					var firstRedPrefix_rep = firstRedPrefix.replace(this.DS_1_o + this.DK_1_o, '$#');
+					var preflen = firstRedPrefix_rep.length;
+					console.log('firstRedPrefix:');
+					console.log(firstRedPrefix);
+					for (i=0; i < preflen; i++) {
+					console.log(i + ' with ' + next_nodes);
 						// TODO :: make this more professional
 						//         (currently, we are converting an array to string and back to array
 						//         to do a deep copy rather than a pointer copy - there must a cleaner
@@ -1779,7 +1784,7 @@ findex1[i][ex2] = cpy;
 			if (!GML.hideXBWenvironments) {
 				// initialize XBW environment
 				GML.XBWs[GML_UI.cur_tab] = this.make_xbw_environment();
-				GML.XBWs[GML_UI.cur_tab].init(findex);
+				GML.XBWs[GML_UI.cur_tab].init(findex_generated);
 				GML.XBWs[GML_UI.cur_tab].generateHTML();
 			}
 		}
@@ -2098,11 +2103,20 @@ findex1[i][ex2] = cpy;
 	// gives out an array containing the positions of all nodes which are directly following that one
 	nextNodes: function(i) {
 
-		// look at first letter of the prefix
-		var firstPrefLetter = this.p12[i][0][0];
-
 		// the origin of our node, which we will expect all other nodes to have too
 		var curOrigin = this.p12_itlv[i];
+
+		// look at first letter of the prefix
+		var firstPrefLetter = this.p12[i][0][0];
+		if (this.p12[i][0].indexOf(this.DS_1_o) === 0) {
+			firstPrefLetter = this.DS_1_o;
+			// the following line ensures that C vs. ACATG works for merge graph BWTs
+			// (merge node tables)
+			curOrigin = 1;
+		}
+		if (this.p12[i][0].indexOf(this.DK_1_o) === 0) {
+			firstPrefLetter = this.DK_1_o;
+		}
 
 		// keep track of how many nodes we need to jump over
 		var jumpOver = 0;
@@ -2110,7 +2124,7 @@ findex1[i][ex2] = cpy;
 		// count how many nodes to jump over (all nodes before i that have the same origin
 		// and the same first letter in their prefix count according to their M value)
 		for (var k=0; k < i; k++) {
-			if ((this.p12[k][0][0] === firstPrefLetter) && (this.p12_itlv[k] === curOrigin)) {
+			if ((this.p12[k][0].slice(0, firstPrefLetter.length) === firstPrefLetter) && (this.p12_itlv[k] === curOrigin)) {
 				jumpOver += this.m[k].length;
 			}
 		}
@@ -2132,6 +2146,7 @@ findex1[i][ex2] = cpy;
 				} else {
 					addToResult--;
 					retNodes.push(k);
+
 					// did we add all we want?
 					if (addToResult < 1) {
 						return retNodes; // we are already done here =)

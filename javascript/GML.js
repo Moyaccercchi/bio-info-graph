@@ -1516,10 +1516,43 @@ findex1[i][ex2] = cpy;
 					}
 
 					var replacement_prefixes = [];
+					var Madd_for_this_prefix = [];
+
+					var do_prefix_doubling = false;
 
 					for (i=0; i < next_nodes.length; i++) {
-						var pref = firstRedPrefix + this.p12[next_nodes[i]][0];
-						replacement_prefixes.push(pref);
+						var pref;
+
+						if (do_prefix_doubling) {
+							pref = firstRedPrefix + this.p12[next_nodes[i]][0];
+							replacement_prefixes.push(pref);
+							Madd_for_this_prefix.push('');
+						} else {
+							pref = this.p12[next_nodes[i]][0];
+
+							// if we start with $_0 or #_0, then we actually want to
+							// copy more than just [0], which would cut off the _0 part =)
+							// and in fact, when starting with $_0, we want to copy
+							// $_0#_0 AND the first character after that =)
+							if (pref.indexOf(this.DS_1_o) === 0) {
+								pref = this.DS_1_o + this.DK_1_o + pref[this.DS_1_o.length + this.DK_1_o.length];
+							} else {
+								if (pref.indexOf(this.DK_1_o) === 0) {
+									pref = this.DK_1_o;
+								} else {
+									pref = pref[0];
+								}
+							}
+
+							pref = firstRedPrefix + pref;
+
+							if (replacement_prefixes.indexOf(pref) < 0) {
+								replacement_prefixes.push(pref);
+								Madd_for_this_prefix.push('');
+							} else {
+								Madd_for_this_prefix[replacement_prefixes.indexOf(pref)] += '0';
+							}
+						}
 					}
 
 					if (this.verbosity > 5) {
@@ -1544,12 +1577,15 @@ findex1[i][ex2] = cpy;
 					}
 
 					this.p12[firstRedi][0] = replacement_prefixes[0];
-					this.m[firstRedi] = '1';
+					this.m[firstRedi] = '1' + Madd_for_this_prefix[0];
 					ins_arr = [firstRedi];
-					
+
 					var Madd = '';
 
 					for (i=1; i < replacement_prefixes.length; i++) {
+
+						Madd += '0';
+
 						this.p12.splice(firstRedi+i, 0, [replacement_prefixes[i], this.p12[firstRedi][1], false]);
 						this.p12_itlv.splice(firstRedi+i, 0, this.p12_itlv[firstRedi]);
 						this.bwt.splice(firstRedi+i, 0, this.bwt[firstRedi]);
@@ -1558,10 +1594,10 @@ findex1[i][ex2] = cpy;
 						// edge leaving it (which is precisely why we are doing the splitting in the first
 						// place - and we are splitting precisely once for each outedge, so we have exactly
 						// one outedge for each node now!)
-						this.m.splice(firstRedi+i, 0, '1');
+
+						this.m.splice(firstRedi+i, 0, '1' + Madd_for_this_prefix[i]);
 
 						ins_arr.push(firstRedi+i);
-						Madd += '0';
 					}
 
 					if (this.verbosity > 5) {

@@ -4284,9 +4284,17 @@ window.GML = {
 								var curNodes = [[same_as[j], 0]];
 								var allEncounteredNodes = [curNodes];
 
+								// allows us to go extra long rounds if necessary,
+								// without changing rec_depth (which is shared by all
+								// considered nodes)
+								var rec_extra = 0;
+
 								// for each letter K in the prefix...
-								for (var k=0; k < rec_depth; k++) {
+								for (var k=0; k < rec_depth+rec_extra; k++) {
 									var nextNodes = [];
+
+									// reset extra recursive depth for the node we are considering now
+									rec_extra = 0;
 
 									// ... we look at each node L on the current node list ...
 									for (var l=0; l < curNodes.length; l++) {
@@ -4297,9 +4305,16 @@ window.GML = {
 											cur_auto = auto;
 										}
 										var curNode = [cur_auto[curNodes[l][0]], curNodes[l][1]];
+
 										// ... and look at each node M following that node L
 										if (spillover_into_auto && (curNode[0].c === this.DS) && (curNode[1] === 0)) {
 											// let's spill over while reconstructing the existing prefix
+
+											// we go an extra round as we wasted time on virtual nodes
+											// between graphs that do not actually exist
+											// (without this, CCA|,1,A,2 vs. CA would fail)
+											rec_extra = 1;
+
 											curNode = [spillover_into_auto[0], 1];
 										}
 										for (var m=0; m < curNode[0].n.length; m++) {

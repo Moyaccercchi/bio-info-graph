@@ -487,24 +487,30 @@ console.log('getting out ' + prefs_to_be_sorted[0]);
 
 			aftersort = [];
 
-// EMRGEMRG - this here actually needs to work differently (shifting through instead of just exchanging)
-/*
-			for (var i=cols_newly_sorted.length-1; i > -1; i--) {
-				aftersort[cols_newly_sorted[i][0]] = cols_newly_sorted[i][1];
-				aftersort[cols_newly_sorted[i][1]] = cols_newly_sorted[i][0];
-			}
-*/
-// EMRG EMRG done:
+			/* before considering CTATGTTATTCCA|,8,A,13 vs. C, we had this here:
 			for (var i=cols_newly_sorted.length-1; i > -1; i--) {
 				for (var j=cols_newly_sorted[i][0]; j < cols_newly_sorted[i][1]; j++) {
-					if (aftersort[j] === undefined) {
+					if (aftersort[j+1] === undefined) {
 						aftersort[j] = j+1;
 					} else {
-						aftersort[j] = aftersort[j]+1;
+						aftersort[j] = aftersort[j+1];
 					}
 				}
 				aftersort[cols_newly_sorted[i][1]] = cols_newly_sorted[i][0];
 			}
+			*/
+			for (var i=0; i < cols_newly_sorted.length; i++) {
+				for (var j=cols_newly_sorted[i][0]; j < cols_newly_sorted[i][1]; j++) {
+					if (aftersort[j+1] === undefined) {
+						aftersort[j] = j+1;
+					} else {
+						aftersort[j] = aftersort[j+1];
+					}
+				}
+				aftersort[cols_newly_sorted[i][1]] = cols_newly_sorted[i][0];
+			}
+
+			// with TATA|,2,A,4 vs. C we get aftersort = [2,3], [1,3], [5,6]
 
 			console.log('aftersort is now:');
 			console.log(aftersort);
@@ -523,15 +529,23 @@ console.log('getting out ' + prefs_to_be_sorted[0]);
 			for (var i=0; i < aftersort.length; i++) {
 
 				if (aftersort[i] !== undefined) {
+					/*
+					aftersort_bwt[i] = aftersort[i]-M_offset;
+					aftersort_fic[i] = aftersort[i]-F_offset;
+					/**/
+					/**/
 					aftersort_bwt[i-M_offset] = aftersort[i]-M_offset;
 					aftersort_fic[i-F_offset] = aftersort[i]-F_offset;
+					/**/
 					/*
 					// funky: this breaks ATCT|,2,A,3 and CC,
 					// as well as ATCGAT|,2,,5;,4,CG,6 and C,
 					// even though it feels much more professional =)
 					aftersort_bwt[i+M_offset-F_offset] = aftersort[i]+M_offset-F_offset;
 					aftersort_fic[i+F_offset-M_offset] = aftersort[i]+F_offset-M_offset;
-					*/
+					/**/
+					console.log('aftersort_bwt int: ' + aftersort_bwt.join(', '));
+					console.log('aftersort_fic int: ' + aftersort_fic.join(', '));
 				}
 
 				if (F[i] === '0') {
@@ -541,6 +555,30 @@ console.log('getting out ' + prefs_to_be_sorted[0]);
 					M_offset++;
 				}
 			}
+
+/*
+aftersort_bwt = [0, 2, 1, 3, 4, 6, 5];
+aftersort_fic = [0, 2, 1, 3, 4, 6, 5];
+*/
+/*
+aftersort_bwt = [0, 3, 2, 1, 4, 6, 5];
+aftersort_fic = [0, 1, 2, 3, 4, 6, 5];
+*/
+// for TATA|,2,A,4 and C, given is aftersort as
+// [x, 3, 2, 1, x, 6, 5 ]
+/*
+aftersort_fic = [0, 2, 1, 3, 5, 4];
+aftersort_fic = [0, 2, 1, 3, 4, 6, 5];
+
+// for TATA|,2,A,4 and C: none of the following are acceptable, apparently:
+aftersort_fic = [0, 1, 2, 3, 5, 4]; // x
+aftersort_fic = [0, 2, 1, 3, 5, 4]; // x
+aftersort_fic = [0, 1, 3, 2, 5, 4]; // x
+aftersort_fic = [0, 3, 1, 2, 5, 4]; // x
+aftersort_fic = [0, 3, 2, 1, 5, 4]; // x
+aftersort_fic = [0, 2, 3, 1, 5, 4]; // x
+*/
+// => conclusion: maybe an F == 0 is something a bit more... localized?
 
 			console.log('aftersort_bwt is now:');
 			console.log(aftersort_bwt);

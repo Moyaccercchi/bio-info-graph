@@ -43,7 +43,7 @@
 	generate_BWT_naively: function(h);
 	generate_BWT_advanced: function(h);
 	generate_BWTs_advanced: function(h1, h2);
-	generate_BWTs_advanced_int: function(h1, h2, generate_F);
+	generate_BWTs_advanced_int: function(h1, h2, flat_merging);
 	merge_BWTs_advanced: function(h1, h2);
 	merge_XBWs: function(h1, h2);
 	nextNodes: function(i);
@@ -78,7 +78,7 @@
 	deep_copy_array: function(arr);
 	isAutomatonPrefixSorted: function(auto);
 	makeAutomatonPrefixSorted: function(auto, addToSOut, spillover_into_auto);
-	getFindexFromAutomaton: function(auto);
+	getFindexFromAutomaton: function(auto, bwt_aftersort, flat_merging);
 	getAutomatonFromFindex: function(findex);
 	generate_BWTs_naively: function(h1, h2);
 	merge_BWTs_naively: function(h1, h2);
@@ -880,10 +880,11 @@ window.GML = {
 
 
 
-	// takes in two graph strings
+	// takes in two graph strings and an optional boolean parameter, specifying
+	//   whether we are merging flat tables or not
 	// gives out a string containing info about the BWT generation for both,
 	//   as well as the findexes for the merged H, for H_1 and for H_2
-	generate_BWTs_advanced_int: function(h1, h2, generate_F) {
+	generate_BWTs_advanced_int: function(h1, h2, flat_merging) {
 
 		this.error_flag = false;
 
@@ -1031,7 +1032,7 @@ window.GML = {
 			if (this.verbosity > 2) {
 				sout += "We can now generate the BWTs of the graphs, ";
 				sout += "together with the ";
-				if (generate_F) {
+				if (flat_merging) {
 					sout += "vectors " + this.DM + ' and ' + this.DF;
 				} else {
 					sout += "vector " + this.DM;
@@ -1040,35 +1041,35 @@ window.GML = {
 			}
 
 			this.bwt_aftersort = {};
-			var findex1 = this.getFindexFromAutomaton(auto1, this.bwt_aftersort);
+			var findex1 = this.getFindexFromAutomaton(auto1, this.bwt_aftersort, flat_merging);
 
-			if (generate_F) {
+			if (flat_merging) {
 				findex1[3] = this.generateFfromPrefixesBWTM(findex1[0], findex1[1], findex1[2]);
 			}
 
 			if (this.verbosity > 1) {
 				sout += "For " + this.DH_1 + " we get:" + this.nlnl;
-				sout += this.fe_findexToTable(findex1, true, generate_F);
+				sout += this.fe_findexToTable(findex1, true, flat_merging);
 			}
 
 			var findex2 = this.getFindexFromAutomaton(auto2);
-			if (generate_F) {
+			if (flat_merging) {
 				findex2[3] = this.generateFfromPrefixesBWTM(findex2[0], findex2[1], findex2[2]);
 			}
 
 			if (this.verbosity > 1) {
 				sout += "And for " + this.DH_2 + " we have:" + this.nlnl;
-				sout += this.fe_findexToTable(findex2, true, generate_F);
+				sout += this.fe_findexToTable(findex2, true, flat_merging);
 			}
 
 			var findex = this.getFindexFromAutomaton(auto);
-			if (generate_F) {
+			if (flat_merging) {
 				findex[3] = this.generateFfromPrefixesBWTM(findex[0], findex[1], findex[2]);
 			}
 
 			if (this.verbosity > 1) {
 				sout += "As well as for " + this.DH + ":" + this.nlnl;
-				sout += this.fe_findexToTable(findex, true, generate_F);
+				sout += this.fe_findexToTable(findex, true, flat_merging);
 			}
 		}
 
@@ -1932,6 +1933,30 @@ window.GML = {
 				shide = '<div class="table_box">' + xbw.generateTable() + '</div>';
 				sout += this.hideWrap(shide, 'Table') + this.nlnl;
 			}
+
+
+
+
+
+
+
+
+
+
+			// GCCG-GCGC fix
+			xbw1.apply_GCCG_GCGC_flat_fix();
+
+			if (this.verbosity > 3) {
+				sout += "We also apply the GCCG-GCGC fix to " + this.DH_1 + "." + this.nlnl;
+			}
+
+
+
+
+
+
+
+
 
 
 
@@ -3323,7 +3348,12 @@ window.GML = {
 	stringToGraph: function(str) {
 
 		// get rid of illegal characters in input
-		str = str.split('^').join('').split('#').join('').split('$').join('');
+		str = str.split('^').join('')
+				 .split('#').join('')
+				 .split('$').join('')
+				 .split('_').join('')
+				 .split('%').join('')
+				 .split(' ').join('');
 
 		var ssplit = str.split('|');
 
@@ -4500,9 +4530,9 @@ window.GML = {
 
 
 
-	// takes in an automaton
+	// takes in an automaton, an optional object and an optional boolean value
 	// gives out the BWT and M vector
-	getFindexFromAutomaton: function(auto, bwt_aftersort) {
+	getFindexFromAutomaton: function(auto, bwt_aftersort, flat_merging) {
 
 		var prefixes = [];
 
@@ -4521,6 +4551,29 @@ window.GML = {
 
 		// keep > in mind when sorting (that is, take out > for correct spillover sorting)
 		var spillover_str = this.DS_1_o + this.DK_1_o;
+
+// [OVERRIDE 4]
+if (flat_merging) {
+
+	var replace_str = this.DS + this.DK;
+
+	// sort as we would if we opened an FFX file
+	prefixes.sort(function(a, b) {
+
+		var a_s = a[0].replace(spillover_str, replace_str);
+		var b_s = b[0].replace(spillover_str, replace_str);
+
+		if (a_s < b_s) {
+			return -1;
+		}
+		if (a_s > b_s) {
+			return 1;
+		}
+
+		return 0;
+	});
+
+} else {
 
 		prefixes.sort(function(a, b) {
 
@@ -4600,6 +4653,7 @@ console.log(prefixes_for_bwt[i]);
 
 console.log(bwt_aftersort);
 		}
+}
 
 		var BWT = [];
 		var M = [];

@@ -181,6 +181,15 @@ window.GML_UI = {
 		['GCCG', 'GCGC'],
 		['GCCG', 'BDFK'],
 		['GG', 'CGG'],
+		['ATCT|,2,A,3', 'CC'],
+		['ATCGAT|,2,,5;,4,CG,6', 'C'],
+		['TGATGAG|,6,,7', 'GCCAGGTCAGCCTAGTCCCTG'],
+		['GTTAATGTGGCAAGT', 'CTCGCGACGACTAAAGCTGGCC'],
+		['TCCCTGT', 'CTCAGCAGAGGCCCAGGCAAA|,13,TA,15'],
+		['CTACCAGGTGCTGTTATTCCAC|,16,A,22', 'CATCGATTT|,3,CGAT,9'],
+		['CTATGTTATTCCA|,8,A,13', 'C'],
+		['TATA|,2,A,4', 'C'],
+		['CCA|,1,A,2', 'CA'],
 	],
 
 
@@ -244,6 +253,8 @@ window.GML_UI = {
 			el.innerHTML += '<div style="margin-bottom:0px;">Testing to generate table for ' + tests[i] + '.</div>';
 
 			var res = GML.generate_BWT_advanced(tests[i]);
+			// we send a sad face right afterwards, so if the NEXT test destroys JS, then sad face is shown
+			this.sad_face();
 
 			if (res.indexOf('class="error"') < 0) {
 				el.innerHTML += '<div>Success!</div>';
@@ -302,6 +313,8 @@ window.GML_UI = {
 			el.innerHTML += '<div style="margin-bottom:0px;">Testing to merge ' + tests[i][0] + ' and ' + tests[i][1] + '.</div>';
 
 			var res = GML.merge_BWTs_advanced(tests[i][0], tests[i][1]);
+			// we send a sad face right afterwards, so if the NEXT test destroys JS, then sad face is shown
+			this.sad_face();
 
 			if (res.indexOf('are exactly the same! Jippey! =)') >= 0) {
 				el.innerHTML += '<div>Success!</div>';
@@ -352,6 +365,8 @@ window.GML_UI = {
 			el.innerHTML += '<div style="margin-bottom:0px;">Testing to merge ' + tests[i][0] + ' and ' + tests[i][1] + '.</div>';
 
 			var res = GML.merge_XBWs(tests[i][0], tests[i][1]);
+			// we send a sad face right afterwards, so if the NEXT test destroys JS, then sad face is shown
+			this.sad_face();
 
 			if (res.indexOf('exactly the same, and we are happy!') >= 0) {
 				el.innerHTML += '<div>Success!</div>';

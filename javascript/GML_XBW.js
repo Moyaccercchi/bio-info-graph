@@ -60,12 +60,17 @@ GML.make_xbw_environment = function() {
 
 	var multi_cur_fic = []; // first column and M
 	var multi_cur_bwt = []; // BWT and F
+	var multi_cur_fic_int = []; // like multi_cur_fic, but including the aftersort
+	var multi_cur_bwt_int = []; // like multi_cur_bwt, but including the aftersort
 
 	// keep track from where the last node came to highlight it visually
 	var last_high_fic = []; // the first two contain the last high node
 	var last_high_bwt = []; // for each subXBW
 	var last_high_fic_arr = []; // the second two contain all characters
 	var last_high_bwt_arr = []; // leading up to the very latest high node
+
+	var aftersort_bwt = [];
+	var aftersort_fic = [];
 
 
 
@@ -298,6 +303,9 @@ GML.make_xbw_environment = function() {
 
 		init: function(findex) {
 
+			aftersort_bwt = [];
+			aftersort_fic = [];
+
 			subXBWs = [];
 			role = 1;
 
@@ -359,6 +367,8 @@ GML.make_xbw_environment = function() {
 
 			multi_cur_fic = [];
 			multi_cur_bwt = [];
+			multi_cur_fic_int = [];
+			multi_cur_bwt_int = [];
 
 			role = 2;
 		},
@@ -369,6 +379,8 @@ GML.make_xbw_environment = function() {
 
 			multi_cur_fic = [];
 			multi_cur_bwt = [];
+			multi_cur_fic_int = [];
+			multi_cur_bwt_int = [];
 
 			role = 3;
 		},
@@ -387,6 +399,8 @@ GML.make_xbw_environment = function() {
 
 			multi_cur_fic.push(0);
 			multi_cur_bwt.push(0);
+			multi_cur_fic_int.push(0);
+			multi_cur_bwt_int.push(0);
 
 			subXBWs.push(subXBW);
 		},
@@ -402,6 +416,149 @@ GML.make_xbw_environment = function() {
 		_setNextXBW: function(nXBW) {
 			nextXBW = nXBW;
 		},
+
+
+
+
+
+
+
+
+
+
+
+		apply_GCCG_GCGC_flat_fix: function() {
+
+			// [TODO P3 FLAT]
+
+			var S0K0 = GML.DS_1 + GML.DK_1;
+			var cols_to_be_sorted = [];
+			var prefs_to_be_sorted = [];
+			var cols_newly_sorted = [];
+
+			// TODO :: check if we can break the for loop when we have found some S0K0 and have used
+			// all cols_to_be_sorted to be back to emptiness or somesuch?
+			for (var i=0; i < BWT.length; i++) {
+				// TODO :: we here have the length undefined and therefore get looong prefixes...
+				// but that surely is not actually necessary? (it is just a bit difficult to know
+				// how long the prefix needs to be to be able to compare it... but meeeps *g*)
+				cur_pref = this._publishPrefix(i, false, undefined, true);
+
+				// EMRGEMRG :: we here need not check for S0K0 in cur_pref, right?
+				// I mean, it is ALWAYS there, the question is just how early...
+				// (so is this just a NOT-IN-POS-0 check? and would it be sad to also
+				// allow it being in pos 0?)
+				if (cur_pref.indexOf(S0K0) > 0) {
+				// if (cur_pref.indexOf(S0K0) === 1) { EMRGEMRG
+				console.log('push next:');
+					var new_pref = cur_pref.replace(S0K0, '');
+					var j = 0;
+					while (prefs_to_be_sorted[j] && (new_pref > prefs_to_be_sorted[j])) {
+						j++;
+					}
+					cols_to_be_sorted.splice(j, 0, i);
+					prefs_to_be_sorted.splice(j, 0, new_pref);
+				}
+				//else {
+				console.log(i + ' ' + cur_pref);
+					while (prefs_to_be_sorted.length > 0) {
+						if (cur_pref.replace(S0K0, '') > prefs_to_be_sorted[0]) {
+							// put the column from cols_to_be_sorted[0] into position i-1
+							// (it would theoretically be position i, but we have to say -1
+							// because we delete the column first and then all indices after
+							// it get shifted down by 1)
+console.log('getting out ' + prefs_to_be_sorted[0]);
+							if (cols_to_be_sorted[0] !== i-1) {
+								cols_newly_sorted.push([cols_to_be_sorted[0], i-1]);
+							}
+							cols_to_be_sorted.splice(0, 1);
+							prefs_to_be_sorted.splice(0, 1);
+						} else {
+							break;
+						}
+					}
+				//}
+			}
+
+			console.log('in the end, we have:');
+			console.log(cols_newly_sorted);
+			console.log(cols_to_be_sorted);
+			console.log(prefs_to_be_sorted);
+
+			aftersort = [];
+
+// EMRGEMRG - this here actually needs to work differently (shifting through instead of just exchanging)
+/*
+			for (var i=cols_newly_sorted.length-1; i > -1; i--) {
+				aftersort[cols_newly_sorted[i][0]] = cols_newly_sorted[i][1];
+				aftersort[cols_newly_sorted[i][1]] = cols_newly_sorted[i][0];
+			}
+*/
+// EMRG EMRG done:
+			for (var i=cols_newly_sorted.length-1; i > -1; i--) {
+				for (var j=cols_newly_sorted[i][0]; j < cols_newly_sorted[i][1]; j++) {
+					if (aftersort[j] === undefined) {
+						aftersort[j] = j+1;
+					} else {
+						aftersort[j] = aftersort[j]+1;
+					}
+				}
+				aftersort[cols_newly_sorted[i][1]] = cols_newly_sorted[i][0];
+			}
+
+			console.log('aftersort is now:');
+			console.log(aftersort);
+
+			aftersort_bwt = [];
+			aftersort_fic = [];
+
+			var M_offset = 0;
+			var F_offset = 0;
+
+			console.log('aftersort BWT before:');
+			console.log(GML.deep_copy_array(aftersort_bwt));
+			console.log('aftersort FiC before:');
+			console.log(GML.deep_copy_array(aftersort_fic));
+
+			for (var i=0; i < aftersort.length; i++) {
+
+				if (aftersort[i] !== undefined) {
+					aftersort_bwt[i-M_offset] = aftersort[i]-M_offset;
+					aftersort_fic[i-F_offset] = aftersort[i]-F_offset;
+					/*
+					// funky: this breaks ATCT|,2,A,3 and CC,
+					// as well as ATCGAT|,2,,5;,4,CG,6 and C,
+					// even though it feels much more professional =)
+					aftersort_bwt[i+M_offset-F_offset] = aftersort[i]+M_offset-F_offset;
+					aftersort_fic[i+F_offset-M_offset] = aftersort[i]+F_offset-M_offset;
+					*/
+				}
+
+				if (F[i] === '0') {
+					F_offset++;
+				}
+				if (M[i] === '0') {
+					M_offset++;
+				}
+			}
+
+			console.log('aftersort_bwt is now:');
+			console.log(aftersort_bwt);
+			console.log('aftersort_fic is now:');
+			console.log(aftersort_fic);
+		},
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -466,9 +623,11 @@ GML.make_xbw_environment = function() {
 
 			for (var i=0; i < multi_cur_fic.length; i++) {
 				multi_cur_fic[i] = 0;
+				multi_cur_fic_int[i] = 0;
 			}
 			for (var i=0; i < multi_cur_bwt.length; i++) {
 				multi_cur_bwt[i] = 0;
+				multi_cur_bwt_int[i] = 0;
 			}
 		},
 
@@ -607,7 +766,7 @@ GML.make_xbw_environment = function() {
 		notFullyMerged: function() {
 
 			for (var i=0; i < subXBWs.length; i++) {
-				if (multi_cur_bwt[i] < subXBWs[i]._publishBWTlen()) {
+				if (multi_cur_bwt_int[i] < subXBWs[i]._publishBWTlen()) {
 					return true;
 				}
 			}
@@ -649,6 +808,21 @@ GML.make_xbw_environment = function() {
 			if (length === undefined) {
 				length = GML.loop_threshold;
 			}
+
+
+
+/*
+// [OVERRIDE 1]
+if (nextXBW) { // if we are H_0
+	switch (pref_cur_i) { // switch according to aftersort (now manually 3x4)
+		case 3:
+			pref_cur_i = 4;
+		case 4:
+			pref_cur_i = 3;
+	}
+}
+*/
+
 
 			var pref_cur_is = [pref_cur_i];
 			var pref_cur_is_store;
@@ -754,6 +928,26 @@ GML.make_xbw_environment = function() {
 								pref_cur_is[j]--;
 							}
 						}
+
+
+
+
+
+/*
+// [OVERRIDE 2]
+if (nextXBW) { // if we are H_0
+	switch (pref_cur_is[j]) { // switch according to aftersort (now manually 3x4)
+		case 3:
+			pref_cur_is[j] = 4;
+		case 4:
+			pref_cur_is[j] = 3;
+	}
+}
+*/
+
+
+
+
 
 						var pcis_len, pcis_len_m;
 						if (give_the_split_node) {
@@ -957,11 +1151,11 @@ GML.make_xbw_environment = function() {
 									 // all lines that need to be changed regarding this have
 									 // been highlighted as TE1TE
 
-			if (multi_cur_fic[0] > subXBWs[0]._publishBWTlen()-1) { // TE1TE - here we say if H_1 is bad, use H_2, and vice versa - but for three and more this is much more complicated, we need to instead think of a pool of candidates
+			if (multi_cur_fic_int[0] > subXBWs[0]._publishBWTlen()-1) { // TE1TE - here we say if H_1 is bad, use H_2, and vice versa - but for three and more this is much more complicated, we need to instead think of a pool of candidates
 				return [1, sout, prefixes, split_nodes]; // TE1TE
 			} // TE1TE
 
-			if (multi_cur_fic[1] > subXBWs[1]._publishBWTlen()-1) { // TE1TE
+			if (multi_cur_fic_int[1] > subXBWs[1]._publishBWTlen()-1) { // TE1TE
 				return [0, sout, prefixes, split_nodes]; // TE1TE
 			} // TE1TE
 
@@ -982,7 +1176,7 @@ GML.make_xbw_environment = function() {
 				for (var j=0; j < subXBWs.length; j++) {
 					gtsn.o = j;
 					prefixes[j] = subXBWs[j]._publishPrefix(
-						multi_cur_fic[j], true, patience, true, gtsn);
+						multi_cur_fic_int[j], true, patience, true, gtsn);
 					split_nodes[j] = {sn_i: gtsn.i, o: gtsn.o};
 				}
 
@@ -993,10 +1187,10 @@ GML.make_xbw_environment = function() {
 				}
 			}
 
-			sout += '<span class="col-6">The prefix of ' + GML.DH_1 + '[' + multi_cur_fic[0] + '] is ' +
+			sout += '<span class="col-6">The prefix of ' + GML.DH_1 + '[' + multi_cur_fic_int[0] + '] is ' +
 					prefixes[0] + '.</span>'; // TE1TE
 
-			sout += 'The prefix of ' + GML.DH_2 + '[' + multi_cur_fic[1] + '] is ' +
+			sout += 'The prefix of ' + GML.DH_2 + '[' + multi_cur_fic_int[1] + '] is ' +
 					prefixes[1] + '.' + GML.nlnl; // TE1TE
 
 			var comp = GML.comparePrefixes(prefixes[0], prefixes[1]); // TE1TE
@@ -1033,22 +1227,54 @@ GML.make_xbw_environment = function() {
 			}
 
 
-			last_high_fic[takeNodeFrom] = multi_cur_fic[takeNodeFrom];
-			last_high_bwt[takeNodeFrom] = multi_cur_bwt[takeNodeFrom];
+			last_high_fic[takeNodeFrom] = multi_cur_fic_int[takeNodeFrom];
+			last_high_bwt[takeNodeFrom] = multi_cur_bwt_int[takeNodeFrom];
 
 			// insert node from the sub XBW at multi_cur into the merged XBW
-			fic_i = multi_cur_fic[takeNodeFrom];
+			fic_i = multi_cur_fic_int[takeNodeFrom];
 			fic_o = takeNodeFrom;
-			bwt_i = multi_cur_bwt[takeNodeFrom];
+			bwt_i = multi_cur_bwt_int[takeNodeFrom];
 			bwt_o = takeNodeFrom;
 
 			multi_cur_fic[takeNodeFrom]++;
 			multi_cur_bwt[takeNodeFrom]++;
 
-
-
 			this._addNodeBasedOnTwo(fic_o, fic_i, bwt_o, bwt_i);
 
+
+
+// [OVERRIDE 3]
+//if (takeNodeFrom === 0) {
+	multi_cur_fic_int[takeNodeFrom] = subXBWs[takeNodeFrom]._doAftersortFiC(multi_cur_fic[takeNodeFrom]);
+	multi_cur_bwt_int[takeNodeFrom] = subXBWs[takeNodeFrom]._doAftersortBWT(multi_cur_bwt[takeNodeFrom]);
+	console.log('multi_cur_fic: ' + multi_cur_fic[0]);
+	console.log('multi_cur_bwt: ' + multi_cur_bwt[0]);
+	console.log('multi_cur_fic_int: ' + multi_cur_fic_int[0]);
+	console.log('multi_cur_bwt_int: ' + multi_cur_bwt_int[0]);
+/*} else {
+	multi_cur_fic_int[takeNodeFrom] = multi_cur_fic[takeNodeFrom];
+	multi_cur_bwt_int[takeNodeFrom] = multi_cur_bwt[takeNodeFrom];
+}*/
+
+/*
+	switch(multi_cur_fic[0]) {
+		case 3:
+			multi_cur_fic_int[0] = 4;
+		break;
+		case 4:
+			multi_cur_fic_int[0] = 3;
+		break;
+	}
+	switch(multi_cur_bwt[0]) {
+		case 3:
+			multi_cur_bwt_int[0] = 4;
+		break;
+		case 4:
+			multi_cur_bwt_int[0] = 3;
+		break;
+	}
+}
+*/
 
 			if (verbose) {
 
@@ -1080,6 +1306,40 @@ GML.make_xbw_environment = function() {
 
 				return sout;
 			}
+		},
+
+		_doAftersortBWT: function(i) {
+			var ret = aftersort_bwt[i];
+			if (ret === undefined) {
+				ret = i;
+			}
+			ret++;
+			var j = 0, k = 0;
+			while ((k < ret) && (j <= F.length)) {
+				if (F[j] === '1') {
+					k++;
+				}
+				j++;
+			}
+			j--;
+			return j;
+		},
+
+		_doAftersortFiC: function(i) {
+			var ret = aftersort_fic[i];
+			if (ret === undefined) {
+				ret = i;
+			}
+			ret++;
+			var j = 0, k = 0;
+			while ((k < ret) && (j <= M.length)) {
+				if (M[j] === '1') {
+					k++;
+				}
+				j++;
+			}
+			j--;
+			return j;
 		},
 
 		checkIfSplitOneMore: function(split_nodes_out) {
@@ -1133,6 +1393,9 @@ GML.make_xbw_environment = function() {
 				if (takeNodeFrom > -1) {
 					multi_cur_fic[takeNodeFrom]++;
 					multi_cur_bwt[takeNodeFrom]++;
+
+					multi_cur_fic_int[takeNodeFrom] = subXBWs[takeNodeFrom]._doAftersortFiC(multi_cur_fic[takeNodeFrom]);
+					multi_cur_bwt_int[takeNodeFrom] = subXBWs[takeNodeFrom]._doAftersortBWT(multi_cur_bwt[takeNodeFrom]);
 				}
 			}
 
@@ -1206,7 +1469,7 @@ GML.make_xbw_environment = function() {
 				last_high_fic_arr.push(char.length);
 				char += node_fic[1][fic_i + i];
 				M    += node_fic[2][fic_i + i];
-				multi_cur_fic[fic_o]++;
+//				multi_cur_fic[fic_o]++;
 				i++;
 			}
 
@@ -1215,11 +1478,11 @@ GML.make_xbw_environment = function() {
 			BWT  += node_bwt[0][bwt_i];
 			F    += node_bwt[3][bwt_i];
 			i = 1;
-			while (node_fic[3][bwt_i + i] === '0') {
+			while (node_bwt[3][bwt_i + i] === '0') {
 				last_high_bwt_arr.push(BWT.length);
 				BWT  += node_bwt[0][bwt_i + i];
 				F    += node_bwt[3][bwt_i + i];
-				multi_cur_bwt[bwt_o]++;
+//				multi_cur_bwt[bwt_o]++;
 				i++;
 			}
 
@@ -1632,18 +1895,38 @@ GML.make_xbw_environment = function() {
 
 				if (last_high_bwt[i] > -1) {
 					high_bwt = [last_high_bwt[i]];
-					for (var j=last_high_bwt[i]+1; j < multi_cur_bwt[i]; j++) {
+					for (var j=last_high_bwt[i]+1; j < last_high_bwt[i] + last_high_bwt_arr.length; j++) {
 						high_bwt.push(j);
 					}
 				}
 				if (last_high_fic[i] > -1) {
 					high_fic = [last_high_fic[i]];
-					for (var j=last_high_fic[i]+1; j < multi_cur_fic[i]; j++) {
+					for (var j=last_high_fic[i]+1; j < last_high_fic[i] + last_high_fic_arr.length; j++) {
 						high_fic.push(j);
 					}
 				}
 
-				r += subXBWs[i].generateTable([[], [multi_cur_bwt[i]], [multi_cur_fic[i]], [multi_cur_fic[i]], [multi_cur_bwt[i]]], [[], high_bwt, high_fic, high_fic, high_bwt]);
+				// expand purple to right for the entire node
+				var bwt_arr = [multi_cur_bwt_int[i]];
+				var fic_arr = [multi_cur_fic_int[i]];
+
+				var nodes = subXBWs[i]._publishAllNodes();
+				var pF = nodes[3];
+				var pM = nodes[2];
+
+				var j = bwt_arr[0]+1;
+				while (pF[j] === '0') {
+					bwt_arr.push(j);
+					j++;
+				}
+
+				var j = fic_arr[0]+1;
+				while (pM[j] === '0') {
+					fic_arr.push(j);
+					j++;
+				}
+
+				r += subXBWs[i].generateTable([[], bwt_arr, fic_arr, fic_arr, bwt_arr], [[], high_bwt, high_fic, high_fic, high_bwt]);
 			}
 
 			if (!hideMergedTable) {

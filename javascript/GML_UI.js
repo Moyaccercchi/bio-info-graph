@@ -47,6 +47,8 @@ window.GML_UI = {
 				el.style.display = 'none';
 			}
 		}
+
+		this.no_face();
 	},
 
 	// the tab that is currently open
@@ -176,6 +178,9 @@ window.GML_UI = {
 		['TAATACGCGGGTC|,8,,9', 'ACCTG|,1,,5;,1,,3'],
 		['AAGTTTCTTTCGTGCGAGGCCGT|,10,ACAA,19;,16,CGT,20', 'ACCTG'],
 		['ATAGTCAATTGACTGCCGACG', 'CGGGGTAAAAAAGCGCC'],
+		['GCCG', 'GCGC'],
+		['GCCG', 'BDFK'],
+		['GG', 'CGG'],
 	],
 
 
@@ -233,6 +238,8 @@ window.GML_UI = {
 		var el = this.activateDivOut(2, false, false);
 		el.innerHTML = '';
 
+		var some_error = false;
+
 		for (var i=0; i < tests.length; i++) {
 			el.innerHTML += '<div style="margin-bottom:0px;">Testing to generate table for ' + tests[i] + '.</div>';
 
@@ -242,11 +249,18 @@ window.GML_UI = {
 				el.innerHTML += '<div>Success!</div>';
 			} else {
 				el.innerHTML += '<div class="error" style="margin-top:0px;">Failure...</div>';
+				some_error = true;
 			}
 		}
 
 		GML.verbosity = old_verbosity;
 		GML.hideXBWenvironments = old_hide_xbw_env;
+
+		if (some_error) {
+			this.sad_face();
+		} else {
+			this.happy_face();
+		}
 	},
 
 
@@ -282,6 +296,8 @@ window.GML_UI = {
 		var el = this.activateDivOut(3, false, false);
 		el.innerHTML = '';
 
+		var some_error = false;
+
 		for (var i=0; i < tests.length; i++) {
 			el.innerHTML += '<div style="margin-bottom:0px;">Testing to merge ' + tests[i][0] + ' and ' + tests[i][1] + '.</div>';
 
@@ -291,11 +307,18 @@ window.GML_UI = {
 				el.innerHTML += '<div>Success!</div>';
 			} else {
 				el.innerHTML += '<div class="error" style="margin-top:0px;">Failure...</div>';
+				some_error = true;
 			}
 		}
 
 		GML.verbosity = old_verbosity;
 		GML.hideXBWenvironments = old_hide_xbw_env;
+
+		if (some_error) {
+			this.sad_face();
+		} else {
+			this.happy_face();
+		}
 	},
 
 
@@ -323,6 +346,8 @@ window.GML_UI = {
 		var el = this.activateDivOut(5, false, false);
 		el.innerHTML = '';
 
+		var some_error = false;
+
 		for (var i=0; i < tests.length; i++) {
 			el.innerHTML += '<div style="margin-bottom:0px;">Testing to merge ' + tests[i][0] + ' and ' + tests[i][1] + '.</div>';
 
@@ -332,11 +357,18 @@ window.GML_UI = {
 				el.innerHTML += '<div>Success!</div>';
 			} else {
 				el.innerHTML += '<div class="error" style="margin-top:0px;">Failure...</div>';
+				some_error = true;
 			}
 		}
 
 		GML.verbosity = old_verbosity;
 		GML.hideXBWenvironments = old_hide_xbw_env;
+
+		if (some_error) {
+			this.sad_face();
+		} else {
+			this.happy_face();
+		}
 	},
 
 
@@ -1114,6 +1146,53 @@ window.GML_UI = {
 		this.changeOptions_verbosity_update();
 
 		this.animateApplyBtn(false);
+	},
+
+	happy_face: function() {
+		document.getElementsByTagName('body')[0].style.backgroundColor = '#2F2';
+
+		this.lighten_up_slowly();
+	},
+
+	sad_face: function() {
+		document.getElementsByTagName('body')[0].style.backgroundColor = '#F22';
+
+		this.lighten_up_slowly();
+	},
+
+	no_face: function() {
+		document.getElementsByTagName('body')[0].style.backgroundColor = '#FFF';
+	},
+
+	// TODO :: check if this works in chrome and other browsers (or if the value given
+	// back might actually be in hex or in rgba or somesuch)
+	lighten_up_id: -1,
+
+	lighten_up_slowly: function() {
+
+		if (this.lighten_up_id > -1) {
+			window.clearInterval(this.lighten_up_id);
+		}
+
+		this.lighten_up_id = window.setInterval(function() {
+
+			var el = document.getElementsByTagName('body')[0];
+
+			if (el) {
+				var col_now = el.style.backgroundColor;
+				col_now = col_now.slice(4);
+				col_now = col_now.slice(0, -1);
+				col_now = col_now.split(', ');
+				for (var i=0; i < 3; i++) {
+					col_now[i] = Math.min(255, parseInt(col_now[i], 10) + 20);
+				}
+				el.style.backgroundColor = 'rgb(' + col_now.join(', ') + ')';
+				if ((col_now[0] === 255) && (col_now[1] === 255) && (col_now[2] === 255)) {
+					window.clearInterval(GML_UI.lighten_up_id);
+				}
+			}
+
+		}, 50);
 	},
 
 };

@@ -844,7 +844,7 @@ window.GML = {
 
 
 
-			if (!GML.hideXBWenvironments) {
+			if ((!GML.hideXBWenvironments) && GML_UI) {
 				// initialize XBW environment
 				GML.XBWs[GML_UI.cur_tab] = this.make_xbw_environment();
 				GML.XBWs[GML_UI.cur_tab].init(findex);
@@ -891,7 +891,7 @@ window.GML = {
 
 		// if someone inputs AC vs. TG into the first input field, then handle it as AC in the first
 		// and TG in the second input field - just a way quicker enter saved input data =)
-		var vs_index = h1.indexOf(' VS. ');
+		var vs_index = Math.max(h1.indexOf(' VS. '), h1.indexOf(' AND '));
 		if (vs_index >= 0) {
 			graph1 = this.stringToGraph(h1.slice(0, vs_index));
 			graph2 = this.stringToGraph(h1.slice(vs_index + 5));
@@ -983,9 +983,6 @@ window.GML = {
 						"into prefix-sorted automata." + this.nlnl;
 			}
 
-
-// [TODO P4] - so we need to adjust computePrefixes AND makeAutomatonPrefixSorted?
-
 			auto = this.computePrefixes(auto);
 			auto2 = this.computePrefixes(auto2);
 			auto1 = this.computePrefixes(auto1, auto2);
@@ -1042,25 +1039,12 @@ window.GML = {
 				sout += "." + this.nlnl;
 			}
 
-// [TODO P3] - auto1 here already has its full prefixes within its .f strings,
-// so we need to adjust these before anything else to get to the bottom of it all =)
+			this.bwt_aftersort = {};
+			var findex1 = this.getFindexFromAutomaton(auto1, this.bwt_aftersort);
 
-			var findex1 = this.getFindexFromAutomaton(auto1);
 			if (generate_F) {
 				findex1[3] = this.generateFfromPrefixesBWTM(findex1[0], findex1[1], findex1[2]);
 			}
-
-/*
-// [TODO P1]
-var ex1 = 2;
-var ex2 = 3;
-for (var i=0; i < 4; i++) {
-if (findex1[i]) {
-var cpy = findex1[i][ex1];
-findex1[i][ex1] = findex1[i][ex2];
-findex1[i][ex2] = cpy;
-}}
-*/
 
 			if (this.verbosity > 1) {
 				sout += "For " + this.DH_1 + " we get:" + this.nlnl;
@@ -1538,7 +1522,7 @@ findex1[i][ex2] = cpy;
 								pref = this.DS_1_o + this.DK_1_o + pref[this.DS_1_o.length + this.DK_1_o.length];
 							} else {
 								if (pref.indexOf(this.DK_1_o) === 0) {
-									pref = this.DK_1_o;
+									pref = this.DS_1_o + this.DK_1_o;
 								} else {
 									pref = pref[0];
 								}
@@ -1589,6 +1573,32 @@ findex1[i][ex2] = cpy;
 						this.p12.splice(firstRedi+i, 0, [replacement_prefixes[i], this.p12[firstRedi][1], false]);
 						this.p12_itlv.splice(firstRedi+i, 0, this.p12_itlv[firstRedi]);
 						this.bwt.splice(firstRedi+i, 0, this.bwt[firstRedi]);
+
+
+
+						// [NOTE P9]
+						var cur_bwt_aftersort;
+						var cur_o = this.p12_itlv[firstRedi];
+						if (cur_o === 0) {
+							cur_bwt_aftersort = this.bwt_aftersort;
+						}
+						if (cur_bwt_aftersort) {
+							var cur_b = this.bwt[firstRedi][0];
+							var cur_before = 0;
+							for (var j=0; j < firstRedi+i; j++) {
+								if (this.bwt[j] === cur_b) {
+									cur_before++;
+								}
+							}
+							for (var j=0; j < cur_bwt_aftersort[cur_b].length; j++) {
+								if (cur_bwt_aftersort[cur_b][j] >= cur_before) {
+									cur_bwt_aftersort[cur_b][j]++;
+								}
+							}
+							cur_bwt_aftersort[cur_b].splice(cur_before, 0, cur_before);
+						}
+
+
 
 						// set M of the inserted column to 1, as each of these nodes now has exactly one
 						// edge leaving it (which is precisely why we are doing the splitting in the first
@@ -1706,8 +1716,6 @@ findex1[i][ex2] = cpy;
 				}
 			}
 
-
-
 			if (!unsuccessful) {
 				if (this.merge_directly) {
 					// get M-value of "#_1" node
@@ -1818,21 +1826,21 @@ findex1[i][ex2] = cpy;
 				sout += 'We can see that the table found through merging the BWTs and the ' +
 						'table found through merging the graphs and then building one BWT ' +
 						'are exactly the same! Jippey! =)' + this.nlnl;
-				if (this.verbosity > 1) {
-					document.getElementsByTagName('body')[0].style.backgroundColor = '#FFF';
+				if (GML_UI) {
+					GML_UI.happy_face();
 				}
 			} else {
 				sout += 'We can see that the table found through merging the BWTs and the ' +
 						'table found through merging the graphs and then building one BWT ' +
 						'are not the same... Sad face. =(' + this.nlnl;
-				if (this.verbosity > 1) {
-					document.getElementsByTagName('body')[0].style.backgroundColor = '#F44';
+				if (GML_UI) {
+					GML_UI.sad_face();
 				}
 			}
 
 
 
-			if (!GML.hideXBWenvironments) {
+			if ((!GML.hideXBWenvironments) && GML_UI) {
 				// initialize XBW environment
 				GML.XBWs[GML_UI.cur_tab] = this.make_xbw_environment();
 				GML.XBWs[GML_UI.cur_tab].init(findex_generated);
@@ -2113,14 +2121,14 @@ findex1[i][ex2] = cpy;
 
 			if (xbw.equals(xbw12)) {
 				sout += 'We can see that these are exactly the same, and we are happy!' + this.nlnl;
-				if (this.verbosity > 1) {
-					document.getElementsByTagName('body')[0].style.backgroundColor = '#FFF';
+				if (GML_UI) {
+					GML_UI.happy_face();
 				}
 			} else {
 				sout += 'We can see that these are different from each other, ' +
 						'so something somewhere went wrong...' + this.nlnl;
-				if (this.verbosity > 1) {
-					document.getElementsByTagName('body')[0].style.backgroundColor = '#F44';
+				if (GML_UI) {
+					GML_UI.sad_face();
 				}
 			}
 
@@ -2136,7 +2144,7 @@ findex1[i][ex2] = cpy;
 
 
 
-			if (!GML.hideXBWenvironments) {
+			if ((!GML.hideXBWenvironments) && GML_UI) {
 				// start up control center for merged XBW
 				GML.XBWs[GML_UI.cur_tab] = xbw12;
 				GML.XBWs[GML_UI.cur_tab].init(xbw12._publishFindex());
@@ -2193,6 +2201,15 @@ findex1[i][ex2] = cpy;
 
 		var retNodes = [];
 
+
+		// [NOTE P7]
+
+		// we here use firstPrefLetter[0] as $_0 is indexed as $, #_0 is indexed as #, etc.
+		if (curOrigin === 0) {
+			jumpOver = this.bwt_aftersort[firstPrefLetter[0]][jumpOver];
+		}
+
+
 		// find nodes / columns whose BWTs contain this letter, and whose origin is the same,
 		// and jump over as many as necessary
 		for (var k=0; k < this.p12.length; k++) {
@@ -2239,9 +2256,19 @@ findex1[i][ex2] = cpy;
 				}
 			}
 
+
+			// [NOTE P8]
+
+			// we here use curBWTLetter[0] as $_0 is indexed as $, #_0 is indexed as #, etc.
+			if (curOrigin === 0) {
+				jumpOver = this.bwt_aftersort[curBWTLetter[0]][jumpOver];
+			}
+
+
 			// if the BWT letter is #_1 (or $_1, but that doesn't really occur), then we
 			// need to check more fanciful, as a simple check against p12[][][0] is not enough
-			// anymore
+			// anymore - that is, we need to check against a string rather than a character,
+			// as both #_1 and $_1 include more than one character =)
 			if ((curBWTLetter === this.DK_1_o) || (curBWTLetter === this.DS_1_o)) {
 				// find any prefix starting with the BWT letter and having the same origin as our node
 				for (var k=0; k < this.p12.length; k++) {
@@ -4475,18 +4502,26 @@ findex1[i][ex2] = cpy;
 
 	// takes in an automaton
 	// gives out the BWT and M vector
-	getFindexFromAutomaton: function(auto) {
+	getFindexFromAutomaton: function(auto, bwt_aftersort) {
 
 		var prefixes = [];
 
 		for (var i=0; i < auto.length; i++) {
 			if (auto[i]) {
-				prefixes.push([auto[i].f, i]);
+				prefixes.push([
+					auto[i].f,
+					i,
+					// the following is only necessary if we are interested in bwt_aftersort (that is,
+					// if bwt_aftersort is not undefined)
+					// btw., we call Math.max(x, 1) to give the $ node at least one entry
+					Math.max(auto[i].n.length, 1)
+				]);
 			}
 		}
 
 		// keep > in mind when sorting (that is, take out > for correct spillover sorting)
 		var spillover_str = this.DS_1_o + this.DK_1_o;
+
 		prefixes.sort(function(a, b) {
 
 			var a_s = a[0].replace(spillover_str, '');
@@ -4501,6 +4536,70 @@ findex1[i][ex2] = cpy;
 
 			return 0;
 		});
+
+		// [NOTE P5]
+		if (bwt_aftersort) {
+			// we now take the already sorted prefixes, and sort them again - this time
+			// not completely jumping over $_0#_0
+			// the resulting reordering between the original prefix sorting and the new
+			// prefix sorting will be stored in bwt_aftersort, and we will reorder the
+			// BWT row (and only that row) after all the merging has been finished, that
+			// is, after all the navigating through it all has been finished
+			var prefixes_for_bwt = [];
+			var prefix_letters = [];
+			for (var i=0; i < prefixes.length; i++) {
+				var firstChar = prefixes[i][0][0];
+				if (!prefix_letters[firstChar]) {
+					prefix_letters[firstChar] = 0;
+				}
+				for (var m=0; m < prefixes[i][2]; m++) {
+					prefixes_for_bwt.push([prefixes[i][0], prefix_letters[firstChar]]);
+					prefix_letters[firstChar] += 1;
+				}
+			}
+
+			var replace_str = this.DS + this.DK;
+
+			prefixes_for_bwt.sort(function(a, b) {
+
+				// we here choose the very same approach as usual, ONLY if we have
+				// $_0#_0 in position 1 (that is, one character and then them), then
+				// we do something different
+				var a_s = a[0].replace(spillover_str, '');
+				var b_s = b[0].replace(spillover_str, '');
+
+				if ((a[0][1] === '$') || (a[0][1] === '#')) {
+					a_s = a[0].replace(spillover_str, replace_str);
+				}
+				if ((b[0][1] === '$') || (b[0][1] === '#')) {
+					b_s = b[0].replace(spillover_str, replace_str);
+				}
+
+				if (a_s < b_s) {
+					return -1;
+				}
+				if (a_s > b_s) {
+					return 1;
+				}
+
+				return 0;
+			});
+
+console.log(prefixes_for_bwt);
+
+			var firstChars = {};
+			for (var i=0; i < prefixes_for_bwt.length; i++) {
+console.log(prefixes_for_bwt[i]);
+				var firstChar = prefixes_for_bwt[i][0][0];
+				if (!bwt_aftersort[firstChar]) {
+					bwt_aftersort[firstChar] = [];
+					firstChars[firstChar] = 0;
+				}
+				bwt_aftersort[firstChar][prefixes_for_bwt[i][1]] = firstChars[firstChar]++;
+			}
+
+console.log(bwt_aftersort);
+		}
 
 		var BWT = [];
 		var M = [];

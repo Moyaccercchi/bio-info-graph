@@ -855,6 +855,13 @@ aftersort_fic = [0, 2, 3, 1, 5, 4]; // x
 			var loc, i;
 			var DS_1 = GML.DS_1;
 			var DK_1 = GML.DK_1;
+			var DK = GML.DK;
+
+for (i=0; i < char.length; i++) {
+	if (char[i] === DK_1) {
+		M = GML.setInString(M, i, '1');
+	}
+}
 
 
 
@@ -874,6 +881,7 @@ aftersort_fic = [0, 2, 3, 1, 5, 4]; // x
 			}
 
 // EMRG - we just added this here, as it sounded like it made sense, but now we are not sure anymore
+
 pos1 = rank('1', M, pos1);
 pos1 = select('1', F, pos1);
 
@@ -892,20 +900,38 @@ pos1 = select('1', F, pos1);
 				   GML.repeatstr(char.slice(crossstart).length, char[loc]) +
 				   char.slice(loc+1, crossstart) +
 				   DK_1;
+
+/*
+Previous M approach:
+*//*
+// keeping this one in lets CAGCC|,2,,4 and TT|,1,AGG,2   and  CCCAGCC|,4,,6 and TT|,1,AGG,2 fail...
 			M = M.slice(0, loc) +
 				M.slice(crossstart) +
 				M.slice(loc+1, crossstart) +
 				M[loc];
-
-
+/*
+However, this fails for CAGCC|,2,,4 and TT|,1,AGG,2.
+We therefore have another good think about what we actually want to do... and basically it is this:
+* adjust the FiC and BWT completely as necessary, completely ignoring M
+* then figure out which BWT was put instead of #_0
+* for these, find the nodes with the corresponding FiC
+  (that is, if the BWT had #_0, replaced by C 2 and C 3, then find the FiC with C 2 and C 3)
+* then set the M for these (e.g. for C 2 set M = 1 and for C 3 set M = 0)
+=> which we are all doing in // [HERE]
+*/
 
 			// We now exchange
 			//   BWT in position where FiC == $_0
 			// and
 			//   BWT in position where BWT == #_0
 
-			for (i=0; i < BWT.length; i++) {
+			var firstHash0Replacement;
+			var hash0replacement_len = 0;
+
+			for (i=BWT.length-1; i>-1; i--) {
 				if (BWT[i] === DK_1) {
+					firstHash0Replacement = i;
+					hash0replacement_len++;
 					BWT = GML.setInString(BWT, i, BWTatpos);
 					// we do NOT break as we can have several #_0 nodes,
 					// e.g. in GACGT|,2,T,4;,3,,5 vs. ACCTG|,1,,5;,1,,3
@@ -914,7 +940,28 @@ pos1 = select('1', F, pos1);
 
 			BWT = GML.setInString(BWT, pos1, DK_1);
 
+// [HERE]
+firstHash0Replacement = rank(BWTatpos, BWT, firstHash0Replacement);
+firstHash0Replacement = select(BWTatpos, char, firstHash0Replacement);
 
+/*
+alert('firstHash0Replacement: ' + firstHash0Replacement + '\n' +
+	'crossstart: ' + crossstart + '\n' +
+	'loc: ' + loc);
+*/
+
+// EMRG :: this here brings us down to 3 failures, but I am not exactly sure it is 100% how it should be ^^
+if (firstHash0Replacement <= loc) {
+M = M.slice(0, loc) +
+	M.slice(crossstart) +
+	M.slice(loc+1, crossstart) +
+	M[loc];
+}
+
+// this here IS how it should be
+for (i=1; i < hash0replacement_len; i++) {
+	M = GML.setInString(M, firstHash0Replacement+i, '0');
+}
 
 			// cut out $_0 from BWT and F
 			for (i=0; i < BWT.length; i++) {

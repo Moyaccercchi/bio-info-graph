@@ -4362,12 +4362,14 @@ window.GML = {
 										if (spillover_into_auto && (curNode[0].c === this.DS) && (curNode[1] === 0)) {
 											// let's spill over while reconstructing the existing prefix
 
+											curNode = [spillover_into_auto[0], 1];
+										}
+										if (curNode[1] === 1) {
+
 											// we go an extra round as we wasted time on virtual nodes
 											// between graphs that do not actually exist
 											// (without this, CCA|,1,A,2 vs. CA would fail)
 											rec_extra = 1;
-
-											curNode = [spillover_into_auto[0], 1];
 										}
 										for (var m=0; m < curNode[0].n.length; m++) {
 											nextNodes.push([curNode[0].n[m], curNode[1]]);
@@ -4394,6 +4396,7 @@ window.GML = {
 									// no spillover happening
 									cur_auto = auto;
 								}
+
 								firstNodeLabel = cur_auto[cur_auto[curNodes[0][0]].n[0]].c;
 								var check_for_label = firstNodeLabel;
 

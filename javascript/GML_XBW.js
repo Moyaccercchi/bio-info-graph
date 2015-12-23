@@ -450,10 +450,10 @@ GML.make_xbw_environment = function() {
 					break;
 				}
 				pos++;
+
 				// TODO :: we here have the length undefined and therefore get looong prefixes...
 				// but that surely is not actually necessary? (it is just a bit difficult to know
 				// how long the prefix needs to be to be able to compare it... but meeeps *g*)
-//				cur_pref = this._publishPrefix(i, false, undefined, true);
 				cur_pref = this._publishPrefix(i, true, undefined, true);
 
 				// EMRGEMRG :: we here need not check for S0K0 in cur_pref, right?
@@ -461,8 +461,6 @@ GML.make_xbw_environment = function() {
 				// (so is this just a NOT-IN-POS-0 check? and would it be sad to also
 				// allow it being in pos 0?)
 				if (cur_pref.indexOf(S0K0) > 0) {
-				// if (cur_pref.indexOf(S0K0) === 1) { EMRGEMRG
-				console.log('push next:');
 					var new_pref = cur_pref.replace(S0K0, '');
 					var j = 0;
 					while (prefs_to_be_sorted[j] && (new_pref > prefs_to_be_sorted[j])) {
@@ -471,46 +469,25 @@ GML.make_xbw_environment = function() {
 					cols_to_be_sorted.splice(j, 0, pos);
 					prefs_to_be_sorted.splice(j, 0, new_pref);
 				}
-				//else {
-				console.log('i: ' + i + ' cur_pref: ' + cur_pref + ' M: ' + M[i] + ' F: ' + F[i]);
-					while (prefs_to_be_sorted.length > 0) {
-						if (cur_pref.replace(S0K0, '') > prefs_to_be_sorted[0]) {
-							// put the column from cols_to_be_sorted[0] into position i-1
-							// (it would theoretically be position i, but we have to say -1
-							// becauwse we delete the column first and then all indices after
-							// it get shifted down by 1)
-console.log('getting out ' + prefs_to_be_sorted[0]);
-							if (cols_to_be_sorted[0] !== pos-1) {
-								cols_newly_sorted.push([cols_to_be_sorted[0], pos-1]);
-							}
-							cols_to_be_sorted.splice(0, 1);
-							prefs_to_be_sorted.splice(0, 1);
-						} else {
-							break;
+				while (prefs_to_be_sorted.length > 0) {
+					if (cur_pref.replace(S0K0, '') > prefs_to_be_sorted[0]) {
+						// put the column from cols_to_be_sorted[0] into position i-1
+						// (it would theoretically be position i, but we have to say -1
+						// becauwse we delete the column first and then all indices after
+						// it get shifted down by 1)
+						if (cols_to_be_sorted[0] !== pos-1) {
+							cols_newly_sorted.push([cols_to_be_sorted[0], pos-1]);
 						}
+						cols_to_be_sorted.splice(0, 1);
+						prefs_to_be_sorted.splice(0, 1);
+					} else {
+						break;
 					}
-				//}
+				}
 			}
-
-			console.log('in the end, we have:');
-			console.log(cols_newly_sorted);
-			console.log(cols_to_be_sorted);
-			console.log(prefs_to_be_sorted);
 
 			aftersort = [];
 
-			/* before considering CTATGTTATTCCA|,8,A,13 vs. C, we had this here:
-			for (var i=cols_newly_sorted.length-1; i > -1; i--) {
-				for (var j=cols_newly_sorted[i][0]; j < cols_newly_sorted[i][1]; j++) {
-					if (aftersort[j+1] === undefined) {
-						aftersort[j] = j+1;
-					} else {
-						aftersort[j] = aftersort[j+1];
-					}
-				}
-				aftersort[cols_newly_sorted[i][1]] = cols_newly_sorted[i][0];
-			}
-			*/
 			for (var i=0; i < cols_newly_sorted.length; i++) {
 				for (var j=cols_newly_sorted[i][0]; j < cols_newly_sorted[i][1]; j++) {
 					if (aftersort[j+1] === undefined) {
@@ -523,240 +500,7 @@ console.log('getting out ' + prefs_to_be_sorted[0]);
 			}
 
 			// with TATA|,2,A,4 vs. C we get aftersort = [2,3], [1,3], [5,6]
-
-			console.log('aftersort is now:');
-			console.log(aftersort);
-
-/*////
-			aftersort_bwt = [];
-			aftersort_fic = [];
-
-			var M_offset = 0;
-			var F_offset = 0;
-
-			console.log('aftersort BWT before:');
-			console.log(GML.deep_copy_array(aftersort_bwt));
-			console.log('aftersort FiC before:');
-			console.log(GML.deep_copy_array(aftersort_fic));
-
-/*
-What if we need to jump over one if F == 0 and lower all whose numbers are higher than that
-(no matter if before or after)?
-*/
-
-/* ////
-var F_off_away = [];
-var M_off_away = [];
-
-for (var i=0; i < aftersort.length; i++) {
-
-	if (F[i] === '0') {
-		F_offset++;
-		if (aftersort[i] === undefined) {
-			F_off_away.push(i);
-		} else {
-			F_off_away.push(aftersort[i]);
-		}
-	} //else {
-		if (aftersort[i] === undefined) {
-			aftersort_fic.push(i);
-		} else {
-			aftersort_fic.push(aftersort[i]);
-		}
-	//}
-
-	if (M[i] === '0') {
-		M_offset++;
-		if (aftersort[i] === undefined) {
-			M_off_away.push(i);
-		} else {
-			M_off_away.push(aftersort[i]);
-		}
-	} //else {
-		if (aftersort[i] === undefined) {
-			aftersort_bwt.push(i);
-		} else {
-			aftersort_bwt.push(aftersort[i]);
-		}
-	//}
-
-/*
-	if (F[i] === '0') {
-		F_offset++;
-		F_off_away.push(i);
-	} else {
-		if (aftersort[i] === undefined) {
-			aftersort_fic.push(i);
-		} else {
-			aftersort_fic.push(aftersort[i]);
-		}
-	}
-
-	if (M[i] === '0') {
-		M_offset++;
-		M_off_away.push(i);
-	} else {
-		if (aftersort[i] === undefined) {
-			aftersort_bwt.push(i);
-		} else {
-			aftersort_bwt.push(aftersort[i]);
-		}
-	}
-*/
-////}
-
-////console.log('F: ' + F);
-////console.log('M: ' + M);
-////
-////console.log('F_off_away: ' + F_off_away.join(', '));
-////console.log('M_off_away: ' + M_off_away.join(', '));
-/*
-console.log('aftersort_fic in between: ' + aftersort_fic.join(', '));
-for (var i=0; i < aftersort_fic.length; i++) {
-	for (var j=F_off_away.length-1; j>-1; j--) {
-		if (aftersort_fic[i] > F_off_away[j]) {
-			aftersort_fic[i]++;
-		}
-	}
-}
-
-console.log('aftersort_bwt in between: ' + aftersort_bwt.join(', '));
-for (var i=0; i < aftersort_bwt.length; i++) {
-	for (var j=M_off_away.length-1; j>-1; j--) {
-		if (aftersort_bwt[i] > M_off_away[j]) {
-			aftersort_bwt[i]++;
-		}
-	}
-}
-*/
-////var cpy = aftersort_bwt;
-////aftersort_bwt = aftersort_fic;
-////aftersort_fic = cpy;
-
-/*
-console.log('aftersort_fic in between: ' + aftersort_fic.join(', '));
-for (var i=0; i < aftersort_fic.length; i++) {
-	for (var j=F_off_away.length-1; j>-1; j--) {
-		if (aftersort_fic[i] > F_off_away[j]) {
-			aftersort_fic[i]--;
-		}
-	}
-}
-
-console.log('aftersort_bwt in between: ' + aftersort_bwt.join(', '));
-for (var i=0; i < aftersort_bwt.length; i++) {
-	for (var j=M_off_away.length-1; j>-1; j--) {
-		if (aftersort_bwt[i] > M_off_away[j]) {
-			aftersort_bwt[i]--;
-		}
-	}
-}
-*/
-
-/**
-			for (var i=0; i < aftersort.length; i++) {
-
-				if (aftersort[i] !== undefined) {
-**/
-					/** current main contender
-					aftersort_bwt[i-M_offset] = aftersort[i]-M_offset;
-					aftersort_fic[i-F_offset] = aftersort[i]-F_offset;
-					/**/
-
-
-
-					/*
-					aftersort_bwt[i] = aftersort[i]-M_offset;
-					aftersort_fic[i] = aftersort[i]-F_offset;
-					/**/
-					/*
-					// funky: this breaks ATCT|,2,A,3 and CC,
-					// as well as ATCGAT|,2,,5;,4,CG,6 and C,
-					// even though it feels much more professional =)
-					aftersort_bwt[i+M_offset-F_offset] = aftersort[i]+M_offset-F_offset;
-					aftersort_fic[i+F_offset-M_offset] = aftersort[i]+F_offset-M_offset;
-					/**/
-/**					console.log('aftersort_bwt int: ' + aftersort_bwt.join(', '));
-					console.log('aftersort_fic int: ' + aftersort_fic.join(', '));
-				}
-
-				if (F[i] === '0') {
-					F_offset++;
-				}
-				if (M[i] === '0') {
-					M_offset++;
-				}
-			}
-**/
-
-
-
-
-
-/*
-aftersort_bwt = [0, 2, 1, 3, 4, 6, 5];
-aftersort_fic = [0, 2, 1, 3, 4, 6, 5];
-*/
-/*
-aftersort_bwt = [0, 3, 2, 1, 4, 6, 5];
-aftersort_fic = [0, 1, 2, 3, 4, 6, 5];
-*/
-// for TATA|,2,A,4 and C, given is aftersort as
-// [x, 3, 2, 1, x, 6, 5 ]
-/*
-aftersort_fic = [0, 2, 1, 3, 5, 4];
-aftersort_fic = [0, 2, 1, 3, 4, 6, 5];
-
-// for TATA|,2,A,4 and C: none of the following are acceptable, apparently:
-aftersort_fic = [0, 1, 2, 3, 5, 4]; // x
-aftersort_fic = [0, 2, 1, 3, 5, 4]; // x
-aftersort_fic = [0, 1, 3, 2, 5, 4]; // x
-aftersort_fic = [0, 3, 1, 2, 5, 4]; // x
-aftersort_fic = [0, 3, 2, 1, 5, 4]; // x
-aftersort_fic = [0, 2, 3, 1, 5, 4]; // x
-*/
-// => conclusion: maybe an F == 0 is something a bit more... localized?
-
-
-
-
-
-
-
-
-
-/*
-			console.log('aftersort_bwt is now:');
-			console.log(aftersort_bwt);
-			console.log('aftersort_fic is now:');
-			console.log(aftersort_fic);
-*/
-
-
-
-/*
-			for (var i=0; i < 20; i++) {
-				console.log('_doAftersortBWT(' + i + ') = ' + this._doAftersortBWT(i));
-			}
-			for (var i=0; i < 20; i++) {
-				console.log('_doPresortBWT(' + i + ') = ' + this._doPresortBWT(i));
-			}
-*/
 		},
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 		_publishFindex: function() {
 
@@ -1360,8 +1104,6 @@ if (nextXBW) { // if we are H_0
 
 		_setSplitNodeBasedOnStore: function(give_the_split_node, pref_cur_is_store, offset) {
 
-			console.log('_setSplitNodeBasedOnStore');
-
 			var i = pref_cur_is_store.length + offset;
 			while (i > 0) {
 				i--;
@@ -1526,40 +1268,9 @@ sout += '<br>' +
 
 
 
-// [OVERRIDE 3]
-//if (takeNodeFrom === 0) {
-				//	console.log('_doAfter 2');
-	multi_cur_fic_int[takeNodeFrom] = subXBWs[takeNodeFrom]._doAftersortFiC(multi_cur_fic[takeNodeFrom]);
-	multi_cur_bwt_int[takeNodeFrom] = subXBWs[takeNodeFrom]._doAftersortBWT(multi_cur_bwt[takeNodeFrom]);
-/*	console.log('multi_cur_fic: ' + multi_cur_fic[0]);
-	console.log('multi_cur_bwt: ' + multi_cur_bwt[0]);
-	console.log('multi_cur_fic_int: ' + multi_cur_fic_int[0]);
-	console.log('multi_cur_bwt_int: ' + multi_cur_bwt_int[0]);
-*/
-/*} else {
-	multi_cur_fic_int[takeNodeFrom] = multi_cur_fic[takeNodeFrom];
-	multi_cur_bwt_int[takeNodeFrom] = multi_cur_bwt[takeNodeFrom];
-}*/
-
-/*
-	switch(multi_cur_fic[0]) {
-		case 3:
-			multi_cur_fic_int[0] = 4;
-		break;
-		case 4:
-			multi_cur_fic_int[0] = 3;
-		break;
-	}
-	switch(multi_cur_bwt[0]) {
-		case 3:
-			multi_cur_bwt_int[0] = 4;
-		break;
-		case 4:
-			multi_cur_bwt_int[0] = 3;
-		break;
-	}
-}
-*/
+			// [OVERRIDE 3]
+			multi_cur_fic_int[takeNodeFrom] = subXBWs[takeNodeFrom]._doAftersortFiC(multi_cur_fic[takeNodeFrom]);
+			multi_cur_bwt_int[takeNodeFrom] = subXBWs[takeNodeFrom]._doAftersortBWT(multi_cur_bwt[takeNodeFrom]);
 
 			if (verbose) {
 
@@ -1593,163 +1304,12 @@ sout += '<br>' +
 			}
 		},
 
-/*
-		// inverse of _doAftersortBWT
-		_doPresortBWT: function(j) {
-			var k = 0;
-			for (var i=0; i < j; i++) {
-				if (F[i] === '1') {
-					k++;
-				}
-			}
-			var ret = k--;
-// TODO EMRG :: replace random for loop with while (until a return is reached), which is however overflow protected
-			for (var i=0; i < 100; i++) {
-				if (aftersort_bwt[i] === undefined) {
-					if (i === ret) {
-						return i;
-					}
-				} else {
-					if (aftersort_bwt[i] === ret) {
-						return i;
-					}
-				}
-			}
-		},
-*/
-
-		// takes in a BWT number
-		// gives out the actual column in which that BWT is to be found,
-		//   accounting for F values and aftersort weirdness
-		/*_doAftersortBWT: function(i) {
-			var ret = aftersort_bwt[i];
-			if (ret === undefined) {
-				ret = i;
-			}
-			ret++;
-			var j = 0, k = 0;
-			while ((k < ret) && (j <= F.length)) {
-				if (F[j] === '1') {
-					k++;
-				}
-				j++;
-			}
-			j--;
-			return j;
-		},*/
-// EMRG CONV
-/*		_doAftersortBWT: function(i) {
-
-//			console.log('_doAftersortBWT, i in: ' + i);
-
-/*
-var extraone = 0;
-if (i >= F.length) {
-	extraone = 1;
-}
-*/
-/*
-//			console.log('_doAftersortBWT, i after rank: ' + i);
-
-i = rank('1', F, i);
-i = select('1', F, i);
-
-//i = rank('1', M, i);
-			var ret = aftersort[i];
-			if (ret === undefined) {
-				ret = i;
-			}
-ret = select('1', F, ret);
-
-//i = rank('1', F, i);
-
-//			console.log('_doAftersortBWT, i after aftersort: ' + ret);
-
-//			ret = select('1', F, ret);
-
-//			console.log('_doAftersortBWT, i after select: ' + ret);
-
-/*
-ret += extraone;
-*/
-/*
-			return ret;
-		},
-
-		// takes in a FiC number
-		// gives out the actual column in which that FiC is to be found,
-		//   accounting for M values and aftersort weirdness
-/*
-		_doAftersortFiC: function(i) {
-			var ret = aftersort_fic[i];
-			if (ret === undefined) {
-				ret = i;
-			}
-			ret++;
-			var j = 0, k = 0;
-			while ((k < ret) && (j <= M.length)) {
-				if (M[j] === '1') {
-					k++;
-				}
-				j++;
-			}
-			j--;
-			return j;
-		},
-*/
-// EMRG CONV
-/*
-		_doAftersortFiC: function(i) {
-
-//			console.log('_doAftersortFiC, i in: ' + i);
-
-/*
-var extraone = 0;
-if (i >= M.length) {
-	extraone = 1;
-}
-*/
-/*
-			//i = rank('1', M, i);
-
-//			console.log('_doAftersortFiC, i after rank: ' + i);
-
-i = rank('1', M, i);
-i = select('1', M, i);
-
-//i = rank('1', F, i);
-			var ret = aftersort[i];
-			if (ret === undefined) {
-				ret = i;
-			}
-ret = select('1', M, ret);
-
-//i = rank('1', M, i);
-
-//			console.log('_doAftersortFiC, i after aftersort: ' + ret);
-
-//			ret = select('1', M, ret);
-
-//			console.log('_doAftersortFiC, i after select: ' + ret);
-
-/*
-ret += extraone;
-*/
-/*
-			return ret;
-		},
-*/
-
 		_doAftersortBWT: function(i) {
 
-			//i = select('1', M, i);
-
 			var ret = aftersort[i];
 			if (ret === undefined) {
 				ret = i;
 			}
-
-			//ret = rank('1', M, ret);
 
 			ret = select('1', F, ret);
 
@@ -1804,12 +1364,6 @@ ret += extraone;
 
 			for (var i=0; i < subXBWs.length; i++) {
 				if (prefixes[i][prefixes[i].length-1] === pEC) {
-					console.log('checkIfSplitOneMore pushes out:');
-					console.log(prefixes);
-					console.log(i);
-					console.log(prefixes[i]);
-					console.log(split_nodes_in);
-					console.log(split_nodes_in[i]);
 					split_nodes_out.push(split_nodes_in[i]);
 					return sout;
 				}
@@ -1825,7 +1379,6 @@ ret += extraone;
 					multi_cur_fic[takeNodeFrom]++;
 					multi_cur_bwt[takeNodeFrom]++;
 
-					//console.log('_doAfter 1');
 					multi_cur_fic_int[takeNodeFrom] = subXBWs[takeNodeFrom]._doAftersortFiC(multi_cur_fic[takeNodeFrom]);
 					multi_cur_bwt_int[takeNodeFrom] = subXBWs[takeNodeFrom]._doAftersortBWT(multi_cur_bwt[takeNodeFrom]);
 				}
@@ -2009,111 +1562,83 @@ ret += extraone;
 
 			// 1. Take the node and copy it for each 0 in its M node.
 
+			// this line makes CACT and GCGTACG|,4,,7;,1,C,5 work and brings us down from 3 fails to 2 fails
+			sn_i = rank('1', M, sn_i);
+
 			// get location of this node's M
-//			var Mloc = sn_i - (1 + rank('0', F, sn_i));
-
-// this line makes CACT and GCGTACG|,4,,7;,1,C,5 work and brings us down from 3 fails to 2 fails
-sn_i = rank('1', M, sn_i);
-
-var Mloc = sn_i;
-var Floc1 = select('1', F, sn_i);
-
-//Mloc = sn_i - (1 + rank('0', F, sn_i));
-console.log('in _splitNode:');
-console.log('sn_i: ' + sn_i);
-console.log('Mloc: ' + Mloc);
+			var Mloc = sn_i;
+			var Floc1 = select('1', F, sn_i);
 
 			// get number within this node's M
 			var Mloc1 = select('1', M, Mloc);
 			var Mloc2 = select('1', M, Mloc+1);
 			var Mnum = Mloc2 - Mloc1;
 
-console.log('Mnum: ' + Mnum);
+			// we used to have sn_i here instead of Floc1 - but using Floc1 actually makes TC|,1,C,2 work and does not make all else fail =)
+			var prevNodes = [lf([Floc1, Floc1], BWT[Floc1], false, false)[0]];
 
-// HERE we already need to do stuff FOR EACH PREFIX
+			// We check if the previous node actually is more than one node by checking the F to the right
+			// (Basically, we landed on F = 1; now if F on the right is also 1, then that is a new node,
+			// different from what we are considering.
+			// But if F = 0 on the right, then that is one more edge coming into this node here, meaning
+			// there is one more preceding. And so on we go, until we have F = 1.)
 
-// we used to have sn_i here instead of Floc1 - but using Floc1 actually makes TC|,1,C,2 work and does not make all else fail =)
-var prevNodes = [lf([Floc1, Floc1], BWT[Floc1], false, false)[0]];
-
-// We check if the previous node actually is more than one node by checking the F to the right
-// (Basically, we landed on F = 1; now if F on the right is also 1, then that is a new node,
-// different from what we are considering.
-// But if F = 0 on the right, then that is one more edge coming into this node here, meaning
-// there is one more preceding. And so on we go, until we have F = 1.)
-
-var i=1;
-while (F[Floc1+i] === '0') {
-	prevNodes.push(lf([Floc1+i, Floc1+i], BWT[Floc1+i], false, false)[0]);
-	i++;
-}
-
-var foff = -Mnum;
-
-//for (var j=prevNodes.length-1; j > -1; j--) { // this makes CACT and GCGTACG|,5,,7;,1,C,5 fail
-for (var j=0; j<prevNodes.length; j++) { // this makes CACTC and GGGCAGTACGTGG|,9,,11;,7,CGCG,8 fail
-
-	foff += Mnum;
-
-			// insert into BWT and F at the same time
-			var newBWT = BWT.slice(0, Floc1+1);
-			var newF = F.slice(0, Floc1+1);
-			for (var i=1; i < Mnum; i++) {
-				newBWT += BWT[Floc1+foff];
-				newF += F[Floc1+foff];
+			var i=1;
+			while (F[Floc1+i] === '0') {
+				prevNodes.push(lf([Floc1+i, Floc1+i], BWT[Floc1+i], false, false)[0]);
+				i++;
 			}
-			newBWT += BWT.slice(Floc1+1);
-			newF += F.slice(Floc1+1);
+
+			var foff = -Mnum;
+
+			//for (var j=prevNodes.length-1; j > -1; j--) { // this makes CACT and GCGTACG|,5,,7;,1,C,5 fail
+			for (var j=0; j<prevNodes.length; j++) { // this makes CACTC and GGGCAGTACGTGG|,9,,11;,7,CGCG,8 fail
+
+				foff += Mnum;
+
+				// insert into BWT and F at the same time
+				var newBWT = BWT.slice(0, Floc1+1);
+				var newF = F.slice(0, Floc1+1);
+				for (var i=1; i < Mnum; i++) {
+					newBWT += BWT[Floc1+foff];
+					newF += F[Floc1+foff];
+				}
+				newBWT += BWT.slice(Floc1+1);
+				newF += F.slice(Floc1+1);
 
 
-for (var k=j+1; k < prevNodes.length; k++) {
-	if (prevNodes[k] > prevNodes[j]) {
-		prevNodes[k] += Mnum - 1;
-	}
-}
+				for (var k=j+1; k < prevNodes.length; k++) {
+					if (prevNodes[k] > prevNodes[j]) {
+						prevNodes[k] += Mnum - 1;
+					}
+				}
 
 
-			// 2. Set the M value of the original and all copies to 1.
-			//    (We are not inserting / deleting here, just setting values to 1 that were 0,
-			//    so we can do this BEFORE step 3, in which we modify M again, based on the
-			//    locations of ones and zeroes BEFORE step 2.)
+				// 2. Set the M value of the original and all copies to 1.
+				//    (We are not inserting / deleting here, just setting values to 1 that were 0,
+				//    so we can do this BEFORE step 3, in which we modify M again, based on the
+				//    locations of ones and zeroes BEFORE step 2.)
 
-			var newM = M.slice(0,Mloc1);
-			for (var i=Mloc1; i < Mloc2; i++) {
-				newM += '1';
+				var newM = M.slice(0,Mloc1);
+				for (var i=Mloc1; i < Mloc2; i++) {
+					newM += '1';
+				}
+				newM += M.slice(Mloc2);
+
+				// 3. Add as many zeroes to the M of the preceding node as nodes were copied.
+
+				var newMn = newM.slice(0, prevNodes[j]+1);
+				for (var i=1; i < Mnum; i++) {
+					newMn += '0';
+				}
+				newMn += newM.slice(prevNodes[j]+1);
+
+				// actually update BWT, M and F explicitly
+
+				BWT = newBWT;
+				M = newMn;
+				F = newF;
 			}
-			newM += M.slice(Mloc2);
-
-			// 3. Add as many zeroes to the M of the preceding node as nodes were copied.
-
-//			var prevNode = lf([sn_i, sn_i], BWT[sn_i], true, false)[0];
-//console.log('prevNode with lf(true): ' + prevNode);
-
-
-// UNDERRIDE
-
-/*
-// makes TC|,1,C,2 and TC work, but makes 11 fail
-if (prevNode > Mloc1) {
-	prevNode += Mnum;
-}
-*/
-/*
-// makes TC|,1,C,2 and TC work, but makes 15 fail
-prevNode += select('0', F, prevNode);
-*/
-
-			var newMn = newM.slice(0, prevNodes[j]+1);
-			for (var i=1; i < Mnum; i++) {
-				newMn += '0';
-			}
-			newMn += newM.slice(prevNodes[j]+1);
-
-			// actually update BWT, M and F explicitly
-
-			BWT = newBWT;
-			M = newMn;
-			F = newF;
-}
 
 			// TODO :: apply directly to char, ord etc., so that no recalculation is necessary
 			recalculate(true);

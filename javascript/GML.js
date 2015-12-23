@@ -1667,14 +1667,11 @@ window.GML = {
 						for (i=0; i < prev_nodes.length; i++) {
 
 							var pnode = prev_nodes[i];
-console.log('pnode was: ' + pnode);
+
 							// ignore the freshly inserted columns
 							if (pnode > firstRedi) {
 								pnode += replacement_prefixes.length - 1;
 							}
-console.log('pnode is: ' + pnode);
-console.log(this.bwt_aftersort);
-console.log(this.bwt_aftersort['C']);
 
 							mrep_arr.push(pnode);
 
@@ -2034,18 +2031,15 @@ console.log(this.bwt_aftersort['C']);
 					var sstep = '<div>' + xbw12.checkIfSplitOneMore(splitnodes);
 
 					if (splitnodes.length > 0) {
-console.log('splitnodes:');
-console.log(splitnodes);
 						sstep += xbw12.splitOneMore(splitnodes);
 
-// TODO :: we are now solving the issue of aftersort having to be regenerated and so on
-//         through simply restarting the process with another round from the beginning,
-//         and regenerating everything... which is not particularly nice, as it is a
-//         lot of unnecessary overhead if these calculations could be done directly here,
-//         in-place
-console.log('force reround');
-xbw1.apply_GCCG_GCGC_flat_fix();
-xbw12.forceFullyMerged();
+						// TODO :: we are now solving the issue of aftersort having to be regenerated and so on
+						//         through simply restarting the process with another round from the beginning,
+						//         and regenerating everything... which is not particularly nice, as it is a
+						//         lot of unnecessary overhead if these calculations could be done directly here,
+						//         in-place
+						xbw1.apply_GCCG_GCGC_flat_fix();
+						xbw12.forceFullyMerged();
 
 						doAnotherRound = true;
 					}
@@ -4625,81 +4619,16 @@ xbw12.forceFullyMerged();
 		// keep > in mind when sorting (that is, take out > for correct spillover sorting)
 		var spillover_str = this.DS_1_o + this.DK_1_o;
 
-// [OVERRIDE 4]
-if (flat_merging) {
-
-	var replace_str = this.DS + this.DK;
-
-	// sort as we would if we opened an FFX file
-	prefixes.sort(function(a, b) {
-
-		var a_s = a[0].replace(spillover_str, replace_str);
-		var b_s = b[0].replace(spillover_str, replace_str);
-
-		if (a_s < b_s) {
-			return -1;
-		}
-		if (a_s > b_s) {
-			return 1;
-		}
-
-		return 0;
-	});
-
-} else {
-
-		prefixes.sort(function(a, b) {
-
-			var a_s = a[0].replace(spillover_str, '');
-			var b_s = b[0].replace(spillover_str, '');
-
-			if (a_s < b_s) {
-				return -1;
-			}
-			if (a_s > b_s) {
-				return 1;
-			}
-
-			return 0;
-		});
-
-		// [NOTE P5]
-		if (bwt_aftersort) {
-			// we now take the already sorted prefixes, and sort them again - this time
-			// not completely jumping over $_0#_0
-			// the resulting reordering between the original prefix sorting and the new
-			// prefix sorting will be stored in bwt_aftersort, and we will reorder the
-			// BWT row (and only that row) after all the merging has been finished, that
-			// is, after all the navigating through it all has been finished
-			var prefixes_for_bwt = [];
-			var prefix_letters = [];
-			for (var i=0; i < prefixes.length; i++) {
-				var firstChar = prefixes[i][0][0];
-				if (!prefix_letters[firstChar]) {
-					prefix_letters[firstChar] = 0;
-				}
-				for (var m=0; m < prefixes[i][2]; m++) {
-					prefixes_for_bwt.push([prefixes[i][0], prefix_letters[firstChar]]);
-					prefix_letters[firstChar] += 1;
-				}
-			}
+		// [OVERRIDE 4]
+		if (flat_merging) {
 
 			var replace_str = this.DS + this.DK;
 
-			prefixes_for_bwt.sort(function(a, b) {
+			// sort as we would if we opened an FFX file
+			prefixes.sort(function(a, b) {
 
-				// we here choose the very same approach as usual, ONLY if we have
-				// $_0#_0 in position 1 (that is, one character and then them), then
-				// we do something different
-				var a_s = a[0].replace(spillover_str, '');
-				var b_s = b[0].replace(spillover_str, '');
-
-				if ((a[0][1] === '$') || (a[0][1] === '#')) {
-					a_s = a[0].replace(spillover_str, replace_str);
-				}
-				if ((b[0][1] === '$') || (b[0][1] === '#')) {
-					b_s = b[0].replace(spillover_str, replace_str);
-				}
+				var a_s = a[0].replace(spillover_str, replace_str);
+				var b_s = b[0].replace(spillover_str, replace_str);
 
 				if (a_s < b_s) {
 					return -1;
@@ -4711,23 +4640,82 @@ if (flat_merging) {
 				return 0;
 			});
 
-console.log(prefixes_for_bwt);
+		} else {
 
-			var firstChars = {};
-			for (var i=0; i < prefixes_for_bwt.length; i++) {
-console.log(prefixes_for_bwt[i]);
-				var firstChar = prefixes_for_bwt[i][0][0];
-				if (!bwt_aftersort[firstChar]) {
-					bwt_aftersort[firstChar] = [];
-					firstChars[firstChar] = 0;
+			prefixes.sort(function(a, b) {
+
+				var a_s = a[0].replace(spillover_str, '');
+				var b_s = b[0].replace(spillover_str, '');
+
+				if (a_s < b_s) {
+					return -1;
 				}
-				bwt_aftersort[firstChar][prefixes_for_bwt[i][1]] = firstChars[firstChar]++;
-			}
+				if (a_s > b_s) {
+					return 1;
+				}
 
-console.log(bwt_aftersort);
-console.log(bwt_aftersort['C']);
+				return 0;
+			});
+
+			// [NOTE P5]
+			if (bwt_aftersort) {
+				// we now take the already sorted prefixes, and sort them again - this time
+				// not completely jumping over $_0#_0
+				// the resulting reordering between the original prefix sorting and the new
+				// prefix sorting will be stored in bwt_aftersort, and we will reorder the
+				// BWT row (and only that row) after all the merging has been finished, that
+				// is, after all the navigating through it all has been finished
+				var prefixes_for_bwt = [];
+				var prefix_letters = [];
+				for (var i=0; i < prefixes.length; i++) {
+					var firstChar = prefixes[i][0][0];
+					if (!prefix_letters[firstChar]) {
+						prefix_letters[firstChar] = 0;
+					}
+					for (var m=0; m < prefixes[i][2]; m++) {
+						prefixes_for_bwt.push([prefixes[i][0], prefix_letters[firstChar]]);
+						prefix_letters[firstChar] += 1;
+					}
+				}
+
+				var replace_str = this.DS + this.DK;
+
+				prefixes_for_bwt.sort(function(a, b) {
+
+					// we here choose the very same approach as usual, ONLY if we have
+					// $_0#_0 in position 1 (that is, one character and then them), then
+					// we do something different
+					var a_s = a[0].replace(spillover_str, '');
+					var b_s = b[0].replace(spillover_str, '');
+
+					if ((a[0][1] === '$') || (a[0][1] === '#')) {
+						a_s = a[0].replace(spillover_str, replace_str);
+					}
+					if ((b[0][1] === '$') || (b[0][1] === '#')) {
+						b_s = b[0].replace(spillover_str, replace_str);
+					}
+
+					if (a_s < b_s) {
+						return -1;
+					}
+					if (a_s > b_s) {
+						return 1;
+					}
+
+					return 0;
+				});
+
+				var firstChars = {};
+				for (var i=0; i < prefixes_for_bwt.length; i++) {
+					var firstChar = prefixes_for_bwt[i][0][0];
+					if (!bwt_aftersort[firstChar]) {
+						bwt_aftersort[firstChar] = [];
+						firstChars[firstChar] = 0;
+					}
+					bwt_aftersort[firstChar][prefixes_for_bwt[i][1]] = firstChars[firstChar]++;
+				}
+			}
 		}
-}
 
 		var BWT = [];
 		var M = [];

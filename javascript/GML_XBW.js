@@ -223,6 +223,16 @@ GML.make_xbw_environment = function() {
 			return [];
 		}
 
+// EMRG IMPROVE LF WITH AFTERSORT 2
+/*
+if (aftersort_bwt[ep] !== undefined) {
+ep = aftersort_bwt[ep];
+}
+if (aftersort_bwt[sp] !== undefined) {
+sp = aftersort_bwt[sp];
+}
+*/
+
 		if (do_rank) {
 			sp = rank('1', M, sp);
 			ep = rank('1', M, ep);
@@ -526,16 +536,111 @@ console.log('getting out ' + prefs_to_be_sorted[0]);
 			console.log('aftersort FiC before:');
 			console.log(GML.deep_copy_array(aftersort_fic));
 
+/*
+What if we need to jump over one if F == 0 and lower all whose numbers are higher than that
+(no matter if before or after)?
+*/
+
+var F_off_away = [];
+var M_off_away = [];
+
+for (var i=0; i < aftersort.length; i++) {
+
+	if (F[i] === '0') {
+		F_offset++;
+		if (aftersort[i] === undefined) {
+			F_off_away.push(i);
+		} else {
+			F_off_away.push(aftersort[i]);
+		}
+	} else {
+		if (aftersort[i] === undefined) {
+			aftersort_fic.push(i);
+		} else {
+			aftersort_fic.push(aftersort[i]);
+		}
+	}
+
+	if (M[i] === '0') {
+		M_offset++;
+		if (aftersort[i] === undefined) {
+			M_off_away.push(i);
+		} else {
+			M_off_away.push(aftersort[i]);
+		}
+	} else {
+		if (aftersort[i] === undefined) {
+			aftersort_bwt.push(i);
+		} else {
+			aftersort_bwt.push(aftersort[i]);
+		}
+	}
+
+/*
+	if (F[i] === '0') {
+		F_offset++;
+		F_off_away.push(i);
+	} else {
+		if (aftersort[i] === undefined) {
+			aftersort_fic.push(i);
+		} else {
+			aftersort_fic.push(aftersort[i]);
+		}
+	}
+
+	if (M[i] === '0') {
+		M_offset++;
+		M_off_away.push(i);
+	} else {
+		if (aftersort[i] === undefined) {
+			aftersort_bwt.push(i);
+		} else {
+			aftersort_bwt.push(aftersort[i]);
+		}
+	}
+*/
+}
+
+console.log('F: ' + F);
+console.log('M: ' + M);
+
+console.log('F_off_away: ' + F_off_away.join(', '));
+console.log('M_off_away: ' + M_off_away.join(', '));
+
+console.log('aftersort_fic in between: ' + aftersort_fic.join(', '));
+for (var i=0; i < aftersort_fic.length; i++) {
+	for (var j=F_off_away.length-1; j>-1; j--) {
+		if (aftersort_fic[i] > F_off_away[j]) {
+			aftersort_fic[i]--;
+		}
+	}
+}
+
+console.log('aftersort_bwt in between: ' + aftersort_bwt.join(', '));
+for (var i=0; i < aftersort_bwt.length; i++) {
+	for (var j=M_off_away.length-1; j>-1; j--) {
+		if (aftersort_bwt[i] > M_off_away[j]) {
+			aftersort_bwt[i]--;
+		}
+	}
+}
+
+
+/**
 			for (var i=0; i < aftersort.length; i++) {
 
 				if (aftersort[i] !== undefined) {
+**/
+					/** current main contender
+					aftersort_bwt[i-M_offset] = aftersort[i]-M_offset;
+					aftersort_fic[i-F_offset] = aftersort[i]-F_offset;
+					/**/
+
+
+
 					/*
 					aftersort_bwt[i] = aftersort[i]-M_offset;
 					aftersort_fic[i] = aftersort[i]-F_offset;
-					/**/
-					/**/
-					aftersort_bwt[i-M_offset] = aftersort[i]-M_offset;
-					aftersort_fic[i-F_offset] = aftersort[i]-F_offset;
 					/**/
 					/*
 					// funky: this breaks ATCT|,2,A,3 and CC,
@@ -544,7 +649,7 @@ console.log('getting out ' + prefs_to_be_sorted[0]);
 					aftersort_bwt[i+M_offset-F_offset] = aftersort[i]+M_offset-F_offset;
 					aftersort_fic[i+F_offset-M_offset] = aftersort[i]+F_offset-M_offset;
 					/**/
-					console.log('aftersort_bwt int: ' + aftersort_bwt.join(', '));
+/**					console.log('aftersort_bwt int: ' + aftersort_bwt.join(', '));
 					console.log('aftersort_fic int: ' + aftersort_fic.join(', '));
 				}
 
@@ -555,6 +660,11 @@ console.log('getting out ' + prefs_to_be_sorted[0]);
 					M_offset++;
 				}
 			}
+**/
+
+
+
+
 
 /*
 aftersort_bwt = [0, 2, 1, 3, 4, 6, 5];
@@ -580,10 +690,31 @@ aftersort_fic = [0, 2, 3, 1, 5, 4]; // x
 */
 // => conclusion: maybe an F == 0 is something a bit more... localized?
 
+
+
+
+
+
+
+
+
+
 			console.log('aftersort_bwt is now:');
 			console.log(aftersort_bwt);
 			console.log('aftersort_fic is now:');
 			console.log(aftersort_fic);
+
+
+
+
+/*
+			for (var i=0; i < 20; i++) {
+				console.log('_doAftersortBWT(' + i + ') = ' + this._doAftersortBWT(i));
+			}
+			for (var i=0; i < 20; i++) {
+				console.log('_doPresortBWT(' + i + ') = ' + this._doPresortBWT(i));
+			}
+*/
 		},
 
 
@@ -715,6 +846,10 @@ aftersort_fic = [0, 2, 3, 1, 5, 4]; // x
 				}
 			}
 
+// EMRG - we just added this here, as it sounded like it made sense, but now we are not sure anymore
+pos1 = rank('1', M, pos1);
+pos1 = select('1', F, pos1);
+
 			var BWTatpos = BWT[pos1];
 
 			// we find out the how manieth T this one is
@@ -741,10 +876,6 @@ aftersort_fic = [0, 2, 3, 1, 5, 4]; // x
 			//   BWT in position where FiC == $_0
 			// and
 			//   BWT in position where BWT == #_0
-
-			// TODO EMRG :: do we need to transform pos1 in some part?
-			// (as we want to actually go for the node, not just the column,
-			// and we are switching from FiC-indexing to BWT-indexing...)
 
 			for (i=0; i < BWT.length; i++) {
 				if (BWT[i] === DK_1) {
@@ -801,6 +932,8 @@ aftersort_fic = [0, 2, 3, 1, 5, 4]; // x
 			recalculate(true);
 		},
 
+		// gives back true if more merging needs to be done, and false if
+		// a whole round of merging has been finished
 		notFullyMerged: function() {
 
 			for (var i=0; i < subXBWs.length; i++) {
@@ -810,6 +943,14 @@ aftersort_fic = [0, 2, 3, 1, 5, 4]; // x
 			}
 
 			return false;
+		},
+
+		// makes certain that the next call to notFullyMerged() results in false
+		forceFullyMerged: function() {
+
+			for (var i=0; i < subXBWs.length; i++) {
+				multi_cur_bwt_int[i] = subXBWs[i]._publishBWTlen();
+			}
 		},
 
 		_publishBWTlen: function() {
@@ -1346,6 +1487,32 @@ if (nextXBW) { // if we are H_0
 			}
 		},
 
+		// inverse of _doAftersortBWT
+		_doPresortBWT: function(j) {
+			var k = 0;
+			for (var i=0; i < j; i++) {
+				if (F[i] === '1') {
+					k++;
+				}
+			}
+			var ret = k--;
+// TODO EMRG :: replace random for loop with while (until a return is reached), which is however overflow protected
+			for (var i=0; i < 100; i++) {
+				if (aftersort_bwt[i] === undefined) {
+					if (i === ret) {
+						return i;
+					}
+				} else {
+					if (aftersort_bwt[i] === ret) {
+						return i;
+					}
+				}
+			}
+		},
+
+		// takes in a BWT number
+		// gives out the actual column in which that BWT is to be found,
+		//   accounting for F values and aftersort weirdness
 		_doAftersortBWT: function(i) {
 			var ret = aftersort_bwt[i];
 			if (ret === undefined) {
@@ -1363,6 +1530,9 @@ if (nextXBW) { // if we are H_0
 			return j;
 		},
 
+		// takes in a FiC number
+		// gives out the actual column in which that FiC is to be found,
+		//   accounting for M values and aftersort weirdness
 		_doAftersortFiC: function(i) {
 			var ret = aftersort_fic[i];
 			if (ret === undefined) {
@@ -1648,7 +1818,12 @@ if (nextXBW) { // if we are H_0
 
 			// 3. Add as many zeroes to the M of the preceding node as nodes were copied.
 
+// EMRG IMPROVE LF WITH AFTERSORT 1 (or should the aftersort stuff just go right inside LF?)
 			var prevNode = lf([sn_i, sn_i], BWT[sn_i], true, false)[0];
+			console.log('lf of ' + sn_i + ' gives ' + prevNode);
+// prevNode = this._doPresortBWT(prevNode);
+// prevNode = this._doAftersortBWT(prevNode);
+			console.log('pre-after-sort of ' + sn_i + ' gives ' + prevNode);
 
 			var newMn = newM.slice(0, prevNode+1);
 			for (var i=1; i < Mnum; i++) {

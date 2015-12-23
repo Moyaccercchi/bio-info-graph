@@ -1975,7 +1975,6 @@ console.log(this.bwt_aftersort['C']);
 
 
 
-			// GCCG-GCGC fix
 			xbw1.apply_GCCG_GCGC_flat_fix();
 
 			if (this.verbosity > 3) {
@@ -2036,6 +2035,16 @@ console.log(this.bwt_aftersort['C']);
 
 					if (splitnodes.length > 0) {
 						sstep += xbw12.splitOneMore(splitnodes);
+
+// TODO :: we are now solving the issue of aftersort having to be regenerated and so on
+//         through simply restarting the process with another round from the beginning,
+//         and regenerating everything... which is not particularly nice, as it is a
+//         lot of unnecessary overhead if these calculations could be done directly here,
+//         in-place
+console.log('force reround');
+xbw1.apply_GCCG_GCGC_flat_fix();
+xbw12.forceFullyMerged();
+
 						doAnotherRound = true;
 					}
 
@@ -4228,6 +4237,9 @@ console.log(this.bwt_aftersort['C']);
 		// while more work is required, do more work
 		while (this.workOnAutomatonPrefixes_int(auto, makePrefixSorted, addToSOut, spillover_into_auto)) {
 			if (addToSOut) {
+				// construct new set of prefixes for the display
+				// (as the freshly constructed prefixes from the while could be a bit broken)
+				this.workOnAutomatonPrefixes_int(auto, false, false, spillover_into_auto);
 				this.sout += this.visualize(auto, true);
 			}
 		}

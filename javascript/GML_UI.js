@@ -208,6 +208,8 @@ window.GML_UI = {
 		['GGGCCCAGGGCGATCGACGTTC|,7,,19', 'TTTGTTTGACACGCTGC|,16,,17;,11,AGGG,14'],
 		['CCCAGCC|,4,,6', 'TT|,1,AGG,2'],
 		['CAGCC|,2,,4', 'TT|,1,AGG,2'],
+		['CACT', 'GCGTACG|,5,,7;,1,C,5'],
+		['CACT', 'GCGTACG|,4,,7;,1,C,5'],
 	],
 
 
@@ -272,7 +274,7 @@ window.GML_UI = {
 		var el = this.activateDivOut(2, false, false);
 		el.innerHTML = '';
 
-		var some_error = false;
+		var err_count = 0;
 
 		for (var i=0; i < tests.length; i++) {
 			var sout = '<div class="panel">' +
@@ -287,7 +289,7 @@ window.GML_UI = {
 				sout += '<div class="success">Success!</div></div>';
 			} else {
 				sout += '<div class="error">Failure...</div></div>';
-				some_error = true;
+				err_count++;
 			}
 			el.innerHTML += sout;
 		}
@@ -295,7 +297,11 @@ window.GML_UI = {
 		GML.verbosity = old_verbosity;
 		GML.hideXBWenvironments = old_hide_xbw_env;
 
-		if (some_error) {
+		el.innerHTML += '<div>Overall, we executed ' + tests.length + ' tests. <br>' +
+						(tests.length-err_count) + ' of them were successful, ' +
+						'while ' + err_count + ' failed.</div>';
+
+		if (err_count > 0) {
 			this.sad_face();
 		} else {
 			this.happy_face();
@@ -343,7 +349,7 @@ window.GML_UI = {
 		var el = this.activateDivOut(3, false, false);
 		el.innerHTML = '';
 
-		var some_error = false;
+		var err_count = 0;
 
 		for (var i=0; i < tests.length; i++) {
 			var sout = '<div class="panel">' +
@@ -358,7 +364,7 @@ window.GML_UI = {
 				sout += '<div class="success">Success!</div></div>';
 			} else {
 				sout += '<div class="error">Failure...</div></div>';
-				some_error = true;
+				err_count++;
 			}
 			el.innerHTML += sout;
 		}
@@ -366,7 +372,11 @@ window.GML_UI = {
 		GML.verbosity = old_verbosity;
 		GML.hideXBWenvironments = old_hide_xbw_env;
 
-		if (some_error) {
+		el.innerHTML += '<div>Overall, we executed ' + tests.length + ' tests. <br>' +
+						(tests.length-err_count) + ' of them were successful, ' +
+						'while ' + err_count + ' failed.</div>';
+
+		if (err_count > 0) {
 			this.sad_face();
 		} else {
 			this.happy_face();
@@ -406,7 +416,7 @@ window.GML_UI = {
 		var el = this.activateDivOut(5, false, false);
 		el.innerHTML = '';
 
-		var some_error = false;
+		var err_count = 0;
 
 		for (var i=0; i < tests.length; i++) {
 			var sout = '<div class="panel">' +
@@ -421,7 +431,7 @@ window.GML_UI = {
 				sout += '<div class="success">Success!</div></div>';
 			} else {
 				sout += '<div class="error">Failure...</div></div>';
-				some_error = true;
+				err_count++;
 			}
 			el.innerHTML += sout;
 		}
@@ -429,7 +439,11 @@ window.GML_UI = {
 		GML.verbosity = old_verbosity;
 		GML.hideXBWenvironments = old_hide_xbw_env;
 
-		if (some_error) {
+		el.innerHTML += '<div>Overall, we executed ' + tests.length + ' tests. <br>' +
+						(tests.length-err_count) + ' of them were successful, ' +
+						'while ' + err_count + ' failed.</div>';
+
+		if (err_count > 0) {
 			this.sad_face();
 		} else {
 			this.happy_face();

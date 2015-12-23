@@ -1496,10 +1496,14 @@ window.GML = {
 							shide += this.fe_p12ToTableWithHighlights([[], [], next_nodes], true);
 						}
 						if (i===0) {
-							shide += 'After the first round, we are considering ' + next_nodes.length +
-									 ' nodes. This means that we can add so many values to ' +
-									 this.DM + ' in total, including 1s and 0s.' + this.nlnl;
 							afterround0have = next_nodes.length;
+							shide += 'After the first round, we are considering ' + afterround0have +
+									 ' node';
+							if (afterround0have !== 1) {
+								shide += 's';
+							}
+							shide += '. This means that we can add so many values to ' +
+									 this.DM + ' in total, including 1s and 0s.' + this.nlnl;
 						}
 					}
 
@@ -1663,11 +1667,14 @@ window.GML = {
 						for (i=0; i < prev_nodes.length; i++) {
 
 							var pnode = prev_nodes[i];
-
+console.log('pnode was: ' + pnode);
 							// ignore the freshly inserted columns
 							if (pnode > firstRedi) {
 								pnode += replacement_prefixes.length - 1;
 							}
+console.log('pnode is: ' + pnode);
+console.log(this.bwt_aftersort);
+console.log(this.bwt_aftersort['C']);
 
 							mrep_arr.push(pnode);
 
@@ -2313,7 +2320,17 @@ window.GML = {
 
 			// we here use curBWTLetter[0] as $_0 is indexed as $, #_0 is indexed as #, etc.
 			if (curOrigin === 0) {
-				jumpOver = this.bwt_aftersort[curBWTLetter[0]][jumpOver];
+				// traverse the aftersort array in the opposite direction
+				// (value to key instead of key to value)
+				// TODO :: maybe add an inverted aftersort array? (takes more space, but is faster;
+				// also, needs to be kept up to date when the actual aftersort array is changed,
+				// e.g. when nodes are split)
+				for (var i=0; i < this.bwt_aftersort[curBWTLetter[0]].length; i++) {
+					if (this.bwt_aftersort[curBWTLetter[0]][i] === jumpOver) {
+						jumpOver = i;
+						break;
+					}
+				}
 			}
 
 
@@ -4694,6 +4711,7 @@ console.log(prefixes_for_bwt[i]);
 			}
 
 console.log(bwt_aftersort);
+console.log(bwt_aftersort['C']);
 		}
 }
 

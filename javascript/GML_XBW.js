@@ -2026,15 +2026,44 @@ console.log('Mloc: ' + Mloc);
 
 console.log('Mnum: ' + Mnum);
 
+// HERE we already need to do stuff FOR EACH PREFIX
+
+// we used to have sn_i here instead of Floc1 - but using Floc1 actually makes TC|,1,C,2 work and does not make all else fail =)
+var prevNodes = [lf([Floc1, Floc1], BWT[Floc1], false, false)[0]];
+
+// We check if the previous node actually is more than one node by checking the F to the right
+// (Basically, we landed on F = 1; now if F on the right is also 1, then that is a new node,
+// different from what we are considering.
+// But if F = 0 on the right, then that is one more edge coming into this node here, meaning
+// there is one more preceding. And so on we go, until we have F = 1.)
+
+var i=1;
+while (F[Floc1+i] === '0') {
+	prevNodes.push(lf([Floc1+i, Floc1+i], BWT[Floc1+i], false, false)[0]);
+	i++;
+}
+
+// we need to be sure that we can loop through the indices without them moving,
+// so we first sort here and then use a for loop in the correct direction =)
+prevNodes.sort();
+
+var off = -Mnum;
+
+//for (var j=prevNodes.length-1; j > -1; j--) { // this makes CACT and GCGTACG|,5,,7;,1,C,5 fail
+for (var j=0; j<prevNodes.length; j++) { // this makes CACTC and GGGCAGTACGTGG|,9,,11;,7,CGCG,8 fail
+
+	off += Mnum;
+
 			// insert into BWT and F at the same time
 			var newBWT = BWT.slice(0, Floc1+1);
 			var newF = F.slice(0, Floc1+1);
 			for (var i=1; i < Mnum; i++) {
-				newBWT += BWT[Floc1];
-				newF += F[Floc1];
+				newBWT += BWT[Floc1+off];
+				newF += F[Floc1+off];
 			}
 			newBWT += BWT.slice(Floc1+1);
 			newF += F.slice(Floc1+1);
+
 
 
 			// 2. Set the M value of the original and all copies to 1.
@@ -2054,11 +2083,6 @@ console.log('Mnum: ' + Mnum);
 //			var prevNode = lf([sn_i, sn_i], BWT[sn_i], true, false)[0];
 //console.log('prevNode with lf(true): ' + prevNode);
 
-// we used to have sn_i here instead of Floc1 - but using Floc1 actually makes TC|,1,C,2 work and does not make all else fail =)
-var prevNode = lf([Floc1, Floc1], BWT[Floc1], false, false)[0];
-//console.log('prevNode with lf(false): ' + lf([sn_i, sn_i], BWT[sn_i], false, false)[0]);
-
-
 
 // UNDERRIDE
 
@@ -2073,19 +2097,18 @@ if (prevNode > Mloc1) {
 prevNode += select('0', F, prevNode);
 */
 
-
-			var newMn = newM.slice(0, prevNode+1);
+			var newMn = newM.slice(0, prevNodes[j]+1);
 			for (var i=1; i < Mnum; i++) {
 				newMn += '0';
 			}
-			newMn += newM.slice(prevNode+1);
-
+			newMn += newM.slice(prevNodes[j]+1);
 
 			// actually update BWT, M and F explicitly
 
 			BWT = newBWT;
 			M = newMn;
 			F = newF;
+}
 
 			// TODO :: apply directly to char, ord etc., so that no recalculation is necessary
 			recalculate(true);

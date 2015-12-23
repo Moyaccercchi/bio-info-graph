@@ -69,8 +69,9 @@ GML.make_xbw_environment = function() {
 	var last_high_fic_arr = []; // the second two contain all characters
 	var last_high_bwt_arr = []; // leading up to the very latest high node
 
-	var aftersort_bwt = [];
-	var aftersort_fic = [];
+	var aftersort = []; // EMRG CONV
+//	var aftersort_bwt = [];
+//	var aftersort_fic = [];
 
 
 
@@ -222,16 +223,6 @@ GML.make_xbw_environment = function() {
 		if (ep < sp) {
 			return [];
 		}
-
-// EMRG IMPROVE LF WITH AFTERSORT 2
-/*
-if (aftersort_bwt[ep] !== undefined) {
-ep = aftersort_bwt[ep];
-}
-if (aftersort_bwt[sp] !== undefined) {
-sp = aftersort_bwt[sp];
-}
-*/
 
 		if (do_rank) {
 			sp = rank('1', M, sp);
@@ -445,14 +436,25 @@ sp = aftersort_bwt[sp];
 			var cols_to_be_sorted = [];
 			var prefs_to_be_sorted = [];
 			var cols_newly_sorted = [];
+			var pos = -1;
 
 			// TODO :: check if we can break the for loop when we have found some S0K0 and have used
 			// all cols_to_be_sorted to be back to emptiness or somesuch?
 			for (var i=0; i < BWT.length; i++) {
+				// we jump over M[i] = 0, because the prefix locations are based on FiC, and M[i] = 0
+				// means that this is just another out-edge of the same FiC-node
+				while (M[i] === '0') {
+					i++;
+				}
+				if (i >= BWT.length) {
+					break;
+				}
+				pos++;
 				// TODO :: we here have the length undefined and therefore get looong prefixes...
 				// but that surely is not actually necessary? (it is just a bit difficult to know
 				// how long the prefix needs to be to be able to compare it... but meeeps *g*)
-				cur_pref = this._publishPrefix(i, false, undefined, true);
+//				cur_pref = this._publishPrefix(i, false, undefined, true);
+				cur_pref = this._publishPrefix(i, true, undefined, true);
 
 				// EMRGEMRG :: we here need not check for S0K0 in cur_pref, right?
 				// I mean, it is ALWAYS there, the question is just how early...
@@ -466,20 +468,20 @@ sp = aftersort_bwt[sp];
 					while (prefs_to_be_sorted[j] && (new_pref > prefs_to_be_sorted[j])) {
 						j++;
 					}
-					cols_to_be_sorted.splice(j, 0, i);
+					cols_to_be_sorted.splice(j, 0, pos);
 					prefs_to_be_sorted.splice(j, 0, new_pref);
 				}
 				//else {
-				console.log(i + ' ' + cur_pref);
+				console.log('i: ' + i + ' cur_pref: ' + cur_pref + ' M: ' + M[i] + ' F: ' + F[i]);
 					while (prefs_to_be_sorted.length > 0) {
 						if (cur_pref.replace(S0K0, '') > prefs_to_be_sorted[0]) {
 							// put the column from cols_to_be_sorted[0] into position i-1
 							// (it would theoretically be position i, but we have to say -1
-							// because we delete the column first and then all indices after
+							// becauwse we delete the column first and then all indices after
 							// it get shifted down by 1)
 console.log('getting out ' + prefs_to_be_sorted[0]);
-							if (cols_to_be_sorted[0] !== i-1) {
-								cols_newly_sorted.push([cols_to_be_sorted[0], i-1]);
+							if (cols_to_be_sorted[0] !== pos-1) {
+								cols_newly_sorted.push([cols_to_be_sorted[0], pos-1]);
 							}
 							cols_to_be_sorted.splice(0, 1);
 							prefs_to_be_sorted.splice(0, 1);
@@ -525,6 +527,7 @@ console.log('getting out ' + prefs_to_be_sorted[0]);
 			console.log('aftersort is now:');
 			console.log(aftersort);
 
+/*////
 			aftersort_bwt = [];
 			aftersort_fic = [];
 
@@ -541,6 +544,7 @@ What if we need to jump over one if F == 0 and lower all whose numbers are highe
 (no matter if before or after)?
 */
 
+/* ////
 var F_off_away = [];
 var M_off_away = [];
 
@@ -553,13 +557,13 @@ for (var i=0; i < aftersort.length; i++) {
 		} else {
 			F_off_away.push(aftersort[i]);
 		}
-	} else {
+	} //else {
 		if (aftersort[i] === undefined) {
 			aftersort_fic.push(i);
 		} else {
 			aftersort_fic.push(aftersort[i]);
 		}
-	}
+	//}
 
 	if (M[i] === '0') {
 		M_offset++;
@@ -568,13 +572,13 @@ for (var i=0; i < aftersort.length; i++) {
 		} else {
 			M_off_away.push(aftersort[i]);
 		}
-	} else {
+	} //else {
 		if (aftersort[i] === undefined) {
 			aftersort_bwt.push(i);
 		} else {
 			aftersort_bwt.push(aftersort[i]);
 		}
-	}
+	//}
 
 /*
 	if (F[i] === '0') {
@@ -599,14 +603,37 @@ for (var i=0; i < aftersort.length; i++) {
 		}
 	}
 */
+////}
+
+////console.log('F: ' + F);
+////console.log('M: ' + M);
+////
+////console.log('F_off_away: ' + F_off_away.join(', '));
+////console.log('M_off_away: ' + M_off_away.join(', '));
+/*
+console.log('aftersort_fic in between: ' + aftersort_fic.join(', '));
+for (var i=0; i < aftersort_fic.length; i++) {
+	for (var j=F_off_away.length-1; j>-1; j--) {
+		if (aftersort_fic[i] > F_off_away[j]) {
+			aftersort_fic[i]++;
+		}
+	}
 }
 
-console.log('F: ' + F);
-console.log('M: ' + M);
+console.log('aftersort_bwt in between: ' + aftersort_bwt.join(', '));
+for (var i=0; i < aftersort_bwt.length; i++) {
+	for (var j=M_off_away.length-1; j>-1; j--) {
+		if (aftersort_bwt[i] > M_off_away[j]) {
+			aftersort_bwt[i]++;
+		}
+	}
+}
+*/
+////var cpy = aftersort_bwt;
+////aftersort_bwt = aftersort_fic;
+////aftersort_fic = cpy;
 
-console.log('F_off_away: ' + F_off_away.join(', '));
-console.log('M_off_away: ' + M_off_away.join(', '));
-
+/*
 console.log('aftersort_fic in between: ' + aftersort_fic.join(', '));
 for (var i=0; i < aftersort_fic.length; i++) {
 	for (var j=F_off_away.length-1; j>-1; j--) {
@@ -624,7 +651,7 @@ for (var i=0; i < aftersort_bwt.length; i++) {
 		}
 	}
 }
-
+*/
 
 /**
 			for (var i=0; i < aftersort.length; i++) {
@@ -698,12 +725,12 @@ aftersort_fic = [0, 2, 3, 1, 5, 4]; // x
 
 
 
-
+/*
 			console.log('aftersort_bwt is now:');
 			console.log(aftersort_bwt);
 			console.log('aftersort_fic is now:');
 			console.log(aftersort_fic);
-
+*/
 
 
 
@@ -932,12 +959,13 @@ pos1 = select('1', F, pos1);
 			recalculate(true);
 		},
 
+// EMRG CONV
 		// gives back true if more merging needs to be done, and false if
 		// a whole round of merging has been finished
 		notFullyMerged: function() {
 
 			for (var i=0; i < subXBWs.length; i++) {
-				if (multi_cur_bwt_int[i] < subXBWs[i]._publishBWTlen()) {
+				if (multi_cur_bwt[i] <= subXBWs[i]._publishBWTlenWithF()) {
 					return true;
 				}
 			}
@@ -949,12 +977,17 @@ pos1 = select('1', F, pos1);
 		forceFullyMerged: function() {
 
 			for (var i=0; i < subXBWs.length; i++) {
-				multi_cur_bwt_int[i] = subXBWs[i]._publishBWTlen();
+				multi_cur_bwt[i] = subXBWs[i]._publishBWTlenWithF()+1;
 			}
 		},
 
 		_publishBWTlen: function() {
 			return BWT.length;
+		},
+
+		// TODO EMRG :: store this, instead of recalculating again and again =)
+		_publishBWTlenWithF: function() {
+			return rank('1', F, BWT.length);
 		},
 
 		// pref_cur_i .. current prefix i
@@ -1307,7 +1340,18 @@ if (nextXBW) { // if we are H_0
 		_constructAllPrefixes: function() {
 
 			var sout = '';
-
+/*
+sout += '<br>' +
+		'BEFORE:' + '<br>' +
+		'multi_cur_bwt[0]: ' + multi_cur_bwt[0] + '<br>' +
+		'multi_cur_bwt_int[0]: ' + multi_cur_bwt_int[0] + '<br>' +
+		'multi_cur_fic[0]: ' + multi_cur_fic[0] + '<br>' +
+		'multi_cur_fic_int[0]: ' + multi_cur_fic_int[0] + '<br>' +
+		'multi_cur_bwt[1]: ' + multi_cur_bwt[1] + '<br>' +
+		'multi_cur_bwt_int[1]: ' + multi_cur_bwt_int[1] + '<br>' +
+		'multi_cur_fic[1]: ' + multi_cur_fic[1] + '<br>' +
+		'multi_cur_fic_int[1]: ' + multi_cur_fic_int[1] + '<br>';
+*/
 			var takeNodeFrom;
 			var split_nodes = [];
 			for (var i=0; i < subXBWs.length; i++) {
@@ -1329,12 +1373,12 @@ if (nextXBW) { // if we are H_0
 			var prefixes = ['', '']; // TODO EMRG :: the prefixes here are always just two... never more or less
 									 // all lines that need to be changed regarding this have
 									 // been highlighted as TE1TE
-
-			if (multi_cur_fic_int[0] > subXBWs[0]._publishBWTlen()-1) { // TE1TE - here we say if H_1 is bad, use H_2, and vice versa - but for three and more this is much more complicated, we need to instead think of a pool of candidates
+// EMRG CONV
+			if (multi_cur_bwt[0] > subXBWs[0]._publishBWTlenWithF()) { // TE1TE - here we say if H_1 is bad, use H_2, and vice versa - but for three and more this is much more complicated, we need to instead think of a pool of candidates
 				return [1, sout, prefixes, split_nodes]; // TE1TE
 			} // TE1TE
 
-			if (multi_cur_fic_int[1] > subXBWs[1]._publishBWTlen()-1) { // TE1TE
+			if (multi_cur_bwt[1] > subXBWs[1]._publishBWTlenWithF()) { // TE1TE
 				return [0, sout, prefixes, split_nodes]; // TE1TE
 			} // TE1TE
 
@@ -1385,7 +1429,18 @@ if (nextXBW) { // if we are H_0
 				takeNodeFrom = -1;
 			}
 
-
+/*
+sout += '<br>' +
+		'AFTER:' + '<br>' +
+		'multi_cur_bwt[0]: ' + multi_cur_bwt[0] + '<br>' +
+		'multi_cur_bwt_int[0]: ' + multi_cur_bwt_int[0] + '<br>' +
+		'multi_cur_fic[0]: ' + multi_cur_fic[0] + '<br>' +
+		'multi_cur_fic_int[0]: ' + multi_cur_fic_int[0] + '<br>' +
+		'multi_cur_bwt[1]: ' + multi_cur_bwt[1] + '<br>' +
+		'multi_cur_bwt_int[1]: ' + multi_cur_bwt_int[1] + '<br>' +
+		'multi_cur_fic[1]: ' + multi_cur_fic[1] + '<br>' +
+		'multi_cur_fic_int[1]: ' + multi_cur_fic_int[1] + '<br>';
+*/
 
 			return [takeNodeFrom, sout, prefixes, split_nodes];
 		},
@@ -1424,12 +1479,14 @@ if (nextXBW) { // if we are H_0
 
 // [OVERRIDE 3]
 //if (takeNodeFrom === 0) {
+				//	console.log('_doAfter 2');
 	multi_cur_fic_int[takeNodeFrom] = subXBWs[takeNodeFrom]._doAftersortFiC(multi_cur_fic[takeNodeFrom]);
 	multi_cur_bwt_int[takeNodeFrom] = subXBWs[takeNodeFrom]._doAftersortBWT(multi_cur_bwt[takeNodeFrom]);
-	console.log('multi_cur_fic: ' + multi_cur_fic[0]);
+/*	console.log('multi_cur_fic: ' + multi_cur_fic[0]);
 	console.log('multi_cur_bwt: ' + multi_cur_bwt[0]);
 	console.log('multi_cur_fic_int: ' + multi_cur_fic_int[0]);
 	console.log('multi_cur_bwt_int: ' + multi_cur_bwt_int[0]);
+*/
 /*} else {
 	multi_cur_fic_int[takeNodeFrom] = multi_cur_fic[takeNodeFrom];
 	multi_cur_bwt_int[takeNodeFrom] = multi_cur_bwt[takeNodeFrom];
@@ -1487,6 +1544,7 @@ if (nextXBW) { // if we are H_0
 			}
 		},
 
+/*
 		// inverse of _doAftersortBWT
 		_doPresortBWT: function(j) {
 			var k = 0;
@@ -1509,11 +1567,12 @@ if (nextXBW) { // if we are H_0
 				}
 			}
 		},
+*/
 
 		// takes in a BWT number
 		// gives out the actual column in which that BWT is to be found,
 		//   accounting for F values and aftersort weirdness
-		_doAftersortBWT: function(i) {
+		/*_doAftersortBWT: function(i) {
 			var ret = aftersort_bwt[i];
 			if (ret === undefined) {
 				ret = i;
@@ -1528,11 +1587,50 @@ if (nextXBW) { // if we are H_0
 			}
 			j--;
 			return j;
+		},*/
+// EMRG CONV
+/*		_doAftersortBWT: function(i) {
+
+//			console.log('_doAftersortBWT, i in: ' + i);
+
+/*
+var extraone = 0;
+if (i >= F.length) {
+	extraone = 1;
+}
+*/
+/*
+//			console.log('_doAftersortBWT, i after rank: ' + i);
+
+i = rank('1', F, i);
+i = select('1', F, i);
+
+//i = rank('1', M, i);
+			var ret = aftersort[i];
+			if (ret === undefined) {
+				ret = i;
+			}
+ret = select('1', F, ret);
+
+//i = rank('1', F, i);
+
+//			console.log('_doAftersortBWT, i after aftersort: ' + ret);
+
+//			ret = select('1', F, ret);
+
+//			console.log('_doAftersortBWT, i after select: ' + ret);
+
+/*
+ret += extraone;
+*/
+/*
+			return ret;
 		},
 
 		// takes in a FiC number
 		// gives out the actual column in which that FiC is to be found,
 		//   accounting for M values and aftersort weirdness
+/*
 		_doAftersortFiC: function(i) {
 			var ret = aftersort_fic[i];
 			if (ret === undefined) {
@@ -1549,7 +1647,77 @@ if (nextXBW) { // if we are H_0
 			j--;
 			return j;
 		},
+*/
+// EMRG CONV
+/*
+		_doAftersortFiC: function(i) {
 
+//			console.log('_doAftersortFiC, i in: ' + i);
+
+/*
+var extraone = 0;
+if (i >= M.length) {
+	extraone = 1;
+}
+*/
+/*
+			//i = rank('1', M, i);
+
+//			console.log('_doAftersortFiC, i after rank: ' + i);
+
+i = rank('1', M, i);
+i = select('1', M, i);
+
+//i = rank('1', F, i);
+			var ret = aftersort[i];
+			if (ret === undefined) {
+				ret = i;
+			}
+ret = select('1', M, ret);
+
+//i = rank('1', M, i);
+
+//			console.log('_doAftersortFiC, i after aftersort: ' + ret);
+
+//			ret = select('1', M, ret);
+
+//			console.log('_doAftersortFiC, i after select: ' + ret);
+
+/*
+ret += extraone;
+*/
+/*
+			return ret;
+		},
+*/
+
+		_doAftersortBWT: function(i) {
+
+			//i = select('1', M, i);
+
+			var ret = aftersort[i];
+			if (ret === undefined) {
+				ret = i;
+			}
+
+			//ret = rank('1', M, ret);
+
+			ret = select('1', F, ret);
+
+			return ret;
+		},
+
+		_doAftersortFiC: function(i) {
+
+			var ret = aftersort[i];
+			if (ret === undefined) {
+				ret = i;
+			}
+
+			ret = select('1', M, ret);
+
+			return ret;
+		},
 		checkIfSplitOneMore: function(split_nodes_out) {
 
 			var p = this._constructAllPrefixes();
@@ -1587,6 +1755,12 @@ if (nextXBW) { // if we are H_0
 
 			for (var i=0; i < subXBWs.length; i++) {
 				if (prefixes[i][prefixes[i].length-1] === pEC) {
+					console.log('checkIfSplitOneMore pushes out:');
+					console.log(prefixes);
+					console.log(i);
+					console.log(prefixes[i]);
+					console.log(split_nodes_in);
+					console.log(split_nodes_in[i]);
 					split_nodes_out.push(split_nodes_in[i]);
 					return sout;
 				}
@@ -1602,6 +1776,7 @@ if (nextXBW) { // if we are H_0
 					multi_cur_fic[takeNodeFrom]++;
 					multi_cur_bwt[takeNodeFrom]++;
 
+					//console.log('_doAfter 1');
 					multi_cur_fic_int[takeNodeFrom] = subXBWs[takeNodeFrom]._doAftersortFiC(multi_cur_fic[takeNodeFrom]);
 					multi_cur_bwt_int[takeNodeFrom] = subXBWs[takeNodeFrom]._doAftersortBWT(multi_cur_bwt[takeNodeFrom]);
 				}
@@ -1786,22 +1961,33 @@ if (nextXBW) { // if we are H_0
 			// 1. Take the node and copy it for each 0 in its M node.
 
 			// get location of this node's M
-			var Mloc = sn_i - (1 + rank('0', F, sn_i));
+//			var Mloc = sn_i - (1 + rank('0', F, sn_i));
+
+// EMRGEMRGEMRG
+var Mloc = sn_i;
+var Floc1 = select('1', F, sn_i);
+
+//Mloc = sn_i - (1 + rank('0', F, sn_i));
+console.log('in _splitNode:');
+console.log('sn_i: ' + sn_i);
+console.log('Mloc: ' + Mloc);
 
 			// get number within this node's M
 			var Mloc1 = select('1', M, Mloc);
 			var Mloc2 = select('1', M, Mloc+1);
 			var Mnum = Mloc2 - Mloc1;
 
+console.log('Mnum: ' + Mnum);
+
 			// insert into BWT and F at the same time
-			var newBWT = BWT.slice(0, sn_i+1);
-			var newF = F.slice(0, sn_i+1);
+			var newBWT = BWT.slice(0, Floc1+1);
+			var newF = F.slice(0, Floc1+1);
 			for (var i=1; i < Mnum; i++) {
-				newBWT += BWT[sn_i];
-				newF += F[sn_i];
+				newBWT += BWT[Floc1];
+				newF += F[Floc1];
 			}
-			newBWT += BWT.slice(sn_i+1);
-			newF += F.slice(sn_i+1);
+			newBWT += BWT.slice(Floc1+1);
+			newF += F.slice(Floc1+1);
 
 
 			// 2. Set the M value of the original and all copies to 1.
@@ -1818,12 +2004,28 @@ if (nextXBW) { // if we are H_0
 
 			// 3. Add as many zeroes to the M of the preceding node as nodes were copied.
 
-// EMRG IMPROVE LF WITH AFTERSORT 1 (or should the aftersort stuff just go right inside LF?)
-			var prevNode = lf([sn_i, sn_i], BWT[sn_i], true, false)[0];
-			console.log('lf of ' + sn_i + ' gives ' + prevNode);
-// prevNode = this._doPresortBWT(prevNode);
-// prevNode = this._doAftersortBWT(prevNode);
-			console.log('pre-after-sort of ' + sn_i + ' gives ' + prevNode);
+//			var prevNode = lf([sn_i, sn_i], BWT[sn_i], true, false)[0];
+//console.log('prevNode with lf(true): ' + prevNode);
+
+// we used to have sn_i here instead of Floc1 - but using Floc1 actually makes TC|,1,C,2 work and does not make all else fail =)
+var prevNode = lf([Floc1, Floc1], BWT[Floc1], false, false)[0];
+//console.log('prevNode with lf(false): ' + lf([sn_i, sn_i], BWT[sn_i], false, false)[0]);
+
+
+
+// UNDERRIDE
+
+/*
+// makes TC|,1,C,2 and TC work, but makes 11 fail
+if (prevNode > Mloc1) {
+	prevNode += Mnum;
+}
+*/
+/*
+// makes TC|,1,C,2 and TC work, but makes 15 fail
+prevNode += select('0', F, prevNode);
+*/
+
 
 			var newMn = newM.slice(0, prevNode+1);
 			for (var i=1; i < Mnum; i++) {

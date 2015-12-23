@@ -2034,6 +2034,8 @@ console.log(this.bwt_aftersort['C']);
 					var sstep = '<div>' + xbw12.checkIfSplitOneMore(splitnodes);
 
 					if (splitnodes.length > 0) {
+console.log('splitnodes:');
+console.log(splitnodes);
 						sstep += xbw12.splitOneMore(splitnodes);
 
 // TODO :: we are now solving the issue of aftersort having to be regenerated and so on
@@ -2064,7 +2066,7 @@ xbw12.forceFullyMerged();
 					patience++;
 
 					if (patience > this.loop_threshold) {
-						return this.loopOverflowError(sout);
+						return this.loopOverflowError(sround + '</div>' + sout);
 					}
 				}
 

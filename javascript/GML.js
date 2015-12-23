@@ -1474,21 +1474,32 @@ window.GML = {
 					var firstRedPrefix_rep = firstRedPrefix.replace(this.DS_1_o + this.DK_1_o, '$#');
 					var preflen = firstRedPrefix_rep.length;
 
+					var afterround0have = 0;
+
 					for (i=0; i < preflen; i++) {
-						// TODO :: make this more professional
-						//         (currently, we are converting an array to string and back to array
-						//         to do a deep copy rather than a pointer copy - there must a cleaner
-						//         way ^^)
-						var next_s = '';
-						for (var k=0; k < next_nodes.length; k++) {
-							next_s += this.nextNodes(next_nodes[k]).join(',') + ',';
-						}
-						next_nodes = next_s.slice(0, -1).split(',');
-						for (k=0; k < next_nodes.length; k++) {
-							next_nodes[k] = parseInt(next_nodes[k], 10);
+						var next_len = next_nodes.length;
+						// it is here important that the nodes stay in order
+						// (which they do), so that the afterround0have solution
+						// works - if the nodes here moved around, no one would be
+						// able to tell which nodes were there in the first round
+						// and which nodes arrived later, but in this way we know:
+						// the first x rows (where x = afterround0have) have been
+						// here since the very fist round
+						for (var k=0; k < next_len; k++) {
+							var next_res = this.nextNodes(next_nodes[k]);
+							next_nodes[k] = next_res[0];
+							for (var j=1; j < next_res.length; j++) {
+								next_nodes.push(next_res[j]);
+							}
 						}
 						if (this.verbosity > 6) {
 							shide += this.fe_p12ToTableWithHighlights([[], [], next_nodes], true);
+						}
+						if (i===0) {
+							shide += 'After the first round, we are considering ' + next_nodes.length +
+									 ' nodes. This means that we can add so many values to ' +
+									 this.DM + ' in total, including 1s and 0s.' + this.nlnl;
+							afterround0have = next_nodes.length;
 						}
 					}
 
@@ -1511,7 +1522,7 @@ window.GML = {
 						if (do_prefix_doubling) {
 							pref = firstRedPrefix + this.p12[next_nodes[i]][0];
 							replacement_prefixes.push(pref);
-							Madd_for_this_prefix.push('');
+							Madd_for_this_prefix.push('1');
 						} else {
 							pref = this.p12[next_nodes[i]][0];
 
@@ -1533,9 +1544,20 @@ window.GML = {
 
 							if (replacement_prefixes.indexOf(pref) < 0) {
 								replacement_prefixes.push(pref);
-								Madd_for_this_prefix.push('');
+								Madd_for_this_prefix.push('1');
+								// use up one node as we are writing '1' to M
+								afterround0have--;
 							} else {
-								Madd_for_this_prefix[replacement_prefixes.indexOf(pref)] += '0';
+								// only write '0' to M if we still have a node left
+								// (otherwise, that means that all the coming nodes were
+								// added after the first round, meaning that they do not
+								// give this particular node a higher M, but their M has
+								// already been recorded elsewhere in the table)
+								if (afterround0have > 0) {
+									Madd_for_this_prefix[replacement_prefixes.indexOf(pref)] += '0';
+									// use up one node as we are writing '0' to M
+									afterround0have--;
+								}
 							}
 						}
 					}
@@ -1562,7 +1584,7 @@ window.GML = {
 					}
 
 					this.p12[firstRedi][0] = replacement_prefixes[0];
-					this.m[firstRedi] = '1' + Madd_for_this_prefix[0];
+					this.m[firstRedi] = Madd_for_this_prefix[0];
 					ins_arr = [firstRedi];
 
 					var Madd = '';
@@ -1605,8 +1627,9 @@ window.GML = {
 						// edge leaving it (which is precisely why we are doing the splitting in the first
 						// place - and we are splitting precisely once for each outedge, so we have exactly
 						// one outedge for each node now!)
+						// ... aaand this is not true anymore
 
-						this.m.splice(firstRedi+i, 0, '1' + Madd_for_this_prefix[i]);
+						this.m.splice(firstRedi+i, 0, Madd_for_this_prefix[i]);
 
 						ins_arr.push(firstRedi+i);
 					}

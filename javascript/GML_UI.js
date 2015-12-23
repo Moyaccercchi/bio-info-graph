@@ -190,6 +190,8 @@ window.GML_UI = {
 		['CTATGTTATTCCA|,8,A,13', 'C'],
 		['TATA|,2,A,4', 'C'],
 		['CCA|,1,A,2', 'CA'],
+		['TTCGCAAGA', 'TCCCCAAG'],
+		['CCTGCGTGTGGT|,3,,6', 'CTCTTA|,3,TCG,5'],
 	],
 
 

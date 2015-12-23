@@ -1360,6 +1360,8 @@ if (nextXBW) { // if we are H_0
 
 		_setSplitNodeBasedOnStore: function(give_the_split_node, pref_cur_is_store, offset) {
 
+			console.log('_setSplitNodeBasedOnStore');
+
 			var i = pref_cur_is_store.length + offset;
 			while (i > 0) {
 				i--;
@@ -2010,7 +2012,9 @@ ret += extraone;
 			// get location of this node's M
 //			var Mloc = sn_i - (1 + rank('0', F, sn_i));
 
-// EMRGEMRGEMRG
+// this line makes CACT and GCGTACG|,4,,7;,1,C,5 work and brings us down from 3 fails to 2 fails
+sn_i = rank('1', M, sn_i);
+
 var Mloc = sn_i;
 var Floc1 = select('1', F, sn_i);
 
@@ -2043,27 +2047,29 @@ while (F[Floc1+i] === '0') {
 	i++;
 }
 
-// we need to be sure that we can loop through the indices without them moving,
-// so we first sort here and then use a for loop in the correct direction =)
-prevNodes.sort();
-
-var off = -Mnum;
+var foff = -Mnum;
 
 //for (var j=prevNodes.length-1; j > -1; j--) { // this makes CACT and GCGTACG|,5,,7;,1,C,5 fail
 for (var j=0; j<prevNodes.length; j++) { // this makes CACTC and GGGCAGTACGTGG|,9,,11;,7,CGCG,8 fail
 
-	off += Mnum;
+	foff += Mnum;
 
 			// insert into BWT and F at the same time
 			var newBWT = BWT.slice(0, Floc1+1);
 			var newF = F.slice(0, Floc1+1);
 			for (var i=1; i < Mnum; i++) {
-				newBWT += BWT[Floc1+off];
-				newF += F[Floc1+off];
+				newBWT += BWT[Floc1+foff];
+				newF += F[Floc1+foff];
 			}
 			newBWT += BWT.slice(Floc1+1);
 			newF += F.slice(Floc1+1);
 
+
+for (var k=j+1; k < prevNodes.length; k++) {
+	if (prevNodes[k] > prevNodes[j]) {
+		prevNodes[k] += Mnum - 1;
+	}
+}
 
 
 			// 2. Set the M value of the original and all copies to 1.
@@ -2076,7 +2082,6 @@ for (var j=0; j<prevNodes.length; j++) { // this makes CACTC and GGGCAGTACGTGG|,
 				newM += '1';
 			}
 			newM += M.slice(Mloc2);
-
 
 			// 3. Add as many zeroes to the M of the preceding node as nodes were copied.
 

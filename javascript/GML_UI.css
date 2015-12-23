@@ -108,7 +108,7 @@ div.mainbox div.col-6:nth-child(2n), div.mainbox > div > input.col-6:last-child 
 	float:right;
 }
 
-input, div.button {
+input, div.button, div.panel {
 	border:1px solid #000;
 	box-shadow:0px 0px 5px 0px rgba(0, 0, 0, 0.8);
 	border-radius:4px;
@@ -121,6 +121,14 @@ input {
 
 input.up {
 	text-transform:uppercase;
+}
+
+div.panel {
+	padding:16px;
+}
+
+div.panel > div.success, div.panel > div.error {
+	margin:8px -16px 0px -16px;
 }
 
 div.button {
@@ -305,14 +313,21 @@ div.no_select {
 }
 
 div.error {
-	background-color:rgb(255, 0, 0);
+	background-color:rgb(255, 22, 22);
+}
+
+div.success {
+	background-color:#0B0;
+}
+
+div.error, div.success {
 	font-weight:700;
 	margin:48px -16px;
 	color:rgb(255, 255, 255);
 	text-align:center;
 }
 
-div.error * {
+div.error *, div.success * {
 	color:rgb(255, 255, 255);
 	font-weight:700;
 }

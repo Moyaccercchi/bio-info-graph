@@ -192,6 +192,20 @@ window.GML_UI = {
 		['CCA|,1,A,2', 'CA'],
 		['TTCGCAAGA', 'TCCCCAAG'],
 		['CCTGCGTGTGGT|,3,,6', 'CTCTTA|,3,TCG,5'],
+		['CCGAGCTTATCGCAA', 'GAGAGAGCAAC'],
+		['ATGCGAGTTCGGGAC|,9,CCCG,14', 'TCCAA'],
+		['GCAGGGAGCTCCAGCCGTTAG|,4,CC,13;,1,A,18;,17,,19', 'CGGAT'],
+		['ATTGGAGAAGTCACGCTTGAC|,6,CTA,14', 'GTTAAAACAC|,6,TC,10'],
+		['CACTC', 'GGGCAGTACGTGG|,9,,11;,7,CGCG,8'],
+		['TGCAAGTATGGCGCTT|,2,,8', 'GTGTAATTATGAAC|,13,GATG,14'],
+		['AACCAT|,4,GGG,6', 'GTGCAGCTTTTGG'],
+		['AACCAT|,4,GGG,6', 'TTAAGGTTATGGACCCCCC|,4,GGAT,8;,6,C,12'],
+		['AGAGCACGCCGGT', 'TTAAGGTTATGGACCCCCC|,4,GGAT,8;,6,C,12'],
+		['AGAGCACGCCGGT', 'CGTAAATAGAG|,7,G,9'],
+		['CGGCAATAGACGCTGTCCAATGC|,15,,18', 'CGTAAATAGAG|,7,G,9'],
+		['AGAGCAT', 'AGTGAACACAC'],
+		['ACTGGCATGATTTATCCCTTGG|,11,,12', 'TTTGTTTGACACGCTGC|,16,,17;,11,AGGG,14'],
+		['GGGCCCAGGGCGATCGACGTTC|,7,,19', 'TTTGTTTGACACGCTGC|,16,,17;,11,AGGG,14'],
 	],
 
 
@@ -237,6 +251,13 @@ window.GML_UI = {
 			document.getElementById('in-string-2').value.toUpperCase()) + '</div>';
 	},
 
+	run_test_generateAdvancedBWT: function(i) {
+
+		document.getElementById('in-string-2').value = this.construct_tests[i];
+
+		this.generateAdvancedBWT();
+	},
+
 	test_generateAdvancedBWT: function() {
 
 		var old_verbosity = GML.verbosity;
@@ -252,18 +273,21 @@ window.GML_UI = {
 		var some_error = false;
 
 		for (var i=0; i < tests.length; i++) {
-			el.innerHTML += '<div style="margin-bottom:0px;">Testing to generate table for ' + tests[i] + '.</div>';
-
+			var sout = '<div class="panel">' +
+					   '<div>Testing to generate table for ' + tests[i] + '.' +
+					   '<span class="infobtn" onclick="GML_UI.run_test_generateAdvancedBWT(' + i + ')">Run manually</span>' +
+					   '</div>';
 			var res = GML.generate_BWT_advanced(tests[i]);
 			// we send a sad face right afterwards, so if the NEXT test destroys JS, then sad face is shown
 			this.sad_face();
 
 			if (res.indexOf('class="error"') < 0) {
-				el.innerHTML += '<div>Success!</div>';
+				sout += '<div class="success">Success!</div></div>';
 			} else {
-				el.innerHTML += '<div class="error" style="margin-top:0px;">Failure...</div>';
+				sout += '<div class="error">Failure...</div></div>';
 				some_error = true;
 			}
+			el.innerHTML += sout;
 		}
 
 		GML.verbosity = old_verbosity;
@@ -297,6 +321,14 @@ window.GML_UI = {
 			document.getElementById('in-string-3-2').value.toUpperCase()) + '</div>';
 	},
 
+	run_test_mergeAdvancedBWTs: function(i) {
+
+		document.getElementById('in-string-3-1').value = this.merge_tests[i][0];
+		document.getElementById('in-string-3-2').value = this.merge_tests[i][1];
+
+		this.mergeAdvancedBWTs();
+	},
+
 	test_mergeAdvancedBWTs: function() {
 
 		var old_verbosity = GML.verbosity;
@@ -312,18 +344,21 @@ window.GML_UI = {
 		var some_error = false;
 
 		for (var i=0; i < tests.length; i++) {
-			el.innerHTML += '<div style="margin-bottom:0px;">Testing to merge ' + tests[i][0] + ' and ' + tests[i][1] + '.</div>';
-
+			var sout = '<div class="panel">' +
+					   '<div>Testing to merge ' + tests[i][0] + ' and ' + tests[i][1] + '.' +
+					   '<span class="infobtn" onclick="GML_UI.run_test_mergeAdvancedBWTs(' + i + ')">Run manually</span>' +
+					   '</div>';
 			var res = GML.merge_BWTs_advanced(tests[i][0], tests[i][1]);
 			// we send a sad face right afterwards, so if the NEXT test destroys JS, then sad face is shown
 			this.sad_face();
 
-			if (res.indexOf('are exactly the same! Jippey! =)') >= 0) {
-				el.innerHTML += '<div>Success!</div>';
+			if (res.indexOf('exactly the same! Jippey! =)') >= 0) {
+				sout += '<div class="success">Success!</div></div>';
 			} else {
-				el.innerHTML += '<div class="error" style="margin-top:0px;">Failure...</div>';
+				sout += '<div class="error">Failure...</div></div>';
 				some_error = true;
 			}
+			el.innerHTML += sout;
 		}
 
 		GML.verbosity = old_verbosity;
@@ -349,6 +384,14 @@ window.GML_UI = {
 			document.getElementById('in-string-5-2').value.toUpperCase()) + '</div>';
 	},
 
+	run_test_mergeGraphXBWs: function(i) {
+
+		document.getElementById('in-string-5-1').value = this.merge_tests[i][0];
+		document.getElementById('in-string-5-2').value = this.merge_tests[i][1];
+
+		this.mergeGraphXBWs();
+	},
+
 	test_mergeGraphXBWs: function() {
 
 		var old_verbosity = GML.verbosity;
@@ -364,18 +407,21 @@ window.GML_UI = {
 		var some_error = false;
 
 		for (var i=0; i < tests.length; i++) {
-			el.innerHTML += '<div style="margin-bottom:0px;">Testing to merge ' + tests[i][0] + ' and ' + tests[i][1] + '.</div>';
-
+			var sout = '<div class="panel">' +
+					   '<div>Testing to merge ' + tests[i][0] + ' and ' + tests[i][1] + '.' +
+					   '<span class="infobtn" onclick="GML_UI.run_test_mergeGraphXBWs(' + i + ')">Run manually</span>' +
+					   '</div>';
 			var res = GML.merge_XBWs(tests[i][0], tests[i][1]);
 			// we send a sad face right afterwards, so if the NEXT test destroys JS, then sad face is shown
 			this.sad_face();
 
 			if (res.indexOf('exactly the same, and we are happy!') >= 0) {
-				el.innerHTML += '<div>Success!</div>';
+				sout += '<div class="success">Success!</div></div>';
 			} else {
-				el.innerHTML += '<div class="error" style="margin-top:0px;">Failure...</div>';
+				sout += '<div class="error">Failure...</div></div>';
 				some_error = true;
 			}
+			el.innerHTML += sout;
 		}
 
 		GML.verbosity = old_verbosity;

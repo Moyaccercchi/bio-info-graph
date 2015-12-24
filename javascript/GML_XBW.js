@@ -418,28 +418,67 @@ GML.make_xbw_environment = function() {
 			nextXBW = nXBW;
 		},
 
+		// returns true if the data stored within this XBW environment is graphless,
+		// that is, sequential
+		graphless_data: function() {
 
+			return M.indexOf('0') < 0;
+		},
 
-
-
-
-
-
-
-
-
-		apply_GCCG_GCGC_flat_fix: function() {
+		generate_aftersort_array: function() {
 
 			// [TODO P3 FLAT]
+			// We here replaced the original source code with a new, more robust version which
+			// is sorting alllll the prefixes across alllll their length - this NEEDS to
+			// be done in a less resource hungry way, or else none of this is actually useful!
+			// The reason why we went with this instead of the code after the return is GGAAGG and GG
 
 			var S0K0 = GML.DS_1 + GML.DK_1;
+
+			var pos = -1;
+			var prefixes = [];
+
+			for (var i=0; i < BWT.length; i++) {
+				// we jump over M[i] = 0, because the prefix locations are based on FiC, and M[i] = 0
+				// means that this is just another out-edge of the same FiC-node
+				while (M[i] === '0') {
+					i++;
+				}
+				if (i >= BWT.length) {
+					break;
+				}
+				pos++;
+
+				// TODO :: we here have the length undefined and therefore get looong prefixes...
+				// but that surely is not actually necessary? (it is just a bit difficult to know
+				// how long the prefix needs to be to be able to compare it... but meeeps *g*)
+				prefixes.push([this._publishPrefix(i, true, undefined, true).replace(S0K0, ''), pos]);
+			}
+
+			prefixes = prefixes.sort();
+
+			aftersort = [];
+			for (var i=0; i < prefixes.length; i++) {
+				if (i !== prefixes[i][1]) {
+					aftersort[i] = prefixes[i][1];
+				}
+			}
+
+			return;
+
+
+
+
+
+
+
+
+
 			var cols_to_be_sorted = [];
 			var prefs_to_be_sorted = [];
 			var cols_newly_sorted = [];
 			var pos = -1;
 
-			// TODO :: check if we can break the for loop when we have found some S0K0 and have used
-			// all cols_to_be_sorted to be back to emptiness or somesuch?
 			for (var i=0; i < BWT.length; i++) {
 				// we jump over M[i] = 0, because the prefix locations are based on FiC, and M[i] = 0
 				// means that this is just another out-edge of the same FiC-node
@@ -455,6 +494,7 @@ GML.make_xbw_environment = function() {
 				// but that surely is not actually necessary? (it is just a bit difficult to know
 				// how long the prefix needs to be to be able to compare it... but meeeps *g*)
 				cur_pref = this._publishPrefix(i, true, undefined, true);
+				console.log(cur_pref);
 
 				// EMRGEMRG :: we here need not check for S0K0 in cur_pref, right?
 				// I mean, it is ALWAYS there, the question is just how early...
@@ -502,8 +542,8 @@ GML.make_xbw_environment = function() {
 			// with TATA|,2,A,4 vs. C we get aftersort = [2,3], [1,3], [5,6]
 
 
-			// console.log('aftersort:');
-			// console.log(aftersort);
+			console.log('aftersort:');
+			console.log(aftersort);
 		},
 
 		_publishFindex: function() {
@@ -1424,6 +1464,10 @@ sout += '<br>' +
 
 				oxbw._splitNode(nodes[0].sn_i);
 
+				if (GML.error_flag) {
+					return sout + '<div class="danger">Invalid input: To compute this, nodes would need to be split across graphs.</div>';
+				}
+
 				var newlen = oxbw._publishBWTlen();
 
 
@@ -1568,6 +1612,13 @@ sout += '<br>' +
 
 			// this line makes CACT and GCGTACG|,4,,7;,1,C,5 work and brings us down from 3 fails to 2 fails
 			sn_i = rank('1', M, sn_i);
+
+			// if the first character of the node to the split is #_0,
+			// then the input is most likely malformed
+			if (char[sn_i] === GML.DK_1) {
+				GML.error_flag = true;
+				return;
+			}
 
 			// get location of this node's M
 			var Mloc = sn_i;

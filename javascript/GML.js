@@ -1013,6 +1013,8 @@ window.GML = {
 				isPrefSort1 = this.isAutomatonPrefixSorted(auto1);
 				if (!isPrefSort1) {
 					sout += "Ooops! We do not have a prefix-sorted automaton for " + this.DH_1 + "!" + this.nlnl;
+
+					this.error_flag = true;
 				}
 			}
 
@@ -1023,6 +1025,11 @@ window.GML = {
 				sout += this.visualize(auto2, true);
 				sout += "as well as for " + this.DH + ":" + this.nl;
 				sout += this.visualize(auto, true);
+			}
+
+			if (this.error_flag) {
+				sout += this.errorWrap('Invalid input: To compute this, nodes would need to be split across graphs.', 'danger');
+				return [sout];
 			}
 
 
@@ -1967,26 +1974,11 @@ window.GML = {
 
 
 
-
-
-
-
-
-
-
-			xbw1.apply_GCCG_GCGC_flat_fix();
+			xbw1.generate_aftersort_array();
 
 			if (this.verbosity > 3) {
-				sout += "We also apply the GCCG-GCGC fix to " + this.DH_1 + "." + this.nlnl;
+				sout += "We also generate the aftersort array for " + this.DH_1 + "." + this.nlnl;
 			}
-
-
-
-
-
-
-
-
 
 
 
@@ -1994,102 +1986,123 @@ window.GML = {
 
 			sout += '<span id="in-jump-5-4"></span>';
 
-			if (this.verbosity > 1) {
-				sout += 'We now need to split nodes in order to ensure that the generated ' +
-						'structure will be prefix-sorted.' + this.nlnl;
-			}
+			if (xbw1.graphless_data() && xbw2.graphless_data()) {
 
-			if (this.verbosity > 2) {
-				sout += 'For that, we go pretend to merge ' + 
-						'by comparing the prefixes one by one, and if we cannot make a decision, ' +
-						'we split the node and remember that we will have to do the entire process ' +
-						'another time.' + this.nlnl;
-			}
-
-			var round = this.ao;
-			var doAnotherRound = true;
-
-			this.error_flag = false;
-
-			while (doAnotherRound && !this.error_flag) {
-
-				doAnotherRound = false;
-
-				xbw12.startNewSplitRound();
-
-				if (this.verbosity > 4) {
-					sround = '<div>' + this.nlnl + 'We start round ' + round + ':' + this.nlnl;
-
-					shide = '<div class="table_box">' + xbw12.generateSubTables(true) + '</div>';
-					sround += this.hideWrap(shide, 'Tables') + this.nlnl;
+				if (this.verbosity > 1) {
+					sout += 'We do not need to split nodes in order to ensure that the generated ' +
+							'structure will be prefix-sorted, as both inputs are plain strings. ' +
+							'Therefore, node splitting neither needs to occur, nor can it occur.' +
+							this.nlnlnl;
 				}
 
-				var patience = this.ao;
+			} else {
 
-				while (xbw12.notFullyMerged() && !this.error_flag) {
+				if (this.verbosity > 1) {
+					sout += 'We now need to split nodes in order to ensure that the generated ' +
+							'structure will be prefix-sorted.' + this.nlnl;
+				}
 
-					var splitnodes = [];
+				if (this.verbosity > 2) {
+					sout += 'For that, we go pretend to merge ' + 
+							'by comparing the prefixes one by one, and if we cannot make a decision, ' +
+							'we split the node and remember that we will have to do the entire process ' +
+							'another time.' + this.nlnl;
+				}
 
-					var sstep = '<div>' + xbw12.checkIfSplitOneMore(splitnodes);
+				var sround = '';
+				var round = this.ao;
+				var doAnotherRound = true;
 
-					if (splitnodes.length > 0) {
-						sstep += xbw12.splitOneMore(splitnodes);
+				this.error_flag = false;
 
-						// TODO :: we are now solving the issue of aftersort having to be regenerated and so on
-						//         through simply restarting the process with another round from the beginning,
-						//         and regenerating everything... which is not particularly nice, as it is a
-						//         lot of unnecessary overhead if these calculations could be done directly here,
-						//         in-place
-						xbw1.apply_GCCG_GCGC_flat_fix();
-						xbw12.forceFullyMerged();
+				while (doAnotherRound && !this.error_flag) {
 
-						doAnotherRound = true;
+					doAnotherRound = false;
+
+					xbw12.startNewSplitRound();
+
+					if (this.verbosity > 4) {
+						sround = '<div>' + this.nlnl + 'We start round ' + round + ':' + this.nlnl;
+
+						shide = '<div class="table_box">' + xbw12.generateSubTables(true) + '</div>';
+						sround += this.hideWrap(shide, 'Tables') + this.nlnl;
 					}
 
-					if (this.verbosity > 8) {
-						if (!this.error_flag) {
-							sstep += this.nlnl + 'We now have:' + this.nlnl;
+					var patience = this.ao;
 
-							shide = '<div class="table_box">' + xbw12.generateSubTables(true) + '</div>';
-							sstep += this.hideWrap(shide, 'Tables') + this.nlnl;
+					while (xbw12.notFullyMerged() && !this.error_flag) {
+
+						var splitnodes = [];
+
+						var sstep = '<div>' + xbw12.checkIfSplitOneMore(splitnodes);
+
+						if (splitnodes.length > 0) {
+
+							sstep += xbw12.splitOneMore(splitnodes);
+
+							if (this.error_flag) {
+								document.getElementById('div-xbw-5').style.display = 'none';
+								sout += sround + sstep;
+								sout = sout.replace(/\^/g, '#');
+								return sout;
+							}
+
+							// TODO :: we are now solving the issue of aftersort having to be regenerated and so on
+							//         through simply restarting the process with another round from the beginning,
+							//         and regenerating everything... which is not particularly nice, as it is a
+							//         lot of unnecessary overhead if these calculations could be done directly here,
+							//         in-place
+							xbw1.generate_aftersort_array();
+							xbw12.forceFullyMerged();
+
+							doAnotherRound = true;
 						}
 
-						sstep += '</div>';
+						if (this.verbosity > 8) {
+							if (!this.error_flag) {
+								sstep += this.nlnl + 'We now have:' + this.nlnl;
 
-						sround += this.hideWrap(sstep, 'Step ' + patience) + this.nlnl;
+								shide = '<div class="table_box">' + xbw12.generateSubTables(true) + '</div>';
+								sstep += this.hideWrap(shide, 'Tables') + this.nlnl;
+							}
+
+							sstep += '</div>';
+
+							sround += this.hideWrap(sstep, 'Step ' + patience) + this.nlnl;
+						}
+
+						patience++;
+
+						if (patience > this.loop_threshold) {
+							return this.loopOverflowError(sround + '</div>' + sout);
+						}
 					}
 
-					patience++;
+					if (this.verbosity > 4) {
+						sround += '</div>';
+						
+						sout += this.hideWrap(sround, 'Round ' + round) + this.nlnl;
+					}
 
-					if (patience > this.loop_threshold) {
-						return this.loopOverflowError(sround + '</div>' + sout);
+					round++;
+
+					if (round > this.loop_threshold) {
+						return this.loopOverflowError(sout);
 					}
 				}
 
-				if (this.verbosity > 4) {
-					sround += '</div>';
-					
-					sout += this.hideWrap(sround, 'Round ' + round) + this.nlnl;
+				// end splitting
+
+
+				if (this.error_flag) {
+
+					document.getElementById('div-xbw-5').style.display = 'none';
+					if (sout.indexOf(' class="error"') < 0) {
+						sout += this.errorWrap('An error occurred!');
+					}
+					sout = sout.replace(/\^/g, '#');
+					return sout;
 				}
-
-				round++;
-
-				if (round > this.loop_threshold) {
-					return this.loopOverflowError(sout);
-				}
-			}
-
-			// end splitting
-
-
-			if (this.error_flag) {
-
-				document.getElementById('div-xbw-5').style.display = 'none';
-				if (sout.indexOf(' class="error"') < 0) {
-					sout += this.errorWrap('An error occurred!');
-				}
-				sout = sout.replace(/\^/g, '#');
-				return sout;
 			}
 
 
@@ -3301,16 +3314,21 @@ window.GML = {
 
 
 
-	// takes in a string containing HTML that wants to be shown as an error message
+	// takes in a string containing HTML that wants to be shown as an error message,
+	//   as well as an optional error kind (default is 'error', also possible is 'danger')
 	// gives out the string formatted as error message and hides the XBW environment
 	//   from the current tab
-	errorWrap: function(sout) {
+	errorWrap: function(sout, kind) {
+
+		if (!kind) {
+			kind = 'error';
+		}
 
 		if (GML_UI) {
 			GML_UI.unShowXBWEnv(GML_UI.cur_tab);
 		}
 
-		return '<div class="error">' + sout + '</div>';
+		return '<div class="' + kind + '">' + sout + '</div>';
 	},
 
 
@@ -4584,13 +4602,25 @@ window.GML = {
 	// gives out true if it is prefix sorted or false otherwise
 	isAutomatonPrefixSorted: function(auto) {
 
+		var S0K0 = this.DS_1 + this.DK_1;
+
 		for (var i=0; i < auto.length; i++) {
 			if (auto[i]) {
-				var cur_auto_f = auto[i].f;
+				var cur_auto_f = auto[i].f.replace(S0K0, '');
 
-				// aha! there is at least one node that does not have a useful prefix!
+				// aha! there is at least one node with a prefix that needs to be
+				// extended, but cannot be extended!
 				if (cur_auto_f[cur_auto_f.length - 1] == this.prefixErrorChar) {
 					return false;
+				}
+
+				for (var j=0; j < auto.length; j++) {
+					if (auto[j] && (i !== j)) {
+						// aha! there are at least two nodes with the same prefix!
+						if (cur_auto_f === auto[j].f.replace(S0K0, '')) {
+							return false;
+						}
+					}
 				}
 			}
 		}

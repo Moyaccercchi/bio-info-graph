@@ -263,9 +263,15 @@ window.GML_UI = {
 		'AGGCCATTGATGAAAA|,7,AT,9;,5,CCT,12 and GACTG|,2,,3',
 		'GTATGCT|,6,TACC,7 and GGACCTACGGCGGTTTAAAA|,8,A,14;,2,GCGA,12',
 		'ATTATCGATCA|,3,TCT,7;,10,CGCT,11;,8,TTCA,11 and TGACAAGGTGCTCAGGTGAAA',
+		'GTAACCTTGAGGAAGG and GGGATTCAGTAGTTC',
+		'GTCGAATGATTCGCC|,8,ATT,15 and GCTTGTGCCTAA|,8,GT,12;,7,TGT,10;,2,A,12',
+		'CTATA and AAATATG|,3,AGTT,6',
+		'GGAAGG and GG',
 	],
 
 	test_something: function(tab, tests, what_are_we_doing, func, test_func_s) {
+
+		this['last_' + tab + '_tests'] = tests;
 
 		var old_verbosity = GML.verbosity;
 		GML.verbosity = 1;
@@ -276,6 +282,7 @@ window.GML_UI = {
 		el.innerHTML = '';
 
 		var err_count = 0;
+		var dang_count = 0;
 
 		for (var i=0; i < tests.length; i++) {
 
@@ -294,11 +301,16 @@ window.GML_UI = {
 			// we send a sad face right afterwards, so if the NEXT test destroys JS, then sad face is shown
 			this.sad_face();
 
-			if (res.indexOf('class="error"') < 0) {
-				sout += '<div class="success">Success!</div>';
+			if (res.indexOf('class="danger"') > -1) {
+				sout += '<div class="danger">Invalid input</div>';
+				dang_count++;
 			} else {
-				sout += '<div class="error">Failure...</div>';
-				err_count++;
+				if (res.indexOf('class="error"') < 0) {
+					sout += '<div class="success">Success!</div>';
+				} else {
+					sout += '<div class="error">Failure...</div>';
+					err_count++;
+				}
 			}
 			document.getElementById('test_' + tab + '_' + i).innerHTML = sout;
 		}
@@ -306,9 +318,21 @@ window.GML_UI = {
 		GML.verbosity = old_verbosity;
 		GML.hideXBWenvironments = old_hide_xbw_env;
 
-		el.innerHTML += '<div>Overall, we executed ' + tests.length + ' tests. <br>' +
-						(tests.length-err_count) + ' of them were successful, ' +
-						'while ' + err_count + ' failed.</div>';
+		sout = '<div>Overall, we executed ' + tests.length + ' tests. <br>' +
+						(tests.length-(err_count+dang_count)) + ' of them were successful, ' +
+						'while ' + err_count + ' failed.';
+		if (dang_count > 0) {
+			sout += '<br>Also, ' + dang_count + ' of them contained invalid input, ' +
+					'not honoring the core assumptions of the algorithms used.';
+		}
+		if (err_count > 0) {
+			sout += '<br><br>' +
+					'<b>Info:</b> It is possible that reported failures actually represent ' +
+					'invalid input which was not caught properly by the program.';
+		}
+		sout += '</div>';
+
+		el.innerHTML += sout;
 
 		if (err_count > 0) {
 			this.sad_face();
@@ -363,7 +387,7 @@ window.GML_UI = {
 
 	run_test_generateAdvancedBWT: function(i) {
 
-		document.getElementById('in-string-2').value = this.construct_tests[i];
+		document.getElementById('in-string-2').value = this.last_2_tests[i];
 
 		this.generateAdvancedBWT();
 	},
@@ -410,7 +434,7 @@ window.GML_UI = {
 
 	run_test_mergeAdvancedBWTs: function(i) {
 
-		var test = this.merge_tests[i].split(' and ');
+		var test = this.last_3_tests[i].split(' and ');
 
 		document.getElementById('in-string-3-1').value = test[0];
 		document.getElementById('in-string-3-2').value = test[1];
@@ -452,7 +476,7 @@ window.GML_UI = {
 
 	run_test_mergeGraphXBWs: function(i) {
 
-		var test = this.merge_tests[i].split(' and ');
+		var test = this.last_5_tests[i].split(' and ');
 
 		document.getElementById('in-string-5-1').value = test[0];
 		document.getElementById('in-string-5-2').value = test[1];

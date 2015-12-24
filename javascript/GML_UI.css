@@ -140,7 +140,7 @@ div.panel {
 	padding:16px;
 }
 
-div.panel > div.success, div.panel > div.error {
+div.panel > div.success, div.panel > div.error, div.panel > div.danger {
 	margin:8px -16px 0px -16px;
 }
 
@@ -334,19 +334,26 @@ div.error {
 	background-color:rgb(255, 22, 22);
 }
 
+div.danger {
+	background-color:#FFAA00;
+}
+
 div.success {
 	background-color:#0B0;
 }
 
-div.error, div.success {
-	font-weight:700;
+div.error, div.success, div.danger {
 	margin:48px -16px;
-	color:rgb(255, 255, 255);
 	text-align:center;
 }
 
-div.error *, div.success * {
+div.error *, div.error, div.success *, div.success {
 	color:rgb(255, 255, 255);
+	font-weight:700;
+}
+
+div.danger *, div.danger {
+	color:#000;
 	font-weight:700;
 }
 

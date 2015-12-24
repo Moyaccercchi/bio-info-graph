@@ -500,6 +500,10 @@ GML.make_xbw_environment = function() {
 			}
 
 			// with TATA|,2,A,4 vs. C we get aftersort = [2,3], [1,3], [5,6]
+
+
+			// console.log('aftersort:');
+			// console.log(aftersort);
 		},
 
 		_publishFindex: function() {

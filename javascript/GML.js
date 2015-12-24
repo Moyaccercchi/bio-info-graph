@@ -4464,6 +4464,13 @@ window.GML = {
 											}
 										}
 
+										if (!orig_node.n) {
+											if (addToSOut) {
+												this.sout += 'An error occurred.';
+											}
+											return false;
+										}
+
 										// update the current node: leave p and c, but only keep the
 										// first of the out-nodes and add their label to the prefix
 										cur_auto[orig_node_i] = {

@@ -218,6 +218,51 @@ window.GML_UI = {
 		'TAGCTTGGAC|,2,AG,9 and GTGATGT|,5,,7',
 		'GACAAACACAAACATCACCCTGT and TGAAATAGT|,4,T,6',
 		'CGTCGCC|,6,T,7 and TCAATGTATAGTCGTGTCTGAAAT|,8,TGCA,23',
+		'AAAGTAT and AAAGCGAGCAAAAGATTGACGAA',
+		'TACTTGTC and CTCAACT|,6,,7',
+		'GCAGAATTCCGCAGGAAAGC and CATGGCGTCTAGGA|,10,GC,12',
+		'CGCGACAGTGGCCAATCT and TCGTCTGATGATCTTTGCTCTC|,19,,20',
+		'GGTACATGGGAT and ATGCGCTCGAAGCACGAAGG|,6,AT,15',
+		'TCTGGTACGCTG|,1,,11 and ATGCAAAAGTTTAAAGTTGTCCGT|,3,CGCT,18',
+		'GGGAACAGATGTCTGTGATCC|,13,CAT,14 and TGAAAAAAACTCAGCGGGGAGT',
+		'CGAGTTACGTGGCCGCCTCAT and CCGTA|,3,TGT,5',
+		'TGTCTGTTACAGATTGC and AGACATCCATC|,4,,11;,10,TC,11',
+		'CGAAGCCTA and TTGTGAATATCG|,6,CTG,9',
+		'CGAAAGAGTGTGTCTAGGC|,11,TC,19 and AGAGCT',
+		'TTTAGGTTAGTACCAC|,8,CTG,11 and CATAGCTTAGCC|,11,,12',
+		'TACTTCCCCAGGACGGGACGCTA and GGTCAG',
+		'AAAGGAGGT|,7,,8;,2,A,6 and GAGTTATGACG',
+		'GGTGGCCGAGTGC|,10,CTGC,12 and CATTTGTGGCGCGCTTGATCTCTG|,10,,20',
+		'CGAATACCGTACTGAA|,12,AAAA,15;,14,GGTC,15 and ACAGCGAGAGCAGACG|,14,TC,15;,8,,16',
+		'TTCCAATGGTGAGTCTC and ATAAAG|,3,AG,5',
+		'AAGAT|,2,CTC,3;,1,C,4 and ACGCTCCTTTGTGG',
+		'AACAAATT|,4,TCCT,8 and GAGCGGAGAATCATACGGGC|,16,GAG,20;,1,CGC,17',
+		'AAAAGAAGCTGAT|,4,,6 and CTTGAA',
+		'ACGTGCCCACCCG|,2,A,8 and CCCCAACTGGGAATTC|,13,TCC,16;,4,TTT,14',
+		'TAGGCGCGGT and CTGGGACGG|,4,GTG,7;,2,C,6;,4,TGA,7;,6,C,9',
+		'TTTGCATCATATC and GAAACATTTATGACATTA|,4,,12',
+		'TTGTAG|,5,A,6 and AACGCGT|,3,,6',
+		'CTATATAGCGGC|,4,CTA,7 and ACGCATATTGGTTC',
+		'ATTAATACG|,2,G,5 and TTTTTATGGTCCGACTAA',
+		'CGGCCT|,1,A,6;,2,TT,4 and TTAATCT',
+		'CATCTTTC|,5,CA,7 and GTTGGTGGCCATCGG|,11,,15;,4,GG,14',
+		'AGGCAGCTATCGACCATCTTGCG|,22,,23;,2,TT,9;,9,C,10;,22,,23 and AGCTGGGAAAC',
+		'AAGAGTCCAGAG|,7,,11;,5,TATA,9 and AGTGGCTGATTGGT',
+		'GCCACGACACCCTCAAGCT|,17,CA,18 and TCAATTGCCGGTA',
+		'TTAAA|,4,GAT,5 and GAACTCGGGGC|,3,TTGT,5',
+		'TACCAGGGCTTTTTTACTGGCT|,8,,19;,20,GCT,21 and CCGGCGGATTGATAGTGC',
+		'TGAAGCGCATTCT|,9,,11;,3,,11 and GGATGCGAGCAGTACGTCTCCTTC',
+		'CGGATAGCACTCTA|,9,TT,11 and ATGTTGGGCCCTAA|,7,A,12;,8,T,11',
+		'TCCCTGGGC and ACGATTCCCTAACCACCCGT|,17,ATG,19;,7,TT,16',
+		'CAAGGTATTGTTAA and AGTCTAAGGCTTCGTGTTGGATC|,9,GTA,22',
+		'CTCGGCTCT|,1,AAGG,2;,4,,6;,8,TG,9 and AAAGTCTTCAATGT',
+		'AGGGAGCCTTAACATTTTCG|,13,T,19;,11,AGCG,15;,10,A,12 and CATGTTGGTTGT',
+		'TCAGGGCGAGC|,6,G,9 and GACAACCCAGATTTTCCCGCATT|,10,,18;,15,TAA,17',
+		'GGAGCCAGGCTTGCCC|,7,,11 and ACAGGATAGGTCATTGAGTGGGG|,11,CAAC,16',
+		'TGGCCCTCCCCCTACAT and TAGGCCGAAGTTTCTCTATCTTG|,13,CAAA,18;,16,AAC,19',
+		'AGGCCATTGATGAAAA|,7,AT,9;,5,CCT,12 and GACTG|,2,,3',
+		'GTATGCT|,6,TACC,7 and GGACCTACGGCGGTTTAAAA|,8,A,14;,2,GCGA,12',
+		'ATTATCGATCA|,3,TCT,7;,10,CGCT,11;,8,TTCA,11 and TGACAAGGTGCTCAGGTGAAA',
 	],
 
 	test_something: function(tab, tests, what_are_we_doing, func, test_func_s) {
@@ -233,21 +278,29 @@ window.GML_UI = {
 		var err_count = 0;
 
 		for (var i=0; i < tests.length; i++) {
-			var sout = '<div class="panel">' +
+
+			el.innerHTML += '<div id="test_' + tab + '_' + i + '" class="panel">' +
 					   '<div>Testing to ' + what_are_we_doing + ' ' + tests[i] + '.' +
 					   '<span class="infobtn" onclick="GML_UI.' + test_func_s + '(' + i + ')">Run manually</span>' +
+					   '</div>' +
+					   '<div class="error">Crash!</div>' +
 					   '</div>';
+
+			var sout = '<div>Testing to ' + what_are_we_doing + ' ' + tests[i] + '.' +
+					   '<span class="infobtn" onclick="GML_UI.' + test_func_s + '(' + i + ')">Run manually</span>' +
+					   '</div>';
+
 			var res = func(tests[i]);
 			// we send a sad face right afterwards, so if the NEXT test destroys JS, then sad face is shown
 			this.sad_face();
 
 			if (res.indexOf('class="error"') < 0) {
-				sout += '<div class="success">Success!</div></div>';
+				sout += '<div class="success">Success!</div>';
 			} else {
-				sout += '<div class="error">Failure...</div></div>';
+				sout += '<div class="error">Failure...</div>';
 				err_count++;
 			}
-			el.innerHTML += sout;
+			document.getElementById('test_' + tab + '_' + i).innerHTML = sout;
 		}
 
 		GML.verbosity = old_verbosity;
@@ -315,11 +368,20 @@ window.GML_UI = {
 		this.generateAdvancedBWT();
 	},
 
-	test_generateAdvancedBWT: function() {
+	test_generateAdvancedBWT: function(use_random_data) {
+
+		var cur_tests = this.construct_tests;
+
+		if (use_random_data) {
+			cur_tests = [];
+			for (var i=0; i < 10; i++) {
+				cur_tests.push(GML.generateRandomGraphString());
+			}
+		}
 
 		this.test_something(
 			2,
-			this.construct_tests,
+			cur_tests,
 			'generate table for',
 			function (test) {return GML.generate_BWT_advanced(test);},
 			'run_test_generateAdvancedBWT');
@@ -356,11 +418,20 @@ window.GML_UI = {
 		this.mergeAdvancedBWTs();
 	},
 
-	test_mergeAdvancedBWTs: function() {
+	test_mergeAdvancedBWTs: function(use_random_data) {
+
+		var cur_tests = this.merge_tests;
+
+		if (use_random_data) {
+			cur_tests = [];
+			for (var i=0; i < 10; i++) {
+				cur_tests.push(GML.generateRandomGraphString() + ' and ' + GML.generateRandomGraphString());
+			}
+		}
 
 		this.test_something(
 			3,
-			this.merge_tests,
+			cur_tests,
 			'merge',
 			function (test) {return GML.merge_BWTs_advanced(test);},
 			'run_test_mergeAdvancedBWTs');
@@ -389,11 +460,20 @@ window.GML_UI = {
 		this.mergeGraphXBWs();
 	},
 
-	test_mergeGraphXBWs: function() {
+	test_mergeGraphXBWs: function(use_random_data) {
+
+		var cur_tests = this.merge_tests;
+
+		if (use_random_data) {
+			cur_tests = [];
+			for (var i=0; i < 10; i++) {
+				cur_tests.push(GML.generateRandomGraphString() + ' and ' + GML.generateRandomGraphString());
+			}
+		}
 
 		this.test_something(
 			5,
-			this.merge_tests,
+			cur_tests,
 			'merge',
 			function (test) {return GML.merge_XBWs(test);},
 			'run_test_mergeGraphXBWs');

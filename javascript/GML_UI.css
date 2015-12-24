@@ -99,6 +99,19 @@ div.mainbox > div > input.in-text-input {
 	margin-left:5px;
 }
 
+div.mainbox div.col-4, div.mainbox > div > input.col-4 {
+	display:inline-block;
+	width:32%;
+}
+
+div.mainbox div.col-4:nth-child(2n), div.mainbox > div > input.col-4:nth-child(2n) {
+	margin-left:1.7%;
+}
+
+div.mainbox div.col-4:nth-child(3n), div.mainbox > div > input.col-4:last-child {
+	float:right;
+}
+
 div.mainbox div.col-6, div.mainbox > div > input.col-6 {
 	display:inline-block;
 	width:49%;
@@ -296,6 +309,11 @@ tr.barless > td:last-child {
 	box-shadow:-50px 0px 50px -5px rgba(0, 0, 0, 0.5) inset;
 	background:#EEE none repeat scroll 0% 0%;
 	border-radius:3px;
+}
+
+span.col-4 {
+	width:33.33%;
+	display:inline-block;
 }
 
 span.col-6 {

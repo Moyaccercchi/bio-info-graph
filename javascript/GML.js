@@ -892,7 +892,7 @@ window.GML = {
 
 		// if someone inputs AC vs. TG into the first input field, then handle it as AC in the first
 		// and TG in the second input field - just a way quicker enter saved input data =)
-		var vs_index = Math.max(h1.indexOf(' VS. '), h1.indexOf(' AND '));
+		var vs_index = Math.max(h1.toUpperCase().indexOf(' VS. '), h1.toUpperCase().indexOf(' AND '));
 		if (vs_index >= 0) {
 			graph1 = this.stringToGraph(h1.slice(0, vs_index));
 			graph2 = this.stringToGraph(h1.slice(vs_index + 5));
@@ -1601,7 +1601,12 @@ window.GML = {
 						this.p12_itlv.splice(firstRedi+i, 0, this.p12_itlv[firstRedi]);
 						this.bwt.splice(firstRedi+i, 0, this.bwt[firstRedi]);
 
-
+						// set M of the inserted column to 1, as each of these nodes now has exactly one
+						// edge leaving it (which is precisely why we are doing the splitting in the first
+						// place - and we are splitting precisely once for each outedge, so we have exactly
+						// one outedge for each node now!)
+						// ... aaand this is not true anymore, now we can actually even insert some zeroes too
+						this.m.splice(firstRedi+i, 0, Madd_for_this_prefix[i]);
 
 						// [NOTE P9]
 						var cur_bwt_aftersort;
@@ -1612,28 +1617,25 @@ window.GML = {
 						if (cur_bwt_aftersort) {
 							var cur_b = this.bwt[firstRedi][0];
 							var cur_before = 0;
+							var cur_before_offset = 0;
 							for (var j=0; j < firstRedi+i; j++) {
-								if (this.bwt[j] === cur_b) {
+								if ((this.p12_itlv[j] === cur_o) && (this.bwt[j].indexOf(cur_b) > -1)) {
 									cur_before++;
+									// we count this.bwt[j].split('|').length as basically F
+									// (as the amount of options in the BWT is equal to the
+									// length of F, even though it is not given here)
+									cur_before_offset += 1 - this.bwt[j].split('|').length;
 								}
 							}
+
 							for (var j=0; j < cur_bwt_aftersort[cur_b].length; j++) {
 								if (cur_bwt_aftersort[cur_b][j] >= cur_before) {
 									cur_bwt_aftersort[cur_b][j]++;
 								}
 							}
-							cur_bwt_aftersort[cur_b].splice(cur_before, 0, cur_before);
+
+							cur_bwt_aftersort[cur_b].splice(cur_before+cur_before_offset, 0, cur_before);
 						}
-
-
-
-						// set M of the inserted column to 1, as each of these nodes now has exactly one
-						// edge leaving it (which is precisely why we are doing the splitting in the first
-						// place - and we are splitting precisely once for each outedge, so we have exactly
-						// one outedge for each node now!)
-						// ... aaand this is not true anymore
-
-						this.m.splice(firstRedi+i, 0, Madd_for_this_prefix[i]);
 
 						ins_arr.push(firstRedi+i);
 					}

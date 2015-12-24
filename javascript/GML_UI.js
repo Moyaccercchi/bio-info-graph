@@ -163,62 +163,107 @@ window.GML_UI = {
 	],
 
 	merge_tests: [
-		['ACEG', 'BDFK'],
-		['ACEG|,1,,3', 'BDFK'],
-		['ACEG|,1,,3;,2,TB,4', 'BDFK|,2,,4'],
-		['C', 'ACTG|,2,,4'],
-		['C', 'ACATG'],
-		['GACGT|,2,T,4;,3,,5', 'ACCTG|,1,,5;,1,,3'],
-		['C', 'ACTG|,2,T,4'],
-		['GACGT|,2,C,4;,2,T,4;,3,,5', 'ACCTG|,1,,5;,1,,3'],
-		['GACGT|,2,T,4;,1,C,4;,3,,5', 'ACCTG|,1,,5;,1,,3'],
-		['TAT', 'C'],
-		['TT|,1,A,2', 'C'],
-		['TCGTGCGAGG|,1,ACAA,10', 'C'],
-		['TAATACGCGGGTC|,8,,9', 'ACCTG|,1,,5;,1,,3'],
-		['AAGTTTCTTTCGTGCGAGGCCGT|,10,ACAA,19;,16,CGT,20', 'ACCTG'],
-		['ATAGTCAATTGACTGCCGACG', 'CGGGGTAAAAAAGCGCC'],
-		['GCCG', 'GCGC'],
-		['GCCG', 'BDFK'],
-		['GG', 'CGG'],
-		['ATCT|,2,A,3', 'CC'],
-		['ATCGAT|,2,,5;,4,CG,6', 'C'],
-		['TGATGAG|,6,,7', 'GCCAGGTCAGCCTAGTCCCTG'],
-		['GTTAATGTGGCAAGT', 'CTCGCGACGACTAAAGCTGGCC'],
-		['TCCCTGT', 'CTCAGCAGAGGCCCAGGCAAA|,13,TA,15'],
-		['CTACCAGGTGCTGTTATTCCAC|,16,A,22', 'CATCGATTT|,3,CGAT,9'],
-		['CTATGTTATTCCA|,8,A,13', 'C'],
-		['TATA|,2,A,4', 'C'],
-		['CCA|,1,A,2', 'CA'],
-		['TTCGCAAGA', 'TCCCCAAG'],
-		['CCTGCGTGTGGT|,3,,6', 'CTCTTA|,3,TCG,5'],
-		['CCGAGCTTATCGCAA', 'GAGAGAGCAAC'],
-		['ATGCGAGTTCGGGAC|,9,CCCG,14', 'TCCAA'],
-		['GCAGGGAGCTCCAGCCGTTAG|,4,CC,13;,1,A,18;,17,,19', 'CGGAT'],
-		['ATTGGAGAAGTCACGCTTGAC|,6,CTA,14', 'GTTAAAACAC|,6,TC,10'],
-		['CACTC', 'GGGCAGTACGTGG|,9,,11;,7,CGCG,8'],
-		['TGCAAGTATGGCGCTT|,2,,8', 'GTGTAATTATGAAC|,13,GATG,14'],
-		['AACCAT|,4,GGG,6', 'GTGCAGCTTTTGG'],
-		['AACCAT|,4,GGG,6', 'TTAAGGTTATGGACCCCCC|,4,GGAT,8;,6,C,12'],
-		['AGAGCACGCCGGT', 'TTAAGGTTATGGACCCCCC|,4,GGAT,8;,6,C,12'],
-		['AGAGCACGCCGGT', 'CGTAAATAGAG|,7,G,9'],
-		['CGGCAATAGACGCTGTCCAATGC|,15,,18', 'CGTAAATAGAG|,7,G,9'],
-		['AGAGCAT', 'AGTGAACACAC'],
-		['ACTGGCATGATTTATCCCTTGG|,11,,12', 'TTTGTTTGACACGCTGC|,16,,17;,11,AGGG,14'],
-		['GGGCCCAGGGCGATCGACGTTC|,7,,19', 'TTTGTTTGACACGCTGC|,16,,17;,11,AGGG,14'],
-		['CCCAGCC|,4,,6', 'TT|,1,AGG,2'],
-		['CAGCC|,2,,4', 'TT|,1,AGG,2'],
-		['CACT', 'GCGTACG|,5,,7;,1,C,5'],
-		['CACT', 'GCGTACG|,4,,7;,1,C,5'],
-		['TC|,1,C,2', 'TC'],
-		['ATCAACTTTCC|,6,CA,7', 'TACCGAACGCCGGTGTGATAA|,6,,8'],
-		['GCGGTGAAGAGAAA|,2,CGG,7', 'GACTC'],
-		['CCACGCTAAGTTATCGTGT', 'GCTTTATACGTAAT|,10,CC,13'],
-		['ATCCAATCGTAAT|,7,T,8', 'TCGAATTATCACGATAT|,13,AAA,17;,12,CG,15;,7,,15;,7,GAG,16'],
-		['TAGCTTGGAC|,2,AG,9', 'GTGATGT|,5,,7'],
-		['GACAAACACAAACATCACCCTGT', 'TGAAATAGT|,4,T,6'],
-		['CGTCGCC|,6,T,7', 'TCAATGTATAGTCGTGTCTGAAAT|,8,TGCA,23'],
+		'ACEG and BDFK',
+		'ACEG|,1,,3 and BDFK',
+		'ACEG|,1,,3;,2,TB,4 and BDFK|,2,,4',
+		'C and ACTG|,2,,4',
+		'C and ACATG',
+		'GACGT|,2,T,4;,3,,5 and ACCTG|,1,,5;,1,,3',
+		'C and ACTG|,2,T,4',
+		'GACGT|,2,C,4;,2,T,4;,3,,5 and ACCTG|,1,,5;,1,,3',
+		'GACGT|,2,T,4;,1,C,4;,3,,5 and ACCTG|,1,,5;,1,,3',
+		'TAT and C',
+		'TT|,1,A,2 and C',
+		'TCGTGCGAGG|,1,ACAA,10 and C',
+		'TAATACGCGGGTC|,8,,9 and ACCTG|,1,,5;,1,,3',
+		'AAGTTTCTTTCGTGCGAGGCCGT|,10,ACAA,19;,16,CGT,20 and ACCTG',
+		'ATAGTCAATTGACTGCCGACG and CGGGGTAAAAAAGCGCC',
+		'GCCG and GCGC',
+		'GCCG and BDFK',
+		'GG and CGG',
+		'ATCT|,2,A,3 and CC',
+		'ATCGAT|,2,,5;,4,CG,6 and C',
+		'TGATGAG|,6,,7 and GCCAGGTCAGCCTAGTCCCTG',
+		'GTTAATGTGGCAAGT and CTCGCGACGACTAAAGCTGGCC',
+		'TCCCTGT and CTCAGCAGAGGCCCAGGCAAA|,13,TA,15',
+		'CTACCAGGTGCTGTTATTCCAC|,16,A,22 and CATCGATTT|,3,CGAT,9',
+		'CTATGTTATTCCA|,8,A,13 and C',
+		'TATA|,2,A,4 and C',
+		'CCA|,1,A,2 and CA',
+		'TTCGCAAGA and TCCCCAAG',
+		'CCTGCGTGTGGT|,3,,6 and CTCTTA|,3,TCG,5',
+		'CCGAGCTTATCGCAA and GAGAGAGCAAC',
+		'ATGCGAGTTCGGGAC|,9,CCCG,14 and TCCAA',
+		'GCAGGGAGCTCCAGCCGTTAG|,4,CC,13;,1,A,18;,17,,19 and CGGAT',
+		'ATTGGAGAAGTCACGCTTGAC|,6,CTA,14 and GTTAAAACAC|,6,TC,10',
+		'CACTC and GGGCAGTACGTGG|,9,,11;,7,CGCG,8',
+		'TGCAAGTATGGCGCTT|,2,,8 and GTGTAATTATGAAC|,13,GATG,14',
+		'AACCAT|,4,GGG,6 and GTGCAGCTTTTGG',
+		'AACCAT|,4,GGG,6 and TTAAGGTTATGGACCCCCC|,4,GGAT,8;,6,C,12',
+		'AGAGCACGCCGGT and TTAAGGTTATGGACCCCCC|,4,GGAT,8;,6,C,12',
+		'AGAGCACGCCGGT and CGTAAATAGAG|,7,G,9',
+		'CGGCAATAGACGCTGTCCAATGC|,15,,18 and CGTAAATAGAG|,7,G,9',
+		'AGAGCAT and AGTGAACACAC',
+		'ACTGGCATGATTTATCCCTTGG|,11,,12 and TTTGTTTGACACGCTGC|,16,,17;,11,AGGG,14',
+		'GGGCCCAGGGCGATCGACGTTC|,7,,19 and TTTGTTTGACACGCTGC|,16,,17;,11,AGGG,14',
+		'CCCAGCC|,4,,6 and TT|,1,AGG,2',
+		'CAGCC|,2,,4 and TT|,1,AGG,2',
+		'CACT and GCGTACG|,5,,7;,1,C,5',
+		'CACT and GCGTACG|,4,,7;,1,C,5',
+		'TC|,1,C,2 and TC',
+		'ATCAACTTTCC|,6,CA,7 and TACCGAACGCCGGTGTGATAA|,6,,8',
+		'GCGGTGAAGAGAAA|,2,CGG,7 and GACTC',
+		'CCACGCTAAGTTATCGTGT and GCTTTATACGTAAT|,10,CC,13',
+		'ATCCAATCGTAAT|,7,T,8 and TCGAATTATCACGATAT|,13,AAA,17;,12,CG,15;,7,,15;,7,GAG,16',
+		'TAGCTTGGAC|,2,AG,9 and GTGATGT|,5,,7',
+		'GACAAACACAAACATCACCCTGT and TGAAATAGT|,4,T,6',
+		'CGTCGCC|,6,T,7 and TCAATGTATAGTCGTGTCTGAAAT|,8,TGCA,23',
 	],
+
+	test_something: function(tab, tests, what_are_we_doing, func, test_func_s) {
+
+		var old_verbosity = GML.verbosity;
+		GML.verbosity = 1;
+		var old_hide_xbw_env = GML.hideXBWenvironments;
+		GML.hideXBWenvironments = true;
+
+		var el = this.activateDivOut(tab, false, false);
+		el.innerHTML = '';
+
+		var err_count = 0;
+
+		for (var i=0; i < tests.length; i++) {
+			var sout = '<div class="panel">' +
+					   '<div>Testing to ' + what_are_we_doing + ' ' + tests[i] + '.' +
+					   '<span class="infobtn" onclick="GML_UI.' + test_func_s + '(' + i + ')">Run manually</span>' +
+					   '</div>';
+			var res = func(tests[i]);
+			// we send a sad face right afterwards, so if the NEXT test destroys JS, then sad face is shown
+			this.sad_face();
+
+			if (res.indexOf('class="error"') < 0) {
+				sout += '<div class="success">Success!</div></div>';
+			} else {
+				sout += '<div class="error">Failure...</div></div>';
+				err_count++;
+			}
+			el.innerHTML += sout;
+		}
+
+		GML.verbosity = old_verbosity;
+		GML.hideXBWenvironments = old_hide_xbw_env;
+
+		el.innerHTML += '<div>Overall, we executed ' + tests.length + ' tests. <br>' +
+						(tests.length-err_count) + ' of them were successful, ' +
+						'while ' + err_count + ' failed.</div>';
+
+		if (err_count > 0) {
+			this.sad_face();
+		} else {
+			this.happy_face();
+		}
+	},
+
 
 
 	/*
@@ -272,48 +317,12 @@ window.GML_UI = {
 
 	test_generateAdvancedBWT: function() {
 
-		var old_verbosity = GML.verbosity;
-		GML.verbosity = 1;
-		var old_hide_xbw_env = GML.hideXBWenvironments;
-		GML.hideXBWenvironments = true;
-
-		var tests = this.construct_tests;
-
-		var el = this.activateDivOut(2, false, false);
-		el.innerHTML = '';
-
-		var err_count = 0;
-
-		for (var i=0; i < tests.length; i++) {
-			var sout = '<div class="panel">' +
-					   '<div>Testing to generate table for ' + tests[i] + '.' +
-					   '<span class="infobtn" onclick="GML_UI.run_test_generateAdvancedBWT(' + i + ')">Run manually</span>' +
-					   '</div>';
-			var res = GML.generate_BWT_advanced(tests[i]);
-			// we send a sad face right afterwards, so if the NEXT test destroys JS, then sad face is shown
-			this.sad_face();
-
-			if (res.indexOf('class="error"') < 0) {
-				sout += '<div class="success">Success!</div></div>';
-			} else {
-				sout += '<div class="error">Failure...</div></div>';
-				err_count++;
-			}
-			el.innerHTML += sout;
-		}
-
-		GML.verbosity = old_verbosity;
-		GML.hideXBWenvironments = old_hide_xbw_env;
-
-		el.innerHTML += '<div>Overall, we executed ' + tests.length + ' tests. <br>' +
-						(tests.length-err_count) + ' of them were successful, ' +
-						'while ' + err_count + ' failed.</div>';
-
-		if (err_count > 0) {
-			this.sad_face();
-		} else {
-			this.happy_face();
-		}
+		this.test_something(
+			2,
+			this.construct_tests,
+			'generate table for',
+			function (test) {return GML.generate_BWT_advanced(test);},
+			'run_test_generateAdvancedBWT');
 	},
 
 
@@ -339,56 +348,22 @@ window.GML_UI = {
 
 	run_test_mergeAdvancedBWTs: function(i) {
 
-		document.getElementById('in-string-3-1').value = this.merge_tests[i][0];
-		document.getElementById('in-string-3-2').value = this.merge_tests[i][1];
+		var test = this.merge_tests[i].split(' and ');
+
+		document.getElementById('in-string-3-1').value = test[0];
+		document.getElementById('in-string-3-2').value = test[1];
 
 		this.mergeAdvancedBWTs();
 	},
 
 	test_mergeAdvancedBWTs: function() {
 
-		var old_verbosity = GML.verbosity;
-		GML.verbosity = 1;
-		var old_hide_xbw_env = GML.hideXBWenvironments;
-		GML.hideXBWenvironments = true;
-
-		var tests = this.merge_tests;
-
-		var el = this.activateDivOut(3, false, false);
-		el.innerHTML = '';
-
-		var err_count = 0;
-
-		for (var i=0; i < tests.length; i++) {
-			var sout = '<div class="panel">' +
-					   '<div>Testing to merge ' + tests[i][0] + ' and ' + tests[i][1] + '.' +
-					   '<span class="infobtn" onclick="GML_UI.run_test_mergeAdvancedBWTs(' + i + ')">Run manually</span>' +
-					   '</div>';
-			var res = GML.merge_BWTs_advanced(tests[i][0], tests[i][1]);
-			// we send a sad face right afterwards, so if the NEXT test destroys JS, then sad face is shown
-			this.sad_face();
-
-			if (res.indexOf('exactly the same! Jippey! =)') >= 0) {
-				sout += '<div class="success">Success!</div></div>';
-			} else {
-				sout += '<div class="error">Failure...</div></div>';
-				err_count++;
-			}
-			el.innerHTML += sout;
-		}
-
-		GML.verbosity = old_verbosity;
-		GML.hideXBWenvironments = old_hide_xbw_env;
-
-		el.innerHTML += '<div>Overall, we executed ' + tests.length + ' tests. <br>' +
-						(tests.length-err_count) + ' of them were successful, ' +
-						'while ' + err_count + ' failed.</div>';
-
-		if (err_count > 0) {
-			this.sad_face();
-		} else {
-			this.happy_face();
-		}
+		this.test_something(
+			3,
+			this.merge_tests,
+			'merge',
+			function (test) {return GML.merge_BWTs_advanced(test);},
+			'run_test_mergeAdvancedBWTs');
 	},
 
 
@@ -406,56 +381,22 @@ window.GML_UI = {
 
 	run_test_mergeGraphXBWs: function(i) {
 
-		document.getElementById('in-string-5-1').value = this.merge_tests[i][0];
-		document.getElementById('in-string-5-2').value = this.merge_tests[i][1];
+		var test = this.merge_tests[i].split(' and ');
+
+		document.getElementById('in-string-5-1').value = test[0];
+		document.getElementById('in-string-5-2').value = test[1];
 
 		this.mergeGraphXBWs();
 	},
 
 	test_mergeGraphXBWs: function() {
 
-		var old_verbosity = GML.verbosity;
-		GML.verbosity = 1;
-		var old_hide_xbw_env = GML.hideXBWenvironments;
-		GML.hideXBWenvironments = true;
-
-		var tests = this.merge_tests;
-
-		var el = this.activateDivOut(5, false, false);
-		el.innerHTML = '';
-
-		var err_count = 0;
-
-		for (var i=0; i < tests.length; i++) {
-			var sout = '<div class="panel">' +
-					   '<div>Testing to merge ' + tests[i][0] + ' and ' + tests[i][1] + '.' +
-					   '<span class="infobtn" onclick="GML_UI.run_test_mergeGraphXBWs(' + i + ')">Run manually</span>' +
-					   '</div>';
-			var res = GML.merge_XBWs(tests[i][0], tests[i][1]);
-			// we send a sad face right afterwards, so if the NEXT test destroys JS, then sad face is shown
-			this.sad_face();
-
-			if (res.indexOf('exactly the same, and we are happy!') >= 0) {
-				sout += '<div class="success">Success!</div></div>';
-			} else {
-				sout += '<div class="error">Failure...</div></div>';
-				err_count++;
-			}
-			el.innerHTML += sout;
-		}
-
-		GML.verbosity = old_verbosity;
-		GML.hideXBWenvironments = old_hide_xbw_env;
-
-		el.innerHTML += '<div>Overall, we executed ' + tests.length + ' tests. <br>' +
-						(tests.length-err_count) + ' of them were successful, ' +
-						'while ' + err_count + ' failed.</div>';
-
-		if (err_count > 0) {
-			this.sad_face();
-		} else {
-			this.happy_face();
-		}
+		this.test_something(
+			5,
+			this.merge_tests,
+			'merge',
+			function (test) {return GML.merge_XBWs(test);},
+			'run_test_mergeGraphXBWs');
 	},
 
 

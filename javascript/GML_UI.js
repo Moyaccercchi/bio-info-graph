@@ -1292,32 +1292,8 @@ window.GML_UI = {
 
 		GML.ao = parseInt(document.getElementById('in-options-array-offset').value, 10);
 		GML.loop_threshold = parseInt(document.getElementById('in-options-loop-threshold').value, 10);
-
-		this.saveOptions();
-	},
-
-	resetOptions: function() {
-
-		document.getElementById('in-options-array-offset').value = '0';
-		document.getElementById('in-options-loop-threshold').value = '100';
-
-		document.getElementById('in-options-show-xbw-envs').innerHTML = 'X';
-		document.getElementById('in-options-show-graph').innerHTML = '&nbsp;';
-		document.getElementById('in-options-show-autoi').innerHTML = '&nbsp;';
-		document.getElementById('in-options-show-hashtag').innerHTML = 'X';
-		document.getElementById('in-options-show-dollarsign').innerHTML = 'X';
-		document.getElementById('in-options-always-search-path').innerHTML = '&nbsp;';
-		document.getElementById('in-options-find-shortest-path').innerHTML = '&nbsp;';
-		document.getElementById('in-options-vis-alternate').innerHTML = 'X';
-
-		document.getElementById('in-options-svg-font-latex').innerHTML = 'X';
-
-		this.changeOptions_verbosity_compwidth = 100;
-
-		this.applyOptions();
-	},
-
-	saveOptions: function() {
+		GML.vis_width_override = document.getElementById('in-options-svg-width-override').innerHTML == 'X';
+		GML.vis_width_override_value = parseInt(document.getElementById('in-options-svg-width-override-value').value, 10);
 
 		for (var i = 0; i < this.upToTabs; i++) {
 			this.div_out_visibility[i] = false;
@@ -1351,6 +1327,8 @@ window.GML_UI = {
 			env_links[i].style.display = env_disp;
 		}
 
+		GML.do_prefix_doubling = document.getElementById('in-options-do-prefix-doubling').innerHTML == 'X';
+
 		GML_UI.svg_font_latex = document.getElementById('in-options-svg-font-latex').innerHTML == 'X';
 
 		GML.vis_show_hashtag = document.getElementById('in-options-show-hashtag').innerHTML == 'X';
@@ -1362,6 +1340,30 @@ window.GML_UI = {
 		this.changeOptions_verbosity_update();
 
 		this.animateApplyBtn(false);
+	},
+
+	resetOptions: function() {
+
+		document.getElementById('in-options-array-offset').value = '0';
+		document.getElementById('in-options-loop-threshold').value = '100';
+
+		document.getElementById('in-options-show-xbw-envs').innerHTML = 'X';
+		document.getElementById('in-options-do-prefix-doubling').innerHTML = '&nbsp;';
+		document.getElementById('in-options-show-graph').innerHTML = '&nbsp;';
+		document.getElementById('in-options-show-autoi').innerHTML = '&nbsp;';
+		document.getElementById('in-options-show-hashtag').innerHTML = 'X';
+		document.getElementById('in-options-show-dollarsign').innerHTML = 'X';
+		document.getElementById('in-options-always-search-path').innerHTML = '&nbsp;';
+		document.getElementById('in-options-find-shortest-path').innerHTML = '&nbsp;';
+		document.getElementById('in-options-vis-alternate').innerHTML = 'X';
+		document.getElementById('in-options-svg-width-override').innerHTML = '&nbsp;';
+		document.getElementById('in-options-svg-width-override-value').value = '1041';
+
+		document.getElementById('in-options-svg-font-latex').innerHTML = 'X';
+
+		this.changeOptions_verbosity_compwidth = 100;
+
+		this.applyOptions();
 	},
 
 	happy_face: function() {

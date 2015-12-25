@@ -187,6 +187,9 @@
 		<div onclick="GML_UI.changeOptions_show_graph()" style="cursor:pointer">
 			<span id="in-options-show-graph" class="our_checkbox">&nbsp;</span> Show tabs for na&iuml;ve graph functionality <b id="show-graph-info-text" style="display:none">(which has been discontinued)</b>
 		</div>
+		<div onclick="GML_UI.changeOptions_checkbox('in-options-do-prefix-doubling')" style="cursor:pointer">
+			<span id="in-options-do-prefix-doubling" class="our_checkbox">&nbsp;</span> Do prefix doubling in node table merging</b>
+		</div>
 		<div>
 			The first element of any string and array is obviously <input id="in-options-array-offset" type="text" value="0" class="in-text-input" onchange="GML_UI.animateApplyBtn(true)" onkeyup="GML_UI.animateApplyBtn(true)"></input>.
 		</div>
@@ -196,6 +199,7 @@
 		<div>
 			The following options all concern the graph visualization:
 		</div>
+		<div>
 		<div class="col-6" onclick="GML_UI.changeOptions_checkbox('in-options-show-hashtag')" style="cursor:pointer">
 			<span id="in-options-show-hashtag" class="our_checkbox">X</span> Show &#35; node in graphs
 		</div>
@@ -216,6 +220,10 @@
 		</div>
 		<div class="col-6" onclick="GML_UI.changeOptions_checkbox('in-options-svg-font-latex')" style="cursor:pointer">
 			<span id="in-options-svg-font-latex" class="our_checkbox">X</span> When saving SVG files, use Times New Roman as LaTeX-like font</b>
+		</div>
+		<div class="col-6" onclick="GML_UI.changeOptions_checkbox('in-options-svg-width-override')" style="cursor:pointer">
+			<span id="in-options-svg-width-override" class="our_checkbox">&nbsp;</span> Override automatic width and set to <input id="in-options-svg-width-override-value" type="text" value="1041" class="in-text-input" onchange="GML_UI.animateApplyBtn(true)" onkeyup="GML_UI.animateApplyBtn(true)"></input> pixels instead.
+		</div>
 		</div>
 		<div>
 			<div class="button col-6" onclick="GML_UI.applyOptions()" id="id-apply-btn">Apply Options</div>
@@ -320,12 +328,12 @@
 
 
 	<span class="creditline absleft">
-		GML, Version: 0.0.3.1
+		GML, Version: 0.0.3.2
 	</span>
 	<span class="creditline absright">
 		Moyaccercchi (tws@hi.is),
 		University of Iceland,
-		1<span class="u">st</span> Sep 2014 - 24<span class="u">th</span> Dec 2015
+		1<span class="u">st</span> Sep 2014 - 25<span class="u">th</span> Dec 2015
 	</span>
 
 	<div id="dropdown" style="display:none;" onmouseleave="document.getElementById('dropdown').style.display = 'none'"></div>

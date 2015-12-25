@@ -20,7 +20,7 @@ body {
 	padding:16px;
 	background:rgb(255, 255, 255) none repeat scroll 0% 0%;
 	position:relative;
-	min-width:800px;
+	min-width:880px;
 }
 
 i, i > span {
@@ -87,12 +87,16 @@ div.mainbox > div, div.mainbox > input, div.mainbox > div.button {
 	margin-bottom:16px;
 }
 
+div.mainbox > div > div.col-6 {
+	margin-bottom:16px;
+}
+
 div.mainbox > div > input {
 	display:block;
 	width:100%;
 }
 
-div.mainbox > div > input.in-text-input {
+div.mainbox > div input.in-text-input {
 	display:inline-block;
 	width:10%;
 	margin-right:5px;

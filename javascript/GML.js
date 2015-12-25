@@ -1085,6 +1085,14 @@ window.GML = {
 
 
 
+	// if true, we perform prefix doubling while working on the node table merging,
+	// which makes the algorithm faster, but more prone to crashing (due to splitovers
+	// now happening) and to reporting failures (when more node splitting was undertaken
+	// than necessary)
+	do_prefix_doubling: false,
+
+
+
 	// takes in two graph strings
 	// gives out a string contain info about the BWT merging for both
 	merge_BWTs_advanced: function(h1, h2) {
@@ -1525,12 +1533,10 @@ window.GML = {
 					var replacement_prefixes = [];
 					var Madd_for_this_prefix = [];
 
-					var do_prefix_doubling = false;
-
 					for (i=0; i < next_nodes.length; i++) {
 						var pref;
 
-						if (do_prefix_doubling) {
+						if (this.do_prefix_doubling) {
 							pref = firstRedPrefix + this.p12[next_nodes[i]][0];
 							replacement_prefixes.push(pref);
 							Madd_for_this_prefix.push('1');
@@ -2706,6 +2712,8 @@ window.GML = {
 	vis_always_search_path: false,
 	vis_find_shortest_path: false,
 	vis_displayed_edges: [],
+	vis_width_override: false,
+	vis_width_override_value: 1041,
 
 
 
@@ -3071,7 +3079,12 @@ window.GML = {
 		// we display the entire mainrow, but we can cut off 30px of whitespace in the front and back
 		// (but we give it half a pixel on each side to have a little bit of spillover room...
 		// we are not monsters!)
-		var svgwidth = (mainrow.length * 100) - 59;
+		var mainwidth = mainrow.length * 100;
+		var svgwidth = mainwidth - 59;
+		if (this.vis_width_override) {
+			svgwidth = this.vis_width_override_value;
+		}
+		var x_start_at = (((mainwidth - 59) - svgwidth) / 2) + 29.5;
 
 		var sprev = '<div';
 		sprev += ' style="overflow-x:auto;text-align:center;padding-top:15px;"';
@@ -3080,11 +3093,11 @@ window.GML = {
 		sprev += '<svg ';
 		sprev += 'style="width:' + svgwidth + 'px;height:' + svgheight + 'px" ';
 		sprev += 'xmlns="http:/' + '/www.w3.org/2000/svg" version="1.1"' +
-				 'viewBox="29.5 ' + y_start_at;
+				 'viewBox="' + x_start_at + ' ' + y_start_at;
 		sprev += ' ' + svgwidth + ' ' + svgheight +
 				 '" preserveAspectRatio="xMidYMid slice">';
 
-		sprev += '<rect x="29.5" y="' + y_start_at + '" width="' + svgwidth + '" ' +
+		sprev += '<rect x="' + x_start_at + '" y="' + y_start_at + '" width="' + svgwidth + '" ' +
 				 'height="' + svgheight + '" style="fill:#FFF" />';
 
 		sout = sprev + sout;

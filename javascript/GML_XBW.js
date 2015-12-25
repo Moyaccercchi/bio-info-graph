@@ -1465,7 +1465,7 @@ sout += '<br>' +
 				oxbw._splitNode(nodes[0].sn_i);
 
 				if (GML.error_flag) {
-					return sout + '<div class="danger">Invalid input: To compute this, nodes would need to be split across graphs.</div>';
+					return sout + '<div class="note">Invalid input: To compute this, nodes would need to be split across graphs.</div>';
 				}
 
 				var newlen = oxbw._publishBWTlen();

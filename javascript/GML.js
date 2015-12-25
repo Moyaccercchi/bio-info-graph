@@ -1028,7 +1028,7 @@ window.GML = {
 			}
 
 			if (this.error_flag) {
-				sout += this.errorWrap('Invalid input: To compute this, nodes would need to be split across graphs.', 'danger');
+				sout += this.errorWrap('Invalid input: To compute this, nodes would need to be split across graphs.', 'note');
 				return [sout];
 			}
 
@@ -1863,7 +1863,7 @@ window.GML = {
 				sout += 'We can see that the table found through merging the BWTs and the ' +
 						'table found through merging the graphs and then building one BWT ' +
 						'are exactly the same! Jippey! =)' + this.nlnl;
-				sout += '<div class="success">Success!</div>';
+				sout += '<div class="success">Success</div>';
 				if (GML_UI) {
 					GML_UI.happy_face();
 				}
@@ -1871,7 +1871,7 @@ window.GML = {
 				sout += 'We can see that the table found through merging the BWTs and the ' +
 						'table found through merging the graphs and then building one BWT ' +
 						'are not the same... Sad face. =(' + this.nlnl;
-				sout += '<div class="error">Failure...</div>';
+				sout += '<div class="error">Failure</div>';
 				if (GML_UI) {
 					GML_UI.sad_face();
 				}
@@ -2198,14 +2198,14 @@ window.GML = {
 
 			if (xbw.equals(xbw12)) {
 				sout += 'We can see that these are exactly the same, and we are happy!' + this.nlnl;
-				sout += '<div class="success">Success!</div>';
+				sout += '<div class="success">Success</div>';
 				if (GML_UI) {
 					GML_UI.happy_face();
 				}
 			} else {
 				sout += 'We can see that these are different from each other, ' +
 						'so something somewhere went wrong...' + this.nlnl;
-				sout += '<div class="error">Failure...</div>';
+				sout += '<div class="error">Failure</div>';
 				if (GML_UI) {
 					GML_UI.sad_face();
 				}
@@ -3315,7 +3315,7 @@ window.GML = {
 
 
 	// takes in a string containing HTML that wants to be shown as an error message,
-	//   as well as an optional error kind (default is 'error', also possible is 'danger')
+	//   as well as an optional error kind (default is 'error', also possible are 'danger' and 'note')
 	// gives out the string formatted as error message and hides the XBW environment
 	//   from the current tab
 	errorWrap: function(sout, kind) {

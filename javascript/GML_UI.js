@@ -160,6 +160,92 @@ window.GML_UI = {
 		'CCACGCGCCATGGC|,1,CTG,14',
 		'GCTGGCGAGCAG|,3,T,5;,5,,7',
 		'GCCGT|,3,,5',
+		'ATCT|,2,A,3',
+		'ATCGAT|,2,,5;,4,CG,6',
+		'TGATGAG|,6,,7',
+		'GTTAATGTGGCAAGT',
+		'TCCCTGT',
+		'CTACCAGGTGCTGTTATTCCAC|,16,A,22',
+		'CTATGTTATTCCA|,8,A,13',
+		'TATA|,2,A,4',
+		'CCA|,1,A,2',
+		'TTCGCAAGA',
+		'CCTGCGTGTGGT|,3,,6',
+		'CCGAGCTTATCGCAA',
+		'ATGCGAGTTCGGGAC|,9,CCCG,14',
+		'GCAGGGAGCTCCAGCCGTTAG|,4,CC,13;,1,A,18;,17,,19',
+		'ATTGGAGAAGTCACGCTTGAC|,6,CTA,14',
+		'CACTC',
+		'TGCAAGTATGGCGCTT|,2,,8',
+		'AACCAT|,4,GGG,6',
+		'AACCAT|,4,GGG,6',
+		'AGAGCACGCCGGT',
+		'AGAGCACGCCGGT',
+		'CGGCAATAGACGCTGTCCAATGC|,15,,18',
+		'AGAGCAT',
+		'ACTGGCATGATTTATCCCTTGG|,11,,12',
+		'GGGCCCAGGGCGATCGACGTTC|,7,,19',
+		'CCCAGCC|,4,,6',
+		'CAGCC|,2,,4',
+		'CACT',
+		'CACT',
+		'TC|,1,C,2',
+		'ATCAACTTTCC|,6,CA,7',
+		'GCGGTGAAGAGAAA|,2,CGG,7',
+		'CCACGCTAAGTTATCGTGT',
+		'ATCCAATCGTAAT|,7,T,8',
+		'TAGCTTGGAC|,2,AG,9',
+		'GACAAACACAAACATCACCCTGT',
+		'CGTCGCC|,6,T,7',
+		'AAAGTAT',
+		'TACTTGTC',
+		'GCAGAATTCCGCAGGAAAGC',
+		'CGCGACAGTGGCCAATCT',
+		'GGTACATGGGAT',
+		'TCTGGTACGCTG|,1,,11',
+		'GGGAACAGATGTCTGTGATCC|,13,CAT,14',
+		'CGAGTTACGTGGCCGCCTCAT',
+		'TGTCTGTTACAGATTGC',
+		'CGAAGCCTA',
+		'CGAAAGAGTGTGTCTAGGC|,11,TC,19',
+		'TTTAGGTTAGTACCAC|,8,CTG,11',
+		'TACTTCCCCAGGACGGGACGCTA',
+		'AAAGGAGGT|,7,,8;,2,A,6',
+		'GGTGGCCGAGTGC|,10,CTGC,12',
+		'CGAATACCGTACTGAA|,12,AAAA,15;,14,GGTC,15',
+		'TTCCAATGGTGAGTCTC',
+		'AAGAT|,2,CTC,3;,1,C,4',
+		'AACAAATT|,4,TCCT,8',
+		'AAAAGAAGCTGAT|,4,,6',
+		'ACGTGCCCACCCG|,2,A,8',
+		'TAGGCGCGGT',
+		'TTTGCATCATATC',
+		'TTGTAG|,5,A,6',
+		'CTATATAGCGGC|,4,CTA,7',
+		'ATTAATACG|,2,G,5',
+		'CGGCCT|,1,A,6;,2,TT,4',
+		'CATCTTTC|,5,CA,7',
+		'AGGCAGCTATCGACCATCTTGCG|,22,,23;,2,TT,9;,9,C,10;,22,,23',
+		'AAGAGTCCAGAG|,7,,11;,5,TATA,9',
+		'GCCACGACACCCTCAAGCT|,17,CA,18',
+		'TTAAA|,4,GAT,5',
+		'TACCAGGGCTTTTTTACTGGCT|,8,,19;,20,GCT,21',
+		'TGAAGCGCATTCT|,9,,11;,3,,11',
+		'CGGATAGCACTCTA|,9,TT,11',
+		'TCCCTGGGC',
+		'CAAGGTATTGTTAA',
+		'CTCGGCTCT|,1,AAGG,2;,4,,6;,8,TG,9',
+		'AGGGAGCCTTAACATTTTCG|,13,T,19;,11,AGCG,15;,10,A,12',
+		'TCAGGGCGAGC|,6,G,9',
+		'GGAGCCAGGCTTGCCC|,7,,11',
+		'TGGCCCTCCCCCTACAT',
+		'AGGCCATTGATGAAAA|,7,AT,9;,5,CCT,12',
+		'GTATGCT|,6,TACC,7',
+		'ATTATCGATCA|,3,TCT,7;,10,CGCT,11;,8,TTCA,11',
+		'GTAACCTTGAGGAAGG',
+		'GTCGAATGATTCGCC|,8,ATT,15',
+		'CTATA',
+		'GGAAGG',
 	],
 
 	merge_tests: [
@@ -264,8 +350,6 @@ window.GML_UI = {
 		'GTATGCT|,6,TACC,7 and GGACCTACGGCGGTTTAAAA|,8,A,14;,2,GCGA,12',
 		'ATTATCGATCA|,3,TCT,7;,10,CGCT,11;,8,TTCA,11 and TGACAAGGTGCTCAGGTGAAA',
 		'GTAACCTTGAGGAAGG and GGGATTCAGTAGTTC',
-		'GTCGAATGATTCGCC|,8,ATT,15 and GCTTGTGCCTAA|,8,GT,12;,7,TGT,10;,2,A,12',
-		'CTATA and AAATATG|,3,AGTT,6',
 		'GGAAGG and GG',
 	],
 
@@ -290,7 +374,7 @@ window.GML_UI = {
 					   '<div>Testing to ' + what_are_we_doing + ' ' + tests[i] + '.' +
 					   '<span class="infobtn" onclick="GML_UI.' + test_func_s + '(' + i + ')">Run manually</span>' +
 					   '</div>' +
-					   '<div class="error">Crash!</div>' +
+					   '<div class="danger">Crash</div>' +
 					   '</div>';
 
 			var sout = '<div>Testing to ' + what_are_we_doing + ' ' + tests[i] + '.' +
@@ -301,14 +385,14 @@ window.GML_UI = {
 			// we send a sad face right afterwards, so if the NEXT test destroys JS, then sad face is shown
 			this.sad_face();
 
-			if (res.indexOf('class="danger"') > -1) {
-				sout += '<div class="danger">Invalid input</div>';
+			if (res.indexOf('class="note"') > -1) {
+				sout += '<div class="note">Invalid input</div>';
 				dang_count++;
 			} else {
 				if (res.indexOf('class="error"') < 0) {
-					sout += '<div class="success">Success!</div>';
+					sout += '<div class="success">Success</div>';
 				} else {
-					sout += '<div class="error">Failure...</div>';
+					sout += '<div class="error">Failure</div>';
 					err_count++;
 				}
 			}

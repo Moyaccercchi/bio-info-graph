@@ -140,7 +140,7 @@ div.panel {
 	padding:16px;
 }
 
-div.panel > div.success, div.panel > div.error, div.panel > div.danger {
+div.panel > div.success, div.panel > div.error, div.panel > div.danger, div.panel > div.note {
 	margin:8px -16px 0px -16px;
 }
 
@@ -331,29 +331,28 @@ div.no_select {
 }
 
 div.error {
-	background-color:rgb(255, 22, 22);
+	background-color:#F02;
+}
+
+div.note {
+	background-color:#666;
 }
 
 div.danger {
-	background-color:#FFAA00;
+	background-color:#D61;
 }
 
 div.success {
 	background-color:#0B0;
 }
 
-div.error, div.success, div.danger {
+div.error, div.note, div.danger, div.success {
 	margin:48px -16px;
 	text-align:center;
 }
 
-div.error *, div.error, div.success *, div.success {
-	color:rgb(255, 255, 255);
-	font-weight:700;
-}
-
-div.danger *, div.danger {
-	color:#000;
+div.error *, div.error, div.note *, div.note, div.danger *, div.danger, div.success *, div.success {
+	color:#FFF;
 	font-weight:700;
 }
 

@@ -3388,38 +3388,54 @@ window.GML = {
 
 
 
-	// takes in nothing
+	// takes in an optional integer parameter specifying the intended length
+	//   of the main row, an optional set containing the alphabet which is supposed
+	//   to be used, a threshold between 0 and 1 for adding at least one infoblock
+	//   and a threshold between 0 and 1 for adding more infoblocks after the first
 	// gives out a string containing a pseudo-random graph string
 	//   (the graph string is actually not very random at all; instead
 	//   it will only contain very basic graphs)
-	generateRandomGraphString: function() {
+	generateRandomGraphString: function(mainrow_length, alphabet, first_infoblock_threshold,
+										other_infoblocks_threshold) {
 
 		var gstr = '';
 
-		// get a mainrow between 5 and 25 characters in length
-		var mainrow_length = 5 + Math.floor(Math.random() * 20);
+		if (!mainrow_length) {
+			// get a mainrow between 5 and 25 characters in length
+			mainrow_length = 5 + Math.floor(Math.random() * 20);
+		}
 
-		var alphabet = ['A', 'C', 'G', 'T'];
+		if (!alphabet) {
+			alphabet = ['A', 'C', 'G', 'T'];
+		}
 
 		// add that many random characters
 		for (var i=0; i < mainrow_length; i++) {
-			gstr += alphabet[Math.floor(Math.random() * 4)];
+			gstr += alphabet[Math.floor(Math.random() * alphabet.length)];
 		}
 
 		// add a random about of infostrings, if any
 		var delimiter = '|';
 
-		// 50% chance to add at least one infoblock
-		var threshold = 0.5;
+		if (!first_infoblock_threshold) {
+			// 50% chance to add at least one infoblock
+			first_infoblock_threshold = 0.5;
+		}
+
+		if (!other_infoblocks_threshold) {
+			// 30% chance to add another infoblock
+			other_infoblocks_threshold = 0.3;
+		}
+
+		var threshold = first_infoblock_threshold;
 
 		while (Math.random() < threshold) {
+
+			threshold = other_infoblocks_threshold;
 
 			// delimiter to previous infoblock (or to main row)
 			gstr += delimiter;
 			delimiter = ';';
-
-			// 30% chance to add another infoblock
-			threshold = 0.3;
 
 			// own designation
 			gstr += ',';
@@ -3432,7 +3448,7 @@ window.GML = {
 			// characters along path
 			var path_length = Math.floor(Math.random() * 5);
 			for (var i=0; i < path_length; i++) {
-				gstr += alphabet[Math.floor(Math.random() * 4)];
+				gstr += alphabet[Math.floor(Math.random() * alphabet.length)];
 			}
 			gstr += ',';
 

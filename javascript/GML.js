@@ -61,6 +61,8 @@
 	stringToGraph: function(str);
 	graphToAutomaton: function(graph);
 	sanitizeAutomaton: function(auto);
+	eliminateMultipleEdgesInAutomaton: function(auto);
+	checkAutomatonForLoops: function(auto);
 	mergeAutomata: function(auto1, auto2);
 	makeAutomatonReverseDeterministic: function(auto, addToSOut);
 	makeAutomatonReverseDeterministic_int: function(auto, addToSOut);
@@ -172,6 +174,10 @@ window.GML = {
 
 	error_flag: false, // global flag that can be unset before calling functions within GML, and will
 					   // be set to true if these functions encounter internal errors
+	error_kind: '', // specifies the kind of error that occurred
+					// (or can be left empty for a default to be provided)
+	error_text: '', // specifies the error message that is supposed to be shown on the label
+					// (or can be left empty for a default to be provided)
 
 	XBWs: [], // XBW environments; one for each tab
 
@@ -654,12 +660,15 @@ window.GML = {
 		var graph = this.stringToGraph(h);
 
 		if (this.error_flag) {
-			return this.errorWrap('An infoblock in the input is wrongly formatted.');
+			return this.errorWrap();
 		}
 
 		// generate the automaton
 		var auto = this.graphToAutomaton(graph);
 
+		if (this.error_flag) {
+			return this.errorWrap();
+		}
 
 
 		var sout = '';
@@ -903,12 +912,20 @@ window.GML = {
 		}
 
 		if (this.error_flag) {
-			return this.errorWrap('An infoblock in the input is wrongly formatted.');
+			return [this.errorWrap()];
 		}
+
+
 
 		// generate the automaton
 		var auto1 = this.graphToAutomaton(graph1);
 		var auto2 = this.graphToAutomaton(graph2);
+
+		if (this.error_flag) {
+			return [this.errorWrap()];
+		}
+
+
 
 		// merge the automata
 		var auto = this.mergeAutomata(auto1, auto2);
@@ -3333,6 +3350,13 @@ window.GML = {
 	//   from the current tab
 	errorWrap: function(sout, kind) {
 
+		// if errorWrap() is called without arguments, display the stored error message
+		if (!sout) {
+			sout = this.error_text;
+			kind = this.error_kind;
+		}
+
+		// if no error kind is given, display it as regular error by default
 		if (!kind) {
 			kind = 'error';
 		}
@@ -3470,6 +3494,9 @@ window.GML = {
 
 					if (b.length !== 4) {
 						this.error_flag = true;
+						this.error_text = 'Invalid input: An infoblock is wrongly formatted.';
+						this.error_kind = 'note';
+						return;
 					}
 
 					sp = b[1];
@@ -3478,6 +3505,13 @@ window.GML = {
 						sp = 'mp:' + sp;
 					}
 					sp = sp.split(':');
+					sp[1] = parseInt(sp[1], 10);
+					if (isNaN(sp[1])) {
+						this.error_flag = true;
+						this.error_text = 'Invalid input: An infoblock contains a non-integer origin.';
+						this.error_kind = 'note';
+						return;
+					}
 					b[1] = sp[0] + ':' + (sp[1] - this.ao);
 
 					sp = b[3];
@@ -3486,6 +3520,13 @@ window.GML = {
 						sp = 'mp:' + sp;
 					}
 					sp = sp.split(':');
+					sp[1] = parseInt(sp[1], 10);
+					if (isNaN(sp[1])) {
+						this.error_flag = true;
+						this.error_text = 'Invalid input: An infoblock contains a non-integer target.';
+						this.error_kind = 'note';
+						return;
+					}
 					b[3] = sp[0] + ':' + (sp[1] - this.ao);
 
 					infoblocks.push(b.join(','));
@@ -3591,9 +3632,24 @@ window.GML = {
 
 
 	// takes in an automaton
+	// gives out nothing, but sanitizes the automaton by taking out multiple edges
+	//   and by checking for whether the automaton contains any loops and whether
+	//   incorrect characters have been entered as node labels
+	sanitizeAutomaton: function(auto) {
+
+		this.eliminateMultipleEdgesInAutomaton(auto);
+
+		this.checkAutomatonForLoops(auto);
+
+		this.checkAutomatonForIncorrectChars(auto);
+	},
+
+
+
+	// takes in an automaton
 	// gives out nothing, but eliminates multiple edges within the automaton
 	//   (that is, no two edges are allowed to have the same starting and ending nodes)
-	sanitizeAutomaton: function(auto) {
+	eliminateMultipleEdgesInAutomaton: function(auto) {
 
 		var i, k, new_arr;
 
@@ -3620,6 +3676,90 @@ window.GML = {
 					}
 				}
 				auto[i].n = new_arr;
+			}
+		}
+	},
+
+
+
+	// takes in an automaton
+	// gives out nothing, but sets the GML-wide error_flag to true if the
+	//   automaton contains at least one loop or cycle
+	checkAutomatonForLoops: function(auto) {
+
+		var paths = [[0]];
+
+		while (paths.length > 0) {
+
+			for (var i=0; i < paths.length; i++) {
+
+				var curNode = auto[paths[i][paths[i].length-1]];
+
+				if (curNode.n.length > 0) {
+
+					// count downwards so that we reach j === 0 last
+					// (so that we do not append node j to each new path)
+					for (var j=curNode.n.length-1; j > -1; j--) {
+
+						if (paths[i].indexOf(curNode.n[j]) > -1) {
+							this.error_flag = true;
+							this.error_kind = 'note';
+							this.error_text = 'Invalid input: A loop was encountered within the graph.';
+							return;
+						}
+
+						if (j === 0) {
+
+							// append one more node to this path
+							paths[i].push(curNode.n[0]);
+
+						} else {
+
+							// add more paths based on the current path
+							var nextPath = this.deep_copy_array(paths[i]);
+							nextPath.push(curNode.n[j]);
+							paths.push(nextPath);
+						}
+					}
+				} else {
+					// delete the path if it reached the end
+					paths.splice(i, 1);
+				}
+			}
+		}
+	},
+
+
+
+	// takes in an automaton
+	// gives out nothing, but sets the GML-wide error_flag to true if the
+	//   automaton contains disallowed characters (only English upper case
+	//   letters are allowed in addition to $ as start node and # as end node)
+	checkAutomatonForIncorrectChars: function(auto) {
+
+		for (var i=0; i < auto.length; i++) {
+			if (auto[i]) {
+				var label = auto[i].c;
+
+				// $ is okay as label if we are in the last node
+				if ((label === this.DS) && (auto[i].n.length === 0)) {
+					continue;
+				}
+
+				// # is okay as label if we are in the first node
+				if ((label === this.DK) && (auto[i].p.length === 0)) {
+					continue;
+				}
+
+				// One English upper case character is okay - not zero, not several, just one
+				if (/^[A-Z()]$/.test(label)) {
+					continue;
+				}
+
+				this.error_flag = true;
+				this.error_kind = 'note';
+				this.error_text = 'Invalid input: The input contains illegal characters.';
+				return;
 			}
 		}
 	},

@@ -69,9 +69,7 @@ GML.make_xbw_environment = function() {
 	var last_high_fic_arr = []; // the second two contain all characters
 	var last_high_bwt_arr = []; // leading up to the very latest high node
 
-	var aftersort = []; // EMRG CONV
-//	var aftersort_bwt = [];
-//	var aftersort_fic = [];
+	var aftersort = [];
 
 
 
@@ -473,7 +471,7 @@ GML.make_xbw_environment = function() {
 
 
 
-
+			/*
 			var cols_to_be_sorted = [];
 			var prefs_to_be_sorted = [];
 			var cols_newly_sorted = [];
@@ -544,6 +542,7 @@ GML.make_xbw_environment = function() {
 
 			console.log('aftersort:');
 			console.log(aftersort);
+			*/
 		},
 
 		_publishFindex: function() {
@@ -668,14 +667,12 @@ for (i=0; i < char.length; i++) {
 				}
 			}
 
-// EMRG - we just added this here, as it sounded like it made sense, but now we are not sure anymore
-
-pos1 = rank('1', M, pos1);
-pos1 = select('1', F, pos1);
+			pos1 = rank('1', M, pos1);
+			pos1 = select('1', F, pos1);
 
 			var BWTatpos = BWT[pos1];
 
-			// we find out the how manieth T this one is
+			// we find out the how manieth A, C, G or T this one is
 			loc = rank(BWTatpos, BWT, pos1);
 
 			// we find out where in the first column this is
@@ -728,28 +725,21 @@ We therefore have another good think about what we actually want to do... and ba
 
 			BWT = GML.setInString(BWT, pos1, DK_1);
 
-// [HERE]
-firstHash0Replacement = rank(BWTatpos, BWT, firstHash0Replacement);
-firstHash0Replacement = select(BWTatpos, char, firstHash0Replacement);
+			firstHash0Replacement = rank(BWTatpos, BWT, firstHash0Replacement);
+			firstHash0Replacement = select(BWTatpos, char, firstHash0Replacement);
 
-/*
-alert('firstHash0Replacement: ' + firstHash0Replacement + '\n' +
-	'crossstart: ' + crossstart + '\n' +
-	'loc: ' + loc);
-*/
+			// TODO :: this here brings us down to 3 failures, but I am not exactly sure it is 100% how it should be ^^
+			if (firstHash0Replacement <= loc) {
+				M = M.slice(0, loc) +
+					M.slice(crossstart) +
+					M.slice(loc+1, crossstart) +
+					M[loc];
+			}
 
-// EMRG :: this here brings us down to 3 failures, but I am not exactly sure it is 100% how it should be ^^
-if (firstHash0Replacement <= loc) {
-M = M.slice(0, loc) +
-	M.slice(crossstart) +
-	M.slice(loc+1, crossstart) +
-	M[loc];
-}
-
-// this here IS how it should be
-for (i=1; i < hash0replacement_len; i++) {
-	M = GML.setInString(M, firstHash0Replacement+i, '0');
-}
+			// this is how it should be
+			for (i=1; i < hash0replacement_len; i++) {
+				M = GML.setInString(M, firstHash0Replacement+i, '0');
+			}
 
 			// cut out $_0 from BWT and F
 			for (i=0; i < BWT.length; i++) {
@@ -794,7 +784,6 @@ for (i=1; i < hash0replacement_len; i++) {
 			recalculate(true);
 		},
 
-// EMRG CONV
 		// gives back true if more merging needs to be done, and false if
 		// a whole round of merging has been finished
 		notFullyMerged: function() {
@@ -855,20 +844,6 @@ for (i=1; i < hash0replacement_len; i++) {
 			if (length === undefined) {
 				length = GML.loop_threshold;
 			}
-
-
-
-/*
-// [OVERRIDE 1]
-if (nextXBW) { // if we are H_0
-	switch (pref_cur_i) { // switch according to aftersort (now manually 3x4)
-		case 3:
-			pref_cur_i = 4;
-		case 4:
-			pref_cur_i = 3;
-	}
-}
-*/
 
 
 			var pref_cur_is = [pref_cur_i];
@@ -1205,10 +1180,10 @@ sout += '<br>' +
 			//             prefix for this here in the previous step, then we do not
 			//             need to create it again)
 
-			var prefixes = ['', '']; // TODO EMRG :: the prefixes here are always just two... never more or less
+			var prefixes = ['', '']; // TODO :: the prefixes here are always just two... never more or less
 									 // all lines that need to be changed regarding this have
 									 // been highlighted as TE1TE
-// EMRG CONV
+
 			if (multi_cur_bwt[0] > subXBWs[0]._publishBWTlenWithF()) { // TE1TE - here we say if H_1 is bad, use H_2, and vice versa - but for three and more this is much more complicated, we need to instead think of a pool of candidates
 				return [1, sout, prefixes, split_nodes]; // TE1TE
 			} // TE1TE

@@ -596,14 +596,9 @@ window.GML_UI = {
 	fuseGraphXBWs: function() {
 		var el = this.activateDivOut(6, true, true);
 
-		// TODO EMRG :: actually implement fuse_XBWs within GML
-		el.innerHTML = '<div>' + GML.errorWrap('Sorry, this has not yet been implemented.') + '</div>';
-
-		/*
 		el.innerHTML = '<div>' + GML.fuse_XBWs(
 			document.getElementById('in-string-6-1').value.toUpperCase(),
 			document.getElementById('in-string-6-2').value.toUpperCase()) + '</div>';
-		*/
 	},
 
 
@@ -1129,7 +1124,7 @@ window.GML_UI = {
 
 		// replace some HTML commands with some LaTeX commands which do essentially the same =)
 		source = source.split('$').join('\\$');
-		source = source.split('#').join('\\#');
+		source = source.split('#').join('\\textbf{\\#}');
 		source = source.split('\\textbf{<i>i</i>}').join('$\\boldsymbol{i}$');
 		source = source.split('\\textbf{<i>M</i>}').join('$\\boldsymbol{M}$');
 		source = source.split('\\textbf{<i>F</i>}').join('$\\boldsymbol{F}$');

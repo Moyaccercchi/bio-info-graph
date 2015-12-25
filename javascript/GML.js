@@ -46,6 +46,7 @@
 	generate_BWTs_advanced_int: function(h1, h2, flat_merging);
 	merge_BWTs_advanced: function(h1, h2);
 	merge_XBWs: function(h1, h2);
+	fuse_XBWs: function(h1, h2);
 	nextNodes: function(i);
 	prevNodes: function(i);
 	finalComparison: function(findex);
@@ -1923,7 +1924,7 @@ window.GML = {
 
 
 	// takes in two graph strings
-	// gives out a string contain info about the XBW merging for both
+	// gives out an HTML text contain info about the XBW merging for both
 	merge_XBWs: function(h1, h2) {
 
 		var ret = this.generate_BWTs_advanced_int(h1, h2, true);
@@ -2251,6 +2252,89 @@ window.GML = {
 				GML.XBWs[GML_UI.cur_tab] = xbw12;
 				GML.XBWs[GML_UI.cur_tab].init(xbw12._publishFindex());
 				GML.XBWs[GML_UI.cur_tab].generateHTML();
+			}
+		}
+
+
+
+		sout += this.s_end_document;
+
+		// replace '^' with '#' before printout
+		sout = sout.replace(/\^/g, '#');
+
+		return sout;
+	},
+
+
+
+	// takes in two graph strings
+	// gives out an HTML text contain info about the XBW fusing for both
+	fuse_XBWs: function(h1, h2) {
+
+		var ret = this.generate_BWTs_advanced_int(h1, h2, true);
+
+		var sout = ret[0];
+
+		if (!this.error_flag) {
+
+			var unsuccessful = false;
+
+			var findex1 = ret[2];
+			var findex2 = ret[3];
+
+			var bwt1 = findex1[1];
+			var bwt2 = findex2[1];
+			var m1 = findex1[2];
+			var m2 = findex2[2];
+
+
+			sout += '<span id="in-jump-5-3"></span>';
+
+			if (this.verbosity > 1) {
+				sout += 'We now want to fuse the ' +
+						'XBW data we have for ' + this.DH_1 + ' and ' + this.DH_2 + '.' + this.nlnl;
+			}
+
+			if (this.verbosity > 2) {
+				sout += 'We need to flatten the BWTs and drop the prefixes.' +
+						this.nlnl;
+			}
+
+
+
+			// initialize XBW environments
+
+			var xbw1  = this.make_xbw_environment();
+			var xbw2  = this.make_xbw_environment();
+			var xbw12 = this.make_xbw_environment();
+
+			xbw1.init(findex1);
+			xbw2.init(findex2);
+
+			xbw12.initAsMergeHost();
+			xbw12.addSubXBW(xbw1);
+			xbw12.addSubXBW(xbw2);
+
+
+
+			if (this.verbosity > 3) {
+				sout += "For " + this.DH_1 + " we get:" + this.nlnl;
+
+				shide = '<div class="table_box">' + xbw1.generateTable() + '</div>';
+				sout += this.hideWrap(shide, 'Table') + this.nlnl;
+
+				sout += "And for " + this.DH_2 + " we have:" + this.nlnl;
+
+				shide = '<div class="table_box">' + xbw2.generateTable() + '</div>';
+				sout += this.hideWrap(shide, 'Table') + this.nlnl;
+			}
+
+
+
+			if ((!GML.hideXBWenvironments) && GML_UI) {
+				// start up control center for fused XBW
+				GML.XBWs[GML_UI.cur_tab] = xbw12;
+				//GML.XBWs[GML_UI.cur_tab].generateHTML();
 			}
 		}
 
@@ -3676,22 +3760,26 @@ window.GML = {
 			if (auto[i]) {
 
 				// ... construct a new .p array without any repeats ...
-				new_arr = [];
-				for (k=0; k < auto[i].p.length; k++) {
-					if (new_arr.indexOf(auto[i].p[k]) < 0) {
-						new_arr.push(auto[i].p[k]);
+				if (auto[i].p.length > 1) {
+					new_arr = [];
+					for (k=0; k < auto[i].p.length; k++) {
+						if (new_arr.indexOf(auto[i].p[k]) < 0) {
+							new_arr.push(auto[i].p[k]);
+						}
 					}
+					auto[i].p = new_arr;
 				}
-				auto[i].p = new_arr;
 
 				// ... and construct a new .n array without any repeats
-				new_arr = [];
-				for (k=0; k < auto[i].n.length; k++) {
-					if (new_arr.indexOf(auto[i].n[k]) < 0) {
-						new_arr.push(auto[i].n[k]);
+				if (auto[i].n.length > 1) {
+					new_arr = [];
+					for (k=0; k < auto[i].n.length; k++) {
+						if (new_arr.indexOf(auto[i].n[k]) < 0) {
+							new_arr.push(auto[i].n[k]);
+						}
 					}
+					auto[i].n = new_arr;
 				}
-				auto[i].n = new_arr;
 			}
 		}
 	},
@@ -3714,7 +3802,7 @@ window.GML = {
 				if (curNode.n.length > 0) {
 
 					// count downwards so that we reach j === 0 last
-					// (so that we do not append node j to each new path)
+					// (so that we do not append node 0 to each new path)
 					for (var j=curNode.n.length-1; j > -1; j--) {
 
 						if (paths[i].indexOf(curNode.n[j]) > -1) {
@@ -6537,7 +6625,9 @@ window.GML = {
 			sout += ', ';
 		}
 
-		sout = sout.slice(0, -2);
+		if (sout.length > 1) {
+			sout = sout.slice(0, -2);
+		}
 
 		sout += ']';
 

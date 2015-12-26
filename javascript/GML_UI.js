@@ -1288,9 +1288,11 @@ window.GML_UI = {
 
 	applyOptions: function() {
 
+		var TRUE = 'X';
+
 		GML.ao = parseInt(document.getElementById('in-options-array-offset').value, 10);
 		GML.loop_threshold = parseInt(document.getElementById('in-options-loop-threshold').value, 10);
-		GML.vis_width_override = document.getElementById('in-options-svg-width-override').innerHTML == 'X';
+		GML.vis_width_override = document.getElementById('in-options-svg-width-override').innerHTML == TRUE;
 		GML.vis_width_override_value = parseInt(document.getElementById('in-options-svg-width-override-value').value, 10);
 
 		for (var i = 0; i < this.upToTabs; i++) {
@@ -1299,17 +1301,17 @@ window.GML_UI = {
 			this.setJumpDispStyle(i, false);
 		}
 
-		GML.hideXBWenvironments = document.getElementById('in-options-show-xbw-envs').innerHTML != 'X';
+		GML.hideXBWenvironments = document.getElementById('in-options-show-xbw-envs').innerHTML !== TRUE;
 
 		GML.set_to_HTML();
 
 		var dispstyle = 'none';
 
-		if (document.getElementById('in-options-show-graph').innerHTML == 'X') {
+		if (document.getElementById('in-options-show-graph').innerHTML == TRUE) {
 			dispstyle = 'inline-block';
 		}
 
-		GML.show_auto_i = document.getElementById('in-options-show-autoi').innerHTML == 'X';
+		GML.show_auto_i = document.getElementById('in-options-show-autoi').innerHTML == TRUE;
 
 		document.getElementById('tab-btn-0').style.display = dispstyle;
 		document.getElementById('tab-btn-1').style.display = dispstyle;
@@ -1325,15 +1327,16 @@ window.GML_UI = {
 			env_links[i].style.display = env_disp;
 		}
 
-		GML.do_prefix_doubling = document.getElementById('in-options-do-prefix-doubling').innerHTML == 'X';
+		GML.do_prefix_doubling = document.getElementById('in-options-do-prefix-doubling').innerHTML == TRUE;
 
-		GML_UI.svg_font_latex = document.getElementById('in-options-svg-font-latex').innerHTML == 'X';
+		GML_UI.svg_font_latex = document.getElementById('in-options-svg-font-latex').innerHTML == TRUE;
 
-		GML.vis_show_hashtag = document.getElementById('in-options-show-hashtag').innerHTML == 'X';
-		GML.vis_show_dollarsign = document.getElementById('in-options-show-dollarsign').innerHTML == 'X';
-		GML.vis_always_search_path = document.getElementById('in-options-always-search-path').innerHTML == 'X';
-		GML.vis_find_shortest_path = document.getElementById('in-options-find-shortest-path').innerHTML == 'X';
-		GML.vis_alternate = document.getElementById('in-options-vis-alternate').innerHTML == 'X';
+		GML.vis_show_hashtag = document.getElementById('in-options-show-hashtag').innerHTML == TRUE;
+		GML.vis_show_dollarsign = document.getElementById('in-options-show-dollarsign').innerHTML == TRUE;
+		GML.vis_always_search_path = document.getElementById('in-options-always-search-path').innerHTML == TRUE;
+		GML.vis_find_shortest_path = document.getElementById('in-options-find-shortest-path').innerHTML == TRUE;
+		GML.vis_alternate = document.getElementById('in-options-vis-alternate').innerHTML == TRUE;
+		GML.vis_invert_colors = document.getElementById('in-options-svg-invert-colors').innerHTML == TRUE;
 
 		this.changeOptions_verbosity_update();
 
@@ -1342,22 +1345,25 @@ window.GML_UI = {
 
 	resetOptions: function() {
 
+		var TRUE = 'X', FALSE = '&nbsp;';
+
 		document.getElementById('in-options-array-offset').value = '0';
 		document.getElementById('in-options-loop-threshold').value = '100';
 
-		document.getElementById('in-options-show-xbw-envs').innerHTML = 'X';
-		document.getElementById('in-options-do-prefix-doubling').innerHTML = '&nbsp;';
-		document.getElementById('in-options-show-graph').innerHTML = '&nbsp;';
-		document.getElementById('in-options-show-autoi').innerHTML = '&nbsp;';
-		document.getElementById('in-options-show-hashtag').innerHTML = 'X';
-		document.getElementById('in-options-show-dollarsign').innerHTML = 'X';
-		document.getElementById('in-options-always-search-path').innerHTML = '&nbsp;';
-		document.getElementById('in-options-find-shortest-path').innerHTML = '&nbsp;';
-		document.getElementById('in-options-vis-alternate').innerHTML = 'X';
-		document.getElementById('in-options-svg-width-override').innerHTML = '&nbsp;';
+		document.getElementById('in-options-show-xbw-envs').innerHTML = TRUE;
+		document.getElementById('in-options-do-prefix-doubling').innerHTML = FALSE;
+		document.getElementById('in-options-show-graph').innerHTML = FALSE;
+		document.getElementById('in-options-show-autoi').innerHTML = FALSE;
+		document.getElementById('in-options-show-hashtag').innerHTML = TRUE;
+		document.getElementById('in-options-show-dollarsign').innerHTML = TRUE;
+		document.getElementById('in-options-always-search-path').innerHTML = FALSE;
+		document.getElementById('in-options-find-shortest-path').innerHTML = FALSE;
+		document.getElementById('in-options-vis-alternate').innerHTML = TRUE;
+		document.getElementById('in-options-svg-width-override').innerHTML = FALSE;
 		document.getElementById('in-options-svg-width-override-value').value = '1041';
+		document.getElementById('in-options-svg-invert-colors').innerHTML = FALSE;
 
-		document.getElementById('in-options-svg-font-latex').innerHTML = 'X';
+		document.getElementById('in-options-svg-font-latex').innerHTML = TRUE;
 
 		this.changeOptions_verbosity_compwidth = 100;
 

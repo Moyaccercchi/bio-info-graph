@@ -2805,7 +2805,7 @@ window.GML = {
 	vis_alternate: true,
 	vis_cur_alternate: 100,
 	vis_default_color: '#000',
-	vis_extra_color: '#C00',
+	vis_extra_arrow_color: '#C00',
 	vis_marker_arrow: 'markerArrow0',
 	vis_checkedge: '0_0',
 	vis_extra_high_edges: [],
@@ -2815,6 +2815,7 @@ window.GML = {
 	vis_displayed_edges: [],
 	vis_width_override: false,
 	vis_width_override_value: 1041,
+	vis_invert_colors: false,
 
 
 
@@ -2836,10 +2837,28 @@ window.GML = {
 
 		var default_color = this.vis_default_color;
 		var default_bg_color = '#FFF';
-		var extra_color = this.vis_extra_color;
+		var extra_color = '#C00';
+		var extra_above_color = extra_color;
 		var extra_bg_color = '#FCF';
+		var extra_circle_color = extra_color;
+		var extra_arrow_color = '#C00';
 		var high_color = '#A0A';
+		var high_above_color = high_color;
 		var high_bg_color = '#FFA';
+		var high_circle_color = high_color;
+
+		if (this.vis_invert_colors) {
+			extra_bg_color = '#C00';
+			extra_color = '#FFF';
+			extra_circle_color = '#000';
+			extra_above_color = extra_circle_color;
+			high_bg_color = '#A0A';
+			high_color = '#FFA';
+			high_circle_color = '#000';
+			high_above_color = high_circle_color;
+		}
+
+		this.vis_extra_arrow_color = extra_arrow_color;
 
 		var extra_high_nodes = [];
 		this.vis_extra_high_edges = [];
@@ -2899,7 +2918,7 @@ window.GML = {
 		sout += '<path d="M2,7 L2,9.5 L5,7 L2,4.5 L2,7" style="fill:' + default_color + ';" />';
 		sout += '</marker>';
 		sout += '<marker id="' + this.vis_marker_arrow + '_extra" markerWidth="13" markerHeight="13" refX="4" refY="7" orient="auto">';
-		sout += '<path d="M2,7 L2,9.5 L5,7 L2,4.5 L2,7" style="fill:' + extra_color + ';" />';
+		sout += '<path d="M2,7 L2,9.5 L5,7 L2,4.5 L2,7" style="fill:' + extra_arrow_color + ';" />';
 		sout += '</marker>';
 		sout += '</defs>';
 
@@ -2940,17 +2959,23 @@ window.GML = {
 
 			if (((j > 0) || (this.vis_show_hashtag)) && ((j < hlen-1) || (this.vis_show_dollarsign))) {
 				var highcolor = default_color;
+				var highabovecolor = default_color;
+				var circlecolor = default_color;
 				var bgcolor = default_bg_color;
 				if (extra_high_nodes.indexOf(i) >= 0) {
 					highcolor = extra_color;
+					highabovecolor = extra_above_color;
+					circlecolor = extra_circle_color;
 					bgcolor = extra_bg_color;
 				}
 				if (highlight_p12.indexOf(auto[i].f) >= 0) {
 					highcolor = high_color;
+					highabovecolor = high_above_color;
+					circlecolor = high_circle_color;
 					bgcolor = high_bg_color;
 				}
 
-				sout += '<circle cx="' + xoff + '" cy="' + y_mainrow + '" r="' + node_radius_outer + '" style="fill:' + highcolor + '" />';
+				sout += '<circle cx="' + xoff + '" cy="' + y_mainrow + '" r="' + node_radius_outer + '" style="fill:' + circlecolor + '" />';
 				sout += '<circle cx="' + xoff + '" cy="' + y_mainrow + '" r="' + node_radius_inner + '" style="fill:' + bgcolor + '" />';
 				sout += '<text x="' + xoff + '" y="' + (y_mainrow + 10) + '" text-anchor="middle" style="fill:' + highcolor + ';">' +
 						auto[i].c + '</text>';
@@ -2963,7 +2988,7 @@ window.GML = {
 					}
 
 					sout += '<text class="prefix" x="' + xoff +
-							'" y="78" text-anchor="middle" style="fill:' + highcolor + '">';
+							'" y="78" text-anchor="middle" style="fill:' + highabovecolor + '">';
 					if (showPrefixes) {
 						sout += auto[i].f;
 						if (this.show_auto_i) {
@@ -3063,13 +3088,19 @@ window.GML = {
 					positions[path[i]] = [xoff, yoffl];
 
 					var highcolor = default_color;
+					var highabovecolor = default_color;
+					var circlecolor = default_color;
 					var bgcolor = default_bg_color;
 					if (extra_high_nodes.indexOf(path[i]) >= 0) {
 						highcolor = extra_color;
+						highabovecolor = extra_above_color;
+						circlecolor = extra_circle_color;
 						bgcolor = extra_bg_color;
 					}
 					if (highlight_p12.indexOf(auto[path[i]].f) >= 0) {
 						highcolor = high_color;
+						highabovecolor = high_above_color;
+						circlecolor = high_circle_color;
 						bgcolor = high_bg_color;
 					}
 
@@ -3081,7 +3112,7 @@ window.GML = {
 						y_end_at = yoffl + node_radius_outer;
 					}
 
-					sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="' + node_radius_outer + '" style="fill:' + highcolor + '" />';
+					sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="' + node_radius_outer + '" style="fill:' + circlecolor + '" />';
 					sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="' + node_radius_inner + '" style="fill:' + bgcolor + '" />';
 					sout += '<text x="' + xoff + '" y="' + (yoffl+10) +
 							'" text-anchor="middle" style="fill:' + highcolor + ';">' +
@@ -3095,7 +3126,7 @@ window.GML = {
 						}
 
 						sout += '<text class="prefix" x="' + xoff + '" y="' + (yoffl-22) +
-								'" text-anchor="middle" style="fill:' + highcolor + '">';
+								'" text-anchor="middle" style="fill:' + highabovecolor + '">';
 						if (showPrefixes) {
 							sout += auto[path[i]].f;
 							if (this.show_auto_i) {
@@ -3255,7 +3286,7 @@ window.GML = {
 		var marker = this.vis_marker_arrow;
 
 		if (this.vis_extra_high_edges.indexOf(this.vis_checkedge) >= 0) {
-			strokecolor = this.vis_extra_color;
+			strokecolor = this.vis_extra_arrow_color;
 			marker += '_extra';
 		}
 

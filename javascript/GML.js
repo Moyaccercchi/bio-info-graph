@@ -3023,7 +3023,11 @@ window.GML = {
 				// add (at least one) new node
 
 				var path = [curNode_i];
-				xoff_start = positions[auto[curNode_i].p[0]][0];
+				if (positions[auto[curNode_i].p[0]] === undefined) {
+					xoff_start = 100;
+				} else {
+					xoff_start = positions[auto[curNode_i].p[0]][0];
+				}
 				var nextNode_i = curNode.n[0];
 
 				while (positions[nextNode_i] === undefined) {

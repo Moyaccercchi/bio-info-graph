@@ -2358,58 +2358,58 @@ window.GML = {
 		var curOrigin = this.p12_itlv[i];
 
 		// look at first letter of the prefix
-		var firstPrefLetter = this.p12[i][0][0];
+		var label = this.p12[i][0][0];
 		if (this.p12[i][0].indexOf(this.DS_1_o) === 0) {
-			firstPrefLetter = this.DS_1_o;
+			label = this.DS_1_o;
 			// the following line ensures that C vs. ACATG works for merge graph BWTs
 			// (merge node tables)
 			curOrigin = 1;
 		}
 		if (this.p12[i][0].indexOf(this.DK_1_o) === 0) {
-			firstPrefLetter = this.DK_1_o;
+			label = this.DK_1_o;
 		}
 
 		// keep track of how many nodes we need to jump over
-		var jumpOver = 0;
+		var jump_over = 0;
 
 		// count how many nodes to jump over (all nodes before i that have the same origin
 		// and the same first letter in their prefix count according to their M value)
 		for (var k=0; k < i; k++) {
-			if ((this.p12[k][0].slice(0, firstPrefLetter.length) === firstPrefLetter) && (this.p12_itlv[k] === curOrigin)) {
-				jumpOver += this.m[k].length;
+			if ((this.p12[k][0].slice(0, label.length) === label) && (this.p12_itlv[k] === curOrigin)) {
+				jump_over += this.m[k].length;
 			}
 		}
 
 		// the amount of nodes that we want to add to the result is equal to the M value
 		// of the considered node, i (as we are looking at the next nodes, going out from
 		// i, and the M value of node i tells us how many outgoing edges there are)
-		var addToResult = this.m[i].length;
+		var outdegree = this.m[i].length;
 
-		var retNodes = [];
+		var nodes_found = [];
 
 
 		// [NOTE P7]
 
 		// we here use firstPrefLetter[0] as $_0 is indexed as $, #_0 is indexed as #, etc.
 		if (curOrigin === 0) {
-			jumpOver = this.bwt_aftersort[firstPrefLetter[0]][jumpOver];
+			jump_over = this.bwt_aftersort[label[0]][jump_over];
 		}
 
 
 		// find nodes / columns whose BWTs contain this letter, and whose origin is the same,
 		// and jump over as many as necessary
 		for (var k=0; k < this.p12.length; k++) {
-			if ((this.p12_itlv[k] === curOrigin) && (this.bwt[k].indexOf(firstPrefLetter) > -1)) {
+			if ((this.p12_itlv[k] === curOrigin) && (this.bwt[k].indexOf(label) > -1)) {
 				// still jumping...
-				if (jumpOver > 0) {
-					jumpOver--;
+				if (jump_over > 0) {
+					jump_over--;
 				} else {
-					addToResult--;
-					retNodes.push(k);
+					outdegree--;
+					nodes_found.push(k);
 
 					// did we add all we want?
-					if (addToResult < 1) {
-						return retNodes; // we are already done here =)
+					if (outdegree < 1) {
+						return nodes_found; // we are already done here =)
 					}
 				}
 			}
@@ -2417,7 +2417,7 @@ window.GML = {
 
 		// we didn't get as many as we wanted, but we should return the ones we have anyway
 		// TODO :: maybe create an error message here? (at least some console-error stuff?)
-		return retNodes;
+		return nodes_found;
 	},
 
 

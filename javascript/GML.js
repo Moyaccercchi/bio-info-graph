@@ -74,6 +74,7 @@
 	arraysContainSameEls: function(a1, a2);
 	arrayContainsOtherArraysEls: function(a1, a2);
 	generateFfromPrefixesBWTM: function(prefixes, bwt, m);
+	checkAutomatonIsValid: function(auto);
 	computePrefixes: function(auto, spillover_into_auto);
 	workOnAutomatonPrefixes: function(auto, makePrefixSorted, addToSOut, spillover_into_auto);
 	workOnAutomatonPrefixes_int: function(auto, makePrefixSorted, addToSOut, spillover_into_auto);
@@ -754,6 +755,7 @@ window.GML = {
 						"into a prefix-sorted automaton." + this.nlnl;
 			}
 
+			// console.log('computePrefixes - 1');
 			auto = this.computePrefixes(auto);
 
 			if (this.verbosity > 5) {
@@ -774,6 +776,7 @@ window.GML = {
 			} else {
 
 				this.sout = '';
+				// console.log('makeAutomatonPrefixSorted - 1');
 				auto = this.makeAutomatonPrefixSorted(auto, this.verbosity > 3);
 
 				if (this.verbosity > 3) {
@@ -1002,8 +1005,11 @@ window.GML = {
 						"into prefix-sorted automata." + this.nlnl;
 			}
 
+			// console.log('computePrefixes - 2');
 			auto = this.computePrefixes(auto);
+			// console.log('computePrefixes - 3');
 			auto2 = this.computePrefixes(auto2);
+			// console.log('computePrefixes - 4');
 			auto1 = this.computePrefixes(auto1, auto2);
 
 			var isPrefSort = this.isAutomatonPrefixSorted(auto);
@@ -1011,6 +1017,7 @@ window.GML = {
 			var isPrefSort2 = this.isAutomatonPrefixSorted(auto2);
 
 			if (!isPrefSort) {
+				// console.log('makeAutomatonPrefixSorted - 2');
 				auto = this.makeAutomatonPrefixSorted(auto, false);
 				isPrefSort = this.isAutomatonPrefixSorted(auto);
 				if (!isPrefSort) {
@@ -1019,6 +1026,7 @@ window.GML = {
 			}
 
 			if (!isPrefSort2) {
+				// console.log('makeAutomatonPrefixSorted - 3');
 				auto2 = this.makeAutomatonPrefixSorted(auto2, false);
 				isPrefSort2 = this.isAutomatonPrefixSorted(auto2);
 				if (!isPrefSort2) {
@@ -1027,6 +1035,7 @@ window.GML = {
 			}
 
 			if (!isPrefSort1) {
+				// console.log('makeAutomatonPrefixSorted - 4');
 				auto1 = this.makeAutomatonPrefixSorted(auto1, false, auto2);
 				isPrefSort1 = this.isAutomatonPrefixSorted(auto1);
 				if (!isPrefSort1) {
@@ -1603,6 +1612,21 @@ window.GML = {
 
 						shide += replacement_prefixes.join(this.nlnl);
 						shide += this.nlnlnl;
+					}
+
+					var rp_split_on_one = 0;
+					for (var rp=0; rp < replacement_prefixes.length; rp++) {
+						if (replacement_prefixes[rp].indexOf(this.DS_1_o+this.DK_1_o) === 1) {
+							rp_split_on_one++;
+						}
+					}
+
+					if (rp_split_on_one > 1) {
+						sout += shide + '</div>';
+						// replace '^' with '#' before printout
+						sout = sout.replace(/\^/g, '#');
+						sout += this.errorWrap('Invalid input: Attempting to split nodes across graphs.', 'note');
+						return sout;
 					}
 
 					// 4 - insert these new prefixes instead of the original column
@@ -3911,10 +3935,20 @@ window.GML = {
 
 		var auto = [];
 
-		var outOf1 = 0; // position of $_1 in auto
+		var outOf1 = []; // position of $_1 in auto
 
 		var offset = auto1.length; // offset added to all positions within auto2
 		var del_i = -1; // keep track of the i of the deleted node
+
+		// if this.merge_directly is true, we leave out the $ node at the end of auto1,
+		// and we leave out the # node at the beginning of auto2
+		// if this.merge_directly is false, we leave these nodes in, but replace their
+		// labels by $_0 and #_0; also, if this.merge_directly is false, we are still
+		// implicitly assuming that $_0 has exactly one in-edge and #_0 has exactly one
+		// out-edge
+		if (this.merge_directly) {
+			offset -= 2;
+		}
 
 		// start building auto as copy of auto1
 		for (var i=0; i < auto1.length; i++) {
@@ -3924,17 +3958,20 @@ window.GML = {
 					if (this.merge_directly) {
 
 						del_i = i;
-						offset -= 2;
 
-						// we are here assuming that only one edge goes into $ in H_1
-						outOf1 = newNode.p[0];
+						outOf1 = this.deep_copy_array(newNode.p);
 
 						continue;
 					}
-					outOf1 = i;
+					outOf1 = [i];
 				}
 				auto.push(newNode);
 			}
+		}
+
+		// take out link to $_0
+		for (var j=0; j < outOf1.length; j++) {
+			auto[outOf1[j]].n.splice(auto[outOf1[j]].n.indexOf(del_i), 1);
 		}
 
 		// update counts of other nodes due to deletion of $ at the end of H_1
@@ -3955,15 +3992,17 @@ window.GML = {
 			}
 		}
 
-		var into2 = auto.length;  // position of #_1 in auto
+		var into2 = [auto.length];  // position of #_1 in auto
 		var i_start = 0;
 
 		if (this.merge_directly) {
 			
 			i_start = 1;
 
-			// we are here assuming that only one edge goes out of # in H_2
-			into2 = auto2[0].n[0] + offset;
+			into2 = this.deep_copy_array(auto2[0].n);
+			for (var i=0; i < into2.length; i++) {
+				into2[i] += offset;
+			}
 		}
 
 		// add all nodes from auto2
@@ -3980,15 +4019,24 @@ window.GML = {
 			}
 		}
 
+		// take out link to #_0
+		for (var j=0; j < into2.length; j++) {
+			auto[into2[j]].p.splice(auto[into2[j]].p.indexOf(offset), 1);
+		}
+
 		// fuse them together
 
 		// set outOf1.n = [into2] and into2.p = [outOf1]
-		auto[outOf1].n = [into2];
-		auto[into2].p = [outOf1];
+		for (var i=0; i < outOf1.length; i++) {
+			for (var j=0; j < into2.length; j++) {
+				auto[outOf1[i]].n.push(into2[j]);
+				auto[into2[j]].p.push(outOf1[i]);
+			}
+		}
 
 		if (!this.merge_directly) {
-			auto[outOf1].c = this.DS_1_o;
-			auto[into2].c = this.DK_1_o;
+			auto[outOf1[0]].c = this.DS_1_o;
+			auto[into2[0]].c = this.DK_1_o;
 		}
 
 		return auto;
@@ -4523,8 +4571,26 @@ window.GML = {
 
 
 	// takes in an automaton
+	// gives out nothing, but set the error_flag to true if the automaton is not valid
+	checkAutomatonIsValid: function(auto) {
+
+		// check that every node has a successor (except for the $ node)
+		for (var i=0; i < auto.length; i++) {
+			if (auto[i]) {
+				if ((auto[i].c !== this.DS) && (auto[i].n.length === 0)) {
+					GML.error_flag = true;
+					return;
+				}
+			}
+		}
+	},
+
+
+
+	// takes in an automaton
 	// gives out the automaton with prefixes calculated for each node
 	computePrefixes: function(auto, spillover_into_auto) {
+		// console.log('computePrefixes');
 		return this.workOnAutomatonPrefixes(auto, false, false, spillover_into_auto);
 	},
 
@@ -4541,6 +4607,9 @@ window.GML = {
 	// gives out the automaton with prefixes calculated for each node,
 	//   and converted into a prefix sorted automaton if makePrefixSorted is true
 	workOnAutomatonPrefixes: function(auto, makePrefixSorted, addToSOut, spillover_into_auto) {
+
+		// console.log('workOnAutomatonPrefixes');
+		// console.log(auto);
 
 		// while more work is required, do more work
 		while (this.workOnAutomatonPrefixes_int(auto, makePrefixSorted, addToSOut, spillover_into_auto)) {
@@ -4709,7 +4778,11 @@ window.GML = {
 									cur_auto = auto;
 								}
 
+								// console.log(cur_auto);
+								// console.log(curNodes[0][0]);
+
 								firstNodeLabel = cur_auto[cur_auto[curNodes[0][0]].n[0]].c;
+
 								var check_for_label = firstNodeLabel;
 
 								if (spillover_into_auto && (firstNodeLabel === this.DS) && (curNodes[0][1] === 0)) {
@@ -4926,6 +4999,7 @@ window.GML = {
 	//   should be verbose or not
 	// gives out a prefix sorted automaton recognizing the same language
 	makeAutomatonPrefixSorted: function(auto, addToSOut, spillover_into_auto) {
+		// console.log('makeAutomatonPrefixSorted');
 		return this.workOnAutomatonPrefixes(auto, true, addToSOut, spillover_into_auto);
 	},
 

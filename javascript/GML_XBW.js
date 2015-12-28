@@ -88,6 +88,8 @@ GML.make_xbw_environment = function() {
 	var last_tab = 0;
 
 
+	// assumes that BWT, M and F are set
+	// calculates FiC (as "char"), the C and ord arrays, and the alphabet alph
 	function recalculate(updateChar) {
 
 		/*
@@ -313,8 +315,20 @@ GML.make_xbw_environment = function() {
 			F = '';
 
 			if (findex) {
+
 				// create an automaton and prefixes that will be used later for visualization
 				auto = GML.getAutomatonFromFindex(findex);
+
+				// if something went wrong during merging (especially if our core assumptions
+				// were not adhered to), then we cannot actually compute the prefixes, so we
+				// need to check in advance, and if something goes wrong, then we need to abort
+				GML.error_flag = false;
+				GML.checkAutomatonIsValid(auto);
+				if (GML.error_flag) {
+					return;
+				}
+
+				// console.log('XBW computePrefixes');
 				auto = GML.computePrefixes(auto);
 
 				prefixes = [];
@@ -1420,6 +1434,9 @@ sout += '<br>' +
 
 			if (nodes.length > 0) {
 
+				// console.log('splitOneMore on nodes:');
+				// console.log(nodes);
+
 				sout += 'We observe a ' + GML.prefixErrorChar + ' in the prefix, ' +
 						'and therefore have to split a node in ' +
 						GML.make_DH(nodes[0].o) + '.<br>';
@@ -1585,15 +1602,15 @@ sout += '<br>' +
 
 			// 1. Take the node and copy it for each 0 in its M node.
 
-			// this line makes CACT and GCGTACG|,4,,7;,1,C,5 work and brings us down from 3 fails to 2 fails
-			sn_i = rank('1', M, sn_i);
-
 			// if the first character of the node to the split is #_0,
 			// then the input is most likely malformed
 			if (char[sn_i] === GML.DK_1) {
 				GML.error_flag = true;
 				return;
 			}
+
+			// this line makes CACT and GCGTACG|,4,,7;,1,C,5 work and brings us down from 3 fails to 2 fails
+			sn_i = rank('1', M, sn_i);
 
 			// get location of this node's M
 			var Mloc = sn_i;
@@ -1744,7 +1761,20 @@ sout += '<br>' +
 
 			sout += '<div>';
 			
-			sout += '<u>XBW Environment</u><br><br>';
+			sout += '<u>XBW Environment</u>';
+
+			if (GML.error_flag) {
+
+				sout += '<div class="error">Failure: The XBW environment cannot be initialized.</div>';
+				sout += '</div>';
+
+				document.getElementById('div-xbw-' + tab).innerHTML =
+					sout;
+
+				return;
+			}
+
+			sout += '<br><br>';
 
 			if (GML.verbosity > 7) {
 				sout += 'To start the XBW environment, we first of all flatten the BWT (replacing any ' +
@@ -1757,8 +1787,10 @@ sout += '<br>' +
 			var alph_and_C_str = this.get_alph_and_C_str();
 
 			sout += 'The alphabet that we are considering is <code>&#931; = ' + alph_and_C_str[0] +
-					'</code> and ' +
-					'the <i>C</i> array is <code>' + alph_and_C_str[1] + '</code>.<br><br>';
+					'</code>, ' +
+					'the ord array is <code>' + GML.printKeyValArr(alph, ord, true) + '</code> ' +
+					'and the <i>C</i> array is <code>' + alph_and_C_str[1] + '</code> ' +
+					'.<br><br>';
 
 			var shide = '<div class="table_box" id="div-xbw-' + tab + '-env-table">' +
 						'</div>';

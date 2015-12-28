@@ -144,6 +144,9 @@ window.GML_UI = {
 		Test Data
 	*/
 
+	// run predefined tests to check if invalid inputs are recognized
+	do_invalid_tests: false,
+
 	construct_tests: [
 		'ACEG',
 		'ACEG|,1,,3;,2,TB,4',
@@ -247,6 +250,9 @@ window.GML_UI = {
 		'GTCGAATGATTCGCC|,8,ATT,15',
 		'CTATA',
 		'GGAAGG',
+	],
+
+	invalid_construct_tests: [
 	],
 
 	merge_tests: [
@@ -354,6 +360,30 @@ window.GML_UI = {
 		'GGAAGG and GG',
 		'AATTCGGTAATACCGAAG|,15,AT,17 and TAAGATAAGGCAAA|,7,TA,11',
 		'CAGAGTATGCTCCGAG and CGATTACGCAT|,8,,10;,3,TA,9',
+		'GACGCCGACAAGAGACAAG|,2,CCA,11;,17,TC,18 and AGGTAGT',
+		'GTATAAATACAAGCTAAG|,17,CCA,18 and GATGA|,3,TCTC,4',
+		'CTAGA|,2,CC,3 and AAGATGAAAGGACCCCCA|,16,,18',
+		'GGGGAAAGCAAGATATCAGCCGT and CAAAAAGA|,4,,5;,3,C,5',
+		'ATGATG|,4,TC,6 and AAATGAGAT|,7,TGC,9;,5,AG,8',
+		'GCCAGA|,3,TAC,5 and CAACTCCAGGTTCCCTTATTG|,11,GTCA,13',
+	],
+
+	invalid_merge_tests: [
+		'CTATA and AAATATG|,3,AGTT,6',
+		'GTCGAATGATTCGCC|,8,ATT,15 and GCTTGTGCCTAA|,8,GT,12;,7,TGT,10;,2,A,12',
+		'TGGCC|,1,TA,2 and ACGCAGCTGCGAGAATA|,1,ACCC,5',
+		'GTAGCAAAGCGGTTTGGGATTG and GGTACCTATAGGGAA|,2,C,5',
+		'GAGTGGCCAAGTAGCCGGGTCACA|,23,GTC,24 and CGTACTG|,3,GAGC,7',
+		'GGTGGGATGGACTCTGTTGTG|,12,CACA,18 and CTGACTGTCAGGAGCTGA|,3,,9',
+		'GGTACGCGTTATCGT and CTGTCTATCTCTAACCC|,12,,16;,2,T,6;,11,GA,12',
+		'GTAAC and TTTCACGCGT|,5,C,10;,5,CTC,6;,1,CG,3;,8,A,9',
+		'GTAATGACGTAGCCC and ATCATCGCA|,3,CT,8',
+		'GGGTTAGCTGTCTAAG|,6,C,9 and ATGATGATA|,5,ATAT,6;,1,TA,2',
+		'GTAGAGAATGGACTACTG and TGTGTGTTC|,2,ACG,4',
+		'ACGCAAGATGTATC|,3,GGAC,9;,10,G,11 and CCCCT|,2,CTT,5',
+		'TCGTCGTGAG|,5,G,6 and GAACCCGGAATCTTA|,2,T,15',
+		'ACTCGTGAAG and GGGCA|,1,CTCA,5',
+		'ATACGTAATCGGTGGCTCGA|,14,TCG,20 and AGATCGAGCTG|,4,,10;,8,,10;,2,CTA,7',
 	],
 
 	test_something: function(tab, tests, what_are_we_doing, func, test_func_s) {
@@ -483,6 +513,10 @@ window.GML_UI = {
 
 		var cur_tests = this.construct_tests;
 
+		if (this.do_invalid_tests) {
+			cur_tests = cur_tests.concat(this.invalid_construct_tests);
+		}
+
 		if (use_random_data) {
 			cur_tests = [];
 			for (var i=0; i < 10; i++) {
@@ -533,6 +567,10 @@ window.GML_UI = {
 
 		var cur_tests = this.merge_tests;
 
+		if (this.do_invalid_tests) {
+			cur_tests = cur_tests.concat(this.invalid_merge_tests);
+		}
+
 		if (use_random_data) {
 			cur_tests = [];
 			for (var i=0; i < 10; i++) {
@@ -574,6 +612,10 @@ window.GML_UI = {
 	test_mergeGraphXBWs: function(use_random_data) {
 
 		var cur_tests = this.merge_tests;
+
+		if (this.do_invalid_tests) {
+			cur_tests = cur_tests.concat(this.invalid_merge_tests);
+		}
 
 		if (use_random_data) {
 			cur_tests = [];
@@ -1329,7 +1371,8 @@ window.GML_UI = {
 
 		GML.do_prefix_doubling = document.getElementById('in-options-do-prefix-doubling').innerHTML == TRUE;
 
-		GML_UI.svg_font_latex = document.getElementById('in-options-svg-font-latex').innerHTML == TRUE;
+		this.svg_font_latex = document.getElementById('in-options-svg-font-latex').innerHTML == TRUE;
+		this.do_invalid_tests = document.getElementById('in-options-do-invalid-tests').innerHTML == TRUE;
 
 		GML.vis_show_hashtag = document.getElementById('in-options-show-hashtag').innerHTML == TRUE;
 		GML.vis_show_dollarsign = document.getElementById('in-options-show-dollarsign').innerHTML == TRUE;
@@ -1351,6 +1394,7 @@ window.GML_UI = {
 		document.getElementById('in-options-loop-threshold').value = '100';
 
 		document.getElementById('in-options-show-xbw-envs').innerHTML = TRUE;
+		document.getElementById('in-options-do-invalid-tests').innerHTML = FALSE;
 		document.getElementById('in-options-do-prefix-doubling').innerHTML = FALSE;
 		document.getElementById('in-options-show-graph').innerHTML = FALSE;
 		document.getElementById('in-options-show-autoi').innerHTML = FALSE;

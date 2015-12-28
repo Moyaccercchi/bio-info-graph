@@ -304,9 +304,7 @@ GML.make_xbw_environment = function() {
 
 		init: function(findex) {
 
-			aftersort_bwt = [];
-			aftersort_fic = [];
-
+			aftersort = [];
 			subXBWs = [];
 			role = 1;
 
@@ -1602,12 +1600,7 @@ sout += '<br>' +
 
 			// 1. Take the node and copy it for each 0 in its M node.
 
-			// if the first character of the node to the split is #_0,
-			// then the input is most likely malformed
-			if (char[sn_i] === GML.DK_1) {
-				GML.error_flag = true;
-				return;
-			}
+			var Mloc1 = sn_i;
 
 			// this line makes CACT and GCGTACG|,4,,7;,1,C,5 work and brings us down from 3 fails to 2 fails
 			sn_i = rank('1', M, sn_i);
@@ -1617,9 +1610,15 @@ sout += '<br>' +
 			var Floc1 = select('1', F, sn_i);
 
 			// get number within this node's M
-			var Mloc1 = select('1', M, Mloc);
 			var Mloc2 = select('1', M, Mloc+1);
 			var Mnum = Mloc2 - Mloc1;
+
+			// if the first character of the node to the split is #_0,
+			// then the input is most likely malformed
+			if (char[Mloc1] === GML.DK_1) {
+				GML.error_flag = true;
+				return;
+			}
 
 			// we used to have sn_i here instead of Floc1 - but using Floc1 actually makes TC|,1,C,2 work and does not make all else fail =)
 			var prevNodes = [lf([Floc1, Floc1], BWT[Floc1], false, false)[0]];
@@ -1666,25 +1665,56 @@ sout += '<br>' +
 				//    so we can do this BEFORE step 3, in which we modify M again, based on the
 				//    locations of ones and zeroes BEFORE step 2.)
 
+
 				var newM = M.slice(0,Mloc1);
 				for (var i=Mloc1; i < Mloc2; i++) {
 					newM += '1';
 				}
 				newM += M.slice(Mloc2);
+/**/
 
 				// 3. Add as many zeroes to the M of the preceding node as nodes were copied.
 
+/*
+// emrg: actually check for Mnum
+if (newM[prevNodes[j]] === '0') {
+	console.log('blubb');
+	var newMn = newM.slice(0, prevNodes[j]+1);
+	for (var i=1; i < Mnum; i++) {
+		newMn += '1';
+	}
+	newMn += newM.slice(prevNodes[j]+1);
+
+} else {
+*/
 				var newMn = newM.slice(0, prevNodes[j]+1);
 				for (var i=1; i < Mnum; i++) {
 					newMn += '0';
 				}
 				newMn += newM.slice(prevNodes[j]+1);
 
+/*
+				var newMn = M.slice(0, prevNodes[j]+1);
+				for (var i=1; i < Mnum; i++) {
+					newMn += '0';
+				}
+				newMn += M.slice(prevNodes[j]+1);
+
+				var newM = newMn.slice(0,Mloc1);
+				for (var i=Mloc1; i < Mloc2; i++) {
+					newM += '1';
+				}
+				newM += newMn.slice(Mloc2);
+				newMn = newM;
+/**/
+
 				// actually update BWT, M and F explicitly
 
 				BWT = newBWT;
 				M = newMn;
 				F = newF;
+/*}*/
+
 			}
 
 			// TODO :: apply directly to char, ord etc., so that no recalculation is necessary
@@ -2076,9 +2106,10 @@ sout += '<br>' +
 			// but why?
 			this._splitNode(sn_i);
 
-			// TODO :: also update the graph (it is still the same graph afterwards!)
-
+			// TODO :: do this without converting to findex and back... (curly being done for graph generation)
+			this.init(this._publishFindex());
 			this.generateHTML();
+			this.generateGraph(undefined, tab);
 		},
 		lfHTML: function(tab) {
 

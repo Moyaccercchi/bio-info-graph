@@ -65,9 +65,12 @@
 	eliminateMultipleEdgesInAutomaton: function(auto);
 	checkAutomatonForLoops: function(auto);
 	mergeAutomata: function(auto1, auto2);
+	invertAutomaton: function(auto);
 	makeAutomatonReverseDeterministic: function(auto, addToSOut);
 	makeAutomatonReverseDeterministic_int: function(auto, addToSOut);
 	reverseDeterminizer: function(i, newchar, auto, addToSOut);
+	generateListOfAllPathsOfAutomaton: function(auto);
+	automatonsAreEquivalent: function(auto1, auto2);
 	mergeNodesInAutomaton: function(auto, node_1, node_2);
 	splitNodeInAutomaton: function(auto, node_i);
 	isAutomatonReverseDeterministic: function(auto);
@@ -1918,10 +1921,57 @@ window.GML = {
 			} else {
 				sout += 'We can see that the table found through merging the BWTs and the ' +
 						'table found through merging the graphs and then building one BWT ' +
-						'are not the same... Sad face. =(' + this.nlnl;
-				sout += '<div class="error">Failure</div>';
-				if (GML_UI) {
-					GML_UI.sad_face();
+						'are not the same.' + this.nlnl;
+
+
+
+				sout += 'Let us see if maybe, possibly, could-be-ly, ' + 
+						'the two graphs are different but the underlying language is the same.' +
+						this.nlnl;
+
+
+				// generate automatons from both tables
+				var our_auto = GML.getAutomatonFromFindex(findex_generated);
+				sout += this.visualize(our_auto);
+				var off_auto = GML.getAutomatonFromFindex(findex);
+				sout += this.visualize(off_auto);
+
+				/*
+				// we could make both automatons forward det (they are already rev det)
+				// - but it is not really necessary, as we will just compare the path lists
+				// afterwards anyway
+
+					// invert both automatons
+					sout += 'We invert both automatons:' + this.nlnl;
+					this.invertAutomaton(our_auto);
+					sout += this.visualize(our_auto);
+					this.invertAutomaton(off_auto);
+					sout += this.visualize(off_auto);
+
+					// make both automatons rev det
+					sout += 'We make both automatons reverse deterministic:' + this.nlnl;
+					this.makeAutomatonReverseDeterministic(our_auto);
+					sout += this.visualize(our_auto);
+					this.makeAutomatonReverseDeterministic(off_auto);
+					sout += this.visualize(off_auto);
+				*/
+
+				// compare the two automatons
+				sout += 'We now check whether the two automatons are equivalent. ';
+
+				if (this.automatonsAreEquivalent(our_auto, off_auto)) {
+					// EPIC WIN
+					sout += 'Aaand yes, they are! Whoop whoop!' + this.nlnl;
+					sout += '<div class="success">Success</div>';
+					if (GML_UI) {
+						GML_UI.happy_face();
+					}
+				} else {
+					sout += "But nope, they are not equivalent..." + this.nlnl;
+					sout += '<div class="error">Failure</div>';
+					if (GML_UI) {
+						GML_UI.sad_face();
+					}
 				}
 			}
 
@@ -2116,6 +2166,22 @@ window.GML = {
 
 							sstep += '</div>';
 
+							if ((this.verbosity > 9) && !this.error_flag) {
+								sround += 'The graphs now look like:';
+								var emrgauto = GML.getAutomatonFromFindex(xbw1._publishFindex());
+								emrgauto = GML.computePrefixes(emrgauto);
+								for (var ea=1; ea < emrgauto.length; ea++) {
+									if (emrgauto[ea].c === this.DS_1) {
+										emrgauto[ea].c = this.DS_1_o;
+									}
+								}
+								sround += this.visualize(emrgauto);
+								var emrgauto = GML.getAutomatonFromFindex(xbw2._publishFindex());
+								emrgauto = GML.computePrefixes(emrgauto);
+								emrgauto[0].c = this.DK_1_o;
+								sround += this.visualize(emrgauto);
+							}
+
 							sround += this.hideWrap(sstep, 'Step ' + patience) + this.nlnl;
 						}
 
@@ -2253,9 +2319,56 @@ window.GML = {
 			} else {
 				sout += 'We can see that these are different from each other, ' +
 						'so something somewhere went wrong...' + this.nlnl;
-				sout += '<div class="error">Failure</div>';
-				if (GML_UI) {
-					GML_UI.sad_face();
+
+
+
+				sout += 'Let us see if maybe, possibly, could-be-ly, ' + 
+						'the two graphs are different but the underlying language is the same.' +
+						this.nlnl;
+
+
+				// generate automatons from both tables
+				var our_auto = GML.getAutomatonFromFindex(xbw12._publishFindex());
+				sout += this.visualize(our_auto);
+				var off_auto = GML.getAutomatonFromFindex(xbw._publishFindex());
+				sout += this.visualize(off_auto);
+
+				/*
+				// we could make both automatons forward det (they are already rev det)
+				// - but it is not really necessary, as we will just compare the path lists
+				// afterwards anyway
+
+					// invert both automatons
+					sout += 'We invert both automatons:' + this.nlnl;
+					this.invertAutomaton(our_auto);
+					sout += this.visualize(our_auto);
+					this.invertAutomaton(off_auto);
+					sout += this.visualize(off_auto);
+
+					// make both automatons rev det
+					sout += 'We make both automatons reverse deterministic:' + this.nlnl;
+					this.makeAutomatonReverseDeterministic(our_auto);
+					sout += this.visualize(our_auto);
+					this.makeAutomatonReverseDeterministic(off_auto);
+					sout += this.visualize(off_auto);
+				*/
+
+				// compare the two automatons
+				sout += 'We now check whether the two automatons are equivalent. ';
+
+				if (this.automatonsAreEquivalent(our_auto, off_auto)) {
+					// EPIC WIN
+					sout += 'Aaand yes, they are! Whoop whoop!' + this.nlnl;
+					sout += '<div class="success">Success</div>';
+					if (GML_UI) {
+						GML_UI.happy_face();
+					}
+				} else {
+					sout += "But nope, they are not equivalent..." + this.nlnl;
+					sout += '<div class="error">Failure</div>';
+					if (GML_UI) {
+						GML_UI.sad_face();
+					}
 				}
 			}
 
@@ -2840,6 +2953,7 @@ window.GML = {
 	vis_width_override: false,
 	vis_width_override_value: 1041,
 	vis_invert_colors: false,
+	vis_add_IO_texts: false,
 
 
 
@@ -2856,7 +2970,7 @@ window.GML = {
 
 		this.vis_displayed_edges = [];
 
-		var texts_visible = showPrefixes || this.show_auto_i;
+		var texts_visible = showPrefixes || this.show_auto_i || this.vis_add_IO_texts;
 		this.vis_texts_visible = texts_visible;
 
 		var default_color = this.vis_default_color;
@@ -3015,12 +3129,18 @@ window.GML = {
 							'" y="78" text-anchor="middle" style="fill:' + highabovecolor + '">';
 					if (showPrefixes) {
 						sout += auto[i].f;
-						if (this.show_auto_i) {
+						if (this.show_auto_i || this.vis_add_IO_texts) {
 							sout += ', ';
 						}
 					}
 					if (this.show_auto_i) {
 						sout += (i + this.ao);
+						if (this.vis_add_IO_texts) {
+							sout += ', ';
+						}
+					}
+					if (this.vis_add_IO_texts) {
+						sout += 'I: ' + auto[i].p.length + ' O: ' + auto[i].n.length;
 					}
 					sout += '</text>';
 				}
@@ -3073,7 +3193,7 @@ window.GML = {
 
 				var path = [curNode_i];
 				if (positions[auto[curNode_i].p[0]] === undefined) {
-					xoff_start = 100;
+					xoff_start = xoff + 100;
 				} else {
 					xoff_start = positions[auto[curNode_i].p[0]][0];
 				}
@@ -3153,12 +3273,18 @@ window.GML = {
 								'" text-anchor="middle" style="fill:' + highabovecolor + '">';
 						if (showPrefixes) {
 							sout += auto[path[i]].f;
-							if (this.show_auto_i) {
+							if (this.show_auto_i || this.vis_add_IO_texts) {
 								sout += ', ';
 							}
 						}
 						if (this.show_auto_i) {
 							sout += (path[i] + this.ao);
+							if (this.vis_add_IO_texts) {
+								sout += ', ';
+							}
+						}
+						if (this.vis_add_IO_texts) {
+							sout += ' I: ' + auto[path[i]].p.length + ' O: ' + auto[path[i]].n.length;
 						}
 						sout += '</text>';
 					}
@@ -4044,6 +4170,53 @@ window.GML = {
 
 
 
+	// takes in an automaton
+	// gives out nothing, but changes every edge in the automaton
+	//   with an edge in the other direction
+	invertAutomaton: function(auto) {
+		var startNode = 0;
+		var endNode, cpy;
+
+		// exchange .n and .p for all nodes
+		for (var i=0; i < auto.length; i++) {
+			if (auto[i]) {
+				cpy = auto[i].n;
+				if (cpy.length === 0) {
+					endNode = i;
+				}
+				auto[i].n = auto[i].p;
+				auto[i].p = cpy;
+			}
+		}
+
+		// exchange start and end node, so that the start node lies in once again [0]
+		cpy = auto[endNode];
+		auto[endNode] = auto[startNode];
+		auto[startNode] = cpy;
+		auto[startNode].c = this.DK;
+		auto[endNode].c = this.DS;
+
+		var sn = auto[startNode].n;
+		for (var i=0; i < sn.length; i++) {
+			for (var j=0; j < auto[sn[i]].p.length; j++) {
+				if (auto[sn[i]].p[j] === endNode) {
+					auto[sn[i]].p[j] = startNode;
+				}
+			}
+		}
+
+		var ep = auto[endNode].p;
+		for (var i=0; i < ep.length; i++) {
+			for (var j=0; j < auto[ep[i]].n.length; j++) {
+				if (auto[ep[i]].n[j] === startNode) {
+					auto[ep[i]].n[j] = endNode;
+				}
+			}
+		}
+	},
+
+
+
 	// takes in an automaton and a boolean parameter stating whether we should be verbose or not
 	// gives out a reverse deterministic automaton realizing the same language
 	makeAutomatonReverseDeterministic: function(auto, addToSOut) {
@@ -4318,6 +4491,84 @@ window.GML = {
 
 
 		return false;
+	},
+
+
+
+	// takes in an automaton
+	// gives out a list of all paths in the automaton
+	generateListOfAllPathsOfAutomaton: function(auto) {
+
+		var out_list = [];
+		var paths = [[0]];
+
+		while (paths.length > 0) {
+
+			for (var i=0; i < paths.length; i++) {
+
+				var curNode = auto[paths[i][paths[i].length-1]];
+
+				if (curNode.n.length > 0) {
+
+					// count downwards so that we reach j === 0 last
+					// (so that we do not append node 0 to each new path)
+					for (var j=curNode.n.length-1; j > -1; j--) {
+
+						if (j === 0) {
+
+							// append one more node to this path
+							paths[i].push(curNode.n[0]);
+
+						} else {
+
+							// add more paths based on the current path
+							var nextPath = this.deep_copy_array(paths[i]);
+							nextPath.push(curNode.n[j]);
+							paths.push(nextPath);
+						}
+					}
+				} else {
+					// add the path to the list if it reached the end
+					var sadd = '';
+					for (var j=0; j < paths[i].length; j++) {
+						sadd += auto[paths[i][j]].c;
+					}
+					out_list.push(sadd);
+					paths.splice(i, 1);
+				}
+			}
+		}
+
+		return out_list;
+	},
+
+
+
+	// takes in two automatons
+	// gives out true if both automatons are equivalent, or false otherwise
+	automatonsAreEquivalent: function(auto1, auto2) {
+
+		// generate all paths (as list of strings) through auto1
+		var list1 = this.generateListOfAllPathsOfAutomaton(auto1);
+
+		// generate all paths (as list of strings) through auto2
+		var list2 = this.generateListOfAllPathsOfAutomaton(auto2);
+
+		// check if list 1 has any elements that list 2 does not have
+		for (var i=0; i < list1.length; i++) {
+			if (list2.indexOf(list1[i]) < 0) {
+				return false;
+			}
+		}
+
+		// check if list 2 has any elements that list 1 does not have
+		for (var i=0; i < list2.length; i++) {
+			if (list1.indexOf(list2[i]) < 0) {
+				return false;
+			}
+		}
+
+		return true;
 	},
 
 
@@ -5181,7 +5432,8 @@ window.GML = {
 		var firstNodei;
 
 		for (i=0; i < this.p12.length; i++) {
-			if (this.p12[i][0] === this.DK) {
+			// checking against this.DK_1 only for unusual use-case of converting H_1 instead of H_12
+			if ((this.p12[i][0] === this.DK) || (this.p12[i][0] === this.DK_1)) {
 				firstNodei = i;
 				break;
 			}

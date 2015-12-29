@@ -1031,6 +1031,7 @@ window.GML = {
 			if (!isPrefSort2) {
 				// console.log('makeAutomatonPrefixSorted - 3');
 				auto2 = this.makeAutomatonPrefixSorted(auto2, false);
+
 				isPrefSort2 = this.isAutomatonPrefixSorted(auto2);
 				if (!isPrefSort2) {
 					sout += "Ooops! We do not have a prefix-sorted automaton for " + this.DH_2 + "!" + this.nlnl;
@@ -1040,6 +1041,12 @@ window.GML = {
 			if (!isPrefSort1) {
 				// console.log('makeAutomatonPrefixSorted - 4');
 				auto1 = this.makeAutomatonPrefixSorted(auto1, false, auto2);
+
+				if (this.error_flag) {
+					sout += this.errorWrap('Invalid input: Attempting to split nodes across graph boundaries.', 'note');
+					return [sout];
+				}
+
 				isPrefSort1 = this.isAutomatonPrefixSorted(auto1);
 				if (!isPrefSort1) {
 					sout += "Ooops! We do not have a prefix-sorted automaton for " + this.DH_1 + "!" + this.nlnl;
@@ -1565,6 +1572,15 @@ window.GML = {
 
 					for (i=0; i < next_nodes.length; i++) {
 						var pref;
+
+// EMRG 2
+if (this.p12[next_nodes[i]] === undefined) {
+	sout += shide + '</div>';
+	// replace '^' with '#' before printout
+	sout = sout.replace(/\^/g, '#');
+	sout += this.errorWrap('EMRG 3', 'error');
+	return sout;
+}
 
 						if (this.do_prefix_doubling) {
 							pref = firstRedPrefix + this.p12[next_nodes[i]][0];
@@ -2375,16 +2391,6 @@ window.GML = {
 
 
 
-			// TODO :: analyze and use these... and then take them out =)
-
-			console.log('xbw findex:');
-			console.log(xbw._publishFindex());
-
-			console.log('xbw12 findex:');
-			console.log(xbw12._publishFindex());
-
-
-
 			if ((!GML.hideXBWenvironments) && GML_UI) {
 				// start up control center for merged XBW
 				GML.XBWs[GML_UI.cur_tab] = xbw12;
@@ -2494,6 +2500,11 @@ window.GML = {
 
 		// the origin of our node, which we will expect all other nodes to have too
 		var curOrigin = this.p12_itlv[i];
+
+// EMRG 1
+if (this.p12[i] === undefined) {
+	return [];
+}
 
 		// look at first letter of the prefix
 		var label = this.p12[i][0][0];
@@ -4912,6 +4923,8 @@ window.GML = {
 	//   on the makePrefixSorted parameter)
 	workOnAutomatonPrefixes_int: function(auto, makePrefixSorted, addToSOut, spillover_into_auto) {
 
+// console.log('newin');
+
 		// start by setting all prefixes just to the labels themselves
 		for (var i=0; i < auto.length; i++) {
 			if (auto[i]) {
@@ -5018,6 +5031,7 @@ window.GML = {
 											// let's spill over while reconstructing the existing prefix
 
 											curNode = [spillover_into_auto[0], 1];
+											allEncounteredNodes.push([[0, 1]]);
 										}
 										if (curNode[1] === 1) {
 
@@ -5048,12 +5062,15 @@ window.GML = {
 										curNodes.push([spillover_into_auto[0].n[cn], 1]);
 									}
 								}
+
 								if (spillover_into_auto && (curNodes[0][1] === 1)) {
 									// we already spilled over way back...
 									cur_auto = spillover_into_auto;
+//console.log('1: spillover_into_auto');
 								} else {
 									// no spillover happening
 									cur_auto = auto;
+//console.log('1: auto');
 								}
 
 								// console.log(cur_auto);
@@ -5074,8 +5091,10 @@ window.GML = {
 								for (var l=0; l < curNodes.length; l++) {
 									if (spillover_into_auto && (curNodes[l][1] === 1)) {
 										cur_auto = spillover_into_auto;
+//console.log('2: spillover_into_auto');
 									} else {
 										cur_auto = auto;
+//console.log('2: auto');
 									}
 									var curNode = cur_auto[curNodes[l][0]];
 									for (var m=0; m < curNode.n.length; m++) {
@@ -5104,13 +5123,18 @@ window.GML = {
 										var orig_node = false;
 										var orig_node_i;
 
+//console.log('start with 3');
+//console.log(allEncounteredNodes);
 										for (var l=allEncounteredNodes.length-1; l > -1; l--) {
 											for (var m=allEncounteredNodes[l].length-1; m > -1; m--) {
 												if (allEncounteredNodes[l][m][1] === 1) {
 													cur_auto = spillover_into_auto;
+//console.log('3: ' + l + ' ' + m + ' spillover_into_auto');
 												} else {
 													cur_auto = auto;
+//console.log('3: ' + l + ' ' + m + ' auto');
 												}
+//console.log('c: ' + cur_auto[allEncounteredNodes[l][m][0]].c + ' n.length: ' + cur_auto[allEncounteredNodes[l][m][0]].n.length);
 												if (cur_auto[allEncounteredNodes[l][m][0]].n.length > 1) {
 													// we actually need deep copies, so that we can
 													// later do work on this without getting REALLY
@@ -5123,6 +5147,14 @@ window.GML = {
 											if (orig_node) {
 												break;
 											}
+										}
+
+										// the node that they want us to split is the #_0 node in H_1...
+										// meaning that we have a splitover...
+										// which shows us that we have invalid input!
+										if ((orig_node_i === 0) && (allEncounteredNodes[l][m][1] === 1)) {
+											this.error_flag = true;
+											return false;
 										}
 
 										if (!orig_node.n) {

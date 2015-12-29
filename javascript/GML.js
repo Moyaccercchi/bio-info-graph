@@ -1949,6 +1949,7 @@ window.GML = {
 				// generate automatons from both tables
 				var our_auto = GML.getAutomatonFromFindex(findex_generated);
 				sout += this.visualize(our_auto);
+
 				var off_auto = GML.getAutomatonFromFindex(findex);
 				sout += this.visualize(off_auto);
 
@@ -2196,6 +2197,7 @@ window.GML = {
 
 						if ((this.verbosity > 9) && !this.error_flag) {
 							sround += 'The graphs now look like:';
+
 							var emrgauto = GML.getAutomatonFromFindex(xbw1._publishFindex());
 							emrgauto = GML.computePrefixes(emrgauto);
 							for (var ea=1; ea < emrgauto.length; ea++) {
@@ -2204,6 +2206,7 @@ window.GML = {
 								}
 							}
 							sround += this.visualize(emrgauto);
+
 							var emrgauto = GML.getAutomatonFromFindex(xbw2._publishFindex());
 							emrgauto = GML.computePrefixes(emrgauto);
 							emrgauto[0].c = this.DK_1_o;
@@ -2343,8 +2346,21 @@ window.GML = {
 						this.nlnl;
 
 				// generate automatons from both tables
+
 				var our_auto = GML.getAutomatonFromFindex(xbw12._publishFindex());
+				if (this.error_flag) {
+					sout += "Oh no, they are not equivalent - " +
+							"as the merged one is not even working at all..." + this.nlnl;
+					sout += '<div class="error">Failure</div>';
+					if (GML_UI) {
+						GML_UI.sad_face();
+					}
+					// replace '^' with '#' before printout
+					sout = sout.replace(/\^/g, '#');
+					return sout;
+				}
 				sout += this.visualize(our_auto);
+
 				var off_auto = GML.getAutomatonFromFindex(xbw._publishFindex());
 				sout += this.visualize(off_auto);
 
@@ -2969,6 +2985,8 @@ window.GML = {
 	vis_width_override_value: 1041,
 	vis_invert_colors: false,
 	vis_add_IO_texts: false,
+	vis_y_start_at: 0,
+	vis_y_end_at: 0,
 
 
 
@@ -3029,8 +3047,8 @@ window.GML = {
 		var y_end_cur = y_mainrow + 20;
 
 		// keep track of how much of the output is visible vertically
-		var y_start_at = y_start_cur;
-		var y_end_at = y_end_cur;
+		this.vis_y_start_at = y_start_cur;
+		this.vis_y_end_at = y_end_cur;
 
 		if (show_vis_hl && (this.vis_highlight_nodes.length > 0) && (this.vis_highlight_nodes[0].length > 0)) {
 
@@ -3136,8 +3154,8 @@ window.GML = {
 				if (texts_visible) {
 
 					// adjust viewport size to also show the text above the nodes
-					if (y_start_at > y_start_cur - y_text_off) {
-						y_start_at = y_start_cur - y_text_off;
+					if (this.vis_y_start_at > y_start_cur - y_text_off) {
+						this.vis_y_start_at = y_start_cur - y_text_off;
 					}
 
 					sout += '<text class="prefix" x="' + xoff +
@@ -3266,11 +3284,11 @@ window.GML = {
 					}
 
 					// adjust viewport size
-					if (y_start_at > yoffl - node_radius_outer) {
-						y_start_at = yoffl - node_radius_outer;
+					if (this.vis_y_start_at > yoffl - node_radius_outer) {
+						this.vis_y_start_at = yoffl - node_radius_outer;
 					}
-					if (y_end_at < yoffl + node_radius_outer) {
-						y_end_at = yoffl + node_radius_outer;
+					if (this.vis_y_end_at < yoffl + node_radius_outer) {
+						this.vis_y_end_at = yoffl + node_radius_outer;
 					}
 
 					sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="' + node_radius_outer + '" style="fill:' + circlecolor + '" />';
@@ -3282,8 +3300,8 @@ window.GML = {
 					if (texts_visible) {
 
 						// adjust viewport size to also show the text above the nodes
-						if (y_start_at > yoffl - node_radius_outer - y_text_off) {
-							y_start_at = yoffl - node_radius_outer - y_text_off;
+						if (this.vis_y_start_at > yoffl - node_radius_outer - y_text_off) {
+							this.vis_y_start_at = yoffl - node_radius_outer - y_text_off;
 						}
 
 						sout += '<text class="prefix" x="' + xoff + '" y="' + (yoffl-22) +
@@ -3347,11 +3365,11 @@ window.GML = {
 				var yoff_view = (yoff + yoffdl)/2;
 
 				// adjust viewport size
-				if (y_start_at > yoff_view) {
-					y_start_at = yoff_view;
+				if (this.vis_y_start_at > yoff_view) {
+					this.vis_y_start_at = yoff_view;
 				}
-				if (y_end_at < yoff_view) {
-					y_end_at = yoff_view;
+				if (this.vis_y_end_at < yoff_view) {
+					this.vis_y_end_at = yoff_view;
 				}
 
 				this.vis_checkedge = from + '_' + to;
@@ -3373,11 +3391,11 @@ window.GML = {
 		}
 
 
-		y_start_at -= 2;
-		y_end_at += 2;
+		this.vis_y_start_at -= 2;
+		this.vis_y_end_at += 2;
 
 		// we display the visible part vertically
-		var svgheight = y_end_at - y_start_at;
+		var svgheight = this.vis_y_end_at - this.vis_y_start_at;
 
 		// we display the entire mainrow, but we can cut off 30px of whitespace in the front and back
 		// (but we give it half a pixel on each side to have a little bit of spillover room...
@@ -3396,11 +3414,11 @@ window.GML = {
 		sprev += '<svg ';
 		sprev += 'style="width:' + svgwidth + 'px;height:' + svgheight + 'px" ';
 		sprev += 'xmlns="http:/' + '/www.w3.org/2000/svg" version="1.1"' +
-				 'viewBox="' + x_start_at + ' ' + y_start_at;
+				 'viewBox="' + x_start_at + ' ' + this.vis_y_start_at;
 		sprev += ' ' + svgwidth + ' ' + svgheight +
 				 '" preserveAspectRatio="xMidYMid slice">';
 
-		sprev += '<rect x="' + x_start_at + '" y="' + y_start_at + '" width="' + svgwidth + '" ' +
+		sprev += '<rect x="' + x_start_at + '" y="' + this.vis_y_start_at + '" width="' + svgwidth + '" ' +
 				 'height="' + svgheight + '" style="fill:#FFF" />';
 
 		sout = sprev + sout;
@@ -3510,11 +3528,21 @@ window.GML = {
 				if (this.vis_cur_alternate > 100) {
 					y_q = y_start + 100;
 					y_start += 25;
+
+					// adjust viewport size
+					if (this.vis_y_end_at < y_start + 40) {
+						this.vis_y_end_at = y_start + 40;
+					}
 				} else {
 					y_q = y_start - 100;
 					y_start -= 25;
 					if (this.vis_texts_visible) {
 						y_start -= 10;
+					}
+
+					// adjust viewport size
+					if (this.vis_y_start_at > y_start - 40) {
+						this.vis_y_start_at = y_start - 40;
 					}
 				}
 				y_end = y_start;
@@ -5501,6 +5529,11 @@ window.GML = {
 				firstNodei = i;
 				break;
 			}
+		}
+
+		if (firstNodei === undefined) {
+			this.error_flag = true;
+			return;
 		}
 
 		var p12ToAuto = [];

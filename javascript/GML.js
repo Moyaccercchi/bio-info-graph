@@ -2354,6 +2354,9 @@ window.GML = {
 				// compare the two automatons
 				sout += 'We now check whether the two automatons are equivalent. ';
 
+				this.checkAutomatonForLoops(our_auto);
+				this.checkAutomatonForLoops(off_auto);
+
 				if (this.automatonsAreEquivalent(our_auto, off_auto)) {
 					// EPIC WIN
 					sout += 'Aaand yes, they are! Whoop whoop!' + this.nlnl;
@@ -4558,6 +4561,15 @@ window.GML = {
 	// takes in two automatons
 	// gives out true if both automatons are equivalent, or false otherwise
 	automatonsAreEquivalent: function(auto1, auto2) {
+
+		this.error_flag = false;
+		this.checkAutomatonForLoops(auto1);
+		this.checkAutomatonForLoops(auto2);
+
+		// abort if we have infinite loops
+		if (this.error_flag) {
+			return false;
+		}
 
 		// generate all paths (as list of strings) through auto1
 		var list1 = this.generateListOfAllPathsOfAutomaton(auto1);

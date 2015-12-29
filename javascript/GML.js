@@ -1573,14 +1573,16 @@ window.GML = {
 					for (i=0; i < next_nodes.length; i++) {
 						var pref;
 
-// EMRG 2
-if (this.p12[next_nodes[i]] === undefined) {
-	sout += shide + '</div>';
-	// replace '^' with '#' before printout
-	sout = sout.replace(/\^/g, '#');
-	sout += this.errorWrap('EMRG 3', 'error');
-	return sout;
-}
+						/*
+						// EMRG - this can be used to prevent crashes, and should probably actually not be commented out
+						if (this.p12[next_nodes[i]] === undefined) {
+							sout += shide + '</div>';
+							// replace '^' with '#' before printout
+							sout = sout.replace(/\^/g, '#');
+							sout += this.errorWrap('Failure', 'error');
+							return sout;
+						}
+						*/
 
 						if (this.do_prefix_doubling) {
 							pref = firstRedPrefix + this.p12[next_nodes[i]][0];
@@ -1938,7 +1940,6 @@ if (this.p12[next_nodes[i]] === undefined) {
 				sout += 'We can see that the table found through merging the BWTs and the ' +
 						'table found through merging the graphs and then building one BWT ' +
 						'are not the same.' + this.nlnl;
-
 
 
 				sout += 'Let us see if maybe, possibly, could-be-ly, ' + 
@@ -2336,7 +2337,6 @@ if (this.p12[next_nodes[i]] === undefined) {
 						'so something somewhere went wrong...' + this.nlnl;
 
 
-
 				sout += 'Let us see if maybe, possibly, could-be-ly, ' + 
 						'the two graphs are different but the underlying language is the same.' +
 						this.nlnl;
@@ -2501,10 +2501,12 @@ if (this.p12[next_nodes[i]] === undefined) {
 		// the origin of our node, which we will expect all other nodes to have too
 		var curOrigin = this.p12_itlv[i];
 
-// EMRG 1
-if (this.p12[i] === undefined) {
-	return [];
-}
+		/*
+		// EMRG - this can be used to prevent crashes, and should probably actually not be commented out
+		if (this.p12[i] === undefined) {
+			return [];
+		}
+		*/
 
 		// look at first letter of the prefix
 		var label = this.p12[i][0][0];

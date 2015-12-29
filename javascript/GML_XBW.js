@@ -728,48 +728,6 @@ GML.make_xbw_environment = function() {
 					'Table') + GML.nlnl;
 			}
 
-			/*
-			Previous M approach:
-			*/
-			// keeping this one in lets CAGCC|,2,,4 and TT|,1,AGG,2   and  CCCAGCC|,4,,6 and TT|,1,AGG,2 fail...
-
-			if (verbose) {
-				sout += 'We slice around the <i>M</i> value magically, into the parts' + GML.nlnl +
-						M.slice(0, loc+2) + GML.nlnl +
-						GML.repeatstr(old_M_slice.length-1, '1') + GML.nlnl +
-						M.slice(loc+2, crossstart) + GML.nlnl +
-						M[loc] + ':' + GML.nlnl;
-			}
-
-			M = M.slice(0, loc+2) +
-				GML.repeatstr(old_M_slice.length-1, '1') +
-				M.slice(loc+2, crossstart) +
-				M[loc];
-
-			/*
-			M = M.slice(0, loc) +
-				GML.repeatstr(old_M_slice.length, '1') +
-				M.slice(loc+1, crossstart) +
-				M[loc];
-			*/
-
-			if (verbose) {
-				sout += GML.hideWrap(
-					'<div class="table_box">' + this.generateSubTables() + '</div>',
-					'Table') + GML.nlnl;
-			}
-
-			/*
-			However, this fails for CAGCC|,2,,4 and TT|,1,AGG,2.
-			We therefore have another good think about what we actually want to do... and basically it is this:
-			* adjust the FiC and BWT completely as necessary, completely ignoring M
-			* then figure out which BWT was put instead of #_0
-			* for these, find the nodes with the corresponding FiC
-			  (that is, if the BWT had #_0, replaced by C 2 and C 3, then find the FiC with C 2 and C 3)
-			* then set the M for these (e.g. for C 2 set M = 1 and for C 3 set M = 0)
-			=> which we are all doing in // [HERE]
-			*/
-
 			// We now exchange
 			//   BWT in position where FiC == $_0
 			// and
@@ -793,7 +751,27 @@ GML.make_xbw_environment = function() {
 			firstHash0Replacement = rank(BWTatpos, BWT, firstHash0Replacement);
 			firstHash0Replacement = select(BWTatpos, char, firstHash0Replacement);
 
-			// this is how it should be
+
+			if (verbose) {
+				sout += 'We slice around the <i>M</i> value magically, into the parts' + GML.nlnl +
+						M.slice(0, firstHash0Replacement) + GML.nlnl +
+						GML.repeatstr(old_M_slice.length, '1') + GML.nlnl +
+						M.slice(firstHash0Replacement+1, crossstart) + GML.nlnl +
+						M[firstHash0Replacement] + ':' + GML.nlnl;
+			}
+
+			M = M.slice(0, firstHash0Replacement) +
+				GML.repeatstr(old_M_slice.length, '1') +
+				M.slice(firstHash0Replacement+1, crossstart) +
+				M[firstHash0Replacement];
+
+			if (verbose) {
+				sout += GML.hideWrap(
+					'<div class="table_box">' + this.generateSubTables() + '</div>',
+					'Table') + GML.nlnl;
+			}
+
+
 			for (i=1; i < hash0replacement_len; i++) {
 				M = GML.setInString(M, firstHash0Replacement+i, '0');
 			}

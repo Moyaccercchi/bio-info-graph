@@ -256,6 +256,7 @@ window.GML_UI = {
 		'GACGTACCTG|,2,T,12;,3,,5;,6,,10;,6,,8',
 		'GACGTACCTG|,4,T,2;,3,,5;,6,,10;,6,,8',
 		'GACGTACCTG|,2,T,4;,a:3,,5;,6,,10;,6,,8',
+		'ATCTCAG|,1,GG,4;a,2,C,6;,a:1,G,7',
 	],
 
 	merge_tests: [
@@ -378,6 +379,11 @@ window.GML_UI = {
 		'GAGTATAAGCCA|,9,,10 and GGCGCGGTCAGTT|,12,GC,13;,2,GAT,6',
 		'AACCA|,4,CTTT,5;,4,CA,5;,4,ACG,5 and AGGTTATAGAT|,7,CAT,9;,2,,11',
 		'TCCGCTT|,2,TTTG,6;,4,ACT,6;,3,GGTG,6;,5,AACG,7;,2,ATC,5;,4,,5;,3,AA,6;,3,GGA,7 and TCGACATTGCTGCAGGTT|,14,CT,18',
+		'CCCAGCC|,4,,6 and TT|,1,AGG,2',
+		'CAGCC|,2,,4 and TT|,1,AGG,2',
+		'TTCCGCGGCTCCATG|,14,CGTA,15 and ACCGTCCTCA|,8,CCGT,9;,8,C,10;,4,,10',
+		'ACTCTGAATGCTGTACACTCA|,5,,19;,13,C,14;,17,AGA,21 and GTTTGGGGA|,6,,9',
+		'ACCTG|,3,AAC,5;,1,C,2;,1,C,2 and ACGATGAAACGGATTGTA',
 	],
 
 	invalid_merge_tests: [
@@ -396,6 +402,7 @@ window.GML_UI = {
 		'TCGTCGTGAG|,5,G,6 and GAACCCGGAATCTTA|,2,T,15',
 		'ACTCGTGAAG and GGGCA|,1,CTCA,5',
 		'ATACGTAATCGGTGGCTCGA|,14,TCG,20 and AGATCGAGCTG|,4,,10;,8,,10;,2,CTA,7',
+		'ATGTACACTTCTGAGTTGTCC and GCGTTGCG|,1,G,4',
 	],
 
 	test_something: function(tab, tests, what_are_we_doing, func, test_func_s) {

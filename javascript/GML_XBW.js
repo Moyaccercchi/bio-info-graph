@@ -646,8 +646,9 @@ GML.make_xbw_environment = function() {
 			ord[newspecchar] = ord[oldspecchar];
 		},
 
-		finalizeMerge: function() {
+		finalizeMerge: function(verbose) {
 
+			sout = '';
 			role = 1;
 			subXBWs = [];
 
@@ -665,6 +666,15 @@ GML.make_xbw_environment = function() {
 				}
 			}
 
+			if (verbose) {
+				sout += 'We get ' +
+						'<code>crossstart = ' + crossstart + '</code>, ' + 
+						'<code>old_M_slice = "' + old_M_slice + '"</code> ' 
+						'and set some M values to 1:' + GML.nlnl;
+				sout += GML.hideWrap(
+					'<div class="table_box">' + this.generateSubTables() + '</div>',
+					'Table') + GML.nlnl;
+			}
 
 			// We need to exchange
 			//   FiC in position where FiC == #_0
@@ -695,20 +705,60 @@ GML.make_xbw_environment = function() {
 			// now we need to cram every FiC = #_0 into here, and push this to the very end
 			var crossstart = select(DK_1, char, 0);
 
+			if (verbose) {
+				sout += 'We get ' +
+						'<code>pos1 = ' + pos1 + '</code>, ' + 
+						'<code>loc = ' + loc + '</code>, ' + 
+						'<code>BWTatpos = "' + BWTatpos + '"</code> and ' + 
+						'update the first column by slicing around magically:' + GML.nlnl +
+						char.slice(0, loc) + GML.nlnl +
+						GML.repeatstr(char.slice(crossstart).length, char[loc]) + GML.nlnl +
+						char.slice(loc+1, crossstart) + GML.nlnl +
+						DK_1 + ':' + GML.nlnl;
+			}
+
 			char = char.slice(0, loc) +
 				   GML.repeatstr(char.slice(crossstart).length, char[loc]) +
 				   char.slice(loc+1, crossstart) +
 				   DK_1;
+
+			if (verbose) {
+				sout += GML.hideWrap(
+					'<div class="table_box">' + this.generateSubTables() + '</div>',
+					'Table') + GML.nlnl;
+			}
 
 			/*
 			Previous M approach:
 			*/
 			// keeping this one in lets CAGCC|,2,,4 and TT|,1,AGG,2   and  CCCAGCC|,4,,6 and TT|,1,AGG,2 fail...
 
+			if (verbose) {
+				sout += 'We slice around the <i>M</i> value magically, into the parts' + GML.nlnl +
+						M.slice(0, loc+2) + GML.nlnl +
+						GML.repeatstr(old_M_slice.length-1, '1') + GML.nlnl +
+						M.slice(loc+2, crossstart) + GML.nlnl +
+						M[loc] + ':' + GML.nlnl;
+			}
+
+			M = M.slice(0, loc+2) +
+				GML.repeatstr(old_M_slice.length-1, '1') +
+				M.slice(loc+2, crossstart) +
+				M[loc];
+
+			/*
 			M = M.slice(0, loc) +
 				GML.repeatstr(old_M_slice.length, '1') +
 				M.slice(loc+1, crossstart) +
 				M[loc];
+			*/
+
+			if (verbose) {
+				sout += GML.hideWrap(
+					'<div class="table_box">' + this.generateSubTables() + '</div>',
+					'Table') + GML.nlnl;
+			}
+
 			/*
 			However, this fails for CAGCC|,2,,4 and TT|,1,AGG,2.
 			We therefore have another good think about what we actually want to do... and basically it is this:
@@ -748,6 +798,15 @@ GML.make_xbw_environment = function() {
 				M = GML.setInString(M, firstHash0Replacement+i, '0');
 			}
 
+			if (verbose) {
+				sout += 'We do some hash replacement nonsense in <i>M</i>, ' +
+						'with <code>firstHash0Replacement = ' + firstHash0Replacement + '</code> and ' +
+						'and <code>hash0replacement_len = ' + hash0replacement_len + '</code>:' + GML.nlnl;
+				sout += GML.hideWrap(
+					'<div class="table_box">' + this.generateSubTables() + '</div>',
+					'Table') + GML.nlnl;
+			}
+
 			// cut out $_0 from BWT and F
 			for (i=0; i < BWT.length; i++) {
 				if (BWT[i] === DS_1) {
@@ -757,6 +816,13 @@ GML.make_xbw_environment = function() {
 			}
 			BWT  =  BWT.slice(0, loc) +  BWT.slice(loc+1);
 			F    =    F.slice(0, loc) +    F.slice(loc+1);
+
+			if (verbose) {
+				sout += 'We cut out ' + GML.DS_1_o + ' from BWT and <i>F</i>:' + GML.nlnl;
+				sout += GML.hideWrap(
+					'<div class="table_box">' + this.generateSubTables() + '</div>',
+					'Table') + GML.nlnl;
+			}
 
 			// cut out $_0 from FiC and M
 			for (i=0; i < char.length; i++) {
@@ -768,6 +834,13 @@ GML.make_xbw_environment = function() {
 			char = char.slice(0, loc) + char.slice(loc+1);
 			M    =    M.slice(0, loc) +    M.slice(loc+1);
 
+			if (verbose) {
+				sout += 'We cut out ' + GML.DS_1_o + ' from first column and <i>M</i>:' + GML.nlnl;
+				sout += GML.hideWrap(
+					'<div class="table_box">' + this.generateSubTables() + '</div>',
+					'Table') + GML.nlnl;
+			}
+
 			// cut out #_0 from BWT and F
 			for (i=0; i < BWT.length; i++) {
 				if (BWT[i] === DK_1) {
@@ -777,6 +850,13 @@ GML.make_xbw_environment = function() {
 			}
 			BWT  =  BWT.slice(0, loc) +  BWT.slice(loc+1);
 			F    =    F.slice(0, loc) +    F.slice(loc+1);
+
+			if (verbose) {
+				sout += 'We cut out ' + GML.DK_1_o + ' from BWT and <i>F</i>:' + GML.nlnl;
+				sout += GML.hideWrap(
+					'<div class="table_box">' + this.generateSubTables() + '</div>',
+					'Table') + GML.nlnl;
+			}
 
 			// cut out #_0 from FiC and M
 			for (i=0; i < char.length; i++) {
@@ -788,7 +868,21 @@ GML.make_xbw_environment = function() {
 			char = char.slice(0, loc) + char.slice(loc+1);
 			M    =    M.slice(0, loc) +    M.slice(loc+1);
 
+			if (verbose) {
+				sout += 'We cut out ' + GML.DK_1_o + ' from first column and <i>M</i>:' + GML.nlnl;
+				sout += GML.hideWrap(
+					'<div class="table_box">' + this.generateSubTables() + '</div>',
+					'Table') + GML.nlnl;
+			}
+
 			recalculate(true);
+
+			if (verbose) {
+				sout += 'We now recalculate the first column, ' +
+						'and the internal <i>C</i> and ord arrays:' + GML.nlnl;
+			}
+
+			return sout;
 		},
 
 		// gives back true if more merging needs to be done, and false if

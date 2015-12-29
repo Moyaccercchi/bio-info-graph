@@ -2286,7 +2286,7 @@ window.GML = {
 				sout += this.hideWrap(shide, 'Table') + this.nlnl;
 			}
 
-			xbw12.finalizeMerge();
+			sout += xbw12.finalizeMerge(this.verbosity > 9);
 
 			// TODO :: we could here also create finalizeMerge functionality for xbw1 and xbw2,
 			// to restore them to their previous form, if we were inclined to do so... however,

@@ -5042,7 +5042,11 @@ window.GML = {
 								if (spillover_into_auto && (curNodes[0][1] === 0) && (auto[curNodes[0][0]].c === this.DS)) {
 									// let's spill over here (like in the for-loop for the edge case
 									// of having $ as the last thing added within the loop)
+
 									curNodes[0] = [spillover_into_auto[0].n[0], 1];
+									for (var cn=1; cn < spillover_into_auto[0].n.length; cn++) {
+										curNodes.push([spillover_into_auto[0].n[cn], 1]);
+									}
 								}
 								if (spillover_into_auto && (curNodes[0][1] === 1)) {
 									// we already spilled over way back...

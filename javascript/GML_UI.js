@@ -403,6 +403,7 @@ window.GML_UI = {
 		'ACTCGTGAAG and GGGCA|,1,CTCA,5',
 		'ATACGTAATCGGTGGCTCGA|,14,TCG,20 and AGATCGAGCTG|,4,,10;,8,,10;,2,CTA,7',
 		'ATGTACACTTCTGAGTTGTCC and GCGTTGCG|,1,G,4',
+		'CGGAGACTATCCTATCC|,9,CAG,15;,11,,16 and CAGTCATCGATTAAACCACTCTG|,1,GG,5',
 	],
 
 	test_something: function(tab, tests, what_are_we_doing, func, test_func_s) {

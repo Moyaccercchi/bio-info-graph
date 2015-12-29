@@ -1929,7 +1929,6 @@ window.GML = {
 						'the two graphs are different but the underlying language is the same.' +
 						this.nlnl;
 
-
 				// generate automatons from both tables
 				var our_auto = GML.getAutomatonFromFindex(findex_generated);
 				sout += this.visualize(our_auto);
@@ -2325,7 +2324,6 @@ window.GML = {
 				sout += 'Let us see if maybe, possibly, could-be-ly, ' + 
 						'the two graphs are different but the underlying language is the same.' +
 						this.nlnl;
-
 
 				// generate automatons from both tables
 				var our_auto = GML.getAutomatonFromFindex(xbw12._publishFindex());
@@ -3871,12 +3869,25 @@ window.GML = {
 			var p3 = path[3];
 
 			p1 = p1.split(':');
-			var p11 = parseInt(p1[1], 10);
-			p11 += path_identifiers_to_nodes[p1[0]];
-
 			p3 = p3.split(':');
+			var p11 = parseInt(p1[1], 10);
 			var p31 = parseInt(p3[1], 10);
+			if ((path_identifiers_to_nodes[p1[0]] === undefined) ||
+				(path_identifiers_to_nodes[p3[0]] === undefined)) {
+				this.error_flag = true;
+				this.error_text = 'Invalid input: An undefined path identifier was used.';
+				this.error_kind = 'note';
+				return;
+			}
+			p11 += path_identifiers_to_nodes[p1[0]];
 			p31 += path_identifiers_to_nodes[p3[0]];
+
+			if (!(auto[p11] && auto[p31])) {
+				this.error_flag = true;
+				this.error_text = 'Invalid input: A non-existant node was used as path origin or target.';
+				this.error_kind = 'note';
+				return;
+			}
 
 			if (path[2].length === 0) {
 				auto[p11].n.push(p31);

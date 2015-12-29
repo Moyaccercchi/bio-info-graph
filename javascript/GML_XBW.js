@@ -656,12 +656,14 @@ GML.make_xbw_environment = function() {
 			var DK_1 = GML.DK_1;
 			var DK = GML.DK;
 
-for (i=0; i < char.length; i++) {
-	if (char[i] === DK_1) {
-		M = GML.setInString(M, i, '1');
-	}
-}
+			var crossstart = select(DK_1, char, 0);
+			var old_M_slice = M.slice(crossstart);
 
+			for (i=0; i < char.length; i++) {
+				if (char[i] === DK_1) {
+					M = GML.setInString(M, i, '1');
+				}
+			}
 
 
 			// We need to exchange
@@ -698,24 +700,25 @@ for (i=0; i < char.length; i++) {
 				   char.slice(loc+1, crossstart) +
 				   DK_1;
 
-/*
-Previous M approach:
-*//*
-// keeping this one in lets CAGCC|,2,,4 and TT|,1,AGG,2   and  CCCAGCC|,4,,6 and TT|,1,AGG,2 fail...
+			/*
+			Previous M approach:
+			*/
+			// keeping this one in lets CAGCC|,2,,4 and TT|,1,AGG,2   and  CCCAGCC|,4,,6 and TT|,1,AGG,2 fail...
+
 			M = M.slice(0, loc) +
-				M.slice(crossstart) +
+				GML.repeatstr(old_M_slice.length, '1') +
 				M.slice(loc+1, crossstart) +
 				M[loc];
-/*
-However, this fails for CAGCC|,2,,4 and TT|,1,AGG,2.
-We therefore have another good think about what we actually want to do... and basically it is this:
-* adjust the FiC and BWT completely as necessary, completely ignoring M
-* then figure out which BWT was put instead of #_0
-* for these, find the nodes with the corresponding FiC
-  (that is, if the BWT had #_0, replaced by C 2 and C 3, then find the FiC with C 2 and C 3)
-* then set the M for these (e.g. for C 2 set M = 1 and for C 3 set M = 0)
-=> which we are all doing in // [HERE]
-*/
+			/*
+			However, this fails for CAGCC|,2,,4 and TT|,1,AGG,2.
+			We therefore have another good think about what we actually want to do... and basically it is this:
+			* adjust the FiC and BWT completely as necessary, completely ignoring M
+			* then figure out which BWT was put instead of #_0
+			* for these, find the nodes with the corresponding FiC
+			  (that is, if the BWT had #_0, replaced by C 2 and C 3, then find the FiC with C 2 and C 3)
+			* then set the M for these (e.g. for C 2 set M = 1 and for C 3 set M = 0)
+			=> which we are all doing in // [HERE]
+			*/
 
 			// We now exchange
 			//   BWT in position where FiC == $_0
@@ -739,14 +742,6 @@ We therefore have another good think about what we actually want to do... and ba
 
 			firstHash0Replacement = rank(BWTatpos, BWT, firstHash0Replacement);
 			firstHash0Replacement = select(BWTatpos, char, firstHash0Replacement);
-
-			// TODO :: this here brings us down to 3 failures, but I am not exactly sure it is 100% how it should be ^^
-			if (firstHash0Replacement <= loc) {
-				M = M.slice(0, loc) +
-					M.slice(crossstart) +
-					M.slice(loc+1, crossstart) +
-					M[loc];
-			}
 
 			// this is how it should be
 			for (i=1; i < hash0replacement_len; i++) {

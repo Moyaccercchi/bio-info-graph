@@ -253,6 +253,9 @@ window.GML_UI = {
 	],
 
 	invalid_construct_tests: [
+		'GACGTACCTG|,2,T,12;,3,,5;,6,,10;,6,,8',
+		'GACGTACCTG|,4,T,2;,3,,5;,6,,10;,6,,8',
+		'GACGTACCTG|,2,T,4;,a:3,,5;,6,,10;,6,,8',
 	],
 
 	merge_tests: [
@@ -299,8 +302,6 @@ window.GML_UI = {
 		'AGAGCAT and AGTGAACACAC',
 		'ACTGGCATGATTTATCCCTTGG|,11,,12 and TTTGTTTGACACGCTGC|,16,,17;,11,AGGG,14',
 		'GGGCCCAGGGCGATCGACGTTC|,7,,19 and TTTGTTTGACACGCTGC|,16,,17;,11,AGGG,14',
-		'CCCAGCC|,4,,6 and TT|,1,AGG,2',
-		'CAGCC|,2,,4 and TT|,1,AGG,2',
 		'CACT and GCGTACG|,5,,7;,1,C,5',
 		'CACT and GCGTACG|,4,,7;,1,C,5',
 		'TC|,1,C,2 and TC',
@@ -373,6 +374,10 @@ window.GML_UI = {
 		'TGTACTGGCTCCTATAT and TAACACATTAGTCAACCACA|,13,,16;,5,,12',
 		'CGACAG|,5,TTCC,6;,3,T,5 and GACCCACGCAAGAAACCGTGA|,10,TAAC,19',
 		'CGTTTGCATGAATTTGTTT and AACGTACCATTAAAATAGCGA|,6,,9;,4,TG,20',
+		'TACGATCGGA|,2,ATCG,6 and TAAGTTA|,2,CTG,3',
+		'GAGTATAAGCCA|,9,,10 and GGCGCGGTCAGTT|,12,GC,13;,2,GAT,6',
+		'AACCA|,4,CTTT,5;,4,CA,5;,4,ACG,5 and AGGTTATAGAT|,7,CAT,9;,2,,11',
+		'TCCGCTT|,2,TTTG,6;,4,ACT,6;,3,GGTG,6;,5,AACG,7;,2,ATC,5;,4,,5;,3,AA,6;,3,GGA,7 and TCGACATTGCTGCAGGTT|,14,CT,18',
 	],
 
 	invalid_merge_tests: [
@@ -1387,6 +1392,7 @@ window.GML_UI = {
 		GML.vis_find_shortest_path = document.getElementById('in-options-find-shortest-path').innerHTML == TRUE;
 		GML.vis_alternate = document.getElementById('in-options-vis-alternate').innerHTML == TRUE;
 		GML.vis_invert_colors = document.getElementById('in-options-svg-invert-colors').innerHTML == TRUE;
+		GML.vis_add_IO_texts = document.getElementById('in-options-vis-add-io-texts').innerHTML == TRUE;
 
 		this.changeOptions_verbosity_update();
 
@@ -1413,6 +1419,7 @@ window.GML_UI = {
 		document.getElementById('in-options-svg-width-override').innerHTML = FALSE;
 		document.getElementById('in-options-svg-width-override-value').value = '1041';
 		document.getElementById('in-options-svg-invert-colors').innerHTML = FALSE;
+		document.getElementById('in-options-vis-add-io-texts').innerHTML = FALSE;
 
 		document.getElementById('in-options-svg-font-latex').innerHTML = TRUE;
 

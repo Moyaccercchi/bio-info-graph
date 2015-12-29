@@ -1942,7 +1942,7 @@ window.GML = {
 						'are not the same.' + this.nlnl;
 
 
-				sout += 'Let us see if maybe, possibly, could-be-ly, ' + 
+				sout += 'Let us see if maybe ' + 
 						'the two graphs are different but the underlying language is the same.' +
 						this.nlnl;
 
@@ -2182,22 +2182,6 @@ window.GML = {
 
 							sstep += '</div>';
 
-							if ((this.verbosity > 9) && !this.error_flag) {
-								sround += 'The graphs now look like:';
-								var emrgauto = GML.getAutomatonFromFindex(xbw1._publishFindex());
-								emrgauto = GML.computePrefixes(emrgauto);
-								for (var ea=1; ea < emrgauto.length; ea++) {
-									if (emrgauto[ea].c === this.DS_1) {
-										emrgauto[ea].c = this.DS_1_o;
-									}
-								}
-								sround += this.visualize(emrgauto);
-								var emrgauto = GML.getAutomatonFromFindex(xbw2._publishFindex());
-								emrgauto = GML.computePrefixes(emrgauto);
-								emrgauto[0].c = this.DK_1_o;
-								sround += this.visualize(emrgauto);
-							}
-
 							sround += this.hideWrap(sstep, 'Step ' + patience) + this.nlnl;
 						}
 
@@ -2209,6 +2193,23 @@ window.GML = {
 					}
 
 					if (this.verbosity > 4) {
+
+						if ((this.verbosity > 9) && !this.error_flag) {
+							sround += 'The graphs now look like:';
+							var emrgauto = GML.getAutomatonFromFindex(xbw1._publishFindex());
+							emrgauto = GML.computePrefixes(emrgauto);
+							for (var ea=1; ea < emrgauto.length; ea++) {
+								if (emrgauto[ea].c === this.DS_1) {
+									emrgauto[ea].c = this.DS_1_o;
+								}
+							}
+							sround += this.visualize(emrgauto);
+							var emrgauto = GML.getAutomatonFromFindex(xbw2._publishFindex());
+							emrgauto = GML.computePrefixes(emrgauto);
+							emrgauto[0].c = this.DK_1_o;
+							sround += this.visualize(emrgauto);
+						}
+
 						sround += '</div>';
 						
 						sout += this.hideWrap(sround, 'Round ' + round) + this.nlnl;
@@ -2337,7 +2338,7 @@ window.GML = {
 						'so something somewhere went wrong...' + this.nlnl;
 
 
-				sout += 'Let us see if maybe, possibly, could-be-ly, ' + 
+				sout += 'Let us see if maybe ' + 
 						'the two graphs are different but the underlying language is the same.' +
 						this.nlnl;
 
@@ -3224,14 +3225,16 @@ window.GML = {
 					// (going from the start node to the right, they might even shoot off the
 					// viewport), but we still prefer them over an infinite loop
 					positions[nextNode_i] = [xoff_start + (path.length * 40), yoffl];
-					path.push(nextNode_i);
-					for (var k=1; k < auto[nextNode_i].n.length; k++) {
-						var addPath = auto[nextNode_i].n[k];
-						if ((done_paths.indexOf(addPath) < 0) && (more_paths.indexOf(addPath) < 0)) {
-							more_paths.push(addPath);
+					if (auto[nextNode_i]) {
+						path.push(nextNode_i);
+						for (var k=1; k < auto[nextNode_i].n.length; k++) {
+							var addPath = auto[nextNode_i].n[k];
+							if ((done_paths.indexOf(addPath) < 0) && (more_paths.indexOf(addPath) < 0)) {
+								more_paths.push(addPath);
+							}
 						}
+						nextNode_i = auto[nextNode_i].n[0];
 					}
-					nextNode_i = auto[nextNode_i].n[0];
 				}
 
 				var plen = path.length;
@@ -5279,11 +5282,11 @@ window.GML = {
 	// gives out true if it is prefix sorted or false otherwise
 	isAutomatonPrefixSorted: function(auto) {
 
-		var S0K0 = this.DS_1 + this.DK_1;
+		var S0oK0o = this.DS_1_o + this.DK_1_o;
 
 		for (var i=0; i < auto.length; i++) {
 			if (auto[i]) {
-				var cur_auto_f = auto[i].f.replace(S0K0, '');
+				var cur_auto_f = auto[i].f.replace(S0oK0o, '');
 
 				// aha! there is at least one node with a prefix that needs to be
 				// extended, but cannot be extended!
@@ -5294,7 +5297,7 @@ window.GML = {
 				for (var j=0; j < auto.length; j++) {
 					if (auto[j] && (i !== j)) {
 						// aha! there are at least two nodes with the same prefix!
-						if (cur_auto_f === auto[j].f.replace(S0K0, '')) {
+						if (cur_auto_f === auto[j].f.replace(S0oK0o, '')) {
 							return false;
 						}
 					}

@@ -103,7 +103,7 @@ window.GML_UI = {
 
 		el = document.getElementById('div-out-' + i);
 		el.innerHTML = '<div class="working">Working on your request...<br><br>' +
-					   'If you see this message for a long time, the page may have crashed. ' +
+					   'If you see this message for a long time, the page may have crashed.<br>' +
 					   'In that case you could try to ' +
 					   'refresh the page, reduce the verbosity in the options, ' +
 					   'and then restart the computation.</div>';
@@ -387,6 +387,7 @@ window.GML_UI = {
 		'TACACG|,4,AAT,6;,1,CCGA,5 and TGGTGTATTATTGCCCTTGGACGC|,20,GA,22;,5,G,17;,8,AATA,10',
 		'TGTAGATGAGCATACCCCGA|,4,ACGA,20;,11,,19;,15,TT,19;,6,,11;,13,AA,20 and AAATATCTTTGTTG',
 		'CTCATACGAGCGAA|,12,CG,13 and GTGCCCGGGTGCA|,1,TTTC,11',
+		'TTTTAATAGTCACCGATCCGG|,17,CGTT,21;,19,TTT,20 and TCGGCATT|,4,ACGA,7;,6,GGA,8;,3,TGA,8',
 	],
 
 	invalid_merge_tests: [
@@ -411,6 +412,7 @@ window.GML_UI = {
 		'GCTCTCATGCAGCCCAA and TTTCAGCCTAACAGTACACGGGT|,1,GA,19',
 		'CGCCC|,4,GAC,5;,4,,5;,3,ATG,4 and CAAGCTG|,1,GTTA,5;,5,GA,6',
 		'ACTCCTACTCCAACTA|,9,GTT,13 and ACTACC|,4,ATG,6',
+		'AACTAGGCGCATGTC|,3,CAG,8;,3,GTT,15 and CTTGGC|,3,AGA,6;,2,T,4;,2,CTAT,4;,1,AT,2',
 	],
 
 	test_something: function(tab, tests, what_are_we_doing, func, test_func_s) {
@@ -1419,7 +1421,7 @@ window.GML_UI = {
 		var TRUE = 'X', FALSE = '&nbsp;';
 
 		document.getElementById('in-options-array-offset').value = '0';
-		document.getElementById('in-options-loop-threshold').value = '100';
+		document.getElementById('in-options-loop-threshold').value = '200';
 
 		document.getElementById('in-options-show-xbw-envs').innerHTML = TRUE;
 		document.getElementById('in-options-do-invalid-tests').innerHTML = FALSE;

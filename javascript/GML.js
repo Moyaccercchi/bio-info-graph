@@ -3339,6 +3339,15 @@ window.GML = {
 					}
 
 					sout += this.visualize_edge([xoff, yoffl], target, i < plen-1);
+
+					var pcur = path[i];
+					for (var ij=1; ij < auto[pcur].n.length; ij++) {
+						var drawto = auto[pcur].n[ij];
+						if (positions[drawto] !== undefined) {
+							this.vis_checkedge = pcur + '_' + drawto;
+							sout += this.visualize_edge(positions[pcur], positions[drawto], false);
+						}
+					}
 				}
 			}
 

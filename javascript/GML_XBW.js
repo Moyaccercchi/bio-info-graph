@@ -1731,13 +1731,20 @@ sout += '<br>' +
 				//    (We are not inserting / deleting here, just setting values to 1 that were 0,
 				//    so we can do this BEFORE step 3, in which we modify M again, based on the
 				//    locations of ones and zeroes BEFORE step 2.)
+				//    => of course, we only do this the very first time around, as it only needs
+				//       to be done once (otherwise, GCTAGTTACAACT and GCAAGCGAA|,3,TCG,4;,5,T,8 fails)
 
-
-				var newM = M.slice(0,Mloc1);
-				for (var i=Mloc1; i < Mloc2; i++) {
-					newM += '1';
+				var newM;
+				if (j === 0) {
+					newM = M.slice(0,Mloc1);
+					for (var i=Mloc1; i < Mloc2; i++) {
+						newM += '1';
+					}
+					newM += M.slice(Mloc2);
+				} else {
+					newM = M;
 				}
-				newM += M.slice(Mloc2);
+
 /**/
 
 				// 3. Add as many zeroes to the M of the preceding node as nodes were copied.

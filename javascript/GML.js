@@ -1573,8 +1573,6 @@ window.GML = {
 					for (i=0; i < next_nodes.length; i++) {
 						var pref;
 
-						/*
-						// EMRG - this can be used to prevent crashes, and should probably actually not be commented out
 						if (this.p12[next_nodes[i]] === undefined) {
 							sout += shide + '</div>';
 							// replace '^' with '#' before printout
@@ -1582,7 +1580,6 @@ window.GML = {
 							sout += this.errorWrap('Failure', 'error');
 							return sout;
 						}
-						*/
 
 						if (this.do_prefix_doubling) {
 							pref = firstRedPrefix + this.p12[next_nodes[i]][0];
@@ -2518,12 +2515,10 @@ window.GML = {
 		// the origin of our node, which we will expect all other nodes to have too
 		var curOrigin = this.p12_itlv[i];
 
-		/*
-		// EMRG - this can be used to prevent crashes, and should probably actually not be commented out
+		// prevents crashes
 		if (this.p12[i] === undefined) {
 			return [];
 		}
-		*/
 
 		// look at first letter of the prefix
 		var label = this.p12[i][0][0];
@@ -5108,15 +5103,15 @@ window.GML = {
 								if (spillover_into_auto && (curNodes[0][1] === 1)) {
 									// we already spilled over way back...
 									cur_auto = spillover_into_auto;
-//console.log('1: spillover_into_auto');
 								} else {
 									// no spillover happening
 									cur_auto = auto;
-//console.log('1: auto');
 								}
 
-								// console.log(cur_auto);
-								// console.log(curNodes[0][0]);
+								if (cur_auto[cur_auto[curNodes[0][0]].n[0]] === undefined) {
+									this.error_flag = true;
+									return false;
+								}
 
 								firstNodeLabel = cur_auto[cur_auto[curNodes[0][0]].n[0]].c;
 
@@ -5133,10 +5128,8 @@ window.GML = {
 								for (var l=0; l < curNodes.length; l++) {
 									if (spillover_into_auto && (curNodes[l][1] === 1)) {
 										cur_auto = spillover_into_auto;
-//console.log('2: spillover_into_auto');
 									} else {
 										cur_auto = auto;
-//console.log('2: auto');
 									}
 									var curNode = cur_auto[curNodes[l][0]];
 									for (var m=0; m < curNode.n.length; m++) {
@@ -5165,18 +5158,13 @@ window.GML = {
 										var orig_node = false;
 										var orig_node_i;
 
-//console.log('start with 3');
-//console.log(allEncounteredNodes);
 										for (var l=allEncounteredNodes.length-1; l > -1; l--) {
 											for (var m=allEncounteredNodes[l].length-1; m > -1; m--) {
 												if (allEncounteredNodes[l][m][1] === 1) {
 													cur_auto = spillover_into_auto;
-//console.log('3: ' + l + ' ' + m + ' spillover_into_auto');
 												} else {
 													cur_auto = auto;
-//console.log('3: ' + l + ' ' + m + ' auto');
 												}
-//console.log('c: ' + cur_auto[allEncounteredNodes[l][m][0]].c + ' n.length: ' + cur_auto[allEncounteredNodes[l][m][0]].n.length);
 												if (cur_auto[allEncounteredNodes[l][m][0]].n.length > 1) {
 													// we actually need deep copies, so that we can
 													// later do work on this without getting REALLY

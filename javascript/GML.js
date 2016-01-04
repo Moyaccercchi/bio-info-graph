@@ -1789,10 +1789,7 @@ window.GML = {
 
 					if (this.verbosity > 5) {
 						shide += this.fe_p12ToTableWithHighlights([], true);
-					}
 
-
-					if (this.verbosity > 5) {
 						sout += this.hideWrap(shide + '</div>', 'Step ' + patience) + this.nlnl;
 					}
 
@@ -2319,15 +2316,19 @@ window.GML = {
 				sout += 'The merging result is:';
 			}
 
-			shide = '<div class="table_box">' + xbw12.generateTable() + '</div>';
+			var equal_ret = xbw.equals(xbw12, true);
+			var equals = equal_ret[0];
+			var highlight_arr = equal_ret[1];
+
+			shide = '<div class="table_box">' + xbw12.generateTable([], highlight_arr) + '</div>';
 			sout += this.hideWrap(shide, 'Table') + this.nlnl;
 
 			sout += 'To simplify the comparison, here is the table that we wanted to achieve:';
 
-			shide = '<div class="table_box">' + xbw.generateTable() + '</div>';
+			shide = '<div class="table_box">' + xbw.generateTable([], highlight_arr) + '</div>';
 			sout += this.hideWrap(shide, 'Table') + this.nlnl;
 
-			if (xbw.equals(xbw12)) {
+			if (equals) {
 				sout += 'We can see that these are exactly the same, and we are happy!' + this.nlnl;
 				sout += '<div class="success">Success</div>';
 				if (GML_UI) {
@@ -2562,6 +2563,12 @@ window.GML = {
 		// find nodes / columns whose BWTs contain this letter, and whose origin is the same,
 		// and jump over as many as necessary
 		for (var k=0; k < this.p12.length; k++) {
+
+// EMRG
+if (!this.bwt[k]) {
+	return nodes_found;
+}
+
 			if ((this.p12_itlv[k] === curOrigin) && (this.bwt[k].indexOf(label) > -1)) {
 				// still jumping...
 				if (jump_over > 0) {
@@ -5680,6 +5687,12 @@ window.GML = {
 				// we only give green light if we reach a node that has no nextNodes AND that
 				// has the label $ - if we do not reach such a node, then we may break if we
 				// cannot go on, but do not report that the main row works =)
+
+// EMRG
+if (!auto[nextNode]) {
+	return;
+}
+
 				if (auto[nextNode].n.length === 0) {
 					if (auto[nextNode].c === this.DS) {
 						naive_main_row_works = true;

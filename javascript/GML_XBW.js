@@ -1030,26 +1030,6 @@ GML.make_xbw_environment = function() {
 							}
 						}
 
-
-
-
-
-/*
-// [OVERRIDE 2]
-if (nextXBW) { // if we are H_0
-	switch (pref_cur_is[j]) { // switch according to aftersort (now manually 3x4)
-		case 3:
-			pref_cur_is[j] = 4;
-		case 4:
-			pref_cur_is[j] = 3;
-	}
-}
-*/
-
-
-
-
-
 						var pcis_len, pcis_len_m;
 						if (give_the_split_node) {
 							pcis_len = pref_cur_is_store.length-1;
@@ -1585,55 +1565,116 @@ sout += '<br>' +
 			recalculate(false);
 		},
 
-		equals: function(otherXBW) {
+		equals: function(otherXBW, give_highlight_arr) {
 
-			return otherXBW._areWeTheSame(BWT, char, M, F, alph, ord, C);
+			return otherXBW._areWeTheSame(BWT, char, M, F, alph, ord, C, give_highlight_arr);
 		},
 
-		_areWeTheSame: function(pBWT, pchar, pM, pF, palph, pord, pC) {
+		_areWeTheSame: function(pBWT, pchar, pM, pF, palph, pord, pC, give_highlight_arr) {
+
+			var highlight_arr = [];
+
+			if (give_highlight_arr) {
+				
+				highlight_arr.push([]);
+
+				if (BWT !== pBWT) {
+					var arr = [];
+					for (var i = 0; i < Math.max(BWT.length, pBWT.length); i++) {
+						if (BWT[i] !== pBWT[i]) {
+							arr.push(i);
+						}
+					}
+					highlight_arr.push(arr);
+				} else {
+					highlight_arr.push([]);
+				}
+
+				if (char !== pchar) {
+					var arr = [];
+					for (var i = 0; i < Math.max(char.length, pchar.length); i++) {
+						if (char[i] !== pchar[i]) {
+							arr.push(i);
+						}
+					}
+					highlight_arr.push(arr);
+				} else {
+					highlight_arr.push([]);
+				}
+
+				if (M !== pM) {
+					var arr = [];
+					for (var i = 0; i < Math.max(M.length, pM.length); i++) {
+						if (M[i] !== pM[i]) {
+							arr.push(i);
+						}
+					}
+					highlight_arr.push(arr);
+				} else {
+					highlight_arr.push([]);
+				}
+
+				if (F !== pF) {
+					var arr = [];
+					for (var i = 0; i < Math.max(F.length, pF.length); i++) {
+						if (F[i] !== pF[i]) {
+							arr.push(i);
+						}
+					}
+					highlight_arr.push(arr);
+				} else {
+					highlight_arr.push([]);
+				}
+			}
 
 			if (BWT !== pBWT) {
-				return false;
+				return [false, highlight_arr];
 			}
 
 			if (char !== pchar) {
-				return false;
+				return [false, highlight_arr];
 			}
 
 			if (M !== pM) {
-				return false;
+				return [false, highlight_arr];
 			}
 
 			if (F !== pF) {
-				return false;
+				return [false, highlight_arr];
 			}
 
 			var len = Math.max(alph.length, palph.length);
 
 			for (var i=0; i < len; i++) {
 				if (alph[i] !== palph[i]) {
-					return false;
+					return [false, highlight_arr];
 				}
 			}
 
 			for (var i=0; i < len; i++) {
 				if (ord[alph[i]] !== pord[palph[i]]) {
-					return false;
+					return [false, highlight_arr];
 				}
 			}
 
 			for (var i=0; i < len; i++) {
 				if (C[alph[i]] !== pC[palph[i]]) {
-					return false;
+					return [false, highlight_arr];
 				}
 			}
 
-			return true;
+			return [true, highlight_arr];
 		},
 
 
 		// split the node in flat table sn_i
 		_splitNode: function(sn_i) {
+
+// () console.log('_splitNode:');
+
+// EMRG aftersort
+// console.log('aftersort before:');
+// console.log(GML.deep_copy_array(aftersort));
 
 			// Thinking about the node table, here is what we want to do:
 			// 1. Take the node and copy it for each 0 in its M node.
@@ -1712,12 +1753,56 @@ sout += '<br>' +
 				// insert into BWT and F at the same time
 				var newBWT = BWT.slice(0, Floc1+1);
 				var newF = F.slice(0, Floc1+1);
+// () console.log('newBWT start: ' + newBWT);
+// () console.log('  newF start: ' + newF);
+				// see [_splitNode with 2 in and 3 out] for the reason why these funky formulas are necessary
+				// (in a nutshell, when we split a node with 2 ins and 3 outs, then we want to splice the
+				// prevNode results into each other)
 				for (var i=1; i < Mnum; i++) {
+// () console.log('newBWT for this run: ' + BWT[Floc1+foff]);
+// () console.log('  newF for this run: ' + F[Floc1+foff]);
 					newBWT += BWT[Floc1+foff];
 					newF += F[Floc1+foff];
+
+// () console.log('newBWT for prev run: ' + BWT.slice(Floc1+(i*j), Floc1+(i*j)+j).split('').reverse().join(''));
+// () console.log('  newF for prev run: ' + F.slice(Floc1+(i*j), Floc1+(i*j)+j).split('').reverse().join(''));
+
+					// we here reverse because looking at
+					// TACGAAACGACAGTTCCTTATA|,1,A,4;,1,TTA,17;,18,A,21;,15,GAG,17 and ACT
+					// we figure out that we actually need to get the column with the 1 in its F into the very last position
+					// TODO :: this works for splitting nodes with an indegree of up to 3, but does it work for more?
+					newBWT += BWT.slice(Floc1+(i*j), Floc1+(i*j)+j).split('').reverse().join('');
+					newF += F.slice(Floc1+(i*j), Floc1+(i*j)+j).split('').reverse().join('');
+
+/*
+console.log('newBWT for prev run: ' + BWT.slice(Floc1+(i*j), Floc1+(i*j)+j));
+
+					newBWT += BWT.slice(Floc1+(i*j), Floc1+(i*j)+j);
+
+// overwrite for _splitNode with 3 in and 2 out
+if (j === prevNodes.length-1) {
+	var extraF = F.slice(Floc1+(i*j), Floc1+(i*j)+j);
+	var eflen = extraF.length;
+	if (eflen > 0) {
+		extraF = '';
+		for (var ef=0; ef < eflen-1; ef++) {
+			extraF += '0';
+		}
+		extraF += '1';
+	}
+console.log('  newF for prev run override: ' + extraF);
+	newF += extraF;
+} else {
+console.log('  newF for prev run: ' + F.slice(Floc1+(i*j), Floc1+(i*j)+j));
+	newF += F.slice(Floc1+(i*j), Floc1+(i*j)+j);
+}
+//					newF += F.slice(Floc1+(i*j), Floc1+(i*j)+j);
+*/
 				}
-				newBWT += BWT.slice(Floc1+1);
-				newF += F.slice(Floc1+1);
+// () console.log('newBWT end: ' + BWT.slice(Floc1+1+((Mnum-1)*j)));
+// () console.log('  newF end: ' + F.slice(Floc1+1+((Mnum-1)*j)));
+				newBWT += BWT.slice(Floc1+1+((Mnum-1)*j));
+				newF += F.slice(Floc1+1+((Mnum-1)*j));
 
 
 				for (var k=j+1; k < prevNodes.length; k++) {
@@ -1725,7 +1810,6 @@ sout += '<br>' +
 						prevNodes[k] += Mnum - 1;
 					}
 				}
-
 
 				// 2. Set the M value of the original and all copies to 1.
 				//    (We are not inserting / deleting here, just setting values to 1 that were 0,
@@ -1741,6 +1825,28 @@ sout += '<br>' +
 						newM += '1';
 					}
 					newM += M.slice(Mloc2);
+
+
+
+// EMRG try to update the aftersort array
+// => this seems to have no effect either way...
+
+/**/
+for (var afs=0; afs < aftersort.length; afs++) {
+	if ((aftersort[afs] !== undefined) && (aftersort[afs] > Mloc)) {
+		aftersort[afs] += Mnum-1;
+	}
+}
+for (var afs=1; afs < Mnum; afs++) {
+	var am = aftersort[Mloc];
+	if (am !== undefined) {
+		am += afs;
+	}
+	aftersort.splice(Mloc+afs-1, 0, am);
+}
+/**/
+
+
 				} else {
 					newM = M;
 				}
@@ -1793,6 +1899,11 @@ if (newM[prevNodes[j]] === '0') {
 
 			// TODO :: apply directly to char, ord etc., so that no recalculation is necessary
 			recalculate(true);
+
+// EMRG aftersort
+// console.log('aftersort after:');
+// console.log(GML.deep_copy_array(aftersort));
+
 		},
 
 
@@ -1989,6 +2100,9 @@ if (newM[prevNodes[j]] === '0') {
 
 			return ['{' + alph.join(', ') + '}', GML.printKeyValArr(alph, C, true)];
 		},
+
+		// in highlight_arr and extra_highlight_arr, we use
+		// 0 for i, 1 for BWT, 2 for FiC, 3 for M and 4 for F
 		generateTable: function(highlight_arr, extra_highlight_arr) {
 
 			if (!highlight_arr) {

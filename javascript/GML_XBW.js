@@ -209,10 +209,12 @@ GML.make_xbw_environment = function() {
 		var ep = spep[1];
 
 		if (do_select) {
+			// convert absolute indexing to BWT-indexing
 			sp = select('1', F, sp);
 			ep = select('1', F, ep+1) - 1;
 		}
 
+		// perform last-to-first mapping while jumping from BWT-indexing to FC-indexing
 		sp = C[c] + rank(c, BWT, sp-1) + 1;
 		ep = C[c] + rank(c, BWT, ep);
 
@@ -225,6 +227,7 @@ GML.make_xbw_environment = function() {
 		}
 
 		if (do_rank) {
+			// convert FC-indexing to absolute indexing
 			sp = rank('1', M, sp);
 			ep = rank('1', M, ep);
 		}
@@ -232,30 +235,31 @@ GML.make_xbw_environment = function() {
 		return [sp, ep];
 	}
 
-	/*
-	psi in python:
-		# psi(i) is select(ch, BWT, i - C[ch]) where ch is the highest value with C[ch] < i
-		def psi(i, BWT, C):
+	// psi finds the succeeding nodes of a given node
+	// i is usually in absolute indexing, and the output is usually in absolute indexing
+	// take_edge_no is the index of the edge that we want to follow out of node i; so if node i has
+	//   three outgoing edges, then the result for take_edge_no=0 is the node we reach when following
+	//   the first edge, the result for take_edge_no=1 is the node we reach when following the second
+	//   edge, and the result for take_edge_no=2 is the node we reach when following the third edge
+	// if do_select is false, then the input is in FC indexing
+	// if do_rank is false, then the output is in BWT indexing
+	function psi(i, take_edge_no, do_select, do_rank) {
 
-			for ch in range(0, len(numToAlphabet)):
-				if C[ch] >= i:
-					ch -= 1
-					break
+		if (do_select) {
+			// convert absolute indexing to FC-indexing
+			i = select('1', M, i);
+		}
 
-			return select(ch, BWT, i - C[ch])
-	*/
-	function psi(i, j, do_select, do_rank) {
+		i += take_edge_no;
 
 		var c = char[i];
 
-		if (do_select) {
-			i = select('1', M, i) + j - 1;
-		}
-
-		// get the next node within the table
+		// get the next node within the table,
+		// while jumping from FC-indexing to BWT-indexing
 		i = select(c, BWT, i - C[c]);
 
 		if (do_rank) {
+			// convert BWT-indexing to absolute indexing
 			i = rank('1', F, i);
 		}
 
@@ -1077,7 +1081,11 @@ GML.make_xbw_environment = function() {
 
 				// get node i
 				for (var j=0; j<pref_cur_is.length; j++) {
-					pref_cur_is[j] = psi(pref_cur_is[j], 1, false, false);
+					// We just follow the first outgoing edge - which would seem completely
+					// stupid usually, but we also deactivate the select, as we are already
+					// in FC-indexing, and the offset of the outgoing edge IS ALREADY INCLUDED
+					// in the index we give as first parameter!
+					pref_cur_is[j] = psi(pref_cur_is[j], 0, false, false);
 				}
 
 				var char_to_add_now = '.';
@@ -2042,7 +2050,7 @@ if (newM[prevNodes[j]] === '0') {
 						'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].lfHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">LF()</div>' +
 						'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].psiHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">&#936;()</div>' +
 						'<div class="input-info-container" style="float:right; display: inline-block; width: 38%;">' +
-							'<input id="in-string-' + tab + '-xbw-psi" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'psiHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="1,4" style="width:100%"></input>' +
+							'<input id="in-string-' + tab + '-xbw-psi" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'psiHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="1,0" style="width:100%"></input>' +
 							'<span class="infobtn" onclick="GML_UI.clickOnXBWInfo(event, 2)">Info</span>' +
 						'</div>' +
 					'</div>';
@@ -2065,7 +2073,7 @@ if (newM[prevNodes[j]] === '0') {
 
 			sout += '<div id="xbw-info-box-2" style="margin-top:20px;display:none;">' +
 					'Optionally, you can add two boolean parameters ' +
-					'in the &#936;() input, e.g. 1,4,true,false.<br>' +
+					'in the &#936;() input, e.g. 1,0,true,false.<br>' +
 					'They control whether select() is called before &#936;() and ' +
 					'whether rank() is called afterwards, respectively.' +
 					'</div>';
@@ -2076,10 +2084,13 @@ if (newM[prevNodes[j]] === '0') {
 						'Just in case you are as forgetful as I am:<br>' +
 						'Assume we have position <i>x</i>, then call ' +
 						'LF(<i>x</i>,<i>x</i>,BWT[<i>x</i>]) ' +
-						'to get the node <b>before</b> <i>x</i>, ' +
-						'and call &#936;(<i>x</i>,<i>x</i>) to get the node <b>after</b> <i>x</i>.<br>' +
-						'To get the prefix of node <i>x</i>, use BWT[&#936;(<i>x</i>,<i>x</i>)] + ' +
-						'BWT[&#936;(&#936;(<i>x</i>,<i>x</i>),&#936;(<i>x</i>,<i>x</i>))] + ...' +
+						'to get all nodes <b>preceding</b> <i>x</i>, ' +
+						'call &#936;(<i>x</i>,<i>0</i>) to get the first node <b>succeeding</b> <i>x</i> and ' +
+						'&#936;(<i>x</i>,<i>1</i>) to get the second node <b>succeeding</b> <i>x</i>, etc.<br>' +
+						'To get the prefix of node <i>x</i>, use BWT[&#936;(<i>x</i>,<i>0</i>)] + ' +
+						'BWT[&#936;(&#936;(<i>x</i>,<i>0</i>),&#936;(<i>x</i>,<i>0</i>))] + ...<br>' +
+						'(This here is just a very general reminder and completely ' +
+						'ignores that you need to keep track of different indexing methods.)'
 						'</div>';
 			}
 
@@ -2230,6 +2241,10 @@ if (newM[prevNodes[j]] === '0') {
 
 			return r;
 		},
+		// highnodes are nodes that are highlighted in purple; they use absolute indexing
+		// tab is the integer designation of the tab on which we are calling this
+		// if show_vis_hl is true, then the extra highlighted nodes and edges in red
+		// are displayed too
 		generateGraph: function(highnodes, tab, show_vis_hl) {
 
 			var outerdiv = document.getElementById('div-xbw-' + tab + '-env-graph');
@@ -2319,22 +2334,30 @@ if (newM[prevNodes[j]] === '0') {
 			}
 			document.getElementById('span-' + tab + '-xbw-results').innerHTML = res;
 
-			this.show_spep_in_HTML(spep, tab, ['i', 'char']);
+			this.show_nodes_in_HTML(spep, tab);
 		},
 		psiHTML: function(tab) {
 
 			var searchfor = document.getElementById('in-string-' + tab + '-xbw-psi').value.split(',');
 
-			var i = psi(
+			var take_edge_no = searchfor[1];
+
+			if (take_edge_no === undefined) {
+				take_edge_no = 0;
+			} else {
+				take_edge_no = parseInt(take_edge_no, 10) - GML.ao;
+			}
+
+			var abs_next_i = psi(
 				parseInt(searchfor[0], 10) - GML.ao,
-				parseInt(searchfor[1], 10) - GML.ao,
+				take_edge_no,
 				searchfor[2] !== 'FALSE', // default to true
 				searchfor[3] !== 'FALSE'  // default to true
 			);
 
-			document.getElementById('span-' + tab + '-xbw-results').innerHTML = (i + GML.ao);
+			document.getElementById('span-' + tab + '-xbw-results').innerHTML = (abs_next_i + GML.ao);
 
-			this.show_spep_in_HTML([i, i], tab, ['i', 'BWT']);
+			this.show_nodes_in_HTML([abs_next_i, abs_next_i], tab);
 		},
 		selectHTML: function(tab) {
 
@@ -2393,6 +2416,48 @@ if (newM[prevNodes[j]] === '0') {
 			document.getElementById('span-' + tab + '-xbw-results').innerHTML = (i + GML.ao);
 
 			this.show_spep_in_HTML([i, i], tab, ['i', searchfor[1]], j, searchfor[0]);
+		},
+		// highlight the nodes in HTML table and graph which lie in the abs_pos_range,
+		// given with absolute indexing
+		show_nodes_in_HTML: function(abs_pos_range, tab) {
+
+			var highnodes = [];
+			var higharr_collection = [];
+			
+			higharr_collection[0] = []; // i
+			higharr_collection[1] = []; // BWT
+			higharr_collection[2] = []; // FC
+			higharr_collection[3] = []; // M
+			higharr_collection[4] = []; // F
+
+			for (var abs_pos = abs_pos_range[0]; abs_pos < abs_pos_range[1] + 1; abs_pos++) {
+
+				var fc_pos_start = select('1', M, abs_pos);
+				var fc_pos_end = select('1', M, abs_pos + 1) - 1;
+
+				var bwt_pos_start = select('1', F, abs_pos);
+				var bwt_pos_end = select('1', F, abs_pos + 1) - 1;
+
+				higharr_collection[0].push(abs_pos);
+
+				// highnodes use absolute indexing
+				highnodes.push(prefixes[abs_pos]);
+
+				for (var i=fc_pos_start; i < fc_pos_end+1; i++) {
+					higharr_collection[2].push(i);
+					higharr_collection[3].push(i);
+				}
+
+				for (var i=bwt_pos_start; i < bwt_pos_end+1; i++) {
+					higharr_collection[1].push(i);
+					higharr_collection[4].push(i);
+				}
+			}
+
+			document.getElementById('div-xbw-' + tab + '-env-table').innerHTML =
+				this.generateTable(higharr_collection);
+
+			this.generateGraph(highnodes, tab, false);
 		},
 		show_spep_in_HTML: function(spep, tab, highrows, override_last_row, override_with, show_vis_hl) {
 

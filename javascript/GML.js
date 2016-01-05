@@ -70,7 +70,7 @@
 	makeAutomatonReverseDeterministic_int: function(auto, addToSOut);
 	reverseDeterminizer: function(i, newchar, auto, addToSOut);
 	generateListOfAllPathsOfAutomaton: function(auto);
-	automatonsAreEquivalent: function(auto1, auto2);
+	automataAreEquivalent: function(auto1, auto2);
 	mergeNodesInAutomaton: function(auto, node_1, node_2);
 	splitNodeInAutomaton: function(auto, node_i);
 	isAutomatonReverseDeterministic: function(auto);
@@ -1940,7 +1940,7 @@ window.GML = {
 						'the two graphs are different but the underlying language is the same.' +
 						this.nlnl;
 
-				// generate automatons from both tables
+				// generate automata from both tables
 				var our_auto = GML.getAutomatonFromFindex(findex_generated);
 				sout += this.visualize(our_auto);
 
@@ -1948,29 +1948,29 @@ window.GML = {
 				sout += this.visualize(off_auto);
 
 				/*
-				// we could make both automatons forward det (they are already rev det)
+				// we could make both automata forward det (they are already rev det)
 				// - but it is not really necessary, as we will just compare the path lists
 				// afterwards anyway
 
-					// invert both automatons
-					sout += 'We invert both automatons:' + this.nlnl;
+					// invert both automata
+					sout += 'We invert both automata:' + this.nlnl;
 					this.invertAutomaton(our_auto);
 					sout += this.visualize(our_auto);
 					this.invertAutomaton(off_auto);
 					sout += this.visualize(off_auto);
 
-					// make both automatons rev det
-					sout += 'We make both automatons reverse deterministic:' + this.nlnl;
+					// make both automata rev det
+					sout += 'We make both automata reverse deterministic:' + this.nlnl;
 					this.makeAutomatonReverseDeterministic(our_auto);
 					sout += this.visualize(our_auto);
 					this.makeAutomatonReverseDeterministic(off_auto);
 					sout += this.visualize(off_auto);
 				*/
 
-				// compare the two automatons
-				sout += 'We now check whether the two automatons are equivalent. ';
+				// compare the two automata
+				sout += 'We now check whether the two automata are equivalent. ';
 
-				if (this.automatonsAreEquivalent(our_auto, off_auto)) {
+				if (this.automataAreEquivalent(our_auto, off_auto)) {
 					// EPIC WIN
 					sout += 'Aaand yes, they are! Whoop whoop!' + this.nlnl;
 					sout += '<div class="success">Success</div>';
@@ -2343,7 +2343,7 @@ window.GML = {
 						'the two graphs are different but the underlying language is the same.' +
 						this.nlnl;
 
-				// generate automatons from both tables
+				// generate automata from both tables
 
 				var our_auto = GML.getAutomatonFromFindex(xbw12._publishFindex());
 				if (this.error_flag) {
@@ -2363,32 +2363,32 @@ window.GML = {
 				sout += this.visualize(off_auto);
 
 				/*
-				// we could make both automatons forward det (they are already rev det)
+				// we could make both automata forward det (they are already rev det)
 				// - but it is not really necessary, as we will just compare the path lists
 				// afterwards anyway
 
-					// invert both automatons
-					sout += 'We invert both automatons:' + this.nlnl;
+					// invert both automata
+					sout += 'We invert both automata:' + this.nlnl;
 					this.invertAutomaton(our_auto);
 					sout += this.visualize(our_auto);
 					this.invertAutomaton(off_auto);
 					sout += this.visualize(off_auto);
 
-					// make both automatons rev det
-					sout += 'We make both automatons reverse deterministic:' + this.nlnl;
+					// make both automata rev det
+					sout += 'We make both automata reverse deterministic:' + this.nlnl;
 					this.makeAutomatonReverseDeterministic(our_auto);
 					sout += this.visualize(our_auto);
 					this.makeAutomatonReverseDeterministic(off_auto);
 					sout += this.visualize(off_auto);
 				*/
 
-				// compare the two automatons
-				sout += 'We now check whether the two automatons are equivalent. ';
+				// compare the two automata
+				sout += 'We now check whether the two automata are equivalent. ';
 
 				this.checkAutomatonForLoops(our_auto);
 				this.checkAutomatonForLoops(off_auto);
 
-				if (this.automatonsAreEquivalent(our_auto, off_auto)) {
+				if (this.automataAreEquivalent(our_auto, off_auto)) {
 					// EPIC WIN
 					sout += 'Aaand yes, they are! Whoop whoop!' + this.nlnl;
 					sout += '<div class="success">Success</div>';
@@ -4219,7 +4219,7 @@ if (!this.bwt[k]) {
 			auto[into2[j]].p.splice(auto[into2[j]].p.indexOf(offset), 1);
 		}
 
-		// fuse them together
+		// attach end of auto1 to start of auto2
 
 		// set outOf1.n = [into2] and into2.p = [outOf1]
 		for (var i=0; i < outOf1.length; i++) {
@@ -4613,9 +4613,9 @@ if (!this.bwt[k]) {
 
 
 
-	// takes in two automatons
-	// gives out true if both automatons are equivalent, or false otherwise
-	automatonsAreEquivalent: function(auto1, auto2) {
+	// takes in two automata
+	// gives out true if both automata are equivalent, or false otherwise
+	automataAreEquivalent: function(auto1, auto2) {
 
 		this.error_flag = false;
 		this.checkAutomatonForLoops(auto1);
@@ -5618,7 +5618,7 @@ if (!this.bwt[k]) {
 		// Making the automaton pretty is not strictly necessary to achieve
 		// a valid automaton, but it being done will not hurt.
 		// This function would be called in the visualization function anyway,
-		// and in general through GML we kind of assume that our automatons
+		// and in general through GML we kind of assume that our automata
 		// are pretty. =)
 
 		this.makeAutomatonPretty(auto);

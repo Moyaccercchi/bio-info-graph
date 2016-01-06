@@ -1187,7 +1187,7 @@ window.GML_UI = {
 				}
 
 				// append the cell data to the LaTeX table
-				source += tbody.children[i].children[j].innerHTML;
+				source += tbody.children[i].children[j].innerHTML.replace('\n', '');
 
 				if (j < rowlen-1) {
 					source += ' & ';
@@ -1211,6 +1211,9 @@ window.GML_UI = {
 		source = source.split('</i>').join('$');
 		source = source.split('First&nbsp;Column').join('FC');
 		source = source.split('&nbsp;').join('~');
+		source = source.split('\\textbf{\\#}<span class="d">0</span>').join('$\\boldsymbol{\\#}_0$');
+		source = source.split('\\$<span class="d">0</span>').join('$\\$_0$');
+		source = source.split('$\\$_0$$\\boldsymbol{\\#}_0$').join('$\\$_0\\boldsymbol{\\#}_0$');
 
 		var url = "data:text/plain,"+encodeURIComponent(source);
 

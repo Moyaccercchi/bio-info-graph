@@ -94,11 +94,6 @@ GML.make_xbw_environment = function() {
 	// prefixes of the automaton
 	var prefixes = [];
 
-	// the last tab for which generateHTML was called (so that we can call it
-	// again without needing to know where we are, from the inside - e.g. in
-	// splitNodeHTML())
-	var last_tab = 0;
-
 
 	// assumes that BWT, M and F are set
 	// calculates FiC (as "char"), the C and ord arrays, and the alphabet alph
@@ -2028,8 +2023,11 @@ if (newM[prevNodes[j]] === '0') {
 				sout += '<br>';
 
 				sout += '<div>' +
-							// '<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].saveAsGML()" style="width:49%;display:inline-block;">Save as GML file</div>' +
+							/*
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].saveAsGML()" style="width:49%;display:inline-block;">Save as GML file</div>' +
 							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].saveAsFFX()" style="float:right; width:49%;display:inline-block;">Save as FFX file</div>' +
+							*/
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].saveAsFFX()">Save as FFX file</div>' +
 						'</div>';
 
 			} else {
@@ -2163,6 +2161,30 @@ if (newM[prevNodes[j]] === '0') {
 
 		saveAsGML: function() {
 
+			// create an automaton
+			auto = GML.getAutomatonFromFindex(this._publishFindex());
+
+			GML.checkAutomatonIsValid(auto);
+			if (GML.error_flag) {
+				alert('Cannot convert flat XBW table to automaton. \nAborting GML file generation.');
+			}
+
+			var source = '>regular_graph' + GML_UI.file_nl;
+
+			var mp = '';
+			var i = auto[0].n[0];
+			while (auto[i].c !== GML.DS) {
+				mp += auto[i].c;
+				i = auto[i].n[0];
+			}
+
+			source += mp;
+
+			// TODO :: add paths off the main row
+
+			var url = "data:application/octet-stream,"+encodeURIComponent(source);
+
+			window.open(url, '_blank');
 		},
 		_generateFFXfilecontent: function() {
 

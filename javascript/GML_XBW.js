@@ -6,6 +6,18 @@
 	Note: Functions within the XBW Environment that are starting with an underscore
 		  are used internally. They are not part of the interface to the outside
 		  world and should (usually) not need to be called from the outside.
+
+	On indexing methods: We starting writing this source code without thinking about
+						 indexing methods much; after some time, we came up with the
+						 difference between node indexing (as in node tables) and
+						 table indexing (as in the actual flat XBW table we are
+						 looking at).
+						 However, in the thesis we actually more properly define
+						 absolute indexing, FC-indexing and BWT-indexing.
+						 To understand older comments in the node i / table i system,
+						 it can be helpful to think about node indexing as absolute
+						 indexing, while table indexing can refer to both FC-indexing
+						 and BWT-indexing.
 */
 
 // use as:
@@ -897,8 +909,8 @@ GML.make_xbw_environment = function() {
 			return rank('1', F, BWT.length);
 		},
 
-		// pref_cur_i .. current prefix i
-		// strict .. boolean [optional, default: false]
+		// pref_cur_i .. current prefix i in FC-indexing
+		// use_all_out_edges .. boolean [optional, default: true]
 		//           (if true, the starting node is checked for more outgoing edges
 		//           and if there are several different ones, a ! report is issued;
 		//           if false, the edge out of the starting node is determined by the
@@ -912,15 +924,13 @@ GML.make_xbw_environment = function() {
 		//           if false, encountering $_0 ends the prefix creation just like $)
 		// give_the_split_node .. object [optional], containing o = 1 or o = 2, the origin
 		//                        see [NOTE 2] to learn more about it
-		_publishPrefix: function(pref_cur_i, strict, length, spillover, give_the_split_node) {
+		_publishPrefix: function(pref_cur_i, use_all_out_edges, length, spillover, give_the_split_node) {
+
+			if (use_all_out_edges === undefined) {
+				use_all_out_edges = true;
+			}
 
 			var pref = '';
-
-			// used for the BWT mode, in which we want to go one extra cycle before
-			// abandoning based on '!', as everything is delayed by a cycle (without
-			// this, we would be missing out on the last character that we actually
-			// ARE granted!)
-			var bwt_not_all_last_round = false;
 
 			GML.vis_highlight_nodes = [[]];
 
@@ -1015,20 +1025,18 @@ GML.make_xbw_environment = function() {
 				// which tells us about the exact edge we want to take - without
 				// that (that is, at i > 0) we would have to select one at random,
 				// and that is a real reason for despair!)
-				if ((i > 0) || strict) {
+				if ((i > 0) || use_all_out_edges) {
 					// here, getting the length before going into the loop is actually
 					// important, as we do not want to loop through the elements that
 					// are added inside (as they have already been converted)
 					var len = pref_cur_is.length;
 					for (var j=0; j<len; j++) {
 						if (i > 0) {
-							// convert node i to table i
+							// convert node i to table i, that is, absolute indexing to FC-indexing
 							pref_cur_is[j] = select('1', M, pref_cur_is[j]);
 						} else {
-							// if strict, we already have table i - but we need to
-							// do something to it anyway; we need to go to the left
-							// as long as we have '0' in M to get to the bottom of
-							// this all ;)
+							// if use_all_out_edges, we need to go to the left as long as
+							// we have '0' in M to get to the bottom of this all ;)
 							while (M[pref_cur_is[j]] == '0') {
 								pref_cur_is[j]--;
 							}
@@ -1043,9 +1051,8 @@ GML.make_xbw_environment = function() {
 							pref_cur_is_store[pcis_len].push({i: pref_cur_is[j], m: 1});
 							pcis_len_m = pref_cur_is_store[pcis_len].length-1;
 						}
-						var k = 1;
 
-						while (M[pref_cur_is[j]+k] == '0') {
+						for (var k = 1; M[pref_cur_is[j]+k] == '0'; k++) {
 							pref_cur_is.push(pref_cur_is[j]+k);
 
 							if (give_the_split_node) {
@@ -1074,17 +1081,17 @@ GML.make_xbw_environment = function() {
 								new_vis_high.push(GML.vis_highlight_nodes[0][l]);
 							}
 							GML.vis_highlight_nodes.push(new_vis_high);
-							k++;
 						}
 					}
 				}
 
-				// get node i
 				for (var j=0; j<pref_cur_is.length; j++) {
 					// We just follow the first outgoing edge - which would seem completely
 					// stupid usually, but we also deactivate the select, as we are already
 					// in FC-indexing, and the offset of the outgoing edge IS ALREADY INCLUDED
 					// in the index we give as first parameter!
+					// We also deactivate the ranking, so that we effectively give in an
+					// FC-indexed value and get out a BWT-indexed value.
 					pref_cur_is[j] = psi(pref_cur_is[j], 0, false, false);
 				}
 
@@ -1107,7 +1114,7 @@ GML.make_xbw_environment = function() {
 					}
 				}
 
-				if (bwt_not_all_last_round || not_all_chars_are_the_same) {
+				if (not_all_chars_are_the_same) {
 
 					// add error char '!' to the prefix
 					pref += GML.prefixErrorChar;
@@ -1121,10 +1128,6 @@ GML.make_xbw_environment = function() {
 					break;
 
 				} else {
-
-					if (not_all_chars_are_the_same) {
-						bwt_not_all_last_round = true;
-					}
 
 					pref += char_to_add_now;
 
@@ -1149,7 +1152,7 @@ GML.make_xbw_environment = function() {
 							if (give_the_split_node) {
 								give_the_split_node.o++;
 							}
-							var pref_in_h2 = nextXBW._publishPrefix(pref_cur_i, strict, length + 2 - pref.length, false, give_the_split_node);
+							var pref_in_h2 = nextXBW._publishPrefix(pref_cur_i, true, length + 2 - pref.length, false, give_the_split_node);
 
 							// if no split node was found on the other one...
 							if (give_the_split_node && (give_the_split_node.i < 0)) {
@@ -1166,7 +1169,7 @@ GML.make_xbw_environment = function() {
 					break;
 				}
 
-				// convert table i to node i
+				// convert from BWT-indexing to absolute indexing
 				for (var j=0; j<pref_cur_is.length; j++) {
 					pref_cur_is[j] = rank('1', F, pref_cur_is[j]);
 				}
@@ -1984,8 +1987,6 @@ if (newM[prevNodes[j]] === '0') {
 
 			sout += '<div>';
 			
-			sout += '<u>XBW Environment</u>';
-
 			if (GML.error_flag) {
 
 				sout += '<div class="error">Failure: The XBW environment cannot be initialized.</div>';
@@ -1997,101 +1998,116 @@ if (newM[prevNodes[j]] === '0') {
 				return;
 			}
 
-			sout += '<br><br>';
+			if (role === 2) {
+				// we are a fused XBW host environment
 
-			if (GML.verbosity > 7) {
-				sout += 'To start the XBW environment, we first of all flatten the BWT (replacing any ' +
-						'entries with several options by as many single-optioned entries) and add the ' +
-						'first column (the alphabetically sorted BWT.)<br>' +
-						'We will also have a look at the ' + GML.DM + ' and ' + GML.DF + ' vectors.' +
-						'<br>';
-			}
+				sout += '<u>Fused XBW Environment</u>';
 
-			var alph_and_C_str = this.get_alph_and_C_str();
+				sout += '<br><br>';
 
-			sout += 'The alphabet that we are considering is <code>&#931; = ' + alph_and_C_str[0] +
-					'</code>, ' +
-					'the ord array is <code>' + GML.printKeyValArr(alph, ord, true) + '</code> ' +
-					'and the <i>C</i> array is <code>' + alph_and_C_str[1] + '</code> ' +
-					'.<br><br>';
+				sout += 'This XBW environment contains ' + subXBWs.length + ' flat tables.';
 
-			var shide = '<div class="table_box" id="div-xbw-' + tab + '-env-table">' +
+			} else {
+				// we are a regular XBW environment
+
+				sout += '<u>XBW Environment</u>';
+
+				sout += '<br><br>';
+
+				if (GML.verbosity > 7) {
+					sout += 'To start the XBW environment, we first of all flatten the BWT (replacing any ' +
+							'entries with several options by as many single-optioned entries) and add the ' +
+							'first column (the alphabetically sorted BWT.)<br>' +
+							'We will also have a look at the ' + GML.DM + ' and ' + GML.DF + ' vectors.' +
+							'<br>';
+				}
+
+				var alph_and_C_str = this.get_alph_and_C_str();
+
+				sout += 'The alphabet that we are considering is <code>&#931; = ' + alph_and_C_str[0] +
+						'</code>, ' +
+						'the ord array is <code>' + GML.printKeyValArr(alph, ord, true) + '</code> ' +
+						'and the <i>C</i> array is <code>' + alph_and_C_str[1] + '</code> ' +
+						'.<br><br>';
+
+				var shide = '<div class="table_box" id="div-xbw-' + tab + '-env-table">' +
+							'</div>';
+
+				sout += GML.hideWrap(shide, 'Table');
+
+				if (GML.verbosity > 7) {
+					sout += '<br>To better keep track of what is happening, we also have a look at the corresponding graph:';
+				}
+
+				sout += '<div id="div-xbw-' + tab  + '-env-graph" class="svgheight">' +
 						'</div>';
 
-			sout += GML.hideWrap(shide, 'Table');
+				if (GML.verbosity > 9) {
+					sout += "Let's use the XBW to search for some string using <code>find()</code>, or go for the navigation functions directly:";
+				}
 
-			if (GML.verbosity > 7) {
-				sout += '<br>To better keep track of what is happening, we also have a look at the corresponding graph:';
-			}
+				sout += '</div>';
 
-			sout += '<div id="div-xbw-' + tab  + '-env-graph" class="svgheight">' +
-					'</div>';
-
-			if (GML.verbosity > 9) {
-				sout += "Let's use the XBW to search for some string using <code>find()</code>, or go for the navigation functions directly:";
-			}
-
-			sout += '</div>';
-
-			sout += '<div>' +
-						'<input id="in-string-' + tab + '-xbw-find" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'findHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="AC" style="display: inline-block; width: 21%;"></input>' +
-						'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].findHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">find()</div>' +
-						'<input id="in-string-' + tab + '-xbw-pref" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'prefHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="2" style="display: inline-block; width: 21%; margin-left:2%;"></input>' +
-						'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].prefHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">prefix()</div>' +
-						'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].splitNodeHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">split node()</div>' +
-						'<input id="in-string-' + tab + '-xbw-split-node" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'splitNodeHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="2" style="float:right; display: inline-block; width: 21%;"></input>' +
-					'</div>';
-
-			sout += '<div>' +
-						'<div class="input-info-container" style="display: inline-block; width: 38%;">' +
-							'<input id="in-string-' + tab + '-xbw-lf" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'lfHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="7,10,A" style="width:100%"></input>' +
-							'<span class="infobtn" onclick="GML_UI.clickOnXBWInfo(event, 1)">Info</span>' +
-						'</div>' +
-						'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].lfHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">LF()</div>' +
-						'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].psiHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">&#936;()</div>' +
-						'<div class="input-info-container" style="float:right; display: inline-block; width: 38%;">' +
-							'<input id="in-string-' + tab + '-xbw-psi" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'psiHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="1,0" style="width:100%"></input>' +
-							'<span class="infobtn" onclick="GML_UI.clickOnXBWInfo(event, 2)">Info</span>' +
-						'</div>' +
-					'</div>';
-
-			sout += '<div>' +
-						'<input id="in-string-' + tab + '-xbw-select" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'selectHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="1,M,13" style="display: inline-block; width: 38%;"></input>' +
-						'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].selectHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">select()</div>' +
-						'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].rankHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">rank()</div>' +
-						'<input id="in-string-' + tab + '-xbw-rank" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'rankHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="1,F,13" style="float:right; display: inline-block; width: 38%;"></input>' +
-					'</div>';
-
-			sout += '<div>Result: <span id="span-' + tab + '-xbw-results">(none)</span>';
-
-			sout += '<div id="xbw-info-box-1" style="margin-top:20px;display:none;">' +
-					'Optionally, you can add two boolean parameters ' +
-					'in the LF() input, e.g. 7,10,A,true,false.<br>' +
-					'They control whether select() is called before LF() and ' +
-					'whether rank() is called afterwards, respectively.' +
-					'</div>';
-
-			sout += '<div id="xbw-info-box-2" style="margin-top:20px;display:none;">' +
-					'Optionally, you can add two boolean parameters ' +
-					'in the &#936;() input, e.g. 1,0,true,false.<br>' +
-					'They control whether select() is called before &#936;() and ' +
-					'whether rank() is called afterwards, respectively.' +
-					'</div>';
-
-			// TODO :: check if this text actually makes sense
-			if (GML.verbosity > 9) {
-				sout += '<div style="margin-top:20px">' +
-						'Just in case you are as forgetful as I am:<br>' +
-						'Assume we have position <i>x</i>, then call ' +
-						'LF(<i>x</i>,<i>x</i>,BWT[<i>x</i>]) ' +
-						'to get all nodes <b>preceding</b> <i>x</i>, ' +
-						'call &#936;(<i>x</i>,<i>0</i>) to get the first node <b>succeeding</b> <i>x</i> and ' +
-						'&#936;(<i>x</i>,<i>1</i>) to get the second node <b>succeeding</b> <i>x</i>, etc.<br>' +
-						'To get the prefix of node <i>x</i>, use BWT[&#936;(<i>x</i>,<i>0</i>)] + ' +
-						'BWT[&#936;(&#936;(<i>x</i>,<i>0</i>),&#936;(<i>x</i>,<i>0</i>))] + ...<br>' +
-						'(This here is just a very general reminder and completely ' +
-						'ignores that you need to keep track of different indexing methods.)'
+				sout += '<div>' +
+							'<input id="in-string-' + tab + '-xbw-find" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'findHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="AC" style="display: inline-block; width: 21%;"></input>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].findHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">find()</div>' +
+							'<input id="in-string-' + tab + '-xbw-pref" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'prefHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="2" style="display: inline-block; width: 21%; margin-left:2%;"></input>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].prefHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">prefix()</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].splitNodeHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">split node()</div>' +
+							'<input id="in-string-' + tab + '-xbw-split-node" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'splitNodeHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="2" style="float:right; display: inline-block; width: 21%;"></input>' +
 						'</div>';
+
+				sout += '<div>' +
+							'<div class="input-info-container" style="display: inline-block; width: 38%;">' +
+								'<input id="in-string-' + tab + '-xbw-lf" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'lfHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="7,10,A" style="width:100%"></input>' +
+								'<span class="infobtn" onclick="GML_UI.clickOnXBWInfo(event, 1)">Info</span>' +
+							'</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].lfHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">LF()</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].psiHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">&#936;()</div>' +
+							'<div class="input-info-container" style="float:right; display: inline-block; width: 38%;">' +
+								'<input id="in-string-' + tab + '-xbw-psi" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'psiHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="1,0" style="width:100%"></input>' +
+								'<span class="infobtn" onclick="GML_UI.clickOnXBWInfo(event, 2)">Info</span>' +
+							'</div>' +
+						'</div>';
+
+				sout += '<div>' +
+							'<input id="in-string-' + tab + '-xbw-select" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'selectHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="1,M,13" style="display: inline-block; width: 38%;"></input>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].selectHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">select()</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].rankHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">rank()</div>' +
+							'<input id="in-string-' + tab + '-xbw-rank" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'rankHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="1,F,13" style="float:right; display: inline-block; width: 38%;"></input>' +
+						'</div>';
+
+				sout += '<div>Result: <span id="span-' + tab + '-xbw-results">(none)</span>';
+
+				sout += '<div id="xbw-info-box-1" style="margin-top:20px;display:none;">' +
+						'Optionally, you can add two boolean parameters ' +
+						'in the LF() input, e.g. 7,10,A,true,false.<br>' +
+						'They control whether select() is called before LF() and ' +
+						'whether rank() is called afterwards, respectively.' +
+						'</div>';
+
+				sout += '<div id="xbw-info-box-2" style="margin-top:20px;display:none;">' +
+						'Optionally, you can add two boolean parameters ' +
+						'in the &#936;() input, e.g. 1,0,true,false.<br>' +
+						'They control whether select() is called before &#936;() and ' +
+						'whether rank() is called afterwards, respectively.' +
+						'</div>';
+
+				// TODO :: check if this text actually makes sense
+				if (GML.verbosity > 9) {
+					sout += '<div style="margin-top:20px">' +
+							'Just in case you are as forgetful as I am:<br>' +
+							'Assume we have position <i>x</i>, then call ' +
+							'LF(<i>x</i>,<i>x</i>,BWT[<i>x</i>]) ' +
+							'to get all nodes <b>preceding</b> <i>x</i>, ' +
+							'call &#936;(<i>x</i>,<i>0</i>) to get the first node <b>succeeding</b> <i>x</i> and ' +
+							'&#936;(<i>x</i>,<i>1</i>) to get the second node <b>succeeding</b> <i>x</i>, etc.<br>' +
+							'To get the prefix of node <i>x</i>, use BWT[&#936;(<i>x</i>,<i>0</i>)] + ' +
+							'BWT[&#936;(&#936;(<i>x</i>,<i>0</i>),&#936;(<i>x</i>,<i>0</i>))] + ...<br>' +
+							'(This here is just a very general reminder and completely ' +
+							'ignores that you need to keep track of different indexing methods.)'
+							'</div>';
+				}
 			}
 
 			sout += '</div>';
@@ -2099,13 +2115,16 @@ if (newM[prevNodes[j]] === '0') {
 			// replace '^' with '#' before printout
 			sout = sout.replace(/\^/g, '#');
 
-			document.getElementById('div-xbw-' + tab).innerHTML =
-				sout;
+			document.getElementById('div-xbw-' + tab).innerHTML = sout;
 
-			document.getElementById('div-xbw-' + tab + '-env-table').innerHTML =
-				this.generateTable();
+			if (role === 2) {
 
-			this.generateGraph([], tab);
+			} else {
+				document.getElementById('div-xbw-' + tab + '-env-table').innerHTML =
+					this.generateTable();
+
+				this.generateGraph([], tab);
+			}
 		},
 		get_alph_and_C_str: function() {
 
@@ -2285,11 +2304,17 @@ if (newM[prevNodes[j]] === '0') {
 		},
 		prefHTML: function(tab) {
 
-			var pref_i = document.getElementById('in-string-' + tab + '-xbw-pref').value;
+			var inputs = document.getElementById('in-string-' + tab + '-xbw-pref').value.split(',');
 
-			pref_i = parseInt(pref_i, 10) - GML.ao;
+			pref_i = parseInt(inputs[0], 10) - GML.ao;
 
-			var prefix = this._publishPrefix(pref_i);
+			if (inputs[1] === undefined) {
+				inputs[1] = true;
+			} else {
+				inputs[1] = inputs[1].toUpperCase() === 'TRUE';
+			}
+
+			var prefix = this._publishPrefix(pref_i, inputs[1]);
 
 			// replace '^' with '#' before output
 			prefix = prefix.split('^').join('#');

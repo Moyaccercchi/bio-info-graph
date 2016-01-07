@@ -2470,13 +2470,9 @@ window.GML = {
 			xbw1.init(findex1);
 			xbw2.init(findex2);
 
-			xbw12.initAsMergeHost();
-			xbw12.addSubXBW(xbw1);
-			xbw12.addSubXBW(xbw2);
 
 
-
-			if (this.verbosity > 3) {
+			if (this.verbosity > 5) {
 				sout += "For " + this.DH_1 + " we get:" + this.nlnl;
 
 				shide = '<div class="table_box">' + xbw1.generateTable() + '</div>';
@@ -2489,11 +2485,35 @@ window.GML = {
 			}
 
 
+			if (this.verbosity > 3) {
+				sout += "We initialize the host data structure, " +
+						"which will contain the tables for " + this.DH_1 +
+						" and " + this.DH_2 + "." + this.nlnl;
+			}
+
+
+			xbw12.initAsMergeHost();
+
+
+			if (this.verbosity > 3) {
+				sout += "We now add both " + this.DH_1 +
+						" and " + this.DH_2 + " to the data structure." + this.nlnl;
+			}
+
+
+			xbw12.addSubXBW(xbw1);
+			xbw12.addSubXBW(xbw2);
+
+
+			if (this.verbosity > 1) {
+				sout += "The fusion of the flat XBW tables has finished." + this.nlnl;
+			}
+
 
 			if ((!GML.hideXBWenvironments) && GML_UI) {
 				// start up control center for fused XBW
 				GML.XBWs[GML_UI.cur_tab] = xbw12;
-				//GML.XBWs[GML_UI.cur_tab].generateHTML();
+				GML.XBWs[GML_UI.cur_tab].generateHTML();
 			}
 		}
 

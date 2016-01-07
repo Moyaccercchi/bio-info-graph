@@ -414,14 +414,21 @@ GML.make_xbw_environment = function() {
 
 
 
-		addSubXBW: function(subXBW) {
+		addSubXBW: function(newXBW) {
+
+			newXBW._setPrevXBW(undefined);
+			newXBW._setNextXBW(undefined);
 
 			if (subXBWs.length > 0) {
-				subXBWs[subXBWs.length-1]._setNextXBW(subXBW);
-				subXBW._setPrevXBW(subXBWs[subXBWs.length-1]);
+				subXBWs[subXBWs.length-1]._setNextXBW(newXBW);
+				newXBW._setPrevXBW(subXBWs[subXBWs.length-1]);
 
-				subXBWs[subXBWs.length-1]._replaceSpecialChar(GML.DS, GML.DS_1);
-				subXBW._replaceSpecialChar(GML.DK, GML.DK_1);
+				// if we are merging, then we replace $ with $_0 and # with #_0
+				// - but if we are fusing, this is not necessary
+				if (role === 2) {
+					subXBWs[subXBWs.length-1]._replaceSpecialChar(GML.DS, GML.DS_1);
+					newXBW._replaceSpecialChar(GML.DK, GML.DK_1);
+				}
 			}
 
 			multi_cur_fic.push(0);
@@ -429,7 +436,7 @@ GML.make_xbw_environment = function() {
 			multi_cur_fic_int.push(0);
 			multi_cur_bwt_int.push(0);
 
-			subXBWs.push(subXBW);
+			subXBWs.push(newXBW);
 		},
 
 		clearSubXBWs: function() {
@@ -1998,14 +2005,25 @@ if (newM[prevNodes[j]] === '0') {
 				return;
 			}
 
-			if (role === 2) {
+			if (role === 3) {
 				// we are a fused XBW host environment
 
 				sout += '<u>Fused XBW Environment</u>';
 
 				sout += '<br><br>';
 
-				sout += 'This XBW environment contains ' + subXBWs.length + ' flat tables.';
+				sout += 'This XBW environment contains ' + subXBWs.length + ' flat tables.<br>' +
+						'They are:<br>';
+
+				var shide = '<div class="table_box" id="div-xbw-' + tab + '-env-table">';
+
+				for (var sx = 0; sx < subXBWs.length; sx++) {
+					shide += subXBWs[sx].generateTable() + '&nbsp;&nbsp;&nbsp;&nbsp;';
+				}
+
+				shide += '</div>';
+
+				sout += GML.hideWrap(shide, 'Table');
 
 			} else {
 				// we are a regular XBW environment
@@ -2117,7 +2135,7 @@ if (newM[prevNodes[j]] === '0') {
 
 			document.getElementById('div-xbw-' + tab).innerHTML = sout;
 
-			if (role === 2) {
+			if (role === 3) {
 
 			} else {
 				document.getElementById('div-xbw-' + tab + '-env-table').innerHTML =

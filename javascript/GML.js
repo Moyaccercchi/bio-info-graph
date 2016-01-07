@@ -2492,7 +2492,7 @@ window.GML = {
 			}
 
 
-			xbw12.initAsMergeHost();
+			xbw12.initAsFuseHost();
 
 
 			if (this.verbosity > 3) {

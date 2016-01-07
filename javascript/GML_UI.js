@@ -1144,7 +1144,7 @@ window.GML_UI = {
 
 		var table = document.getElementById("hide-cont-" + whichOne).getElementsByTagName('table')[0];
 
-		var source = '<table>' + table.innerHTML + '</table>';
+		var source = '<table>' + table.innerHTML.replace('\n', '') + '</table>';
 
 		var url = "data:text/plain,"+encodeURIComponent(source);
 
@@ -1160,9 +1160,9 @@ window.GML_UI = {
 
 		var source = '';
 
-		source += '\\begin{table}[htb]\n';
-		source += '\\centering\n';
-		source += '\\caption[GML table]{This is a table from GML.}\n';
+		source += '\\begin{table}[htb]' + this.file_nl;
+		source += '\\centering' + this.file_nl;
+		source += '\\caption[GML table]{This is a table from GML.}' + this.file_nl;
 		source += '\\begin{tabularx}{1.0\\textwidth}{ ';
 		
 		// iterate over the cells in the first row and define that many columns in the LaTeX table
@@ -1171,8 +1171,8 @@ window.GML_UI = {
 			source += '| c ';
 		}
 		
-		source += '| }\n';
-		source += '\\hline\n';
+		source += '| }' + this.file_nl;
+		source += '\\hline' + this.file_nl;
 
 		// iterate over all rows 
 		var len = tbody.children.length;
@@ -1192,13 +1192,13 @@ window.GML_UI = {
 				if (j < rowlen-1) {
 					source += ' & ';
 				} else {
-					source += '} \\\\ \\hline \n';
+					source += '} \\\\ \\hline ' + this.file_nl;
 				}
 			}
 		}
 
-		source += '\\end{tabularx}\n';
-		source += '\\label{table:gml_table}\n';
+		source += '\\end{tabularx}' + this.file_nl;
+		source += '\\label{table:gml_table}' + this.file_nl;
 		source += '\\end{table}';
 
 		// replace some HTML commands with some LaTeX commands which do essentially the same =)
@@ -1365,6 +1365,8 @@ window.GML_UI = {
 			'rgb(' + c + ',' + c + ',' + c + ')';
 	},
 
+	file_nl: '\r\n',
+
 	applyOptions: function() {
 
 		var TRUE = 'X';
@@ -1411,6 +1413,12 @@ window.GML_UI = {
 		this.svg_font_latex = document.getElementById('in-options-svg-font-latex').innerHTML == TRUE;
 		this.do_invalid_tests = document.getElementById('in-options-do-invalid-tests').innerHTML == TRUE;
 
+		if (document.getElementById('in-options-file-nl').innerHTML == TRUE) {
+			this.file_nl = '\r\n';
+		} else {
+			this.file_nl = '\n';
+		}
+
 		GML.vis_show_hashtag = document.getElementById('in-options-show-hashtag').innerHTML == TRUE;
 		GML.vis_show_dollarsign = document.getElementById('in-options-show-dollarsign').innerHTML == TRUE;
 		GML.vis_always_search_path = document.getElementById('in-options-always-search-path').innerHTML == TRUE;
@@ -1434,6 +1442,7 @@ window.GML_UI = {
 		document.getElementById('in-options-show-xbw-envs').innerHTML = TRUE;
 		document.getElementById('in-options-do-invalid-tests').innerHTML = FALSE;
 		document.getElementById('in-options-do-prefix-doubling').innerHTML = FALSE;
+		document.getElementById('in-options-file-nl').innerHTML = TRUE;
 		document.getElementById('in-options-show-graph').innerHTML = FALSE;
 		document.getElementById('in-options-show-autoi').innerHTML = FALSE;
 		document.getElementById('in-options-show-hashtag').innerHTML = TRUE;

@@ -2025,6 +2025,13 @@ if (newM[prevNodes[j]] === '0') {
 
 				sout += GML.hideWrap(shide, 'Table');
 
+				sout += '<br>';
+
+				sout += '<div>' +
+							// '<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].saveAsGML()" style="width:49%;display:inline-block;">Save as GML file</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].saveAsFFX()" style="float:right; width:49%;display:inline-block;">Save as FFX file</div>' +
+						'</div>';
+
 			} else {
 				// we are a regular XBW environment
 
@@ -2066,33 +2073,38 @@ if (newM[prevNodes[j]] === '0') {
 
 				sout += '</div>';
 
+				// for two entries in a row, use width 38% and width 9%
+				// for three entries in a row, use width 21% and width 9%
+
 				sout += '<div>' +
 							'<input id="in-string-' + tab + '-xbw-find" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'findHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="AC" style="display: inline-block; width: 21%;"></input>' +
-							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].findHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">find()</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].findHTML()" style="width:9%; margin-left:2%;display:inline-block;">find()</div>' +
 							'<input id="in-string-' + tab + '-xbw-pref" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'prefHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="2" style="display: inline-block; width: 21%; margin-left:2%;"></input>' +
-							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].prefHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">prefix()</div>' +
-							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].splitNodeHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">split node()</div>' +
-							'<input id="in-string-' + tab + '-xbw-split-node" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'splitNodeHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="2" style="float:right; display: inline-block; width: 21%;"></input>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].prefHTML()" style="width:9%; margin-left:2%;display:inline-block;">prefix()</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].splitNodeHTML()" style="float:right; width:9%; margin-left:2%;">split node()</div>' +
+							'<input id="in-string-' + tab + '-xbw-split-node" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'splitNodeHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="12" style="float:right; display: inline-block; width: 21%;"></input>' +
 						'</div>';
 
 				sout += '<div>' +
-							'<div class="input-info-container" style="display: inline-block; width: 38%;">' +
+							'<div class="input-info-container" style="display: inline-block; width: 21%;">' +
 								'<input id="in-string-' + tab + '-xbw-lf" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'lfHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="7,10,A" style="width:100%"></input>' +
 								'<span class="infobtn" onclick="GML_UI.clickOnXBWInfo(event, 1)">Info</span>' +
 							'</div>' +
-							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].lfHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">LF()</div>' +
-							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].psiHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">&#936;()</div>' +
-							'<div class="input-info-container" style="float:right; display: inline-block; width: 38%;">' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].lfHTML()" style="width:9%; margin-left:2%;display:inline-block;">LF()</div>' +
+							'<div class="input-info-container" style="display: inline-block; width: 21%; margin-left:2%;">' +
 								'<input id="in-string-' + tab + '-xbw-psi" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'psiHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="1,0" style="width:100%"></input>' +
 								'<span class="infobtn" onclick="GML_UI.clickOnXBWInfo(event, 2)">Info</span>' +
 							'</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].psiHTML()" style="width:9%; margin-left:2%;display:inline-block;">&#936;()</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].saveAsGML()" style="float:right; width:32%; margin-left:2%;">Save as GML file</div>' +
 						'</div>';
 
 				sout += '<div>' +
-							'<input id="in-string-' + tab + '-xbw-select" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'selectHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="1,M,13" style="display: inline-block; width: 38%;"></input>' +
-							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].selectHTML(' + tab + ')" style="width:9%; margin-left:2%;display:inline-block;">select()</div>' +
-							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].rankHTML(' + tab + ')" style="float:right; width:9%; margin-left:2%;">rank()</div>' +
-							'<input id="in-string-' + tab + '-xbw-rank" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'rankHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="1,F,13" style="float:right; display: inline-block; width: 38%;"></input>' +
+							'<input id="in-string-' + tab + '-xbw-select" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'selectHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="1,M,13" style="display: inline-block; width: 21%;"></input>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].selectHTML()" style="width:9%; margin-left:2%;display:inline-block;">select()</div>' +
+							'<input id="in-string-' + tab + '-xbw-rank" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'rankHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="1,F,13" style="display: inline-block; width: 21%; margin-left:2%;"></input>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].rankHTML()" style="width:9%; margin-left:2%; display:inline-block;">rank()</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].saveAsFFX()" style="float:right; width:32%; margin-left:2%;">Save as FFX file</div>' +
 						'</div>';
 
 				sout += '<div>Result: <span id="span-' + tab + '-xbw-results">(none)</span>';
@@ -2141,12 +2153,56 @@ if (newM[prevNodes[j]] === '0') {
 				document.getElementById('div-xbw-' + tab + '-env-table').innerHTML =
 					this.generateTable();
 
-				this.generateGraph([], tab);
+				this.generateGraph([]);
 			}
 		},
 		get_alph_and_C_str: function() {
 
 			return ['{' + alph.join(', ') + '}', GML.printKeyValArr(alph, C, true)];
+		},
+
+		saveAsGML: function() {
+
+		},
+		_generateFFXfilecontent: function() {
+
+			var source = '';
+
+			source += 'B\t' + BWT + GML_UI.file_nl;
+			source += 'M\t' + M + GML_UI.file_nl;
+			source += 'F\t' + F + GML_UI.file_nl;
+			source += 'O\t' + GML.printKeyValArr(alph, ord, true, true) + GML_UI.file_nl;
+			source += 'C\t' + GML.printKeyValArr(alph, C, true, true) + GML_UI.file_nl;
+
+			return source;
+		},
+		saveAsFFX: function() {
+
+			var source;
+
+			switch (role) {
+				case 1:
+					source = '>regular_graph' + GML_UI.file_nl;
+					source += this._generateFFXfilecontent();
+					break;
+				case 3:
+					source = '';
+					for (var sx = 0; sx < subXBWs.length; sx++) {
+						if (sx > 0) {
+							source += GML_UI.file_nl;
+						}
+						source += '>fused_graph_' + sx + GML_UI.file_nl;
+						source += subXBWs[sx]._generateFFXfilecontent();
+					}
+					break;
+				default:
+					alert('This XBW environment is not currently performing a role in which it can save its contents.');
+					return;
+			}
+
+			var url = "data:application/octet-stream,"+encodeURIComponent(source);
+
+			window.open(url, '_blank');
 		},
 
 		// in highlight_arr and extra_highlight_arr, we use
@@ -2282,9 +2338,9 @@ if (newM[prevNodes[j]] === '0') {
 		// tab is the integer designation of the tab on which we are calling this
 		// if show_vis_hl is true, then the extra highlighted nodes and edges in red
 		// are displayed too
-		generateGraph: function(highnodes, tab, show_vis_hl) {
+		generateGraph: function(highnodes, show_vis_hl) {
 
-			var outerdiv = document.getElementById('div-xbw-' + tab + '-env-graph');
+			var outerdiv = document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-graph');
 			var prevdispstyle = 'block';
 			var prevdispcaption = 'Hide';
 			if (outerdiv.childNodes[0]) {
@@ -2302,9 +2358,9 @@ if (newM[prevNodes[j]] === '0') {
 			outerdiv.childNodes[0].childNodes[1].style.display = prevdispstyle;
 			outerdiv.childNodes[0].childNodes[0].childNodes[0].innerHTML = prevdispcaption;
 		},
-		findHTML: function(tab) {
+		findHTML: function() {
 
-			var searchfor = document.getElementById('in-string-' + tab + '-xbw-find').value;
+			var searchfor = document.getElementById('in-string-' + GML_UI.cur_tab + '-xbw-find').value;
 
 			// replace '#' with '^' before calculations
 			searchfor = searchfor.toUpperCase().replace(/\#/g, '^');
@@ -2316,13 +2372,13 @@ if (newM[prevNodes[j]] === '0') {
 				res = '[' + (spep[0] + GML.ao) + ', ' + (spep[1] + GML.ao) + ']';
 			}
 
-			document.getElementById('span-' + tab + '-xbw-results').innerHTML = res;
+			document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML = res;
 
-			this.show_spep_in_HTML(spep, tab, ['i', 'char'], undefined, undefined, true);
+			this.show_spep_in_HTML(spep, ['i', 'char'], undefined, undefined, true);
 		},
-		prefHTML: function(tab) {
+		prefHTML: function() {
 
-			var inputs = document.getElementById('in-string-' + tab + '-xbw-pref').value.split(',');
+			var inputs = document.getElementById('in-string-' + GML_UI.cur_tab + '-xbw-pref').value.split(',');
 
 			pref_i = parseInt(inputs[0], 10) - GML.ao;
 
@@ -2337,13 +2393,13 @@ if (newM[prevNodes[j]] === '0') {
 			// replace '^' with '#' before output
 			prefix = prefix.split('^').join('#');
 
-			document.getElementById('span-' + tab + '-xbw-results').innerHTML = prefix;
+			document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML = prefix;
 
-			this.show_spep_in_HTML([pref_i, pref_i], tab, ['i', 'char'], undefined, undefined, true);
+			this.show_spep_in_HTML([pref_i, pref_i], ['i', 'char'], undefined, undefined, true);
 		},
-		splitNodeHTML: function(tab) {
+		splitNodeHTML: function() {
 
-			var sn_i = document.getElementById('in-string-' + tab + '-xbw-split-node').value;
+			var sn_i = document.getElementById('in-string-' + GML_UI.cur_tab + '-xbw-split-node').value;
 
 			sn_i = parseInt(sn_i, 10) - GML.ao;
 
@@ -2355,11 +2411,11 @@ if (newM[prevNodes[j]] === '0') {
 			// TODO :: do this without converting to findex and back... (curly being done for graph generation)
 			this.init(this._publishFindex());
 			this.generateHTML();
-			this.generateGraph(undefined, tab);
+			this.generateGraph(undefined);
 		},
-		lfHTML: function(tab) {
+		lfHTML: function() {
 
-			var searchfor = document.getElementById('in-string-' + tab + '-xbw-lf').value;
+			var searchfor = document.getElementById('in-string-' + GML_UI.cur_tab + '-xbw-lf').value;
 
 			// replace '#' with '^' before calculations
 			searchfor = searchfor.toUpperCase().replace(/\#/g, '^').split(',');
@@ -2375,13 +2431,13 @@ if (newM[prevNodes[j]] === '0') {
 			if (spep.length > 0) {
 				res = '[' + (spep[0] + GML.ao) + ', ' + (spep[1] + GML.ao) + ']';
 			}
-			document.getElementById('span-' + tab + '-xbw-results').innerHTML = res;
+			document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML = res;
 
-			this.show_nodes_in_HTML(spep, tab);
+			this.show_nodes_in_HTML(spep);
 		},
-		psiHTML: function(tab) {
+		psiHTML: function() {
 
-			var searchfor = document.getElementById('in-string-' + tab + '-xbw-psi').value.split(',');
+			var searchfor = document.getElementById('in-string-' + GML_UI.cur_tab + '-xbw-psi').value.split(',');
 
 			var take_edge_no = searchfor[1];
 
@@ -2398,13 +2454,13 @@ if (newM[prevNodes[j]] === '0') {
 				searchfor[3] !== 'FALSE'  // default to true
 			);
 
-			document.getElementById('span-' + tab + '-xbw-results').innerHTML = (abs_next_i + GML.ao);
+			document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML = (abs_next_i + GML.ao);
 
-			this.show_nodes_in_HTML([abs_next_i, abs_next_i], tab);
+			this.show_nodes_in_HTML([abs_next_i, abs_next_i]);
 		},
-		selectHTML: function(tab) {
+		selectHTML: function() {
 
-			var searchfor = document.getElementById('in-string-' + tab + '-xbw-select').value;
+			var searchfor = document.getElementById('in-string-' + GML_UI.cur_tab + '-xbw-select').value;
 
 			// replace '#' with '^' before calculations
 			searchfor = searchfor.split(',');
@@ -2427,13 +2483,13 @@ if (newM[prevNodes[j]] === '0') {
 					break;
 			}
 
-			document.getElementById('span-' + tab + '-xbw-results').innerHTML = (i + GML.ao);
+			document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML = (i + GML.ao);
 
-			this.show_spep_in_HTML([i, i], tab, ['i', searchfor[1]], i, searchfor[0]);
+			this.show_spep_in_HTML([i, i], ['i', searchfor[1]], i, searchfor[0]);
 		},
-		rankHTML: function(tab) {
+		rankHTML: function() {
 
-			var searchfor = document.getElementById('in-string-' + tab + '-xbw-rank').value;
+			var searchfor = document.getElementById('in-string-' + GML_UI.cur_tab + '-xbw-rank').value;
 
 			// replace '#' with '^' before calculations
 			searchfor = searchfor.split(',');
@@ -2456,13 +2512,13 @@ if (newM[prevNodes[j]] === '0') {
 					break;
 			}
 
-			document.getElementById('span-' + tab + '-xbw-results').innerHTML = (i + GML.ao);
+			document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML = (i + GML.ao);
 
-			this.show_spep_in_HTML([i, i], tab, ['i', searchfor[1]], j, searchfor[0]);
+			this.show_spep_in_HTML([i, i], ['i', searchfor[1]], j, searchfor[0]);
 		},
 		// highlight the nodes in HTML table and graph which lie in the abs_pos_range,
 		// given with absolute indexing
-		show_nodes_in_HTML: function(abs_pos_range, tab) {
+		show_nodes_in_HTML: function(abs_pos_range) {
 
 			var highnodes = [];
 			var higharr_collection = [];
@@ -2497,12 +2553,12 @@ if (newM[prevNodes[j]] === '0') {
 				}
 			}
 
-			document.getElementById('div-xbw-' + tab + '-env-table').innerHTML =
+			document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-table').innerHTML =
 				this.generateTable(higharr_collection);
 
-			this.generateGraph(highnodes, tab, false);
+			this.generateGraph(highnodes, false);
 		},
-		show_spep_in_HTML: function(spep, tab, highrows, override_last_row, override_with, show_vis_hl) {
+		show_spep_in_HTML: function(spep, highrows, override_last_row, override_with, show_vis_hl) {
 
 			var higharr = [];
 			var highnodes = [];
@@ -2595,10 +2651,10 @@ if (newM[prevNodes[j]] === '0') {
 				}
 			}
 
-			document.getElementById('div-xbw-' + tab + '-env-table').innerHTML =
+			document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-table').innerHTML =
 				this.generateTable(higharr_collection);
 
-			this.generateGraph(highnodes, tab, show_vis_hl);
+			this.generateGraph(highnodes, show_vis_hl);
 		},
 	};
 };

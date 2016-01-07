@@ -115,7 +115,7 @@
 	did_itlvs_change: function(itlv1, itlv2);
 	expand_pos: function(pos, bwt);
 	pos_equals_pos: function(pos1, pos2);
-	printKeyValArr: function(keys, values, use_ao);
+	printKeyValArr: function(keys, values, use_ao, minify);
 	count_up_array: function(i);
 	makeVisualsNice: function(sout);
 	comparePrefixes: function(p1, p2);
@@ -3863,7 +3863,7 @@ if (!this.bwt[k]) {
 					sp = b[1];
 					// if no path identifier is specified for the origin, use the main path
 					if (sp.indexOf(':') < 0) {
-						sp = 'mp:' + sp;
+						sp = 'MP:' + sp;
 					}
 					sp = sp.split(':');
 					sp[1] = parseInt(sp[1], 10);
@@ -3878,7 +3878,7 @@ if (!this.bwt[k]) {
 					sp = b[3];
 					// if no path identifier is specified for the origin, use the main path
 					if (sp.indexOf(':') < 0) {
-						sp = 'mp:' + sp;
+						sp = 'MP:' + sp;
 					}
 					sp = sp.split(':');
 					sp[1] = parseInt(sp[1], 10);
@@ -3935,7 +3935,7 @@ if (!this.bwt[k]) {
 		// last node: dollarsign
 		auto.push({c: this.DS, p: [ha.length-2], n: []});
 
-		var path_identifiers_to_nodes = {'mp': 0};
+		var path_identifiers_to_nodes = {'MP': 0};
 
 		// add paths of the graph
 		for (var i = 0; i < h_graph.length; i++) {
@@ -7096,28 +7096,42 @@ if (!auto[nextNode]) {
 
 	// takes in two arrays, one containing keys and the other one
 	//   containing values for the keys (e.g. ['A', 'B'] and ['A'=>0, 'B'=>2]),
-	//   and the boolean parameter use_ao (optional, default: false),
-	//   which if true leads to the array offset being added to all values
+	//   the boolean parameter use_ao (optional, default: false),
+	//   which if true leads to the array offset being added to all values,
+	//   and the boolean parameter minify (optional, default: false),
+	//   which if true leads to the output being presented in a more compressed form
 	// gives out a php-like string representation of the values
-	printKeyValArr: function(keys, values, use_ao) {
+	printKeyValArr: function(keys, values, use_ao, minify) {
 
-		var sout = '[';
+		var sout = '';
+
+		if (!minify) {
+			sout += '[';
+		}
 
 		for (var i=0; i < keys.length; i++) {
-			sout += keys[i] + ' => ';
+			if (i > 0) {
+				sout += ',';
+				if (!minify) {
+					sout += ' ';
+				}
+			}
+			sout += keys[i];
+			if (minify) {
+				sout += '>';
+			} else {
+				sout += ' => ';
+			}
 			if (use_ao) {
 				sout += (values[keys[i]] + GML.ao);
 			} else {
 				sout += values[keys[i]];
 			}
-			sout += ', ';
 		}
 
-		if (sout.length > 1) {
-			sout = sout.slice(0, -2);
+		if (!minify) {
+			sout += ']';
 		}
-
-		sout += ']';
 
 		return sout;
 	},

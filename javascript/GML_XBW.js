@@ -182,6 +182,27 @@ GML.make_xbw_environment = function() {
 	*/
 	function select(c, arr, j) {
 
+		if (role === 3) {
+			return [subXBWs[c[1]]._select(c[0], arr, j), c[1]];
+		}
+
+		switch (arr) {
+			case 'M':
+				arr = M;
+				break;
+			case 'F':
+				arr = F;
+				break;
+			case 'BWT':
+				arr = BWT;
+				break;
+			case 'FC':
+			case 'FIC':
+			case 'CHAR':
+				arr = char;
+				break;
+		}
+
 		// offset adjustment
 		j++;
 
@@ -211,6 +232,31 @@ GML.make_xbw_environment = function() {
 
 	// spep is [sp, ep]
 	function lf(spep, c, do_select, do_rank) {
+
+		if (role === 3) {
+			// we are the host environment
+
+			var j = spep[1];
+			spep = spep[0];
+
+			spep = subXBWs[j]._lf(spep, c, do_select, do_rank);
+
+			/*
+			if spep is # (considering which indexing method we use!) {
+				j--
+				set spep to $
+			}
+			*/
+
+			if ((c === GML.DK) && (spep.length > 0)) {
+				j--;
+				// just [0, 0], even if we are not in absolute indexing, as there is only one edge
+				// into the end node $ in the previous table
+				spep = [0, 0];
+			}
+
+			return [spep, j];
+		}
 
 		var sp = spep[0];
 		var ep = spep[1];
@@ -251,6 +297,43 @@ GML.make_xbw_environment = function() {
 	// if do_select is false, then the input is in FC indexing
 	// if do_rank is false, then the output is in BWT indexing
 	function psi(i, take_edge_no, do_select, do_rank) {
+
+		if (role === 3) {
+			// we are the host environment
+
+			var j = i[1];
+			i = i[0];
+
+			i = subXBWs[j]._psi(i, take_edge_no, do_select, do_rank);
+
+			/*
+			if i is $ (considering which indexing method we use!) {
+				j++
+				set i to #
+			}
+			*/
+
+			if (do_rank) {
+				// we use absolute indexing
+				if (i === 0) {
+					j++;
+					i = nextXBW._publishBWTlenWithF();
+				}
+			} else {
+				// we use BWT-indexing
+				// this rank operation is useless, as we require the start node
+				// to have only one incoming edge anyway
+				// if (rank('1', F, i) === 0) {
+				if (i === 0) {
+					j++;
+					// just the last column, even if we are not in absolute indexing,
+					// as there is only one edge out of the start node # in the next table
+					i = nextXBW._publishBWTlen() - 1;
+				}
+			}
+
+			return [i, j];
+		}
 
 		if (do_select) {
 			// convert absolute indexing to FC-indexing
@@ -444,6 +527,18 @@ GML.make_xbw_environment = function() {
 
 		_setNextXBW: function(nXBW) {
 			nextXBW = nXBW;
+		},
+
+		// allow the outside world to access the psi and lf functions,
+		// such that the host structure in a fused graph can call them
+		_psi: function(i, take_edge_no, do_select, do_rank) {
+			return psi(i, take_edge_no, do_select, do_rank);
+		},
+		_lf: function(spep, c, do_select, do_rank) {
+			return lf(spep, c, do_select, do_rank);
+		},
+		_select: function(c, arr, j) {
+			return select(c, arr, j);
 		},
 
 		// returns true if the data stored within this XBW environment is graphless,
@@ -908,7 +1003,7 @@ GML.make_xbw_environment = function() {
 
 		// TODO EMRG :: store this, instead of recalculating again and again =)
 		_publishBWTlenWithF: function() {
-			return rank('1', F, BWT.length);
+			return rank('1', F, BWT.length-1);
 		},
 
 		// pref_cur_i .. current prefix i in FC-indexing
@@ -1205,11 +1300,6 @@ GML.make_xbw_environment = function() {
 					}
 				}
 			}
-		},
-
-		_publishNode: function(i) {
-
-			return [BWT[i], char[i], M[i], F[i]];
 		},
 
 		_publishAllNodes: function() {
@@ -2007,27 +2097,66 @@ if (newM[prevNodes[j]] === '0') {
 
 				sout += '<br><br>';
 
-				sout += 'This XBW environment contains ' + subXBWs.length + ' flat tables.<br>' +
-						'They are:<br>';
+				sout += 'This XBW environment contains ' + subXBWs.length + ' flat tables.';
+
+				if (GML.verbosity > 4) {
+					sout += '<br>';
+				} else {
+					sout += ' ';
+				}
+				sout += 'They are:<br>';
 
 				var shide = '<div class="table_box" id="div-xbw-' + tab + '-env-table">';
 
 				for (var sx = 0; sx < subXBWs.length; sx++) {
-					shide += subXBWs[sx].generateTable() + '&nbsp;&nbsp;&nbsp;&nbsp;';
+					shide += '<div style="display:inline-block;margin:0px 10px;" id="div-xbw-' + tab + '-env-table-' + sx + '">';
+					shide += subXBWs[sx].generateTable();
+					shide += '</div>';
 				}
 
 				shide += '</div>';
 
 				sout += GML.hideWrap(shide, 'Table');
 
-				sout += '<br>';
+				if (GML.verbosity > 9) {
+					sout += '<br>';
+					sout += "Let's use the XBW to search for some string using <code>find()</code>, or go for the navigation functions directly:";
+				}
+
+				sout += '</div>';
+
+				// for two entries in a row, use width 38% and width 9%
+				// for three entries in a row, use width 21% and width 9%
 
 				sout += '<div>' +
-							/*
-							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].saveAsGML()" style="width:49%;display:inline-block;">Save as GML file</div>' +
-							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].saveAsFFX()" style="float:right; width:49%;display:inline-block;">Save as FFX file</div>' +
-							*/
-							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].saveAsFFX()">Save as FFX file</div>' +
+							'<input id="in-string-' + tab + '-xbw-find" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'findHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="AC" style="display: inline-block; width: 21%;"></input>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].findHTML()" style="background-color:#A55;width:9%; margin-left:2%;display:inline-block;">find()</div>' +
+							'<input id="in-string-' + tab + '-xbw-pref" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'prefHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="(2;0)" style="display: inline-block; width: 21%; margin-left:2%;"></input>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].prefHTML()" style="background-color:#A55;width:9%; margin-left:2%;display:inline-block;">prefix()</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].splitNodeHTML()" style="background-color:#A55;float:right; width:9%; margin-left:2%;">split node()</div>' +
+							'<input id="in-string-' + tab + '-xbw-split-node" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'splitNodeHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="(12;0)" style="float:right; display: inline-block; width: 21%;"></input>' +
+						'</div>';
+
+				sout += '<div>' +
+							'<div class="input-info-container" style="display: inline-block; width: 21%;">' +
+								'<input id="in-string-' + tab + '-xbw-lf" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'lfHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="(7;0),10,A" style="width:100%"></input>' +
+								'<span class="infobtn" onclick="GML_UI.clickOnXBWInfo(event, 1)">Info</span>' +
+							'</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].lfHTML()" style="background-color:#A55;width:9%; margin-left:2%;display:inline-block;">LF()</div>' +
+							'<div class="input-info-container" style="display: inline-block; width: 21%; margin-left:2%;">' +
+								'<input id="in-string-' + tab + '-xbw-psi" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'psiHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="(1;0),0" style="width:100%"></input>' +
+								'<span class="infobtn" onclick="GML_UI.clickOnXBWInfo(event, 2)">Info</span>' +
+							'</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].psiHTML()" style="background-color:#A55;width:9%; margin-left:2%;display:inline-block;">&#936;()</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].saveAsGML()" style="background-color:#A55;float:right; width:32%; margin-left:2%;">Save as GML file</div>' +
+						'</div>';
+
+				sout += '<div>' +
+							'<input id="in-string-' + tab + '-xbw-select" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'selectHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="(1;0),M,4" style="display: inline-block; width: 21%;"></input>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].selectHTML()" style="width:9%; margin-left:2%;display:inline-block;">select()</div>' +
+							'<input id="in-string-' + tab + '-xbw-rank" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'rankHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="(1;0),F,4" style="display: inline-block; width: 21%; margin-left:2%;"></input>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].rankHTML()" style="background-color:#A55;width:9%; margin-left:2%; display:inline-block;">rank()</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].saveAsFFX()" style="float:right; width:32%; margin-left:2%;">Save as FFX file</div>' +
 						'</div>';
 
 			} else {
@@ -2104,38 +2233,50 @@ if (newM[prevNodes[j]] === '0') {
 							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].rankHTML()" style="width:9%; margin-left:2%; display:inline-block;">rank()</div>' +
 							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].saveAsFFX()" style="float:right; width:32%; margin-left:2%;">Save as FFX file</div>' +
 						'</div>';
+			}
 
-				sout += '<div>Result: <span id="span-' + tab + '-xbw-results">(none)</span>';
+			sout += '<div>Result: <span id="span-' + tab + '-xbw-results">(none)</span>';
 
-				sout += '<div id="xbw-info-box-1" style="margin-top:20px;display:none;">' +
-						'Optionally, you can add two boolean parameters ' +
-						'in the LF() input, e.g. 7,10,A,true,false.<br>' +
-						'They control whether select() is called before LF() and ' +
-						'whether rank() is called afterwards, respectively.' +
+			sout += '<div id="xbw-info-box-1" style="margin-top:20px;display:none;">' +
+					'Optionally, you can add two boolean parameters ' +
+					'in the LF() input, e.g. ';
+			if (role === 3) {
+				sout += '(7;0)';
+			} else {
+				sout += '7';
+			}
+			sout += ',10,A,true,false.<br>' +
+					'They control whether select() is called before LF() and ' +
+					'whether rank() is called afterwards, respectively.' +
+					'</div>';
+
+			sout += '<div id="xbw-info-box-2" style="margin-top:20px;display:none;">' +
+					'Optionally, you can add two boolean parameters ' +
+					'in the &#936;() input, e.g. ';
+			if (role === 3) {
+				sout += '(1;0)';
+			} else {
+				sout += '1';
+			}
+			sout += ',0,true,false.<br>' +
+					'They control whether select() is called before &#936;() and ' +
+					'whether rank() is called afterwards, respectively.' +
+					'</div>';
+
+			// TODO :: check if this text actually makes sense
+			if (GML.verbosity > 9) {
+				sout += '<div style="margin-top:20px">' +
+						'Just in case you are as forgetful as I am:<br>' +
+						'Assume we have position <i>x</i>, then call ' +
+						'LF(<i>x</i>,<i>x</i>,BWT[<i>x</i>]) ' +
+						'to get all nodes <b>preceding</b> <i>x</i>, ' +
+						'call &#936;(<i>x</i>,<i>0</i>) to get the first node <b>succeeding</b> <i>x</i> and ' +
+						'&#936;(<i>x</i>,<i>1</i>) to get the second node <b>succeeding</b> <i>x</i>, etc.<br>' +
+						'To get the prefix of node <i>x</i>, use BWT[&#936;(<i>x</i>,<i>0</i>)] + ' +
+						'BWT[&#936;(&#936;(<i>x</i>,<i>0</i>),&#936;(<i>x</i>,<i>0</i>))] + ...<br>' +
+						'(This here is just a very general reminder and completely ' +
+						'ignores that you need to keep track of different indexing methods.)'
 						'</div>';
-
-				sout += '<div id="xbw-info-box-2" style="margin-top:20px;display:none;">' +
-						'Optionally, you can add two boolean parameters ' +
-						'in the &#936;() input, e.g. 1,0,true,false.<br>' +
-						'They control whether select() is called before &#936;() and ' +
-						'whether rank() is called afterwards, respectively.' +
-						'</div>';
-
-				// TODO :: check if this text actually makes sense
-				if (GML.verbosity > 9) {
-					sout += '<div style="margin-top:20px">' +
-							'Just in case you are as forgetful as I am:<br>' +
-							'Assume we have position <i>x</i>, then call ' +
-							'LF(<i>x</i>,<i>x</i>,BWT[<i>x</i>]) ' +
-							'to get all nodes <b>preceding</b> <i>x</i>, ' +
-							'call &#936;(<i>x</i>,<i>0</i>) to get the first node <b>succeeding</b> <i>x</i> and ' +
-							'&#936;(<i>x</i>,<i>1</i>) to get the second node <b>succeeding</b> <i>x</i>, etc.<br>' +
-							'To get the prefix of node <i>x</i>, use BWT[&#936;(<i>x</i>,<i>0</i>)] + ' +
-							'BWT[&#936;(&#936;(<i>x</i>,<i>0</i>),&#936;(<i>x</i>,<i>0</i>))] + ...<br>' +
-							'(This here is just a very general reminder and completely ' +
-							'ignores that you need to keep track of different indexing methods.)'
-							'</div>';
-				}
 			}
 
 			sout += '</div>';
@@ -2160,6 +2301,11 @@ if (newM[prevNodes[j]] === '0') {
 		},
 
 		saveAsGML: function() {
+
+			if (role === 3) {
+				alert('This function has not yet been implemented for fused graphs!');
+				return;
+			}
 
 			// create an automaton
 			auto = GML.getAutomatonFromFindex(this._publishFindex());
@@ -2382,6 +2528,11 @@ if (newM[prevNodes[j]] === '0') {
 		},
 		findHTML: function() {
 
+			if (role === 3) {
+				alert('This function has not yet been implemented for fused graphs!');
+				return;
+			}
+
 			var searchfor = document.getElementById('in-string-' + GML_UI.cur_tab + '-xbw-find').value;
 
 			// replace '#' with '^' before calculations
@@ -2399,6 +2550,11 @@ if (newM[prevNodes[j]] === '0') {
 			this.show_spep_in_HTML(spep, ['i', 'char'], undefined, undefined, true);
 		},
 		prefHTML: function() {
+
+			if (role === 3) {
+				alert('This function has not yet been implemented for fused graphs!');
+				return;
+			}
 
 			var inputs = document.getElementById('in-string-' + GML_UI.cur_tab + '-xbw-pref').value.split(',');
 
@@ -2421,6 +2577,11 @@ if (newM[prevNodes[j]] === '0') {
 		},
 		splitNodeHTML: function() {
 
+			if (role === 3) {
+				alert('This function has not yet been implemented for fused graphs!');
+				return;
+			}
+
 			var sn_i = document.getElementById('in-string-' + GML_UI.cur_tab + '-xbw-split-node').value;
 
 			sn_i = parseInt(sn_i, 10) - GML.ao;
@@ -2436,6 +2597,11 @@ if (newM[prevNodes[j]] === '0') {
 			this.generateGraph(undefined);
 		},
 		lfHTML: function() {
+
+			if (role === 3) {
+				alert('This function has not yet been implemented for fused graphs!');
+				return;
+			}
 
 			var searchfor = document.getElementById('in-string-' + GML_UI.cur_tab + '-xbw-lf').value;
 
@@ -2458,6 +2624,11 @@ if (newM[prevNodes[j]] === '0') {
 			this.show_nodes_in_HTML(spep);
 		},
 		psiHTML: function() {
+
+			if (role === 3) {
+				alert('This function has not yet been implemented for fused graphs!');
+				return;
+			}
 
 			var searchfor = document.getElementById('in-string-' + GML_UI.cur_tab + '-xbw-psi').value.split(',');
 
@@ -2484,32 +2655,44 @@ if (newM[prevNodes[j]] === '0') {
 
 			var searchfor = document.getElementById('in-string-' + GML_UI.cur_tab + '-xbw-select').value;
 
-			// replace '#' with '^' before calculations
 			searchfor = searchfor.split(',');
+			// replace '#' with '^' before calculations
 			searchfor[0] = searchfor[0].toUpperCase().replace(/\#/g, '^');
+
+			if (role === 3) {
+				searchfor[0] = searchfor[0].slice(1,searchfor[0].length-1).split(';');
+				searchfor[0][1] = parseInt(searchfor[0][1], 10);
+			}
 
 			var i, j = parseInt(searchfor[2], 10) - GML.ao;
 
-			switch (searchfor[1]) {
-				case 'M':
-					i = select(searchfor[0], M, j);
-					break;
-				case 'F':
-					i = select(searchfor[0], F, j);
-					break;
-				case 'BWT':
-					i = select(searchfor[0], BWT, j);
-					break;
-				case 'char':
-					i = select(searchfor[0], char, j);
-					break;
+			i = select(searchfor[0], searchfor[1].toUpperCase(), j);
+
+			if (role === 3) {
+				document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML =
+					'(' + (i[0] + GML.ao) + ',' + i[1] + ')';
+
+				for (var sx=0; sx < subXBWs.length; sx++) {
+					if (sx !== i[1]) {
+						document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-table-' + sx).innerHTML =
+							subXBWs[sx].generateTable([]);
+					}
+				}
+
+				this.show_spep_in_HTML([[i[0], i[0]], i[1]], ['i', searchfor[1]], i[0], searchfor[0][0]);
+			} else {
+				document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML =
+					(i + GML.ao);
+
+				this.show_spep_in_HTML([i, i], ['i', searchfor[1]], i, searchfor[0]);
 			}
-
-			document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML = (i + GML.ao);
-
-			this.show_spep_in_HTML([i, i], ['i', searchfor[1]], i, searchfor[0]);
 		},
 		rankHTML: function() {
+
+			if (role === 3) {
+				alert('This function has not yet been implemented for fused graphs!');
+				return;
+			}
 
 			var searchfor = document.getElementById('in-string-' + GML_UI.cur_tab + '-xbw-rank').value;
 
@@ -2519,7 +2702,7 @@ if (newM[prevNodes[j]] === '0') {
 
 			var i, j = parseInt(searchfor[2], 10) - GML.ao;
 
-			switch (searchfor[1]) {
+			switch (searchfor[1].toUpperCase()) {
 				case 'M':
 					i = rank(searchfor[0], M, j);
 					break;
@@ -2529,7 +2712,9 @@ if (newM[prevNodes[j]] === '0') {
 				case 'BWT':
 					i = rank(searchfor[0], BWT, j);
 					break;
-				case 'char':
+				case 'FC':
+				case 'FIC':
+				case 'CHAR':
 					i = rank(searchfor[0], char, j);
 					break;
 			}
@@ -2580,7 +2765,12 @@ if (newM[prevNodes[j]] === '0') {
 
 			this.generateGraph(highnodes, false);
 		},
-		show_spep_in_HTML: function(spep, highrows, override_last_row, override_with, show_vis_hl) {
+		show_spep_in_HTML: function(spep, highrows, override_last_row, override_with, show_vis_hl, j) {
+
+			if (role === 3) {
+				return subXBWs[spep[1]].show_spep_in_HTML(
+					spep[0], highrows, override_last_row, override_with, show_vis_hl, spep[1]);
+			}
 
 			var higharr = [];
 			var highnodes = [];
@@ -2673,10 +2863,19 @@ if (newM[prevNodes[j]] === '0') {
 				}
 			}
 
-			document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-table').innerHTML =
-				this.generateTable(higharr_collection);
+			if (j === undefined) {
+				// we are called from within a regular table
+				document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-table').innerHTML =
+					this.generateTable(higharr_collection);
 
-			this.generateGraph(highnodes, show_vis_hl);
+				this.generateGraph(highnodes, show_vis_hl);
+			} else {
+				// we are called from our host within a fused table
+				document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-table-' + j).innerHTML =
+					this.generateTable(higharr_collection);
+
+				// this.generateGraph(highnodes, show_vis_hl);
+			}
 		},
 	};
 };

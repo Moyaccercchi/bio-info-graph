@@ -815,7 +815,7 @@ window.GML_UI = {
 		', which will be merged with ' + GML.DH_1 + '.<br><br>',
 
 	clickOnXBWInfo: function(e, id) {
-		
+
 		var el = document.getElementById('xbw-info-box-' + id);
 
 		if (el.style.display == 'block') {

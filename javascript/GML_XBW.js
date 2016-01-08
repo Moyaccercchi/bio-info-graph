@@ -2724,12 +2724,12 @@ if (newM[prevNodes[j]] === '0') {
 
 				this.refreshAllTablesExcept(i[1]);
 
-				this.show_spep_in_HTML([[i[0], i[0]], i[1]], ['i', searchfor[1]], i[0], searchfor[0][0]);
+				this.show_spep_in_HTML([[i[0], i[0]], i[1]], ['i', searchfor[1].toUpperCase()], i[0], searchfor[0][0]);
 			} else {
 				document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML =
 					(i + GML.ao);
 
-				this.show_spep_in_HTML([i, i], ['i', searchfor[1]], i, searchfor[0]);
+				this.show_spep_in_HTML([i, i], ['i', searchfor[1].toUpperCase()], i, searchfor[0]);
 			}
 		},
 		rankHTML: function() {
@@ -2752,11 +2752,11 @@ if (newM[prevNodes[j]] === '0') {
 
 				this.refreshAllTablesExcept(i[1]);
 
-				this.show_spep_in_HTML([[i[0], i[0]], i[1]], ['i', searchfor[1]], j, searchfor[0][0]);
+				this.show_spep_in_HTML([[i[0], i[0]], i[1]], ['i', searchfor[1].toUpperCase()], j, searchfor[0][0]);
 			} else {
 				document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML = (i + GML.ao);
 
-				this.show_spep_in_HTML([i, i], ['i', searchfor[1]], j, searchfor[0]);
+				this.show_spep_in_HTML([i, i], ['i', searchfor[1].toUpperCase()], j, searchfor[0]);
 			}
 		},
 		// highlight the nodes in HTML table and graph which lie in the abs_pos_range,

@@ -3673,7 +3673,7 @@ if (!this.bwt[k]) {
 
 		var saveTableBtn = '';
 
-		if (kind === 'Table') {
+		if ((kind === 'Table') || (kind === 'Tables')) {
 			saveTableBtn = '<div class="svg_btn" style="right:90px" ' +
 						   'onclick="GML_UI.saveTable(' + this.hide_counter + ')">' +
 						   '<span>Save</span></div>';

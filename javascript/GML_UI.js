@@ -1142,9 +1142,18 @@ window.GML_UI = {
 
 		this.hideDropdown();
 
-		var table = document.getElementById("hide-cont-" + whichOne).getElementsByTagName('table')[0];
+		var tables = document.getElementById("hide-cont-" + whichOne).getElementsByTagName('table');
 
-		var source = '<table>' + table.innerHTML.replace('\n', '') + '</table>';
+		var source = '';
+
+		for (var t=0; t < tables.length; t++) {
+
+			if (t > 0) {
+				source += this.file_nl+this.file_nl;
+			}
+
+			source += '<table>' + tables[t].innerHTML.replace('\n', '') + '</table>';
+		}
 
 		var url = "data:text/plain,"+encodeURIComponent(source);
 
@@ -1156,50 +1165,59 @@ window.GML_UI = {
 		this.hideDropdown();
 
 		// get the tbody
-		var tbody = document.getElementById("hide-cont-" + whichOne).getElementsByTagName('tbody')[0];
+		var tables = document.getElementById("hide-cont-" + whichOne).getElementsByTagName('tbody');
 
 		var source = '';
 
-		source += '\\begin{table}[htb]' + this.file_nl;
-		source += '\\centering' + this.file_nl;
-		source += '\\caption[GML table]{This is a table from GML.}' + this.file_nl;
-		source += '\\begin{tabularx}{1.0\\textwidth}{ ';
-		
-		// iterate over the cells in the first row and define that many columns in the LaTeX table
-		var rowlen = tbody.children[0].children.length;
-		for (var i=0; i < rowlen; i++) {
-			source += '| c ';
-		}
-		
-		source += '| }' + this.file_nl;
-		source += '\\hline' + this.file_nl;
+		for (var t=0; t < tables.length; t++) {
 
-		// iterate over all rows 
-		var len = tbody.children.length;
-		for (var i=0; i < len; i++) {
-			rowlen = tbody.children[i].children.length;
+			var tbody = tables[t];
 
-			// iterate over all cells within all rows
-			for (var j=0; j < rowlen; j++) {
+			if (t > 0) {
+				source += this.file_nl+this.file_nl;
+			}
 
-				if (j === rowlen-1) {
-					source += '\\textbf{'
-				}
+			source += '\\begin{table}[htb]' + this.file_nl;
+			source += '\\centering' + this.file_nl;
+			source += '\\caption[GML table]{This is a table from GML.}' + this.file_nl;
+			source += '\\begin{tabularx}{1.0\\textwidth}{ ';
+			
+			// iterate over the cells in the first row and define that many columns in the LaTeX table
+			var rowlen = tbody.children[0].children.length;
+			for (var i=0; i < rowlen; i++) {
+				source += '| c ';
+			}
+			
+			source += '| }' + this.file_nl;
+			source += '\\hline' + this.file_nl;
 
-				// append the cell data to the LaTeX table
-				source += tbody.children[i].children[j].innerHTML.replace('\n', '');
+			// iterate over all rows 
+			var len = tbody.children.length;
+			for (var i=0; i < len; i++) {
+				rowlen = tbody.children[i].children.length;
 
-				if (j < rowlen-1) {
-					source += ' & ';
-				} else {
-					source += '} \\\\ \\hline ' + this.file_nl;
+				// iterate over all cells within all rows
+				for (var j=0; j < rowlen; j++) {
+
+					if (j === rowlen-1) {
+						source += '\\textbf{'
+					}
+
+					// append the cell data to the LaTeX table
+					source += tbody.children[i].children[j].innerHTML.replace('\n', '');
+
+					if (j < rowlen-1) {
+						source += ' & ';
+					} else {
+						source += '} \\\\ \\hline ' + this.file_nl;
+					}
 				}
 			}
-		}
 
-		source += '\\end{tabularx}' + this.file_nl;
-		source += '\\label{table:gml_table}' + this.file_nl;
-		source += '\\end{table}';
+			source += '\\end{tabularx}' + this.file_nl;
+			source += '\\label{table:gml_table}' + this.file_nl;
+			source += '\\end{table}';
+		}
 
 		// replace some HTML commands with some LaTeX commands which do essentially the same =)
 		source = source.split('$').join('\\$');

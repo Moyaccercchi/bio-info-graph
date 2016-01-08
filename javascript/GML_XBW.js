@@ -150,6 +150,27 @@ GML.make_xbw_environment = function() {
 	*/
 	function rank(c, arr, i) {
 
+		if (role === 3) {
+			return [subXBWs[c[1]]._rank(c[0], arr, i), c[1]];
+		}
+
+		switch (arr) {
+			case 'M':
+				arr = M;
+				break;
+			case 'F':
+				arr = F;
+				break;
+			case 'BWT':
+				arr = BWT;
+				break;
+			case 'FC':
+			case 'FIC':
+			case 'CHAR':
+				arr = char;
+				break;
+		}
+
 		// offset adjustment
 		i++;
 
@@ -536,6 +557,9 @@ GML.make_xbw_environment = function() {
 		},
 		_lf: function(spep, c, do_select, do_rank) {
 			return lf(spep, c, do_select, do_rank);
+		},
+		_rank: function(c, arr, i) {
+			return rank(c, arr, i);
 		},
 		_select: function(c, arr, j) {
 			return select(c, arr, j);
@@ -2116,7 +2140,7 @@ if (newM[prevNodes[j]] === '0') {
 
 				shide += '</div>';
 
-				sout += GML.hideWrap(shide, 'Table');
+				sout += GML.hideWrap(shide, 'Tables');
 
 				if (GML.verbosity > 9) {
 					sout += '<br>';
@@ -2133,8 +2157,8 @@ if (newM[prevNodes[j]] === '0') {
 							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].findHTML()" style="background-color:#A55;width:9%; margin-left:2%;display:inline-block;">find()</div>' +
 							'<input id="in-string-' + tab + '-xbw-pref" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'prefHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="(2;0)" style="display: inline-block; width: 21%; margin-left:2%;"></input>' +
 							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].prefHTML()" style="background-color:#A55;width:9%; margin-left:2%;display:inline-block;">prefix()</div>' +
-							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].splitNodeHTML()" style="background-color:#A55;float:right; width:9%; margin-left:2%;">split node()</div>' +
-							'<input id="in-string-' + tab + '-xbw-split-node" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'splitNodeHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="(12;0)" style="float:right; display: inline-block; width: 21%;"></input>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].splitNodeHTML()" style="float:right; width:9%; margin-left:2%;">split node()</div>' +
+							'<input id="in-string-' + tab + '-xbw-split-node" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'splitNodeHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="(1;0)" style="float:right; display: inline-block; width: 21%;"></input>' +
 						'</div>';
 
 				sout += '<div>' +
@@ -2155,7 +2179,7 @@ if (newM[prevNodes[j]] === '0') {
 							'<input id="in-string-' + tab + '-xbw-select" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'selectHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="(1;0),M,4" style="display: inline-block; width: 21%;"></input>' +
 							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].selectHTML()" style="width:9%; margin-left:2%;display:inline-block;">select()</div>' +
 							'<input id="in-string-' + tab + '-xbw-rank" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'rankHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="(1;0),F,4" style="display: inline-block; width: 21%; margin-left:2%;"></input>' +
-							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].rankHTML()" style="background-color:#A55;width:9%; margin-left:2%; display:inline-block;">rank()</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].rankHTML()" style="width:9%; margin-left:2%; display:inline-block;">rank()</div>' +
 							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].saveAsFFX()" style="float:right; width:32%; margin-left:2%;">Save as FFX file</div>' +
 						'</div>';
 
@@ -2577,24 +2601,35 @@ if (newM[prevNodes[j]] === '0') {
 		},
 		splitNodeHTML: function() {
 
-			if (role === 3) {
-				alert('This function has not yet been implemented for fused graphs!');
-				return;
-			}
-
 			var sn_i = document.getElementById('in-string-' + GML_UI.cur_tab + '-xbw-split-node').value;
 
-			sn_i = parseInt(sn_i, 10) - GML.ao;
+			sn_i = this.adjustSearchfor0(sn_i);
 
-			// TODO :: make it more clear what this sn_i is... e.g. in the standard
-			// merge example, we can enter i = 14 to achieve node splitting,
-			// but why?
-			this._splitNode(sn_i);
+			if (role === 3) {
 
-			// TODO :: do this without converting to findex and back... (curly being done for graph generation)
-			this.init(this._publishFindex());
-			this.generateHTML();
-			this.generateGraph(undefined);
+				sn_i[0] = parseInt(sn_i[0], 10) - GML.ao;
+
+				subXBWs[sn_i[1]]._splitNode(sn_i[0]);
+
+				this.refreshAllTablesExcept(sn_i[1]);
+
+				document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-table-' + sn_i[1]).innerHTML =
+					subXBWs[sn_i[1]].generateTable([]);
+
+			} else {
+
+				sn_i = parseInt(sn_i, 10) - GML.ao;
+
+				// TODO :: make it more clear what this sn_i is... e.g. in the standard
+				// merge example, we can enter i = 14 to achieve node splitting,
+				// but why?
+				this._splitNode(sn_i);
+
+				// TODO :: do this without converting to findex and back... (curly being done for graph generation)
+				this.init(this._publishFindex());
+				this.generateHTML();
+				this.generateGraph(undefined);
+			}
 		},
 		lfHTML: function() {
 
@@ -2651,6 +2686,24 @@ if (newM[prevNodes[j]] === '0') {
 
 			this.show_nodes_in_HTML([abs_next_i, abs_next_i]);
 		},
+		adjustSearchfor0: function(searchfor0) {
+
+			if (role === 3) {
+				searchfor0 = searchfor0.slice(1,searchfor0.length-1).split(';');
+				searchfor0[1] = parseInt(searchfor0[1], 10);
+			}
+
+			return searchfor0;
+		},
+		refreshAllTablesExcept: function(except) {
+
+			for (var sx=0; sx < subXBWs.length; sx++) {
+				if (sx !== except) {
+					document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-table-' + sx).innerHTML =
+						subXBWs[sx].generateTable([]);
+				}
+			}
+		},
 		selectHTML: function() {
 
 			var searchfor = document.getElementById('in-string-' + GML_UI.cur_tab + '-xbw-select').value;
@@ -2659,10 +2712,7 @@ if (newM[prevNodes[j]] === '0') {
 			// replace '#' with '^' before calculations
 			searchfor[0] = searchfor[0].toUpperCase().replace(/\#/g, '^');
 
-			if (role === 3) {
-				searchfor[0] = searchfor[0].slice(1,searchfor[0].length-1).split(';');
-				searchfor[0][1] = parseInt(searchfor[0][1], 10);
-			}
+			searchfor[0] = this.adjustSearchfor0(searchfor[0]);
 
 			var i, j = parseInt(searchfor[2], 10) - GML.ao;
 
@@ -2672,12 +2722,7 @@ if (newM[prevNodes[j]] === '0') {
 				document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML =
 					'(' + (i[0] + GML.ao) + ',' + i[1] + ')';
 
-				for (var sx=0; sx < subXBWs.length; sx++) {
-					if (sx !== i[1]) {
-						document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-table-' + sx).innerHTML =
-							subXBWs[sx].generateTable([]);
-					}
-				}
+				this.refreshAllTablesExcept(i[1]);
 
 				this.show_spep_in_HTML([[i[0], i[0]], i[1]], ['i', searchfor[1]], i[0], searchfor[0][0]);
 			} else {
@@ -2689,39 +2734,30 @@ if (newM[prevNodes[j]] === '0') {
 		},
 		rankHTML: function() {
 
-			if (role === 3) {
-				alert('This function has not yet been implemented for fused graphs!');
-				return;
-			}
-
 			var searchfor = document.getElementById('in-string-' + GML_UI.cur_tab + '-xbw-rank').value;
 
 			// replace '#' with '^' before calculations
 			searchfor = searchfor.split(',');
 			searchfor[0] = searchfor[0].toUpperCase().replace(/\#/g, '^');
 
+			searchfor[0] = this.adjustSearchfor0(searchfor[0]);
+
 			var i, j = parseInt(searchfor[2], 10) - GML.ao;
 
-			switch (searchfor[1].toUpperCase()) {
-				case 'M':
-					i = rank(searchfor[0], M, j);
-					break;
-				case 'F':
-					i = rank(searchfor[0], F, j);
-					break;
-				case 'BWT':
-					i = rank(searchfor[0], BWT, j);
-					break;
-				case 'FC':
-				case 'FIC':
-				case 'CHAR':
-					i = rank(searchfor[0], char, j);
-					break;
+			i = rank(searchfor[0], searchfor[1].toUpperCase(), j);
+
+			if (role === 3) {
+				document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML =
+					'(' + (i[0] + GML.ao) + ',' + i[1] + ')';
+
+				this.refreshAllTablesExcept(i[1]);
+
+				this.show_spep_in_HTML([[i[0], i[0]], i[1]], ['i', searchfor[1]], j, searchfor[0][0]);
+			} else {
+				document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML = (i + GML.ao);
+
+				this.show_spep_in_HTML([i, i], ['i', searchfor[1]], j, searchfor[0]);
 			}
-
-			document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML = (i + GML.ao);
-
-			this.show_spep_in_HTML([i, i], ['i', searchfor[1]], j, searchfor[0]);
 		},
 		// highlight the nodes in HTML table and graph which lie in the abs_pos_range,
 		// given with absolute indexing

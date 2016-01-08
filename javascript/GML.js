@@ -158,6 +158,9 @@ window.GML = {
 						   // weird input or ridiculous bugs we could run into an infinite loop,
 						   // stop when reaching this iteration
 
+	XPC: true, // true .. experimental prefix construction is happening!
+			   // false .. traditional prefix construction please (like in Siren2014)
+
 	verbosity: 10, // integer, 10 .. tell us about EVERYTHING, 1 .. only give us the results
 	hideXBWenvironments: false, // do not show XBW environments - used if we are only interested in the results
 
@@ -2521,7 +2524,9 @@ window.GML = {
 
 			// if they are found to be invalid, display an error message
 			if (this.error_flag) {
-				return this.errorWrap();
+				// replace '^' with '#' before printout
+				sout = sout.replace(/\^/g, '#');
+				return sout + this.errorWrap();
 			}
 
 
@@ -5117,7 +5122,19 @@ if (!this.bwt[k]) {
 											// let's spill over while reconstructing the existing prefix
 
 											curNode = [spillover_into_auto[0], 1];
+											if (this.XPC) {
+												cur_auto = spillover_into_auto;
+											}
 											allEncounteredNodes.push([[0, 1]]);
+										}
+										for (var m=0; m < curNode[0].n.length; m++) {
+											if (this.XPC) {
+												if (cur_auto_f[k-rec_extra] === cur_auto[curNode[0].n[m]].c) {
+													nextNodes.push([curNode[0].n[m], curNode[1]]);
+												}
+											} else {
+												nextNodes.push([curNode[0].n[m], curNode[1]]);
+											}
 										}
 										if (curNode[1] === 1) {
 
@@ -5125,9 +5142,6 @@ if (!this.bwt[k]) {
 											// between graphs that do not actually exist
 											// (without this, CCA|,1,A,2 vs. CA would fail)
 											rec_extra = 1;
-										}
-										for (var m=0; m < curNode[0].n.length; m++) {
-											nextNodes.push([curNode[0].n[m], curNode[1]]);
 										}
 									}
 									curNodes = nextNodes;
@@ -5162,33 +5176,65 @@ if (!this.bwt[k]) {
 									return false;
 								}
 
-								firstNodeLabel = cur_auto[cur_auto[curNodes[0][0]].n[0]].c;
+								if (this.XPC) {
 
-								var check_for_label = firstNodeLabel;
-
-								if (spillover_into_auto && (firstNodeLabel === this.DS) && (curNodes[0][1] === 0)) {
-									// we actually do the spill over for the first time =)
-									firstNodeLabel = this.DS_1_o + this.DK_1_o + spillover_into_auto[spillover_into_auto[0].n[0]].c;
-									check_for_label = this.DS;
-								}
-
-								// check if any nodes on the list have any successors that have labels
-								// different than firstNodeLabel
-								for (var l=0; l < curNodes.length; l++) {
-									if (spillover_into_auto && (curNodes[l][1] === 1)) {
-										cur_auto = spillover_into_auto;
-									} else {
-										cur_auto = auto;
-									}
-									var curNode = cur_auto[curNodes[l][0]];
-									for (var m=0; m < curNode.n.length; m++) {
-										if (check_for_label !== cur_auto[curNode.n[m]].c) {
-											nextNode_confusing = true;
-											break;
+									// check all potential labels which could be used for the next step,
+									// and decide which one to use
+									var potential_labels = [];
+									for (var l=0; l < curNodes.length; l++) {
+										if (spillover_into_auto && (curNodes[l][1] === 1)) {
+											cur_auto = spillover_into_auto;
+										} else {
+											cur_auto = auto;
+										}
+										var curNode = cur_auto[curNodes[l][0]];
+										for (var m=0; m < curNode.n.length; m++) {
+											var cur_l = cur_auto[curNode.n[m]].c;
+											if (spillover_into_auto && (cur_l === this.DS) && (curNodes[l][1] === 0)) {
+												// we actually do the spill over for the first time =)
+												// TODO :: choose the alphabetically first, not the 0eth leading out of # in H_1?
+												cur_l += this.DS_1_o + this.DK_1_o + spillover_into_auto[spillover_into_auto[0].n[0]].c;
+											}
+											if (potential_labels.indexOf(cur_l) < 0) {
+												potential_labels.push(cur_l);
+											}
 										}
 									}
-									if (nextNode_confusing) {
-										break;
+									potential_labels.sort(function (a, b) {
+										return GML.comparePrefixes(a, b);
+									});
+									firstNodeLabel = potential_labels[0];
+
+								} else {
+
+									firstNodeLabel = cur_auto[cur_auto[curNodes[0][0]].n[0]].c;
+
+									var check_for_label = firstNodeLabel;
+
+									if (spillover_into_auto && (firstNodeLabel === this.DS) && (curNodes[0][1] === 0)) {
+										// we actually do the spill over for the first time =)
+										firstNodeLabel = this.DS_1_o + this.DK_1_o + spillover_into_auto[spillover_into_auto[0].n[0]].c;
+										check_for_label = this.DS;
+									}
+
+									// check if any nodes on the list have any successors that have labels
+									// different than firstNodeLabel
+									for (var l=0; l < curNodes.length; l++) {
+										if (spillover_into_auto && (curNodes[l][1] === 1)) {
+											cur_auto = spillover_into_auto;
+										} else {
+											cur_auto = auto;
+										}
+										var curNode = cur_auto[curNodes[l][0]];
+										for (var m=0; m < curNode.n.length; m++) {
+											if (check_for_label !== cur_auto[curNode.n[m]].c) {
+												nextNode_confusing = true;
+												break;
+											}
+										}
+										if (nextNode_confusing) {
+											break;
+										}
 									}
 								}
 

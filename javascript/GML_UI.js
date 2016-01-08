@@ -1426,6 +1426,7 @@ window.GML_UI = {
 		GML.loop_threshold = parseInt(document.getElementById('in-options-loop-threshold').value, 10);
 		GML.vis_width_override = document.getElementById('in-options-svg-width-override').innerHTML == TRUE;
 		GML.vis_width_override_value = parseInt(document.getElementById('in-options-svg-width-override-value').value, 10);
+		GML.XPC = document.getElementById('in-options-use-xpc').innerHTML == TRUE;
 
 		for (var i = 0; i < this.upToTabs; i++) {
 			this.div_out_visibility[i] = false;
@@ -1494,6 +1495,7 @@ window.GML_UI = {
 		document.getElementById('in-options-do-invalid-tests').innerHTML = FALSE;
 		document.getElementById('in-options-do-prefix-doubling').innerHTML = FALSE;
 		document.getElementById('in-options-file-nl').innerHTML = TRUE;
+		document.getElementById('in-options-use-xpc').innerHTML = FALSE;
 		document.getElementById('in-options-show-graph').innerHTML = FALSE;
 		document.getElementById('in-options-show-autoi').innerHTML = FALSE;
 		document.getElementById('in-options-show-hashtag').innerHTML = TRUE;

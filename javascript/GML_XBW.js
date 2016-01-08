@@ -522,11 +522,30 @@ GML.make_xbw_environment = function() {
 				subXBWs[subXBWs.length-1]._setNextXBW(newXBW);
 				newXBW._setPrevXBW(subXBWs[subXBWs.length-1]);
 
-				// if we are merging, then we replace $ with $_0 and # with #_0
-				// - but if we are fusing, this is not necessary
-				if (role === 2) {
-					subXBWs[subXBWs.length-1]._replaceSpecialChar(GML.DS, GML.DS_1);
-					newXBW._replaceSpecialChar(GML.DK, GML.DK_1);
+				switch (role) {
+					case 2:
+						// if we are merging, then we replace $ with $_0 and # with #_0
+						// - but if we are fusing, this is not necessary
+						subXBWs[subXBWs.length-1]._replaceSpecialChar(GML.DS, GML.DS_1);
+						newXBW._replaceSpecialChar(GML.DK, GML.DK_1);
+						break;
+					case 3:
+						// if we are fusing, we check explicitly that the end node
+						// of the current last table has only one incoming edge and
+						// that the start node of the new table has only one outgoing edge
+
+						if (subXBWs[subXBWs.length-1]._hasMoreThanOneEndNodeEdge()) {
+							GML.error_flag = true;
+							GML.error_text = 'Invalid input: A fused end node has more than one incoming edge.';
+							GML.error_kind = 'note';
+							break;
+						}
+						if (newXBW._hasMoreThanOneStartNodeEdge()) {
+							GML.error_flag = true;
+							GML.error_text = 'Invalid input: A fused start node has more than one outgoing edge.';
+							GML.error_kind = 'note';
+							break;
+						}
 				}
 			}
 
@@ -563,6 +582,28 @@ GML.make_xbw_environment = function() {
 		},
 		_select: function(c, arr, j) {
 			return select(c, arr, j);
+		},
+
+		// returns true if this XBW's end node's indegree is above 1
+		_hasMoreThanOneEndNodeEdge: function() {
+			// the end node has label $, and its predecessors are found at the start of the BWT row,
+			// so if the F row starts on 11..., then we have a BWT row of xy... with x being the
+			// predecessor label of $, but y being unrelated,
+			// so we have only one ingcoming edge into $, and so we return false;
+			// but if the F row starts on 10..., then we have a BWT row of xx... with x being the
+			// predecessor label of $,
+			// so we have multiple incoming edges into $, and so we return true
+			return F[1] === '0';
+		},
+
+		// returns true if this XBW's start node's outdegree is above 1
+		_hasMoreThanOneStartNodeEdge: function() {
+			// the start node has label #, and is found at the end of the FC row,
+			// so if the M row ends on ...1, then we have an FC row of ..x# with x not being a #,
+			// so we have only one outgoing edge from #, and so we return false;
+			// but if the M row ends on ...1...0, then we have an FC row of ...#...#,
+			// so we have multiple outgoing edges from #, and so we return true
+			return M[M.length-1] === '0';
 		},
 
 		// returns true if the data stored within this XBW environment is graphless,

@@ -43,7 +43,7 @@
 	generate_BWT_naively: function(h);
 	generate_BWT_advanced: function(h);
 	generate_BWTs_advanced: function(h1, h2);
-	generate_BWTs_advanced_int: function(h1, h2, flat_merging);
+	generate_BWTs_advanced_int: function(h1, h2, flat_merging, prefsort_individually);
 	merge_BWTs_advanced: function(h1, h2);
 	merge_XBWs: function(h1, h2);
 	fuse_XBWs: function(h1, h2);
@@ -884,7 +884,7 @@ window.GML = {
 	// gives out a string containing info about the BWT generation for both
 	generate_BWTs_advanced: function(h1, h2) {
 
-		var sout = this.generate_BWTs_advanced_int(h1, h2, false)[0];
+		var sout = this.generate_BWTs_advanced_int(h1, h2, false, false)[0];
 
 		sout += this.s_end_document;
 
@@ -896,11 +896,13 @@ window.GML = {
 
 
 
-	// takes in two graph strings and an optional boolean parameter, specifying
-	//   whether we are merging flat tables or not
+	// takes in two graph strings, an optional boolean parameter, specifying
+	//   whether we are merging flat tables or not, and an optional boolean
+	//   parameter, specifying whether we are prefix sorting each input graph
+	//   individually instead of prefix sorting then as a group
 	// gives out a string containing info about the BWT generation for both,
 	//   as well as the findexes for the merged H, for H_1 and for H_2
-	generate_BWTs_advanced_int: function(h1, h2, flat_merging) {
+	generate_BWTs_advanced_int: function(h1, h2, flat_merging, prefsort_individually) {
 
 		this.error_flag = false;
 
@@ -1013,7 +1015,11 @@ window.GML = {
 			// console.log('computePrefixes - 3');
 			auto2 = this.computePrefixes(auto2);
 			// console.log('computePrefixes - 4');
-			auto1 = this.computePrefixes(auto1, auto2);
+			if (prefsort_individually) {
+				auto1 = this.computePrefixes(auto1);
+			} else {
+				auto1 = this.computePrefixes(auto1, auto2);
+			}
 
 			var isPrefSort = this.isAutomatonPrefixSorted(auto);
 			var isPrefSort1 = this.isAutomatonPrefixSorted(auto1);
@@ -1040,7 +1046,12 @@ window.GML = {
 
 			if (!isPrefSort1) {
 				// console.log('makeAutomatonPrefixSorted - 4');
-				auto1 = this.makeAutomatonPrefixSorted(auto1, false, auto2);
+
+				if (prefsort_individually) {
+					auto1 = this.makeAutomatonPrefixSorted(auto1, false);
+				} else {
+					auto1 = this.makeAutomatonPrefixSorted(auto1, false, auto2);
+				}
 
 				if (this.error_flag) {
 					sout += this.errorWrap('Invalid input: Attempting to split nodes across graph boundaries.', 'note');
@@ -1134,7 +1145,7 @@ window.GML = {
 	// gives out a string contain info about the BWT merging for both
 	merge_BWTs_advanced: function(h1, h2) {
 
-		var ret = this.generate_BWTs_advanced_int(h1, h2, false);
+		var ret = this.generate_BWTs_advanced_int(h1, h2, false, false);
 
 		var sout = ret[0];
 
@@ -2012,7 +2023,7 @@ window.GML = {
 	// gives out an HTML text contain info about the XBW merging for both
 	merge_XBWs: function(h1, h2) {
 
-		var ret = this.generate_BWTs_advanced_int(h1, h2, true);
+		var ret = this.generate_BWTs_advanced_int(h1, h2, true, false);
 
 		var sout = ret[0];
 
@@ -2430,7 +2441,7 @@ window.GML = {
 	// gives out an HTML text contain info about the XBW fusing for both
 	fuse_XBWs: function(h1, h2) {
 
-		var ret = this.generate_BWTs_advanced_int(h1, h2, true);
+		var ret = this.generate_BWTs_advanced_int(h1, h2, true, true);
 
 		var sout = ret[0];
 
@@ -2447,7 +2458,7 @@ window.GML = {
 			var m2 = findex2[2];
 
 
-			sout += '<span id="in-jump-5-3"></span>';
+			sout += '<span id="in-jump-6-3"></span>';
 
 			if (this.verbosity > 1) {
 				sout += 'We now want to fuse the ' +
@@ -2485,6 +2496,9 @@ window.GML = {
 			}
 
 
+
+			sout += '<span id="in-jump-6-4"></span>';
+
 			if (this.verbosity > 3) {
 				sout += "We initialize the host data structure, " +
 						"which will contain the tables for " + this.DH_1 +
@@ -2501,13 +2515,21 @@ window.GML = {
 			}
 
 
+			// add the subtable to the host environment and check if they are invalid
 			xbw12.addSubXBW(xbw1);
 			xbw12.addSubXBW(xbw2);
+
+			// if they are found to be invalid, display an error message
+			if (this.error_flag) {
+				return this.errorWrap();
+			}
 
 
 			if (this.verbosity > 1) {
 				sout += "The fusion of the flat XBW tables has finished." + this.nlnl;
 			}
+			
+			sout += '<div class="success">Success</div>';
 
 
 			if ((!GML.hideXBWenvironments) && GML_UI) {

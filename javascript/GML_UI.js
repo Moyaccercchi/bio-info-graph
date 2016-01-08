@@ -680,6 +680,39 @@ window.GML_UI = {
 			document.getElementById('in-string-6-2').value.toUpperCase()) + '</div>';
 	},
 
+	run_test_fuseGraphXBWs: function(i) {
+
+		var test = this.last_6_tests[i].split(' and ');
+
+		document.getElementById('in-string-6-1').value = test[0];
+		document.getElementById('in-string-6-2').value = test[1];
+
+		this.fuseGraphXBWs();
+	},
+
+	test_fuseGraphXBWs: function(use_random_data) {
+
+		var cur_tests = this.merge_tests;
+
+		if (this.do_invalid_tests) {
+			cur_tests = cur_tests.concat(this.invalid_merge_tests);
+		}
+
+		if (use_random_data) {
+			cur_tests = [];
+			for (var i=0; i < 10; i++) {
+				cur_tests.push(GML.generateRandomGraphString() + ' and ' + GML.generateRandomGraphString());
+			}
+		}
+
+		this.test_something(
+			6,
+			cur_tests,
+			'fuse',
+			function (test) {return GML.fuse_XBWs(test);},
+			'run_test_fuseGraphXBWs');
+	},
+
 
 
 	/*

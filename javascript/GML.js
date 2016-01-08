@@ -844,10 +844,10 @@ window.GML = {
 
 			if (this.verbosity > 3) {
 
-				var auto = this.getAutomatonFromFindex(findex);
-
 				sout += 'Converting this table back into an automaton (just to make sure ' +
 						'that everything worked out correctly) yields the following result:' + this.nlnl;
+
+				var auto = this.getAutomatonFromFindex(findex);
 
 				sout += this.visualize(auto, true);
 			}
@@ -5040,6 +5040,8 @@ if (!this.bwt[k]) {
 				if (auto[i]) {
 					var cur_auto_f = auto[i].f.replace(this.DS_1_o + this.DK_1_o, '');
 
+// XPC console.log(cur_auto_f);
+
 					// if we are already in a nonsensical position, then going further down the
 					// rabbit hole is not going to achieve anything (as we started this function
 					// by re-setting all the prefixes, if we encounter a ! now, that means that
@@ -5060,7 +5062,9 @@ if (!this.bwt[k]) {
 								// so that we never can be in a state in which one node's
 								// prefix has become longer than another one's, unless their
 								// prefixes are different anyway, in which case we don't care.
+// XPC console.log('    ' + auto[j].f);
 								if (cur_auto_f === auto[j].f.replace(this.DS_1_o + this.DK_1_o, '')) {
+// XPC console.log('    >======<');
 									same_as.push(j);
 									changed_something = 1;
 								}
@@ -5129,7 +5133,7 @@ if (!this.bwt[k]) {
 										}
 										for (var m=0; m < curNode[0].n.length; m++) {
 											if (this.XPC) {
-												if (cur_auto_f[k-rec_extra] === cur_auto[curNode[0].n[m]].c) {
+												if (cur_auto_f[k-rec_extra+1] === cur_auto[curNode[0].n[m]].c) {
 													nextNodes.push([curNode[0].n[m], curNode[1]]);
 												}
 											} else {
@@ -5171,7 +5175,7 @@ if (!this.bwt[k]) {
 									cur_auto = auto;
 								}
 
-								if (cur_auto[cur_auto[curNodes[0][0]].n[0]] === undefined) {
+								if ((curNodes[0] === undefined) || (cur_auto[cur_auto[curNodes[0][0]].n[0]] === undefined)) {
 									this.error_flag = true;
 									return false;
 								}

@@ -2231,7 +2231,8 @@ if (newM[prevNodes[j]] === '0') {
 								'<span class="infobtn" onclick="GML_UI.clickOnXBWInfo(event, 2)">Info</span>' +
 							'</div>' +
 							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].psiHTML()" style="background-color:#A55;width:9%; margin-left:2%;display:inline-block;">&#936;()</div>' +
-							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].saveAsGML()" style="background-color:#A55;float:right; width:32%; margin-left:2%;">Save as GML file</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].saveAsGML()" style="float:right; width:15%; margin-left:2%;">Save as GML file</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].exportAsGML()" style="float:right; width:15%; margin-left:2%;">Export as GML file</div>' +
 						'</div>';
 
 				sout += '<div>' +
@@ -2239,7 +2240,8 @@ if (newM[prevNodes[j]] === '0') {
 							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].selectHTML()" style="width:9%; margin-left:2%;display:inline-block;">select()</div>' +
 							'<input id="in-string-' + tab + '-xbw-rank" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'rankHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="(1;0),F,4" style="display: inline-block; width: 21%; margin-left:2%;"></input>' +
 							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].rankHTML()" style="width:9%; margin-left:2%; display:inline-block;">rank()</div>' +
-							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].saveAsFFX()" style="float:right; width:32%; margin-left:2%;">Save as FFX file</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].saveAsFFX()" style="float:right; width:15%; margin-left:2%;">Save as FFX file</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].exportAsFFX()" style="float:right; width:15%; margin-left:2%;">Export as FFX file</div>' +
 						'</div>';
 
 			} else {
@@ -2306,7 +2308,8 @@ if (newM[prevNodes[j]] === '0') {
 								'<span class="infobtn" onclick="GML_UI.clickOnXBWInfo(event, 2)">Info</span>' +
 							'</div>' +
 							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].psiHTML()" style="width:9%; margin-left:2%;display:inline-block;">&#936;()</div>' +
-							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].saveAsGML()" style="float:right; width:32%; margin-left:2%;">Save as GML file</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].saveAsGML()" style="float:right; width:15%; margin-left:2%;">Save as GML file</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].exportAsGML()" style="float:right; width:15%; margin-left:2%;">Export as GML file</div>' +
 						'</div>';
 
 				sout += '<div>' +
@@ -2314,7 +2317,8 @@ if (newM[prevNodes[j]] === '0') {
 							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].selectHTML()" style="width:9%; margin-left:2%;display:inline-block;">select()</div>' +
 							'<input id="in-string-' + tab + '-xbw-rank" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'rankHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="1,F,13" style="display: inline-block; width: 21%; margin-left:2%;"></input>' +
 							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].rankHTML()" style="width:9%; margin-left:2%; display:inline-block;">rank()</div>' +
-							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].saveAsFFX()" style="float:right; width:32%; margin-left:2%;">Save as FFX file</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].saveAsFFX()" style="float:right; width:15%; margin-left:2%;">Save as FFX file</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].exportAsFFX()" style="float:right; width:15%; margin-left:2%;">Export as FFX file</div>' +
 						'</div>';
 			}
 
@@ -2385,11 +2389,13 @@ if (newM[prevNodes[j]] === '0') {
 			return ['{' + alph.join(', ') + '}', GML.printKeyValArr(alph, C, true)];
 		},
 
-		saveAsGML: function() {
+		_generateGMLfilecontent: function(mainpath_offset, path_namespace) {
 
-			if (role === 3) {
-				alert('This function has not yet been implemented for fused graphs!');
-				return;
+			if (!mainpath_offset) {
+				mainpath_offset = 0;
+			}
+			if (!path_namespace) {
+				path_namespace = '';
 			}
 
 			// create an automaton
@@ -2397,10 +2403,8 @@ if (newM[prevNodes[j]] === '0') {
 
 			GML.checkAutomatonIsValid(auto);
 			if (GML.error_flag) {
-				alert('Cannot convert flat XBW table to automaton. \nAborting GML file generation.');
+				return;
 			}
-
-			var source = '>regular_graph' + GML_UI.file_nl;
 
 			var further_edges = [];
 			var done_edges = [];
@@ -2414,7 +2418,7 @@ if (newM[prevNodes[j]] === '0') {
 			var k = 0;
 			auto_to_path[0] = ['mp', k];
 
-			var mp = '';
+			var mainpath = '';
 			var i = auto[0].n[0];
 
 			while (auto[i].c !== GML.DS) {
@@ -2426,13 +2430,11 @@ if (newM[prevNodes[j]] === '0') {
 				k++;
 				auto_to_path[i] = ['mp', k];
 
-				mp += auto[i].c;
+				mainpath += auto[i].c;
 				var old_i = i;
 				i = auto[i].n[0];
 				done_edges.push(old_i + '_' + i);
 			}
-
-			source += mp;
 
 			var infoblocks = '';
 			var fpa, from_n, to_n;
@@ -2443,7 +2445,7 @@ if (newM[prevNodes[j]] === '0') {
 				from_n = auto_to_path[fpa[0]];
 				to_n = auto_to_path[fpa[1]];
 				if (from_n && to_n && (from_n[0] === 'mp') && (to_n[0] === 'mp')) {
-					infoblocks += ',' + from_n[1] + ',,' + to_n[1] + ';';
+					infoblocks += ',' + (from_n[1] + mainpath_offset) + ',,' + (to_n[1] + mainpath_offset) + ';';
 					done_edges.push(further_edges[fp]);
 					further_edges.splice(fp, 1);
 					fp--;
@@ -2476,7 +2478,7 @@ if (newM[prevNodes[j]] === '0') {
 						to_n = auto_to_path[fpa[1]];
 						k = 0;
 						named_path_amount++;
-						path_name = 'p' + named_path_amount;
+						path_name = 'p' + path_namespace + named_path_amount;
 						path_contains = '';
 
 						// ... then we advance from this node forwards until we emerge at another node
@@ -2508,10 +2510,12 @@ if (newM[prevNodes[j]] === '0') {
 							var from_node = from_n[0] + ':';
 							if (from_node === 'mp:') {
 								from_node = '';
+								from_n[1] += mainpath_offset;
 							}
 							var to_node = to_n[0] + ':';
 							if (to_node === 'mp:') {
 								to_node = '';
+								to_n[1] += mainpath_offset;
 							}
 							infoblocks += path_name + ',' + from_node + from_n[1] + ',' + path_contains + ',' + to_node + to_n[1] + ';';
 						}
@@ -2522,14 +2526,60 @@ if (newM[prevNodes[j]] === '0') {
 				}
 			}
 
+			return [mainpath, infoblocks];
+		},
+
+		_generateGMLfile: function(mime) {
+
+			var source;
+			var infoblocks;
+
+			GML.error_flag = false;
+
+			switch (role) {
+				case 1:
+					source = '>regular_graph' + GML_UI.file_nl;
+
+					var filecontent = this._generateGMLfilecontent();
+					source += filecontent[0];
+					infoblocks = filecontent[1];
+
+					break;
+				case 3:
+					var mainpath = '';
+					infoblocks = '';
+
+					for (var sx = 0; sx < subXBWs.length; sx++) {
+						var filecontent = subXBWs[sx]._generateGMLfilecontent(mainpath.length, '_'+sx+'_');
+						mainpath += filecontent[0];
+						infoblocks += filecontent[1];
+					}
+					source = '>fused_graph' + GML_UI.file_nl + mainpath;
+					break;
+				default:
+					alert('This XBW environment is not currently performing a role in which it can save its contents.');
+					return;
+			}
+
+			if (GML.error_flag) {
+				alert('Cannot convert flat XBW table to automaton. \nAborting GML file generation.');
+			}
+
 			if (infoblocks.length > 0) {
 				source += '|' + infoblocks.slice(0, infoblocks.length-1);
 			}
 
-			var url = "data:application/octet-stream,"+encodeURIComponent(source);
+			var url = "data:" + mime + ","+encodeURIComponent(source);
 
 			window.open(url, '_blank');
 		},
+		exportAsGML: function() {
+			this._generateGMLfile('text/plain');
+		},
+		saveAsGML: function() {
+			this._generateGMLfile('application/octet-stream');
+		},
+
 		_generateFFXfilecontent: function() {
 
 			var source = '';
@@ -2542,7 +2592,7 @@ if (newM[prevNodes[j]] === '0') {
 
 			return source;
 		},
-		saveAsFFX: function() {
+		_generateFFXfile: function(mime) {
 
 			var source;
 
@@ -2566,9 +2616,15 @@ if (newM[prevNodes[j]] === '0') {
 					return;
 			}
 
-			var url = "data:application/octet-stream,"+encodeURIComponent(source);
+			var url = "data:" + mime + ","+encodeURIComponent(source);
 
 			window.open(url, '_blank');
+		},
+		exportAsFFX: function() {
+			this._generateFFXfile('text/plain');
+		},
+		saveAsFFX: function() {
+			this._generateFFXfile('application/octet-stream');
 		},
 
 		// in highlight_arr and extra_highlight_arr, we use

@@ -2175,13 +2175,31 @@ if (newM[prevNodes[j]] === '0') {
 
 				for (var sx = 0; sx < subXBWs.length; sx++) {
 					shide += '<div style="display:inline-block;margin:0px 10px;" id="div-xbw-' + tab + '-env-table-' + sx + '">';
-					shide += subXBWs[sx].generateTable();
 					shide += '</div>';
 				}
 
 				shide += '</div>';
 
 				sout += GML.hideWrap(shide, 'Tables');
+
+				if (GML.verbosity > 7) {
+					sout += 'To better keep track of what is happening, we also have a look at the corresponding graph:';
+				}
+
+				sout += '<br>';
+
+				sout += '<div style="overflow-x:auto;overflow-y:hidden;white-space:nowrap;min-height:50px;text-align:center;">';
+
+				for (var sx = 0; sx < subXBWs.length; sx++) {
+					sout += '<div style="display:inline-block;margin:15px 5px -25px ';
+					if (sx > 0) {
+						sout += '5';
+					}
+					sout += '5px;min-width:130px;vertical-align:top;" id="div-xbw-' + tab + '-env-graph-' + sx + '">';
+					sout += '</div>';
+				}
+
+				sout += '</div>';
 
 				if (GML.verbosity > 9) {
 					sout += '<br>';
@@ -2256,7 +2274,7 @@ if (newM[prevNodes[j]] === '0') {
 					sout += '<br>To better keep track of what is happening, we also have a look at the corresponding graph:';
 				}
 
-				sout += '<div id="div-xbw-' + tab  + '-env-graph" class="svgheight">' +
+				sout += '<div id="div-xbw-' + tab  + '-env-graph">' +
 						'</div>';
 
 				if (GML.verbosity > 9) {
@@ -2353,11 +2371,13 @@ if (newM[prevNodes[j]] === '0') {
 
 			if (role === 3) {
 
-			} else {
-				document.getElementById('div-xbw-' + tab + '-env-table').innerHTML =
-					this.generateTable();
+				this.refreshAllSubTablesExcept();
+				this.refreshAllSubGraphsExcept();
 
-				this.generateGraph([]);
+			} else {
+
+				this.refreshTable();
+				this.refreshGraph();
 			}
 		},
 		get_alph_and_C_str: function() {
@@ -2567,29 +2587,63 @@ if (newM[prevNodes[j]] === '0') {
 
 			return r;
 		},
-		// highnodes are nodes that are highlighted in purple; they use absolute indexing
-		// tab is the integer designation of the tab on which we are calling this
-		// if show_vis_hl is true, then the extra highlighted nodes and edges in red
-		// are displayed too
 		generateGraph: function(highnodes, show_vis_hl) {
-
-			var outerdiv = document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-graph');
-			var prevdispstyle = 'block';
-			var prevdispcaption = 'Hide';
-			if (outerdiv.childNodes[0]) {
-				prevdispstyle = outerdiv.childNodes[0].childNodes[1].style.display;
-				prevdispcaption = outerdiv.childNodes[0].childNodes[0].childNodes[0].innerHTML;
-			}
 
 			var sout = GML.visualize(auto, true, highnodes, show_vis_hl);
 
 			// replace '^' with '#' before printout
 			sout = sout.replace(/\^/g, '#');
 			
-			outerdiv.innerHTML = sout;
+			return sout;
+		},
+		// highnodes are nodes that are highlighted in purple; they use absolute indexing
+		// tab is the integer designation of the tab on which we are calling this
+		// if show_vis_hl is true, then the extra highlighted nodes and edges in red
+		// are displayed too
+		refreshGraph: function(highnodes, show_vis_hl, j) {
 
-			outerdiv.childNodes[0].childNodes[1].style.display = prevdispstyle;
+			var outerdiv;
+
+			if (j === undefined) {
+				outerdiv = document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-graph');
+			} else {
+				outerdiv = document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-graph-' + j);
+			}
+
+			var prevdispstyle = 'block';
+			var prevdispcaption = 'Hide';
+			
+			if (outerdiv.childNodes[0]) {
+
+				prevdispstyle = outerdiv.childNodes[0].childNodes[2].style.display;
+				prevdispcaption = outerdiv.childNodes[0].childNodes[0].childNodes[0].innerHTML;
+			}
+
+			outerdiv.innerHTML = this.generateGraph(highnodes, show_vis_hl);
+
+			outerdiv.childNodes[0].childNodes[2].style.display = prevdispstyle;
 			outerdiv.childNodes[0].childNodes[0].childNodes[0].innerHTML = prevdispcaption;
+		},
+		refreshAllSubGraphsExcept: function(except, highnodes, show_vis_hl) {
+
+			for (var sx=0; sx < subXBWs.length; sx++) {
+				if (sx !== except) {
+
+					var outerdiv = document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-graph-' + sx);
+					var prevdispstyle = 'block';
+					var prevdispcaption = 'Hide';
+					if (outerdiv.childNodes[0]) {
+						prevdispstyle = outerdiv.childNodes[0].childNodes[2].style.display;
+						prevdispcaption = outerdiv.childNodes[0].childNodes[0].childNodes[0].innerHTML;
+					}
+
+					outerdiv.innerHTML =
+						subXBWs[sx].generateGraph(highnodes, show_vis_hl);
+
+					outerdiv.childNodes[0].childNodes[2].style.display = prevdispstyle;
+					outerdiv.childNodes[0].childNodes[0].childNodes[0].innerHTML = prevdispcaption;
+				}
+			}
 		},
 		findHTML: function() {
 
@@ -2652,11 +2706,15 @@ if (newM[prevNodes[j]] === '0') {
 
 				subXBWs[sn_i[1]]._splitNode(sn_i[0]);
 
-				this.refreshAllTablesExcept(sn_i[1]);
+				subXBWs[sn_i[1]].init(subXBWs[sn_i[1]]._publishFindex());
+				
+				this.refreshAllSubTablesExcept(sn_i[1]);
+				this.refreshAllSubGraphsExcept(sn_i[1]);
 
 				document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-table-' + sn_i[1]).innerHTML =
 					subXBWs[sn_i[1]].generateTable([]);
 
+				subXBWs[sn_i[1]].refreshGraph(undefined, undefined, sn_i[1]);
 			} else {
 
 				sn_i = parseInt(sn_i, 10) - GML.ao;
@@ -2669,7 +2727,7 @@ if (newM[prevNodes[j]] === '0') {
 				// TODO :: do this without converting to findex and back... (curly being done for graph generation)
 				this.init(this._publishFindex());
 				this.generateHTML();
-				this.generateGraph(undefined);
+				this.refreshGraph();
 			}
 		},
 		lfHTML: function() {
@@ -2736,7 +2794,11 @@ if (newM[prevNodes[j]] === '0') {
 
 			return searchfor0;
 		},
-		refreshAllTablesExcept: function(except) {
+		refreshTable: function() {
+			document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-table').innerHTML =
+				this.generateTable();
+		},
+		refreshAllSubTablesExcept: function(except) {
 
 			for (var sx=0; sx < subXBWs.length; sx++) {
 				if (sx !== except) {
@@ -2763,8 +2825,6 @@ if (newM[prevNodes[j]] === '0') {
 				document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML =
 					'(' + (i[0] + GML.ao) + ',' + i[1] + ')';
 
-				this.refreshAllTablesExcept(i[1]);
-
 				this.show_spep_in_HTML([[i[0], i[0]], i[1]], ['i', searchfor[1].toUpperCase()], i[0], searchfor[0][0]);
 			} else {
 				document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML =
@@ -2790,8 +2850,6 @@ if (newM[prevNodes[j]] === '0') {
 			if (role === 3) {
 				document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML =
 					'(' + (i[0] + GML.ao) + ',' + i[1] + ')';
-
-				this.refreshAllTablesExcept(i[1]);
 
 				this.show_spep_in_HTML([[i[0], i[0]], i[1]], ['i', searchfor[1].toUpperCase()], j, searchfor[0][0]);
 			} else {
@@ -2840,11 +2898,15 @@ if (newM[prevNodes[j]] === '0') {
 			document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-table').innerHTML =
 				this.generateTable(higharr_collection);
 
-			this.generateGraph(highnodes, false);
+			this.refreshGraph(highnodes, false);
 		},
 		show_spep_in_HTML: function(spep, highrows, override_last_row, override_with, show_vis_hl, j) {
 
 			if (role === 3) {
+
+				this.refreshAllSubTablesExcept(spep[1]);
+				this.refreshAllSubGraphsExcept(spep[1]);
+
 				return subXBWs[spep[1]].show_spep_in_HTML(
 					spep[0], highrows, override_last_row, override_with, show_vis_hl, spep[1]);
 			}
@@ -2945,13 +3007,13 @@ if (newM[prevNodes[j]] === '0') {
 				document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-table').innerHTML =
 					this.generateTable(higharr_collection);
 
-				this.generateGraph(highnodes, show_vis_hl);
+				this.refreshGraph(highnodes, show_vis_hl);
 			} else {
 				// we are called from our host within a fused table
 				document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-table-' + j).innerHTML =
 					this.generateTable(higharr_collection);
 
-				// this.generateGraph(highnodes, show_vis_hl);
+				this.refreshGraph(highnodes, show_vis_hl, j);
 			}
 		},
 	};

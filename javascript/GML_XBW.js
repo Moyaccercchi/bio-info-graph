@@ -22,7 +22,7 @@
 
 // use as:
 // var xbw = GML.make_xbw_environment();
-// xbw.init(findex);
+// xbw.initFromFindex(findex);
 GML.make_xbw_environment = function() {
 
 	// navigation through XBW
@@ -410,15 +410,8 @@ GML.make_xbw_environment = function() {
 
 	return {
 
-		// initialize the XBW to the data from the findex (optional)
-		//   (the findex should be an array containing a BWT array in position 1,
-		//   an M bit vector array in position 2, and an F bit vector array in position 3;
-		//   the p12 / prefix array which could be in position 0 is ignored, as the
-		//   prefixes are generated on the fly when the graph is generated)
-		//   If findex is undefined, then the init function simply clears the XBW data.
-
-		init: function(findex) {
-
+		// basic initialization, called by all other init methods
+		_init: function() {
 			aftersort = [];
 			subXBWs = [];
 			role = 1;
@@ -427,69 +420,151 @@ GML.make_xbw_environment = function() {
 			M = '';
 			F = '';
 
-			if (findex) {
-
-				// create an automaton and prefixes that will be used later for visualization
-				auto = GML.getAutomatonFromFindex(findex);
-
-				// if something went wrong during merging (especially if our core assumptions
-				// were not adhered to), then we cannot actually compute the prefixes, so we
-				// need to check in advance, and if something goes wrong, then we need to abort
-				GML.error_flag = false;
-				GML.checkAutomatonIsValid(auto);
-				if (GML.error_flag) {
-					return;
-				}
-
-				// console.log('XBW computePrefixes');
-				auto = GML.computePrefixes(auto);
-
-				prefixes = [];
-				for (var i=0; i < auto.length; i++) {
-					if (auto[i]) {
-						prefixes.push(auto[i].f);
-					} else {
-						prefixes.push('');
-					}
-				}
-				prefixes.sort();
+			C = [];
+			alph = [];
+			ord = [];
+		},
 
 
-				var pBWT = findex[1];
-				BWT = '';
-				for (var i=0; i < pBWT.length; i++) {
-					if (pBWT[i].length > 1) {
-						var BWTarr = pBWT[i].split('|');
-						for (var j=0; j < BWTarr.length; j++) {
-							BWT += BWTarr[j];
-						}
-					} else {
-						BWT += pBWT[i];
-					}
-				}
+		// initialize the XBW as regular table with the data from the findex
+		//   (the findex should be an array containing a BWT array in position 1,
+		//   an M bit vector array in position 2, and an F bit vector array in position 3;
+		//   the p12 / prefix array which could be in position 0 is ignored, as the
+		//   prefixes are generated on the fly when the graph is generated)
+		//   If findex is undefined, then the init function simply clears the XBW data.
 
-				M = findex[2].join('');
+		initFromFindex: function(findex) {
 
-				F = findex[3].join('');
+			this.initAsRegularTable();
 
+			// create an automaton and prefixes that will be used later for visualization
+			auto = GML.getAutomatonFromFindex(findex);
 
-				var tableToP12 = [];
-				var cur_ttop12 = -1;
-				for (var i=0; i < M.length; i++) {
-					if (M[i] == '1') {
-						cur_ttop12++;
-					}
-					tableToP12.push(cur_ttop12);
-				}
-				GML.vis_tableToP12 = tableToP12;
+			// if something went wrong during merging (especially if our core assumptions
+			// were not adhered to), then we cannot actually compute the prefixes, so we
+			// need to check in advance, and if something goes wrong, then we need to abort
+			GML.error_flag = false;
+			GML.checkAutomatonIsValid(auto);
+			if (GML.error_flag) {
+				return;
 			}
+
+			// console.log('XBW computePrefixes');
+			auto = GML.computePrefixes(auto);
+
+			prefixes = [];
+			for (var i=0; i < auto.length; i++) {
+				if (auto[i]) {
+					prefixes.push(auto[i].f);
+				} else {
+					prefixes.push('');
+				}
+			}
+			prefixes.sort();
+
+
+			var pBWT = findex[1];
+			BWT = '';
+			for (var i=0; i < pBWT.length; i++) {
+				if (pBWT[i].length > 1) {
+					var BWTarr = pBWT[i].split('|');
+					for (var j=0; j < BWTarr.length; j++) {
+						BWT += BWTarr[j];
+					}
+				} else {
+					BWT += pBWT[i];
+				}
+			}
+
+			M = findex[2].join('');
+
+			F = findex[3].join('');
+
+
+			var tableToP12 = [];
+			var cur_ttop12 = -1;
+			for (var i=0; i < M.length; i++) {
+				if (M[i] == '1') {
+					cur_ttop12++;
+				}
+				tableToP12.push(cur_ttop12);
+			}
+			GML.vis_tableToP12 = tableToP12;
 
 			recalculate(true);
 		},
 
+		initFromFFXData: function(ffxdata) {
+
+			this.initAsRegularTable();
+
+			BWT = ffxdata.BWT;
+			M = ffxdata.M;
+			F = ffxdata.F;
+
+			alph = GML.readKeys(ffxdata.ord, true);
+			ord = GML.readKeyValArr(ffxdata.ord, true, true);
+			C = GML.readKeyValArr(ffxdata.C, true, true);
+
+			char = ''; // FC
+			var k=-1;
+			for (var j=0; j < alph.length; j++) {
+				while (k < C[alph[j]]) {
+					char += alph[j];
+					k++;
+				}
+			}
+		},
+
+		initFromFFX: function(ffx) {
+
+			this.initAsFuseHost();
+
+			var cur_xbw;
+
+			// append one comment line to the end, as we read out each datablock when
+			// encountering a comment, and would otherwise not read out the last one
+			ffx.push('>');
+
+			for (var j=0; j < ffx.length; j++) {
+				switch (ffx[j][0]) {
+					case '>':
+						if (cur_xbw && cur_xbw.BWT && cur_xbw.M && cur_xbw.F && cur_xbw.ord && cur_xbw.C) {
+							var new_xbw = GML.make_xbw_environment();
+							new_xbw.initFromFFXData(cur_xbw);
+							this.addSubXBW(new_xbw);
+						}
+						cur_xbw = {};
+						break;
+					case 'B':
+						cur_xbw.BWT = ffx[j].slice(2);
+						break;
+					case 'M':
+						cur_xbw.M = ffx[j].slice(2);
+						break;
+					case 'F':
+						cur_xbw.F = ffx[j].slice(2);
+						break;
+					case 'O':
+						cur_xbw.ord = ffx[j].slice(2);
+						break;
+					case 'C':
+						cur_xbw.C = ffx[j].slice(2);
+						break;
+				}
+			}
+		},
+
+
+		initAsRegularTable: function() {
+
+			this._init();
+
+		},
+
 		initAsMergeHost: function() {
 
-			this.init();
+			this._init();
 
 			multi_cur_fic = [];
 			multi_cur_bwt = [];
@@ -501,7 +576,7 @@ GML.make_xbw_environment = function() {
 
 		initAsFuseHost: function() {
 
-			this.init();
+			this._init();
 
 			multi_cur_fic = [];
 			multi_cur_bwt = [];
@@ -2597,7 +2672,7 @@ if (newM[prevNodes[j]] === '0') {
 			source += 'M\t' + M + GML_UI.file_nl;
 			source += 'F\t' + F + GML_UI.file_nl;
 			source += 'O\t' + GML.printKeyValArr(alph, ord, true, true) + GML_UI.file_nl;
-			source += 'C\t' + GML.printKeyValArr(alph, C, true, true) + GML_UI.file_nl;
+			source += 'C\t' + GML.printKeyValArr(alph, C, true, true);
 
 			return source;
 		},
@@ -2916,7 +2991,7 @@ if (newM[prevNodes[j]] === '0') {
 
 				subXBWs[sn_i[1]]._splitNode(sn_i[0]);
 
-				subXBWs[sn_i[1]].init(subXBWs[sn_i[1]]._publishFindex());
+				subXBWs[sn_i[1]].initFromFindex(subXBWs[sn_i[1]]._publishFindex());
 				
 				document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-table-' + sn_i[1]).innerHTML =
 					subXBWs[sn_i[1]].generateTable([]);
@@ -2936,7 +3011,7 @@ if (newM[prevNodes[j]] === '0') {
 				this._splitNode(sn_i);
 
 				// TODO :: do this without converting to findex and back... (curly being done for graph generation)
-				this.init(this._publishFindex());
+				this.initFromFindex(this._publishFindex());
 				this.generateHTML();
 				this.refreshGraph();
 			}

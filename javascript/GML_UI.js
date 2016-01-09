@@ -693,8 +693,13 @@ window.GML_UI = {
 	*/
 	generateAdvancedBWT: function() {
 		var el = this.activateDivOut(2, true, true);
-		el.innerHTML = '<div>' + GML.generate_BWT_advanced(
-			document.getElementById('in-string-2').value.toUpperCase()) + '</div>';
+		var type = 'in';
+		var in_value = document.getElementById('in-string-2').value.toUpperCase();
+		if ((in_value === '[FILE CONTENT]') && this.file_storage[2] && this.file_storage[2][1]) {
+			type = this.file_storage[2][1][0];
+			in_value = this.file_storage[2][1][1];
+		}
+		el.innerHTML = '<div>' + GML.generate_BWT_advanced(type, in_value) + '</div>';
 	},
 
 	run_test_generateAdvancedBWT: function(i) {
@@ -723,7 +728,7 @@ window.GML_UI = {
 			2,
 			cur_tests,
 			'generate table for',
-			function (test) {return GML.generate_BWT_advanced(test);},
+			function (test) {return GML.generate_BWT_advanced('in', test);},
 			'run_test_generateAdvancedBWT');
 	},
 
@@ -1434,6 +1439,61 @@ window.GML_UI = {
 
 
 
+	last_file_was: [0, 0, '', ''], // [x, y, z, t] where the last opened file was on tab x the input y,
+								   //              z is the ID of the input field and t is the type
+								   //              (being either 'ffx' or 'gml')
+
+	openfile: function(type, tab, input) {
+		var el_id = tab;
+		if (input !== undefined) {
+			el_id += '-' + input;
+		}
+		var el = document.getElementById('file-input-' + el_id + '-' + type);
+		if (el) {
+			this.last_file_was = [tab, input, 'in-string-' + el_id, type];
+			el.click();
+		}
+	},
+
+	readfile: function(e) {
+		var file = e.target.files[0];
+		if (!file) {
+			return;
+		}
+		var reader = new FileReader();
+		reader.onload = function(e) {
+			GML_UI.file_has_been_read(e.target.result);
+		};
+		reader.readAsText(file);
+	},
+
+
+	file_storage: [],
+
+	file_has_been_read: function(file_contents) {
+
+		// replace \r\n with \n, to be safe with both Windows-y and POSIX-y files
+		file_contents = file_contents.replace(/\r?\n/g, "\n");
+
+		// store file contents as array of lines
+		file_contents = file_contents.split('\n');
+
+		var el = document.getElementById(this.last_file_was[2]);
+		el.value = '[FILE CONTENT]';
+
+		var tab = this.last_file_was[0];
+		if (this.file_storage[tab] === undefined) {
+			this.file_storage[tab] = [];
+		}
+		var input = this.last_file_was[1];
+		if (input === undefined) {
+			input = 1;
+		}
+		this.file_storage[tab][input] = [this.last_file_was[3], file_contents];
+	},
+
+
+
 	changeOptions_verbosity_capture: false,
 	changeOptions_verbosity_compwidth: 100,
 
@@ -1724,6 +1784,13 @@ window.GML_UI = {
 	},
 
 };
+
+
+
+document.getElementById('file-input-2-gml')
+  .addEventListener('change', GML_UI.readfile, false);
+document.getElementById('file-input-2-ffx')
+  .addEventListener('change', GML_UI.readfile, false);
 
 
 

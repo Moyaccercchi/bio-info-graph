@@ -116,6 +116,8 @@
 	expand_pos: function(pos, bwt);
 	pos_equals_pos: function(pos1, pos2);
 	printKeyValArr: function(keys, values, use_ao, minify);
+	readKeys: function(str, minified);
+	readKeyValArr: function(str, minified, numeric_values);
 	count_up_array: function(i);
 	makeVisualsNice: function(sout);
 	comparePrefixes: function(p1, p2);
@@ -658,11 +660,44 @@ window.GML = {
 
 
 
-	// takes in an unterminated string
+	// takes in a type ('in' for direct GML input, 'gml' for a GML file,
+	//   and 'ffx' for an FFX file), and the actual data
 	// gives out a section in DaTeX or HTML about the generation of its BWT
-	generate_BWT_advanced: function(h) {
+	generate_BWT_advanced: function(type, h) {
 
 		this.error_flag = false;
+
+		switch (type) {
+
+			case 'gml':
+				// find first non-comment row
+				var i=0;
+				while ((i < h.length) && (h[i][0] === '>')) {
+					i++;
+				}
+				// add data while we are in a non-comment row
+				var s='';
+				while ((i < h.length) && (h[i][0] !== '>')) {
+					s += h[i];
+					i++;
+				}
+				h = s;
+				break;
+
+			case 'ffx':
+
+				if ((!GML.hideXBWenvironments) && GML_UI) {
+					// initialize XBW environment
+					GML.XBWs[GML_UI.cur_tab] = this.make_xbw_environment();
+					GML.XBWs[GML_UI.cur_tab].initFromFFX(h);
+					GML.XBWs[GML_UI.cur_tab].generateHTML();
+				}
+				var sout = 'We open an FFX file and therefore do not need to ' +
+						   'perform any additional work.' + this.nlnl;
+				sout += '<div class="success">Success</div>';
+
+				return sout;
+		}
 
 		// generate the graph
 		var graph = this.stringToGraph(h);
@@ -861,12 +896,13 @@ window.GML = {
 
 			sout += this.fe_findexToTable(findex, true, true, true);
 
+			sout += '<div class="success">Success</div>';
 
 
 			if ((!GML.hideXBWenvironments) && GML_UI) {
 				// initialize XBW environment
 				GML.XBWs[GML_UI.cur_tab] = this.make_xbw_environment();
-				GML.XBWs[GML_UI.cur_tab].init(findex);
+				GML.XBWs[GML_UI.cur_tab].initFromFindex(findex);
 				GML.XBWs[GML_UI.cur_tab].generateHTML();
 			}
 		}
@@ -2005,7 +2041,7 @@ window.GML = {
 			if ((!GML.hideXBWenvironments) && GML_UI) {
 				// initialize XBW environment
 				GML.XBWs[GML_UI.cur_tab] = this.make_xbw_environment();
-				GML.XBWs[GML_UI.cur_tab].init(findex_generated);
+				GML.XBWs[GML_UI.cur_tab].initFromFindex(findex_generated);
 				GML.XBWs[GML_UI.cur_tab].generateHTML();
 			}
 		}
@@ -2067,14 +2103,14 @@ window.GML = {
 
 			var xbw = this.make_xbw_environment();
 
-			xbw1.init(findex1);
-			xbw2.init(findex2);
+			xbw1.initFromFindex(findex1);
+			xbw2.initFromFindex(findex2);
 
 			xbw12.initAsMergeHost();
 			xbw12.addSubXBW(xbw1);
 			xbw12.addSubXBW(xbw2);
 
-			xbw.init(findex);
+			xbw.initFromFindex(findex);
 
 
 
@@ -2423,7 +2459,7 @@ window.GML = {
 			if ((!GML.hideXBWenvironments) && GML_UI) {
 				// start up control center for merged XBW
 				GML.XBWs[GML_UI.cur_tab] = xbw12;
-				GML.XBWs[GML_UI.cur_tab].init(xbw12._publishFindex());
+				GML.XBWs[GML_UI.cur_tab].initFromFindex(xbw12._publishFindex());
 				GML.XBWs[GML_UI.cur_tab].generateHTML();
 			}
 		}
@@ -2481,8 +2517,8 @@ window.GML = {
 			var xbw2  = this.make_xbw_environment();
 			var xbw12 = this.make_xbw_environment();
 
-			xbw1.init(findex1);
-			xbw2.init(findex2);
+			xbw1.initFromFindex(findex1);
+			xbw2.initFromFindex(findex2);
 
 
 
@@ -3855,7 +3891,9 @@ if (!this.bwt[k]) {
 				 .split('$').join('')
 				 .split('_').join('')
 				 .split('%').join('')
-				 .split(' ').join('');
+				 .split(' ').join('')
+				 .split('\n').join('')
+				 .split('\r').join('');
 
 		var ssplit = str.split('|');
 
@@ -5765,6 +5803,11 @@ if (!this.bwt[k]) {
 		// be sure that the end node will be reachable by always following
 		// the next node 0 - it could be that by always following next node 0, we
 		// actually run in an infinite loop. We therefore need to take precautions!
+		// (Note: Infinite loops are not allowed through most of GML, so we oftentimes
+		// already check for them in inputs etc., so the work performed here is often
+		// not strictly necessary - but in case of weird bugs or strange happenings
+		// it might still be a better idea to do this here than to abandon all hope
+		// and run in infinite loops. ^^)
 		
 
 
@@ -7215,6 +7258,68 @@ if (!auto[nextNode]) {
 		}
 
 		return sout;
+	},
+
+
+
+	// takes in a string and an optional boolean value (default false) telling
+	//   us whether the string was minified or not
+	// gives out the keys which were printed as key-value-array using printKeyValArr
+	//   to generate the string that is given in here
+	readKeys: function(str, minified) {
+
+		if (minified) {
+			str = str.split(',');
+		} else {
+			str = str.split(', ');
+		}
+
+		var arr = [];
+
+		for (var j=0; j < str.length; j++) {
+			var cs;
+			if (minified) {
+				cs = str[j].split('>');
+			} else {
+				cs = str[j].split(' => ');
+			}
+			arr.push(cs[0]);
+		}
+		return arr;
+	},
+
+
+
+	// takes in a string, an optional boolean value (default false) telling
+	//   us whether the string was minified or not and optional boolean value
+	//   (default false) telling us whether the values are supposed to be
+	//   numeric (in which case they will be parsed as integers)
+	// gives out the key-value-array which was printed using printKeyValArr to
+	//   generate the string that is given in here
+	readKeyValArr: function(str, minified, numeric_values) {
+
+		if (minified) {
+			str = str.split(',');
+		} else {
+			str = str.split(', ');
+		}
+
+		var arr = [];
+
+		for (var j=0; j < str.length; j++) {
+			var cs;
+			if (minified) {
+				cs = str[j].split('>');
+			} else {
+				cs = str[j].split(' => ');
+			}
+			if (numeric_values) {
+				arr[cs[0]] = parseInt(cs[1], 10);
+			} else {
+				arr[cs[0]] = cs[1];
+			}
+		}
+		return arr;
 	},
 
 

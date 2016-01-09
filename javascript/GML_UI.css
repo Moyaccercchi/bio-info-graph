@@ -381,6 +381,12 @@ div#dropdown > span.infobtn {
 	text-align:center;
 }
 
+input.fileinput {
+	position:absolute;
+	top:-100px;
+	left:-500px;
+}
+
 
 
 /* SVG */

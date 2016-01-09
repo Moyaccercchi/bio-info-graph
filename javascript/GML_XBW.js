@@ -507,13 +507,23 @@ GML.make_xbw_environment = function() {
 			C = GML.readKeyValArr(ffxdata.C, true, true);
 
 			char = ''; // FC
-			var k=-1;
+			var k=0;
+			var prev_a;
 			for (var j=0; j < alph.length; j++) {
 				while (k < C[alph[j]]) {
-					char += alph[j];
+					char += prev_a;
 					k++;
 				}
+				prev_a = alph[j];
 			}
+			while (char.length < BWT.length) {
+				char += prev_a;
+			}
+
+
+
+			// create an automaton and prefixes that will be used later for visualization
+			auto = this._constructAutomaton();
 		},
 
 		initFromFFX: function(ffx) {
@@ -2306,15 +2316,15 @@ if (newM[prevNodes[j]] === '0') {
 
 				sout += '<div>' +
 							'<div class="input-info-container" style="display: inline-block; width: 21%;">' +
-								'<input id="in-string-' + tab + '-xbw-lf" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'lfHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="(7;0),10,A" style="width:100%"></input>' +
+								'<input id="in-string-' + tab + '-xbw-lf" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'lfHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="([0,10];0),G" style="width:100%"></input>' +
 								'<span class="infobtn" onclick="GML_UI.clickOnXBWInfo(event, 1)">Info</span>' +
 							'</div>' +
-							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].lfHTML()" style="background-color:#A55;width:9%; margin-left:2%;display:inline-block;">LF()</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].lfHTML()" style="width:9%; margin-left:2%;display:inline-block;">LF()</div>' +
 							'<div class="input-info-container" style="display: inline-block; width: 21%; margin-left:2%;">' +
 								'<input id="in-string-' + tab + '-xbw-psi" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'psiHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="(1;0),0" style="width:100%"></input>' +
 								'<span class="infobtn" onclick="GML_UI.clickOnXBWInfo(event, 2)">Info</span>' +
 							'</div>' +
-							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].psiHTML()" style="background-color:#A55;width:9%; margin-left:2%;display:inline-block;">&#936;()</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].psiHTML()" style="width:9%; margin-left:2%;display:inline-block;">&#936;()</div>' +
 							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].saveAsGML()" style="float:right; width:15%; margin-left:2%;">Save as GML file</div>' +
 							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].exportAsGML()" style="float:right; width:15%; margin-left:2%;">Export as GML file</div>' +
 						'</div>';
@@ -2383,7 +2393,7 @@ if (newM[prevNodes[j]] === '0') {
 
 				sout += '<div>' +
 							'<div class="input-info-container" style="display: inline-block; width: 21%;">' +
-								'<input id="in-string-' + tab + '-xbw-lf" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'lfHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="7,10,A" style="width:100%"></input>' +
+								'<input id="in-string-' + tab + '-xbw-lf" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'lfHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="[7,10],A" style="width:100%"></input>' +
 								'<span class="infobtn" onclick="GML_UI.clickOnXBWInfo(event, 1)">Info</span>' +
 							'</div>' +
 							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].lfHTML()" style="width:9%; margin-left:2%;display:inline-block;">LF()</div>' +
@@ -2412,11 +2422,11 @@ if (newM[prevNodes[j]] === '0') {
 					'Optionally, you can add two boolean parameters ' +
 					'in the LF() input, e.g. ';
 			if (role === 3) {
-				sout += '(7;0)';
+				sout += '([0,10];0),G';
 			} else {
-				sout += '7';
+				sout += '[7,10],A';
 			}
-			sout += ',10,A,true,false.<br>' +
+			sout += ',true,false.<br>' +
 					'They control whether select() is called before LF() and ' +
 					'whether rank() is called afterwards, respectively.' +
 					'</div>';
@@ -2471,6 +2481,37 @@ if (newM[prevNodes[j]] === '0') {
 		get_alph_and_C_str: function() {
 
 			return ['{' + alph.join(', ') + '}', GML.printKeyValArr(alph, C, true)];
+		},
+
+		// generate an automaton based on our internal flat table data
+		_constructAutomaton: function() {
+			// currently, we convert our internal data to GML and build an automaton based on that GML file
+			// this is not the most efficient way possible, but it is pretty direct - we would have to
+			// go through all the steps anyway usually, just without having the GML file as string in between,
+			// but generating a main path and off it some extra paths and so on is exactly what we would do
+			// anyway =)
+
+			var h = this._generateGMLfilecontent();
+
+			// h[1] here ends on a ';', and might be empty, so we should check and cut and wöh,
+			// but this is done in stringToGraph anyway, so we may as well be a little dirty
+			var graph = GML.stringToGraph(h[0]+'|'+h[1]);
+
+			var auto = GML.graphToAutomaton(graph);
+
+			// if something went wrong during merging (especially if our core assumptions
+			// were not adhered to), then we cannot actually compute the prefixes, so we
+			// need to check in advance, and if something goes wrong, then we need to abort
+			GML.error_flag = false;
+			GML.checkAutomatonIsValid(auto);
+			if (GML.error_flag) {
+				return;
+			}
+
+			// console.log('XBW computePrefixes');
+			auto = GML.computePrefixes(auto);
+			
+			return auto;
 		},
 
 		_generateGMLfilecontent: function(mainpath_offset, path_namespace) {
@@ -2664,15 +2705,27 @@ if (newM[prevNodes[j]] === '0') {
 			this._generateGMLfile('application/octet-stream');
 		},
 
+		_publishFFXData: function() {
+
+			var cur_xbw = {};
+			cur_xbw.BWT = BWT;
+			cur_xbw.M = M;
+			cur_xbw.F = F;
+			cur_xbw.ord = GML.printKeyValArr(alph, ord, true, true);
+			cur_xbw.C = GML.printKeyValArr(alph, C, true, true);
+
+			return cur_xbw;
+		},
 		_generateFFXfilecontent: function() {
 
 			var source = '';
+			var cur_xbw = this._publishFFXData();
 
-			source += 'B\t' + BWT + GML_UI.file_nl;
-			source += 'M\t' + M + GML_UI.file_nl;
-			source += 'F\t' + F + GML_UI.file_nl;
-			source += 'O\t' + GML.printKeyValArr(alph, ord, true, true) + GML_UI.file_nl;
-			source += 'C\t' + GML.printKeyValArr(alph, C, true, true);
+			source += 'B\t' + cur_xbw.BWT + GML_UI.file_nl;
+			source += 'M\t' + cur_xbw.M + GML_UI.file_nl;
+			source += 'F\t' + cur_xbw.F + GML_UI.file_nl;
+			source += 'O\t' + cur_xbw.ord + GML_UI.file_nl;
+			source += 'C\t' + cur_xbw.C;
 
 			return source;
 		},
@@ -2983,16 +3036,14 @@ if (newM[prevNodes[j]] === '0') {
 
 			var sn_i = document.getElementById('in-string-' + GML_UI.cur_tab + '-xbw-split-node').value;
 
-			sn_i = this.adjustSearchfor0(sn_i);
+			sn_i = this.adjustSearchfor0(sn_i, true);
 
 			if (role === 3) {
 
-				sn_i[0] = parseInt(sn_i[0], 10) - GML.ao;
-
 				subXBWs[sn_i[1]]._splitNode(sn_i[0]);
 
-				subXBWs[sn_i[1]].initFromFindex(subXBWs[sn_i[1]]._publishFindex());
-				
+				subXBWs[sn_i[1]].initFromFFXData(subXBWs[sn_i[1]]._publishFFXData());
+
 				document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-table-' + sn_i[1]).innerHTML =
 					subXBWs[sn_i[1]].generateTable([]);
 
@@ -3003,54 +3054,73 @@ if (newM[prevNodes[j]] === '0') {
 
 			} else {
 
-				sn_i = parseInt(sn_i, 10) - GML.ao;
-
 				// TODO :: make it more clear what this sn_i is... e.g. in the standard
 				// merge example, we can enter i = 14 to achieve node splitting,
 				// but why?
 				this._splitNode(sn_i);
 
-				// TODO :: do this without converting to findex and back... (curly being done for graph generation)
-				this.initFromFindex(this._publishFindex());
+				this.initFromFFXData(this._publishFFXData());
 				this.generateHTML();
 				this.refreshGraph();
 			}
 		},
 		lfHTML: function() {
 
-			if (role === 3) {
-				alert('This function has not yet been implemented for fused graphs!');
-				return;
-			}
-
 			var searchfor = document.getElementById('in-string-' + GML_UI.cur_tab + '-xbw-lf').value;
 
 			// replace '#' with '^' before calculations
 			searchfor = searchfor.toUpperCase().replace(/\#/g, '^').split(',');
 
-			var spep = lf(
-				[parseInt(searchfor[0], 10) - GML.ao, parseInt(searchfor[1], 10) - GML.ao],
-				searchfor[2],
-				searchfor[3] !== 'FALSE', // default to true
-				searchfor[4] !== 'FALSE'  // default to true
-			);
+			if (role === 3) {
 
-			var res = '[]';
-			if (spep.length > 0) {
-				res = '[' + (spep[0] + GML.ao) + ', ' + (spep[1] + GML.ao) + ']';
+				var j = searchfor[1].slice(searchfor[1].indexOf(';')+1);
+				j = j.slice(0, j.length-1);
+				j = parseInt(j, 10) + GML.ao;
+
+				searchfor[0] = searchfor[0].slice(2);
+				searchfor[1] = searchfor[1].slice(0, searchfor[1].indexOf(']'));
+				var spep = lf(
+					[[parseInt(searchfor[0], 10) + GML.ao, parseInt(searchfor[1], 10) + GML.ao], j],
+					searchfor[2],
+					searchfor[3] !== 'FALSE', // default to true
+					searchfor[4] !== 'FALSE'  // default to true
+				);
+
+				var res = '([]';
+				if (spep[0].length > 0) {
+					res = '([' + (spep[0][0] + GML.ao) + ', ' + (spep[0][1] + GML.ao) + ']';
+				}
+				res += ';' + (spep[1] + GML.ao) + ')';
+
+				document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML = res;
+
+				// TODO this.show_nodes_in_HTML(spep);
+			} else {
+
+				searchfor[0] = searchfor[0].slice(1);
+				searchfor[1] = searchfor[1].slice(0, searchfor[1].length-1);
+
+				var spep = lf(
+					[parseInt(searchfor[0], 10) - GML.ao, parseInt(searchfor[1], 10) - GML.ao],
+					searchfor[2],
+					searchfor[3] !== 'FALSE', // default to true
+					searchfor[4] !== 'FALSE'  // default to true
+				);
+
+				var res = '[]';
+				if (spep.length > 0) {
+					res = '[' + (spep[0] + GML.ao) + ', ' + (spep[1] + GML.ao) + ']';
+				}
+				document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML = res;
+
+				this.show_nodes_in_HTML(spep);
 			}
-			document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML = res;
-
-			this.show_nodes_in_HTML(spep);
 		},
 		psiHTML: function() {
 
-			if (role === 3) {
-				alert('This function has not yet been implemented for fused graphs!');
-				return;
-			}
-
 			var searchfor = document.getElementById('in-string-' + GML_UI.cur_tab + '-xbw-psi').value.split(',');
+
+			searchfor[0] = this.adjustSearchfor0(searchfor[0], true);
 
 			var take_edge_no = searchfor[1];
 
@@ -3061,21 +3131,34 @@ if (newM[prevNodes[j]] === '0') {
 			}
 
 			var abs_next_i = psi(
-				parseInt(searchfor[0], 10) - GML.ao,
+				searchfor[0],
 				take_edge_no,
 				searchfor[2] !== 'FALSE', // default to true
 				searchfor[3] !== 'FALSE'  // default to true
 			);
 
-			document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML = (abs_next_i + GML.ao);
+			if (role === 3) {
+				document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML = '(' + (abs_next_i[0] + GML.ao) + ';' + (abs_next_i[1] + GML.ao) + ')';
 
-			this.show_nodes_in_HTML([abs_next_i, abs_next_i]);
+				// TODO this.show_nodes_in_HTML([abs_next_i, abs_next_i]);
+			} else {
+				document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML = (abs_next_i + GML.ao);
+
+				this.show_nodes_in_HTML([abs_next_i, abs_next_i]);
+			}
 		},
-		adjustSearchfor0: function(searchfor0) {
+		adjustSearchfor0: function(searchfor0, also_parse_0) {
 
 			if (role === 3) {
 				searchfor0 = searchfor0.slice(1,searchfor0.length-1).split(';');
-				searchfor0[1] = parseInt(searchfor0[1], 10);
+				searchfor0[1] = parseInt(searchfor0[1], 10) - GML.ao;
+				if (also_parse_0) {
+					searchfor0[0] = parseInt(searchfor0[0], 10) - GML.ao;
+				}
+			} else {
+				if (also_parse_0) {
+					searchfor0 = parseInt(searchfor0, 10) - GML.ao;
+				}
 			}
 
 			return searchfor0;
@@ -3109,7 +3192,7 @@ if (newM[prevNodes[j]] === '0') {
 
 			if (role === 3) {
 				document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML =
-					'(' + (i[0] + GML.ao) + ',' + i[1] + ')';
+					'(' + (i[0] + GML.ao) + ';' + (i[1] + GML.ao) + ')';
 
 				this.show_spep_in_HTML([[i[0], i[0]], i[1]], ['i', searchfor[1].toUpperCase()], i[0], searchfor[0][0]);
 			} else {
@@ -3135,7 +3218,7 @@ if (newM[prevNodes[j]] === '0') {
 
 			if (role === 3) {
 				document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML =
-					'(' + (i[0] + GML.ao) + ',' + i[1] + ')';
+					'(' + (i[0] + GML.ao) + ';' + (i[1] + GML.ao) + ')';
 
 				this.show_spep_in_HTML([[i[0], i[0]], i[1]], ['i', searchfor[1].toUpperCase()], j, searchfor[0][0]);
 			} else {

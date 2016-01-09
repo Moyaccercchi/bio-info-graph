@@ -53,7 +53,7 @@
 	sortp12andFindProblems: function();
 	fe_findexToTable: function(findex, showBWTandM, show_f, show_i);
 	fe_p12ToTableWithHighlights: function(highlight_arr, show_origin, show_f, show_i);
-	visualize: function(auto, showPrefixes, highlight_p12, show_vis_hl);
+	visualize: function(auto, showPrefixes, highlight_p12, show_vis_hl, only_highlight_nodes_from_o);
 	visualize_edge: function(from, to, straight);
 	hideWrap: function(sout, kind);
 	errorWrap: function(sout);
@@ -3041,12 +3041,16 @@ if (!this.bwt[k]) {
 
 
 	// takes in an automaton, a boolean parameter (whether to show the prefixes
-	//   or not) and optionally an array (containing all prefixes for which the
+	//   or not), optionally an array (containing all prefixes for which the
 	//   nodes with these prefixes should be highlighted) and optionally the
 	//   boolean parameter show_vis_hl (default: false), which tells us whether
-	//   the nodes in GML.vis_highlight_nodes should be highlighted too
+	//   the nodes in GML.vis_highlight_nodes should be highlighted too and
+	//   optionally an integer parameter telling us the nodes with which origin
+	//   to highlight (e.g. in a fused graph, several nodes can have the same
+	//   prefix, so addressing nodes by prefixes alone is not enough - this
+	//   here just applies to highlight_p12, btw., not to the extra highlights!)
 	// gives out a string containing a graph visualization of the input
-	visualize: function(auto, showPrefixes, highlight_p12, show_vis_hl) {
+	visualize: function(auto, showPrefixes, highlight_p12, show_vis_hl, only_highlight_nodes_from_o) {
 
 		this.makeAutomatonPretty(auto);
 
@@ -3188,7 +3192,9 @@ if (!this.bwt[k]) {
 					circlecolor = extra_circle_color;
 					bgcolor = extra_bg_color;
 				}
-				if (highlight_p12.indexOf(auto[i].f) >= 0) {
+				if ((highlight_p12.indexOf(auto[i].f) >= 0) &&
+					((only_highlight_nodes_from_o === undefined) ||
+					 (only_highlight_nodes_from_o === auto[i].o))) {
 					highcolor = high_color;
 					highabovecolor = high_above_color;
 					circlecolor = high_circle_color;
@@ -3325,7 +3331,9 @@ if (!this.bwt[k]) {
 						circlecolor = extra_circle_color;
 						bgcolor = extra_bg_color;
 					}
-					if (highlight_p12.indexOf(auto[path[i]].f) >= 0) {
+					if ((highlight_p12.indexOf(auto[path[i]].f) >= 0) &&
+						((only_highlight_nodes_from_o === undefined) ||
+						 (only_highlight_nodes_from_o === auto[path[i]].o))) {
 						highcolor = high_color;
 						highabovecolor = high_above_color;
 						circlecolor = high_circle_color;
@@ -5367,7 +5375,8 @@ if (!this.bwt[k]) {
 			p: [], // prev
 			c: node.c, // caption
 			n: [], // next
-			f: node.f // prefix
+			f: node.f, // prefix (optional)
+			o: node.o, // origin (optional, only used for highlighting in fused graphs)
 		};
 
 		// deep copy prev

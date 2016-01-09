@@ -2183,7 +2183,7 @@ if (newM[prevNodes[j]] === '0') {
 				sout += GML.hideWrap(shide, 'Tables');
 
 				if (GML.verbosity > 7) {
-					sout += 'To better keep track of what is happening, we also have a look at the corresponding graph:';
+					sout += 'To better keep track of what is happening, we also have a look at the corresponding fused graphs:';
 				}
 
 				sout += '<br>';
@@ -2200,6 +2200,15 @@ if (newM[prevNodes[j]] === '0') {
 				}
 
 				sout += '</div>';
+
+				var together_margin = '20px';
+				if (GML.verbosity > 7) {
+					sout += 'We can also look at the overall graph represented by these fused graphs:';
+					together_margin = '0px';
+				}
+
+				sout += '<div id="div-xbw-' + tab  + '-env-graph-together" style="margin-top:' + together_margin + ';">' +
+						'</div>';
 
 				if (GML.verbosity > 9) {
 					sout += '<br>';
@@ -2795,7 +2804,22 @@ if (newM[prevNodes[j]] === '0') {
 		},
 		refreshAllSubGraphsExcept: function(except, highnodes, show_vis_hl) {
 
+			var full_auto;
+
 			for (var sx=0; sx < subXBWs.length; sx++) {
+				if (sx === 0) {
+					full_auto = subXBWs[sx]._publishAuto();
+				} else {
+					full_auto = GML.mergeAutomata(full_auto, subXBWs[sx]._publishAuto());
+				}
+				for (var j=0; j < full_auto.length; j++) {
+					if (full_auto[j]) {
+						if (full_auto[j].o === undefined) {
+							full_auto[j].o = sx;
+						}
+					}
+				}
+
 				if (sx !== except) {
 
 					var outerdiv = document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-graph-' + sx);
@@ -2813,6 +2837,23 @@ if (newM[prevNodes[j]] === '0') {
 					outerdiv.childNodes[0].childNodes[0].childNodes[0].innerHTML = prevdispcaption;
 				}
 			}
+
+			var outerdiv = document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-graph-together');
+			var prevdispstyle = 'block';
+			var prevdispcaption = 'Hide';
+			if (outerdiv.childNodes[0]) {
+				prevdispstyle = outerdiv.childNodes[0].childNodes[2].style.display;
+				prevdispcaption = outerdiv.childNodes[0].childNodes[0].childNodes[0].innerHTML;
+			}
+
+			outerdiv.innerHTML =
+				GML.visualize(full_auto, true, highnodes, show_vis_hl, except).replace(/\^/g, '#');
+
+			outerdiv.childNodes[0].childNodes[2].style.display = prevdispstyle;
+			outerdiv.childNodes[0].childNodes[0].childNodes[0].innerHTML = prevdispcaption;
+		},
+		_publishAuto: function() {
+			return auto;
 		},
 		findHTML: function() {
 
@@ -2877,13 +2918,14 @@ if (newM[prevNodes[j]] === '0') {
 
 				subXBWs[sn_i[1]].init(subXBWs[sn_i[1]]._publishFindex());
 				
-				this.refreshAllSubTablesExcept(sn_i[1]);
-				this.refreshAllSubGraphsExcept(sn_i[1]);
-
 				document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-table-' + sn_i[1]).innerHTML =
 					subXBWs[sn_i[1]].generateTable([]);
 
 				subXBWs[sn_i[1]].refreshGraph(undefined, undefined, sn_i[1]);
+
+				this.refreshAllSubTablesExcept(sn_i[1]);
+				this.refreshAllSubGraphsExcept(sn_i[1]);
+
 			} else {
 
 				sn_i = parseInt(sn_i, 10) - GML.ao;
@@ -3073,11 +3115,13 @@ if (newM[prevNodes[j]] === '0') {
 
 			if (role === 3) {
 
-				this.refreshAllSubTablesExcept(spep[1]);
-				this.refreshAllSubGraphsExcept(spep[1]);
-
-				return subXBWs[spep[1]].show_spep_in_HTML(
+				var highnodes = subXBWs[spep[1]].show_spep_in_HTML(
 					spep[0], highrows, override_last_row, override_with, show_vis_hl, spep[1]);
+
+				this.refreshAllSubTablesExcept(spep[1]);
+				this.refreshAllSubGraphsExcept(spep[1], highnodes, show_vis_hl);
+
+				return;
 			}
 
 			var higharr = [];
@@ -3184,6 +3228,8 @@ if (newM[prevNodes[j]] === '0') {
 
 				this.refreshGraph(highnodes, show_vis_hl, j);
 			}
+
+			return highnodes;
 		},
 	};
 };

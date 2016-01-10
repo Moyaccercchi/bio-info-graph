@@ -1262,7 +1262,13 @@ GML.make_xbw_environment = function() {
 				}
 
 				for (var j=0; j<pref_cur_is.length; j++) {
-					GML.vis_highlight_nodes[j].push(pref_cur_is[j]);
+					if (i === 0) {
+						// convert the first node using tableToP12 from FC-indexing to absolute indexing
+						GML.vis_highlight_nodes[j].push(GML.vis_tableToP12[pref_cur_is[j]]);
+					} else {
+						// leave all others in absolute indexing, in which they already are
+						GML.vis_highlight_nodes[j].push(pref_cur_is[j]);
+					}
 				}
 
 				// ignore this all if we are in the first iteration
@@ -2321,7 +2327,7 @@ if (newM[prevNodes[j]] === '0') {
 							'</div>' +
 							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].lfHTML()" style="width:9%; margin-left:2%;display:inline-block;">LF()</div>' +
 							'<div class="input-info-container" style="display: inline-block; width: 21%; margin-left:2%;">' +
-								'<input id="in-string-' + tab + '-xbw-psi" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'psiHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="(1;0),0" style="width:100%"></input>' +
+								'<input id="in-string-' + tab + '-xbw-psi" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'psiHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="(1;1),0" style="width:100%"></input>' +
 								'<span class="infobtn" onclick="GML_UI.clickOnXBWInfo(event, 2)">Info</span>' +
 							'</div>' +
 							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].psiHTML()" style="width:9%; margin-left:2%;display:inline-block;">&#936;()</div>' +
@@ -2332,7 +2338,7 @@ if (newM[prevNodes[j]] === '0') {
 				sout += '<div>' +
 							'<input id="in-string-' + tab + '-xbw-select" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'selectHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="(1;0),M,4" style="display: inline-block; width: 21%;"></input>' +
 							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].selectHTML()" style="width:9%; margin-left:2%;display:inline-block;">select()</div>' +
-							'<input id="in-string-' + tab + '-xbw-rank" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'rankHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="(1;0),F,4" style="display: inline-block; width: 21%; margin-left:2%;"></input>' +
+							'<input id="in-string-' + tab + '-xbw-rank" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'rankHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="(1;1),F,4" style="display: inline-block; width: 21%; margin-left:2%;"></input>' +
 							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].rankHTML()" style="width:9%; margin-left:2%; display:inline-block;">rank()</div>' +
 							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].saveAsFFX()" style="float:right; width:15%; margin-left:2%;">Save as FFX file</div>' +
 							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].exportAsFFX()" style="float:right; width:15%; margin-left:2%;">Export as FFX file</div>' +
@@ -2435,7 +2441,7 @@ if (newM[prevNodes[j]] === '0') {
 					'Optionally, you can add two boolean parameters ' +
 					'in the &#936;() input, e.g. ';
 			if (role === 3) {
-				sout += '(1;0)';
+				sout += '(1;1)';
 			} else {
 				sout += '1';
 			}
@@ -2531,127 +2537,9 @@ if (newM[prevNodes[j]] === '0') {
 				return;
 			}
 
-			var further_edges = [];
-			var done_edges = [];
+			var mainpath_and_infoblocks = GML.automatonToGMLdata(auto, mainpath_offset, path_namespace);
 
-			// put all edges out of the start node on the to-do-list
-			for (var j=1; j < auto[0].n.length; j++) {
-				further_edges.push(0 + '_' + auto[0].n[j]);
-			}
-
-			var auto_to_path = [];
-			var k = 0;
-			auto_to_path[0] = ['mp', k];
-
-			var mainpath = '';
-			var i = auto[0].n[0];
-
-			while (auto[i].c !== GML.DS) {
-
-				// put all edges out of the main row on the to-do-list
-				for (var j=1; j < auto[i].n.length; j++) {
-					further_edges.push(i + '_' + auto[i].n[j]);
-				}
-				k++;
-				auto_to_path[i] = ['mp', k];
-
-				mainpath += auto[i].c;
-				var old_i = i;
-				i = auto[i].n[0];
-				done_edges.push(old_i + '_' + i);
-			}
-
-			var infoblocks = '';
-			var fpa, from_n, to_n;
-
-			// add direct paths from main row to main row
-			for (var fp=0; fp < further_edges.length; fp++) {
-				fpa = further_edges[fp].split('_');
-				from_n = auto_to_path[fpa[0]];
-				to_n = auto_to_path[fpa[1]];
-				if (from_n && to_n && (from_n[0] === 'mp') && (to_n[0] === 'mp')) {
-					infoblocks += ',' + (from_n[1] + mainpath_offset) + ',,' + (to_n[1] + mainpath_offset) + ';';
-					done_edges.push(further_edges[fp]);
-					further_edges.splice(fp, 1);
-					fp--;
-				}
-			}
-
-			// add all other edges to further_edges
-			for (var fp=0; fp < further_edges.length; fp++) {
-				fpa = further_edges[fp].split('_');
-				for (var j=0; j < auto[fpa[1]].n.length; j++) {
-					var newly_proposed_edge = fpa[1] + '_' + auto[fpa[1]].n[j];
-					if ((done_edges.indexOf(newly_proposed_edge) < 0) &&
-						(further_edges.indexOf(newly_proposed_edge) < 0)) {
-						further_edges.push(newly_proposed_edge);
-					}
-				}
-			}
-
-			var named_path_amount = 0;
-			var path_name;
-
-			// add non-direct paths from main row to main row
-			while (further_edges.length > 0) {
-				for (var fp=0; fp < further_edges.length; fp++) {
-					fpa = further_edges[fp].split('_');
-					from_n = auto_to_path[fpa[0]];
-
-					// if we find a path starting at a node which we already have in the GML file...
-					if (from_n) {
-						to_n = auto_to_path[fpa[1]];
-						k = 0;
-						named_path_amount++;
-						path_name = 'p' + path_namespace + named_path_amount;
-						path_contains = '';
-
-						// ... then we advance from this node forwards until we emerge at another node
-						// which we already have in the file ...
-						// if the automaton is not malformed, then the check for (further_edges.length > 0)
-						// is not really necessary, but better be safe than crash ^^
-						while ((to_n === undefined) && (further_edges.length > 0)) {
-							auto_to_path[fpa[1]] = [path_name, k];
-							k++;
-							path_contains += auto[fpa[1]].c;
-							done_edges.push(further_edges[fp]);
-							further_edges.splice(fp, 1);
-							for (var fp2=0; fp2 < further_edges.length; fp2++) {
-								if (further_edges[fp2].split('_')[0] === fpa[1]) {
-									fp = fp2;
-									fpa = further_edges[fp].split('_');
-									to_n = auto_to_path[fpa[1]];
-									break;
-								}
-							}
-						}
-
-						// if the automaton is not malformed, then the check for (to_n === undefined)
-						// is not really necessary, but better be safe than crash ^^
-						if (to_n === undefined) {
-							infoblocks += 'error;';
-						} else {
-							// ... and add this path as new infoblock
-							var from_node = from_n[0] + ':';
-							if (from_node === 'mp:') {
-								from_node = '';
-								from_n[1] += mainpath_offset;
-							}
-							var to_node = to_n[0] + ':';
-							if (to_node === 'mp:') {
-								to_node = '';
-								to_n[1] += mainpath_offset;
-							}
-							infoblocks += path_name + ',' + from_node + from_n[1] + ',' + path_contains + ',' + to_node + to_n[1] + ';';
-						}
-						done_edges.push(further_edges[fp]);
-						further_edges.splice(fp, 1);
-						break;
-					}
-				}
-			}
-
-			return [mainpath, infoblocks];
+			return mainpath_and_infoblocks;
 		},
 
 		_generateGMLfile: function(mime) {
@@ -3093,8 +2981,6 @@ if (newM[prevNodes[j]] === '0') {
 				res += ';' + (spep[1] + GML.ao) + ')';
 
 				document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML = res;
-
-				// TODO this.show_nodes_in_HTML(spep);
 			} else {
 
 				searchfor[0] = searchfor[0].slice(1);
@@ -3112,9 +2998,8 @@ if (newM[prevNodes[j]] === '0') {
 					res = '[' + (spep[0] + GML.ao) + ', ' + (spep[1] + GML.ao) + ']';
 				}
 				document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML = res;
-
-				this.show_nodes_in_HTML(spep);
 			}
+			this.show_nodes_in_HTML(spep);
 		},
 		psiHTML: function() {
 
@@ -3137,15 +3022,18 @@ if (newM[prevNodes[j]] === '0') {
 				searchfor[3] !== 'FALSE'  // default to true
 			);
 
+			var spep;
+
 			if (role === 3) {
 				document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML = '(' + (abs_next_i[0] + GML.ao) + ';' + (abs_next_i[1] + GML.ao) + ')';
 
-				// TODO this.show_nodes_in_HTML([abs_next_i, abs_next_i]);
+				spep = [[abs_next_i[0], abs_next_i[0]], abs_next_i[1]];
 			} else {
 				document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML = (abs_next_i + GML.ao);
 
-				this.show_nodes_in_HTML([abs_next_i, abs_next_i]);
+				spep = [abs_next_i, abs_next_i];
 			}
+			this.show_nodes_in_HTML(spep);
 		},
 		adjustSearchfor0: function(searchfor0, also_parse_0) {
 
@@ -3229,7 +3117,18 @@ if (newM[prevNodes[j]] === '0') {
 		},
 		// highlight the nodes in HTML table and graph which lie in the abs_pos_range,
 		// given with absolute indexing
-		show_nodes_in_HTML: function(abs_pos_range) {
+		show_nodes_in_HTML: function(abs_pos_range, j) {
+
+			if (role === 3) {
+
+				var highnodes = subXBWs[abs_pos_range[1]].show_nodes_in_HTML(
+					abs_pos_range[0], abs_pos_range[1]);
+
+				this.refreshAllSubTablesExcept(abs_pos_range[1]);
+				this.refreshAllSubGraphsExcept(abs_pos_range[1], highnodes, false);
+
+				return;
+			}
 
 			var highnodes = [];
 			var higharr_collection = [];
@@ -3264,10 +3163,21 @@ if (newM[prevNodes[j]] === '0') {
 				}
 			}
 
-			document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-table').innerHTML =
-				this.generateTable(higharr_collection);
+			if (j === undefined) {
+				// we are called from within a regular table
+				document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-table').innerHTML =
+					this.generateTable(higharr_collection);
 
-			this.refreshGraph(highnodes, false);
+				this.refreshGraph(highnodes, false);
+			} else {
+				// we are called from our host within a fused table
+				document.getElementById('div-xbw-' + GML_UI.cur_tab + '-env-table-' + j).innerHTML =
+					this.generateTable(higharr_collection);
+
+				this.refreshGraph(highnodes, false, j);
+			}
+
+			return highnodes;
 		},
 		show_spep_in_HTML: function(spep, highrows, override_last_row, override_with, show_vis_hl, j) {
 

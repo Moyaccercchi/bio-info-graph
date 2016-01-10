@@ -250,6 +250,7 @@ window.GML_UI = {
 		'GTCGAATGATTCGCC|,8,ATT,15',
 		'CTATA',
 		'GGAAGG',
+		'GACGTACCTG|p1,1,AGCTTC,5;p2,1,AT,4;p3,5,A,8;p4,5,A,10;p9,p1:1,T,p2:1;p10,p2:1,ACT,p4:0;,p9:0,G,p10:1;,p2:1,,p4:0',
 	],
 
 	invalid_construct_tests: [
@@ -393,6 +394,7 @@ window.GML_UI = {
 		'CAGTTTACAACTGCAGCCGTTA|,7,,12 and TCGCCCGTAACTCAACGTTTAA|,16,CTGG,17;,19,A,20;,19,GC,20',
 		'AACCCT|,1,ATCA,3;,2,C,4;,3,,5;,4,TCAT,6 and CCTTCGTACTAGCACAAACT|,5,GGTT,11',
 		'TTGCTAACCAGC|,4,TC,5 and GGTGTTTGGGGCCCATACAAAT|,15,A,18;,1,GA,11;,5,CCGC,14;,10,,19;,5,,13',
+		'GACGTACCTG|p1,1,AGCTTC,5;p2,1,AT,4;p3,5,A,8;p4,5,A,10;p9,p1:1,T,p2:1;p10,p2:1,ACT,p4:0;,p9:0,G,p10:1;,p2:1,,p4:0 and ACCTG',
 	],
 
 	invalid_merge_tests: [
@@ -545,6 +547,7 @@ window.GML_UI = {
 		'AACCCT|,1,ATCA,3;,2,C,4;,3,,5;,4,TCAT,6 and CCTTCGTACTAGCACAAACT|,5,GGTT,11',
 		'GAGTGGCCAAGTAGCCGGGTCACA|,23,GTC,24 and CGTACTG|,3,GAGC,7',
 		'ACTCCTACTCCAACTA|,9,GTT,13 and ACTACC|,4,ATG,6',
+		'GACGTACCTG|p1,1,AGCTTC,5;p2,1,AT,4;p3,5,A,8;p4,5,A,10;p9,p1:1,T,p2:1;p10,p2:1,ACT,p4:0;,p9:0,G,p10:1;,p2:1,,p4:0 and ACCTG',
 	],
 
 	invalid_fuse_tests: [

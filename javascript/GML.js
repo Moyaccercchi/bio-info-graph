@@ -53,7 +53,10 @@
 	sortp12andFindProblems: function();
 	fe_findexToTable: function(findex, showBWTandM, show_f, show_i);
 	fe_p12ToTableWithHighlights: function(highlight_arr, show_origin, show_f, show_i);
+	automatonToGMLdata: function(auto, mainpath_offset, path_namespace);
 	visualize: function(auto, showPrefixes, highlight_p12, show_vis_hl, only_highlight_nodes_from_o);
+	visualize_calc_line: function(from_i, to_i);
+	visualize_adjust_viewport_size: function(yoff_view);
 	visualize_edge: function(from, to, straight);
 	hideWrap: function(sout, kind);
 	errorWrap: function(sout);
@@ -695,6 +698,9 @@ window.GML = {
 				var sout = 'We open an FFX file and therefore do not need to ' +
 						   'perform any additional work.' + this.nlnl;
 				sout += '<div class="success">Success</div>';
+				if (GML_UI) {
+					GML_UI.happy_face();
+				}
 
 				return sout;
 		}
@@ -897,7 +903,9 @@ window.GML = {
 			sout += this.fe_findexToTable(findex, true, true, true);
 
 			sout += '<div class="success">Success</div>';
-
+			if (GML_UI) {
+				GML_UI.happy_face();
+			}
 
 			if ((!GML.hideXBWenvironments) && GML_UI) {
 				// initialize XBW environment
@@ -2571,7 +2579,9 @@ window.GML = {
 			}
 			
 			sout += '<div class="success">Success</div>';
-
+			if (GML_UI) {
+				GML_UI.happy_face();
+			}
 
 			if ((!GML.hideXBWenvironments) && GML_UI) {
 				// start up control center for fused XBW
@@ -3040,6 +3050,138 @@ if (!this.bwt[k]) {
 
 
 
+	// takes in an automaton, an optional (default 0) mainpath offset which is added
+	//   to the locations of all mainpath nodes, and an optional (default '') path
+	//   namespace which is appended to the names of all paths except the main path
+	// gives out a mainpath and infoblocks which together form a GML data string
+	automatonToGMLdata: function(auto, mainpath_offset, path_namespace) {
+
+		var further_edges = [];
+		var done_edges = [];
+
+		// put all edges but the first out of the start node on the to-do-list
+		for (var j=1; j < auto[0].n.length; j++) {
+			further_edges.push(0 + '_' + auto[0].n[j]);
+		}
+
+		var auto_to_path = [];
+		var k = 0;
+		auto_to_path[0] = ['mp', k];
+
+		var mainpath = '';
+		var i = auto[0].n[0];
+
+		while ((auto[i].c !== GML.DS) && (auto[i].c !== GML.DS_1_o)) {
+
+			// put all edges out of the main row on the to-do-list
+			for (var j=1; j < auto[i].n.length; j++) {
+				further_edges.push(i + '_' + auto[i].n[j]);
+			}
+			k++;
+			auto_to_path[i] = ['mp', k];
+
+			mainpath += auto[i].c;
+			var old_i = i;
+			i = auto[i].n[0];
+			done_edges.push(old_i + '_' + i);
+		}
+
+		var infoblocks = '';
+		var fpa, from_n, to_n;
+
+		// add direct paths from main row to main row
+		for (var fp=0; fp < further_edges.length; fp++) {
+			fpa = further_edges[fp].split('_');
+			from_n = auto_to_path[fpa[0]];
+			to_n = auto_to_path[fpa[1]];
+			if (from_n && to_n && (from_n[0] === 'mp') && (to_n[0] === 'mp')) {
+				done_edges.push(further_edges[fp]);
+				further_edges.splice(fp, 1);
+				fp--;
+
+				infoblocks += ',' + (from_n[1] + mainpath_offset) + ',,' + (to_n[1] + mainpath_offset) + ';';
+			}
+		}
+
+		// add all other edges to further_edges
+		for (var fp=0; fp < further_edges.length; fp++) {
+			fpa = further_edges[fp].split('_');
+			for (var j=0; j < auto[fpa[1]].n.length; j++) {
+				var newly_proposed_edge = fpa[1] + '_' + auto[fpa[1]].n[j];
+				if ((done_edges.indexOf(newly_proposed_edge) < 0) &&
+					(further_edges.indexOf(newly_proposed_edge) < 0)) {
+					further_edges.push(newly_proposed_edge);
+				}
+			}
+		}
+
+		var named_path_amount = 0;
+		var path_name;
+
+		// add non-direct paths from main row to main row
+		while (further_edges.length > 0) {
+			for (var fp=0; fp < further_edges.length; fp++) {
+				fpa = further_edges[fp].split('_');
+				from_n = auto_to_path[fpa[0]];
+
+				// if we find a path starting at a node which we already have in the GML file...
+				if (from_n) {
+					to_n = auto_to_path[fpa[1]];
+					k = 0;
+					named_path_amount++;
+					path_name = 'p' + path_namespace + named_path_amount;
+					var path_contains = '';
+
+					// ... then we advance from this node forwards until we emerge at another node
+					// which we already have in the file ...
+					// if the automaton is not malformed, then the check for (further_edges.length > 0)
+					// is not really necessary, but better be safe than crash ^^
+					while ((to_n === undefined) && (further_edges.length > 0)) {
+						auto_to_path[fpa[1]] = [path_name, k];
+						k++;
+						path_contains += auto[fpa[1]].c;
+						done_edges.push(further_edges[fp]);
+						further_edges.splice(fp, 1);
+						for (var fp2=0; fp2 < further_edges.length; fp2++) {
+							if (further_edges[fp2].split('_')[0] === fpa[1]) {
+								fp = fp2;
+								fpa = further_edges[fp].split('_');
+								to_n = auto_to_path[fpa[1]];
+								break;
+							}
+						}
+					}
+
+					// if the automaton is not malformed, then the check for (to_n === undefined)
+					// is not really necessary, but better be safe than crash ^^
+					if (to_n === undefined) {
+						infoblocks += 'error;';
+					} else {
+						// ... and add this path as new infoblock
+						var from_node = from_n[0] + ':';
+						if (from_node === 'mp:') {
+							from_node = '';
+							from_n[1] += mainpath_offset;
+						}
+						var to_node = to_n[0] + ':';
+						if (to_node === 'mp:') {
+							to_node = '';
+							to_n[1] += mainpath_offset;
+						}
+						infoblocks += path_name + ',' + from_node + from_n[1] + ',' + path_contains + ',' + to_node + to_n[1] + ';';
+					}
+					done_edges.push(further_edges[fp]);
+					further_edges.splice(fp, 1);
+					break;
+				}
+			}
+		}
+
+		return [mainpath, infoblocks];
+	},
+
+
+
 	// basically, we start with a table i (id of table column) that we want to highlight
 	// which is stored in the array of arrays vis_highlight_nodes,
 	// use vis_tableToP12 to convert it to a p12 i (id of node in graph-like table),
@@ -3056,23 +3198,23 @@ if (!this.bwt[k]) {
 	vis_show_dollarsign: true,
 
 	vis_alternate: true,
-	vis_cur_alternate: 100,
+	vis_cur_alternate: 75,
+	vis_occupied_top_lines: [], // which lines are occupied at the top
+	vis_occupied_btm_lines: [], // which lines are occupied at the bottom
 	vis_default_color: '#000',
 	vis_extra_arrow_color: '#C00',
 	vis_marker_arrow: 'markerArrow0',
-	vis_checkedge: '0_0',
 	vis_extra_high_edges: [],
 	vis_texts_visible: true,
 	vis_always_search_path: false,
 	vis_find_shortest_path: false,
-	vis_displayed_edges: [],
+	vis_positions: [], // all positions of automaton nodes that have already been drawn
 	vis_width_override: false,
 	vis_width_override_value: 1041,
 	vis_invert_colors: false,
 	vis_add_IO_texts: false,
 	vis_y_start_at: 0,
 	vis_y_end_at: 0,
-
 
 
 
@@ -3090,10 +3232,11 @@ if (!this.bwt[k]) {
 
 		this.makeAutomatonPretty(auto);
 
-		this.vis_displayed_edges = [];
+		this.vis_texts_visible = showPrefixes || this.show_auto_i || this.vis_add_IO_texts;
 
-		var texts_visible = showPrefixes || this.show_auto_i || this.vis_add_IO_texts;
-		this.vis_texts_visible = texts_visible;
+		this.vis_cur_alternate = 75;
+		this.vis_occupied_top_lines = [];
+		this.vis_occupied_btm_lines = [];
 
 		var default_color = this.vis_default_color;
 		var default_bg_color = '#FFF';
@@ -3143,17 +3286,9 @@ if (!this.bwt[k]) {
 
 			for (var j=0; j < this.vis_highlight_nodes.length; j++) {
 
-				// convert the first node using tableToP12 from table i to p12 i to auto i
-				extra_high_nodes.push(
-					this.vis_p12ToAuto[
-						this.vis_tableToP12[
-							this.vis_highlight_nodes[j][0]
-						]
-					]
-				);
-
-				// convert all other nodes just from p12 i to auto i
-				for (var i=1; i < this.vis_highlight_nodes[j].length; i++) {
+				// convert all nodes from p12 i to auto i, that is,
+				// from absolute indexing to indexes of the automaton
+				for (var i=0; i < this.vis_highlight_nodes[j].length; i++) {
 					extra_high_nodes.push(
 						this.vis_p12ToAuto[
 							this.vis_highlight_nodes[j][i]
@@ -3182,30 +3317,53 @@ if (!this.bwt[k]) {
 		sout += '</marker>';
 		sout += '</defs>';
 
-		var positions = [];
+		this.vis_positions = [];
 
-		// keep track of paths we have not visualized yet
-		// (for each path, the location of the first node in auto is saved)
-		var more_paths = [];
-		var done_paths = [];
+		var further_edges = [];
+		var done_edges = [];
+
+		// put all edges but the first out of the start node on the to-do-list
+		for (var j=1; j < auto[0].n.length; j++) {
+			further_edges.push(0 + '_' + auto[0].n[j]);
+		}
+
+		var auto_to_path = [];
+		var k = 0;
+		auto_to_path[0] = ['mp', k];
 
 		// find main row by following from # always the first alternative, until we arrive at $
 		// alternatively, we could also go until we reached a node with no outgoing nodes,
 		// but sometimes some funny bunnies actually put an edge from $ to # to confuse us,
 		// so we'll not do that ;)
-		var mainrow = [0];
+		var mainrow = [];
 		var i = 0;
 
-		// in a well-formed automaton, the auto[i].n.length > 0 check should be unnecessary, as
-		// we go until $ always following .n[0], which should work out fine... buuut better be
-		// safe than sorry (e.g. right now entering TAATACGCGGGTC|,8,,9 into the generate tables
-		// tab made this fail - we fixed it now by adding the sanitization step into the graph to
-		// automaton conversion when reading out user input, but still, this might happen again,
-		// with other as of yet unknown bugs)
-		while ((auto[i].c !== this.DS) && (auto[i].c !== this.DS_1) && (auto[i].n.length > 0)) {
-			i = auto[i].n[0];
+		while (true) {
+
+			// put all edges out of the main row on the to-do-list
+			for (var j=1; j < auto[i].n.length; j++) {
+				further_edges.push(i + '_' + auto[i].n[j]);
+			}
+			k++;
+			auto_to_path[i] = ['mp', k];
+
 			mainrow.push(i);
+
+			// in a well-formed automaton, the auto[i].n.length > 0 check should be unnecessary, as
+			// we go until $ always following .n[0], which should work out fine... buuut better be
+			// safe than sorry (e.g. right now entering TAATACGCGGGTC|,8,,9 into the generate tables
+			// tab made this fail - we fixed it now by adding the sanitization step into the graph to
+			// automaton conversion when reading out user input, but still, this might happen again,
+			// with other as of yet unknown bugs)
+			if ((auto[i].c === GML.DS) || (auto[i].c === GML.DS_1_o) || (auto[i].n.length < 1)) {
+				break;
+			}
+
+			var old_i = i;
+			i = auto[i].n[0];
+			done_edges.push(old_i + '_' + i);
 		}
+
 		var hlen = mainrow.length;
 
 		var xoff, xoffnext, yoff = y_mainrow;
@@ -3214,8 +3372,7 @@ if (!this.bwt[k]) {
 		for (var j = 0; j < hlen; j++) {
 			var i = mainrow[j];
 			xoff = 50 + (100 * j);
-			xoffnext = 50 + (100 * (j+1));
-			positions[i] = [xoff, y_mainrow];
+			this.vis_positions[i] = [xoff, y_mainrow];
 
 			if (((j > 0) || (this.vis_show_hashtag)) && ((j < hlen-1) || (this.vis_show_dollarsign))) {
 				var highcolor = default_color;
@@ -3242,12 +3399,10 @@ if (!this.bwt[k]) {
 				sout += '<text x="' + xoff + '" y="' + (y_mainrow + 10) + '" text-anchor="middle" style="fill:' + highcolor + ';">' +
 						auto[i].c + '</text>';
 
-				if (texts_visible) {
+				if (this.vis_texts_visible) {
 
 					// adjust viewport size to also show the text above the nodes
-					if (this.vis_y_start_at > y_start_cur - y_text_off) {
-						this.vis_y_start_at = y_start_cur - y_text_off;
-					}
+					this.visualize_adjust_viewport_size(y_start_cur - y_text_off);
 
 					sout += '<text class="prefix" x="' + xoff +
 							'" y="78" text-anchor="middle" style="fill:' + highabovecolor + '">';
@@ -3269,229 +3424,220 @@ if (!this.bwt[k]) {
 					sout += '</text>';
 				}
 
-				if ((j < hlen-1) && ((j < hlen-2) || this.vis_show_dollarsign)) {
+				if (((j > 1) || ((j > 0) && this.vis_show_hashtag)) && ((j < hlen-1) || this.vis_show_dollarsign)) {
 
-					this.vis_checkedge = i + '_' + mainrow[j+1];
-
-					sout += this.visualize_edge(
-						[xoff, y_mainrow],
-						[xoffnext, y_mainrow],
-						true);
-				}
-
-				for (var k = 1; k < auto[i].n.length; k++) {
-					var addPath = auto[i].n[k];
-					if ((done_paths.indexOf(addPath) < 0) && (more_paths.indexOf(addPath) < 0)) {
-						more_paths.push(addPath);
-					}
+					sout += this.visualize_edge(mainrow[j-1], i, true);
 				}
 			}
 		}
 
 
-		// alternate yoff between 52.5 and 47.5 (around 50), so that adjacent paths
-		// get put on opposite sides of the main path
-		// TODO :: improve this with an actual space-aware visualization solution
-		var yoff = 125; // offset for path starts and ends - small distance from origin
-		var yoffl = 170;  // offset for nodes - large distance from origin
-		var yoffdl = 200; // offset for Bezier curve control points - doubly large distance from origin
-		this.vis_cur_alternate = 125;
 
+		var fpa, from_n, to_n;
 
-		while (more_paths.length > 0) {
-
-			var curNode_i = more_paths[0];
-			var curNode = auto[curNode_i];
-			done_paths.push(curNode_i);
-			more_paths.splice(0, 1);
-			var j_init = 1;
-			if (mainrow.indexOf(curNode_i) < 0) {
-				j_init = 0;
-			}
-
-			var to = curNode_i;
-
-			if (positions[to] === undefined) {
-
-				// add (at least one) new node
-
-				var path = [curNode_i];
-				if (positions[auto[curNode_i].p[0]] === undefined) {
-					xoff_start = xoff + 100;
-				} else {
-					xoff_start = positions[auto[curNode_i].p[0]][0];
-				}
-				var nextNode_i = curNode.n[0];
-
-				while (positions[nextNode_i] === undefined) {
-					// we write a coordinate into the position, so that if we are in a loop
-					// (which could happen off the main row, as only the main row is
-					// loop protected through the prettifyAutomaton function), we do
-					// not loop forever - instead, we go through the loop once, until
-					// we reach this position again, then see that it has been drawn,
-					// and all is good (otherwise, this here will simply be overwritten)
-					// the actual coordinates which are chosen here are not exactly perfect
-					// (going from the start node to the right, they might even shoot off the
-					// viewport), but we still prefer them over an infinite loop
-					positions[nextNode_i] = [xoff_start + (path.length * 40), yoffl];
-					if (auto[nextNode_i]) {
-						path.push(nextNode_i);
-						for (var k=1; k < auto[nextNode_i].n.length; k++) {
-							var addPath = auto[nextNode_i].n[k];
-							if ((done_paths.indexOf(addPath) < 0) && (more_paths.indexOf(addPath) < 0)) {
-								more_paths.push(addPath);
-							}
-						}
-						nextNode_i = auto[nextNode_i].n[0];
-					}
-				}
-
-				var plen = path.length;
-				xoff_end = positions[nextNode_i][0];
-				var yoff_end = positions[nextNode_i][1];
-				xoff_mid = (xoff_end + xoff_start) / 2;
-				var xoff_width = xoff_end - xoff_start;
-
-				for (var i = 0; i < plen; i++) {
-					xoff = xoff_mid+(xoff_width*(0.5+i - (plen / 2))/plen);
-					xoffnext = xoff_mid+(xoff_width*(1.5+i - (plen / 2))/plen);
-					positions[path[i]] = [xoff, yoffl];
-
-					var highcolor = default_color;
-					var highabovecolor = default_color;
-					var circlecolor = default_color;
-					var bgcolor = default_bg_color;
-					if (extra_high_nodes.indexOf(path[i]) >= 0) {
-						highcolor = extra_color;
-						highabovecolor = extra_above_color;
-						circlecolor = extra_circle_color;
-						bgcolor = extra_bg_color;
-					}
-					if ((highlight_p12.indexOf(auto[path[i]].f) >= 0) &&
-						((only_highlight_nodes_from_o === undefined) ||
-						 (only_highlight_nodes_from_o === auto[path[i]].o))) {
-						highcolor = high_color;
-						highabovecolor = high_above_color;
-						circlecolor = high_circle_color;
-						bgcolor = high_bg_color;
-					}
-
-					// adjust viewport size
-					if (this.vis_y_start_at > yoffl - node_radius_outer) {
-						this.vis_y_start_at = yoffl - node_radius_outer;
-					}
-					if (this.vis_y_end_at < yoffl + node_radius_outer) {
-						this.vis_y_end_at = yoffl + node_radius_outer;
-					}
-
-					sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="' + node_radius_outer + '" style="fill:' + circlecolor + '" />';
-					sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="' + node_radius_inner + '" style="fill:' + bgcolor + '" />';
-					sout += '<text x="' + xoff + '" y="' + (yoffl+10) +
-							'" text-anchor="middle" style="fill:' + highcolor + ';">' +
-							auto[path[i]].c + '</text>';
-
-					if (texts_visible) {
-
-						// adjust viewport size to also show the text above the nodes
-						if (this.vis_y_start_at > yoffl - node_radius_outer - y_text_off) {
-							this.vis_y_start_at = yoffl - node_radius_outer - y_text_off;
-						}
-
-						sout += '<text class="prefix" x="' + xoff + '" y="' + (yoffl-22) +
-								'" text-anchor="middle" style="fill:' + highabovecolor + '">';
-						if (showPrefixes) {
-							sout += auto[path[i]].f;
-							if (this.show_auto_i || this.vis_add_IO_texts) {
-								sout += ', ';
-							}
-						}
-						if (this.show_auto_i) {
-							sout += (path[i] + this.ao);
-							if (this.vis_add_IO_texts) {
-								sout += ', ';
-							}
-						}
-						if (this.vis_add_IO_texts) {
-							sout += ' I: ' + auto[path[i]].p.length + ' O: ' + auto[path[i]].n.length;
-						}
-						sout += '</text>';
-					}
-
-					var strokecolor = default_color;
-					var marker_kind = '';
-					var target;
-
-					if (i < plen-1) {
-						// create horizontal edge between members of the path
-						this.vis_checkedge = path[i] + '_' + path[i+1];
-						target = [xoffnext, yoffl];
-					} else {
-						// create edge at the end of the path
-						this.vis_checkedge = path[i] + '_' + auto[path[plen-1]].n[0];
-						target = [xoff_end, yoff_end];
-					}
-
-					sout += this.visualize_edge([xoff, yoffl], target, i < plen-1);
-
-					var pcur = path[i];
-					for (var ij=1; ij < auto[pcur].n.length; ij++) {
-						var drawto = auto[pcur].n[ij];
-						if (positions[drawto] !== undefined) {
-							this.vis_checkedge = pcur + '_' + drawto;
-							sout += this.visualize_edge(positions[pcur], positions[drawto], false);
-						}
-					}
-				}
-			}
-
-			for (j=j_init; j < curNode.p.length; j++) {
-
-				var from = curNode.p[j];
-
-				// if we are on the mainrow, and we get an incoming edge not from the
-				// mainrow, then we ignore it (as the node outside of the mainrow
-				// will draw its own outgoing edge)
-				if ((j_init == 1) && (mainrow.indexOf(from) < 0)) {
-					continue;
-				}
-
-				for (var k=1; k < auto[from].n.length; k++) {
-					var addPath = auto[from].n[k];
-					if ((done_paths.indexOf(addPath) < 0) && (more_paths.indexOf(addPath) < 0)) {
-						more_paths.push(addPath);
-					}
-				}
+		// add direct paths from main row to main row
+		for (var fp=0; fp < further_edges.length; fp++) {
+			fpa = further_edges[fp].split('_');
+			from_n = auto_to_path[fpa[0]];
+			to_n = auto_to_path[fpa[1]];
+			if (from_n && to_n && (from_n[0] === 'mp') && (to_n[0] === 'mp')) {
+				done_edges.push(further_edges[fp]);
+				further_edges.splice(fp, 1);
+				fp--;
 
 				// just add an edge, but do not add a new node
 
-				var yoff_view = (yoff + yoffdl)/2;
+				this.visualize_calc_line(fpa[0], fpa[1]);
 
-				// adjust viewport size
-				if (this.vis_y_start_at > yoff_view) {
-					this.vis_y_start_at = yoff_view;
-				}
-				if (this.vis_y_end_at < yoff_view) {
-					this.vis_y_end_at = yoff_view;
-				}
+				sout += this.visualize_edge(fpa[0], fpa[1], false);
+			}
+		}
 
-				this.vis_checkedge = from + '_' + to;
 
-				sout += this.visualize_edge(positions[from], positions[to], false);
 
-				if (GML.vis_alternate) {
-					// alternate!
-					this.vis_cur_alternate = 200 - this.vis_cur_alternate;
-					if (texts_visible) {
-						yoff = 190 - yoff;
-					} else {
-						yoff = 200 - yoff;
-					}
-					yoffl = 200 - yoffl;
-					yoffdl = 200 - yoffdl;
+		// add all other edges to further_edges
+		for (var fp=0; fp < further_edges.length; fp++) {
+			fpa = further_edges[fp].split('_');
+			for (var j=0; j < auto[fpa[1]].n.length; j++) {
+				var newly_proposed_edge = fpa[1] + '_' + auto[fpa[1]].n[j];
+				if ((done_edges.indexOf(newly_proposed_edge) < 0) &&
+					(further_edges.indexOf(newly_proposed_edge) < 0)) {
+					further_edges.push(newly_proposed_edge);
 				}
 			}
 		}
 
+
+
+		var named_path_amount = 0;
+		var path_name;
+
+		// add non-direct paths from main row to main row
+		while (further_edges.length > 0) {
+			for (var fp=0; fp < further_edges.length; fp++) {
+				fpa = further_edges[fp].split('_');
+				from_n = auto_to_path[fpa[0]];
+
+				// if we find a path starting at a node which we already have in the GML file...
+				if (from_n) {
+					to_n = auto_to_path[fpa[1]];
+					k = 0;
+					named_path_amount++;
+					path_name = 'p' + named_path_amount;
+					// start with node from which the path originates (this node is not itself part
+					// of the path though, and has already been drawn!)
+					var path_contains = [parseInt(fpa[0], 10)];
+
+					// ... then we advance from this node forwards until we emerge at another node
+					// which we already have in the file ...
+					// if the automaton is not malformed, then the check for (further_edges.length > 0)
+					// is not really necessary, but better be safe than crash ^^
+					while ((to_n === undefined) && (further_edges.length > 0)) {
+						auto_to_path[fpa[1]] = [path_name, k];
+						k++;
+						path_contains.push(parseInt(fpa[1], 10));
+						done_edges.push(further_edges[fp]);
+						further_edges.splice(fp, 1);
+						for (var fp2=0; fp2 < further_edges.length; fp2++) {
+							if (further_edges[fp2].split('_')[0] === fpa[1]) {
+								fp = fp2;
+								fpa = further_edges[fp].split('_');
+								to_n = auto_to_path[fpa[1]];
+								break;
+							}
+						}
+					}
+					// add node into which the path leads (this node is not itself part
+					// of the path though, and has already been drawn!)
+					path_contains.push(parseInt(fpa[1], 10));
+
+					// if the automaton is not malformed, then the check for (to_n === undefined)
+					// is not really necessary, but better be safe than crash ^^
+					if (to_n !== undefined) {
+						// ... and add this path node-for-node to the output =)
+
+						// path_contains has all the nodes of the path, which we will draw now
+						// (minus the first and the last, which are the start and end of the path, so
+						// we only draw edges out of and into them, but do not draw the nodes again ^^)
+
+						var plen = path_contains.length - 2;
+
+						var firstNode_i = path_contains[0];
+						var lastNode_i = path_contains[path_contains.length-1];
+
+						if (plen < 1) {
+							// if from_y and to_y are the same, then we actually draw an edge that
+							// curves around happily, and need to give it a line... otherwise, it is
+							// just an edge drawn inside somewhere, which doesn't need its own line =)
+							if (this.vis_positions[firstNode_i][1] === this.vis_positions[lastNode_i][1]) {
+								this.visualize_calc_line(firstNode_i, lastNode_i);
+							}
+
+							// draw an edge from the start node to the end node, but draw
+							// NOT A SINGLE internal node, as this path is just a single edge! =)
+							sout += this.visualize_edge(firstNode_i, lastNode_i, false);
+
+						} else {
+
+							var yoffl = this.visualize_calc_line(firstNode_i, lastNode_i);
+
+							var xoff_start = this.vis_positions[firstNode_i][0];
+							var xoff_end = this.vis_positions[lastNode_i][0];
+
+							var xoff_mid = (xoff_end + xoff_start) / 2;
+							var xoff_width = xoff_end - xoff_start;
+
+							for (var i = 0; i < plen; i++) {
+
+								var pcur = path_contains[i+1];
+
+								xoff = xoff_mid+(xoff_width*(0.5+i - (plen / 2))/plen);
+								xoffnext = xoff_mid+(xoff_width*(1.5+i - (plen / 2))/plen);
+								this.vis_positions[pcur] = [xoff, yoffl];
+
+								var highcolor = default_color;
+								var highabovecolor = default_color;
+								var circlecolor = default_color;
+								var bgcolor = default_bg_color;
+
+								if (extra_high_nodes.indexOf(pcur) >= 0) {
+									highcolor = extra_color;
+									highabovecolor = extra_above_color;
+									circlecolor = extra_circle_color;
+									bgcolor = extra_bg_color;
+								}
+								if ((highlight_p12.indexOf(auto[pcur].f) >= 0) &&
+									((only_highlight_nodes_from_o === undefined) ||
+									 (only_highlight_nodes_from_o === auto[pcur].o))) {
+									highcolor = high_color;
+									highabovecolor = high_above_color;
+									circlecolor = high_circle_color;
+									bgcolor = high_bg_color;
+								}
+
+								// adjust viewport size - but only once, as we are horizontal anyway ^^
+								if (i === 0) {
+									this.visualize_adjust_viewport_size(yoffl - node_radius_outer);
+									this.visualize_adjust_viewport_size(yoffl + node_radius_outer);
+								}
+
+								sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="' + node_radius_outer + '" style="fill:' + circlecolor + '" />';
+								sout += '<circle cx="' + xoff + '" cy="' + yoffl + '" r="' + node_radius_inner + '" style="fill:' + bgcolor + '" />';
+								sout += '<text x="' + xoff + '" y="' + (yoffl+10) +
+										'" text-anchor="middle" style="fill:' + highcolor + ';">' +
+										auto[pcur].c + '</text>';
+
+								if (this.vis_texts_visible) {
+
+									// adjust viewport size to also show the text above the nodes
+									this.visualize_adjust_viewport_size(yoffl - node_radius_outer - y_text_off);
+
+									sout += '<text class="prefix" x="' + xoff + '" y="' + (yoffl-22) +
+											'" text-anchor="middle" style="fill:' + highabovecolor + '">';
+									if (showPrefixes) {
+										sout += auto[pcur].f;
+										if (this.show_auto_i || this.vis_add_IO_texts) {
+											sout += ', ';
+										}
+									}
+									if (this.show_auto_i) {
+										sout += (pcur + this.ao);
+										if (this.vis_add_IO_texts) {
+											sout += ', ';
+										}
+									}
+									if (this.vis_add_IO_texts) {
+										sout += ' I: ' + auto[pcur].p.length + ' O: ' + auto[pcur].n.length;
+									}
+									sout += '</text>';
+								}
+
+								var strokecolor = default_color;
+								var marker_kind = '';
+								var target;
+
+								if (i === 0) {
+									// draw the start edge
+									sout += this.visualize_edge(firstNode_i, pcur, true);
+								} else {
+									// create horizontal edge between members of the path
+									sout += this.visualize_edge(path_contains[i], pcur, true);
+								}
+
+								if (i === plen - 1) {
+									// draw the end edge
+									sout += this.visualize_edge(pcur, lastNode_i, false);
+								}
+							}
+						}
+					}
+
+					done_edges.push(further_edges[fp]);
+					further_edges.splice(fp, 1);
+					break;
+				}
+			}
+		}
 
 		this.vis_y_start_at -= 2;
 		this.vis_y_end_at += 2;
@@ -3551,11 +3697,137 @@ if (!this.bwt[k]) {
 
 
 
-	// takes in a coordinate pair from and a coordinate pair to as well as a boolean
+
+	// takes in a an automaton index from_i and an automaton index to_i
+	// gives out an offset for nodes and calculates several offsets
+	visualize_calc_line: function(from_i, to_i) {
+
+		var yoff;   // offset for path starts and ends - small distance from origin
+		var yoffl;  // offset for nodes - large distance from origin
+
+		var from_x = this.vis_positions[from_i][0];
+		var from_y = this.vis_positions[from_i][1];
+		var to_x = this.vis_positions[to_i][0];
+		var to_y = this.vis_positions[to_i][1];
+
+
+		// if we go from the mainpath to the mainpath ...
+		if ((from_y === 100) && (to_y === 100)) {
+			// ... then we alternate yoff, so that adjacent paths get put on opposite sides of the main path
+			if (GML.vis_alternate) {
+				if (this.vis_cur_alternate > 100) {
+					this.vis_cur_alternate = 75;
+				} else {
+					this.vis_cur_alternate = 125;
+				}
+			}
+		} else {
+			// we are wobbling around somewhere outside
+			if ((from_y > 100) || (to_y > 100)) {
+				this.vis_cur_alternate = 125;
+			} else {
+				this.vis_cur_alternate = 75;
+			}
+		}
+
+
+		var j=0, cur_lines;
+
+
+		// check which lines we are interested in
+		if (this.vis_cur_alternate > 100) {
+			cur_lines = this.vis_occupied_btm_lines;
+		} else {
+			cur_lines = this.vis_occupied_top_lines;
+		}
+
+
+		// while we have already some entries in a line
+		while (cur_lines[j]) {
+			var go_to_next_line = false;
+			// iterate over all those entries
+			for (var k=0; k < cur_lines[j].length; k++) {
+				// if this entry lies somewhere else,
+				// we do not see a problem with staying on this line
+				if ((cur_lines[j][k][0] >= to_x) ||
+					(cur_lines[j][k][1] <= from_x)) {
+					continue;
+				}
+				// the entry did not lie somewhere else, so there is a problem,
+				// so we want to go to the next line instead
+				go_to_next_line = true;
+			}
+
+			if (go_to_next_line) {
+				// if we want to go to the next line, then do so
+				j++;
+			} else {
+				// if we do not need to go to the next line, escape
+				break;
+			}
+		}
+
+
+		// if the line we are looking at now already has entries...
+		if (cur_lines[j]) {
+			// ... then add this entry to them
+			cur_lines[j].push([from_x, to_x]);
+		} else {
+			// otherwise, define this line and initialize it with this entry
+			cur_lines[j] = [[from_x, to_x]];
+		}
+
+
+		// convert the line into a real position
+		if (this.vis_cur_alternate > 100) {
+			this.vis_cur_alternate = 125 + (70 * j);
+		} else {
+			this.vis_cur_alternate = 75 - (70 * j);
+		}
+
+
+		// refresh yoff
+		yoff = this.vis_cur_alternate;
+		if (this.vis_texts_visible && (this.vis_cur_alternate < 100)) {
+			yoff -= 20;
+		}
+
+
+		// refresh yoffl
+		if (this.vis_cur_alternate > 100) {
+			yoffl = this.vis_cur_alternate + 45;
+		} else {
+			yoffl = this.vis_cur_alternate - 45;
+		}
+
+		return yoffl;
+	},
+
+
+
+	// takes in a new y-view-offset
+	// gives out nothing, but increases the internal viewport size if necessary
+	visualize_adjust_viewport_size: function(yoff_view) {
+
+		if (this.vis_y_start_at > yoff_view) {
+			this.vis_y_start_at = yoff_view;
+		}
+		if (this.vis_y_end_at < yoff_view) {
+			this.vis_y_end_at = yoff_view;
+		}
+	},
+
+
+
+	// takes in a an automaton index from_i and an automaton index to_i as well as a boolean
 	//   parameter telling us whether small texts above the nodes are visible and
-	//   a boolean parameter telling us whether a straight edge is wanted or a curved one
+	//   a boolean parameter telling us whether a straight edge is wanted or a curved one,
+	//   or if there needs to be a curved one then whether to let the incoming edge be straight
 	// gives out a path between the two coordinate pairs in SVG text format
-	visualize_edge: function(from, to, straight) {
+	visualize_edge: function(from_i, to_i, straight) {
+
+		from = this.vis_positions[from_i];
+		to = this.vis_positions[to_i];
 
 		// it is slightly suspicious to call the visualizer for edges
 		// without actually providing an edge that needs to be visualized
@@ -3563,16 +3835,10 @@ if (!this.bwt[k]) {
 			return '';
 		}
 
-		// do not visualize anything if we have already shown this edge
-		if (this.vis_displayed_edges.indexOf(this.vis_checkedge) >= 0) {
-			return '';
-		}
-		this.vis_displayed_edges.push(this.vis_checkedge);
-
 		var strokecolor = this.vis_default_color;
 		var marker = this.vis_marker_arrow;
 
-		if (this.vis_extra_high_edges.indexOf(this.vis_checkedge) >= 0) {
+		if (this.vis_extra_high_edges.indexOf(from_i + '_' + to_i) >= 0) {
 			strokecolor = this.vis_extra_arrow_color;
 			marker += '_extra';
 		}
@@ -3626,50 +3892,83 @@ if (!this.bwt[k]) {
 			} else {
 			// ahh, it is a curved horizontal edge!
 
+				var wide_arc = false;
 				var x_mid = (x_end + x_start) / 2;
-				if (this.vis_cur_alternate > 100) {
-					y_q = y_start + 100;
-					y_start += 25;
 
-					// adjust viewport size
-					if (this.vis_y_end_at < y_start + 40) {
-						this.vis_y_end_at = y_start + 40;
+				if (this.vis_cur_alternate > 100) {
+					y_start += 25;
+					y_q = this.vis_cur_alternate + 75;
+
+					// we are going horizontal, and if we have our own line, then there is something
+					// inside of us that we need to wrap around, so we want to make a wiiide arc!
+					if (Math.abs(this.vis_cur_alternate - y_start) > 30) {
+						//y_q += 70;
+						wide_arc = true;
 					}
+
 				} else {
-					y_q = y_start - 100;
 					y_start -= 25;
+					y_q = this.vis_cur_alternate - 75;
+
+					// we are going horizontal, and if we have our own line, then there is something
+					// inside of us that we need to wrap around, so we want to make a wiiide arc!
+					if (Math.abs(this.vis_cur_alternate - y_start) > 30) {
+						//y_q -= 70;
+						wide_arc = true;
+					}
+
 					if (this.vis_texts_visible) {
 						y_start -= 10;
 					}
-
-					// adjust viewport size
-					if (this.vis_y_start_at > y_start - 40) {
-						this.vis_y_start_at = y_start - 40;
-					}
 				}
+
+				// adjust viewport size
+				if (wide_arc) {
+					this.visualize_adjust_viewport_size((y_start + 3*y_q) / 4);
+				} else {
+					this.visualize_adjust_viewport_size((y_start + y_q) / 2);
+				}
+
 				y_end = y_start;
 
-				// is the edge going forward or backwards?
-				if (x_end > x_start) {
-					x_start += 10;
-					x_end -= 10;
-				} else {
-					x_start -= 10;
-					x_end += 10;
-				}
+				if (wide_arc) {
 
-				sout += '<path d="M' + x_start + ',' + y_start +
-						' Q' + x_mid + ',' + y_q +
-						' ' + x_end + ',' + y_end + '" ';
+					// is the edge going forward or backwards?
+					if (x_end > x_start) {
+						x_start += 3;
+						x_end -= 3;
+					} else {
+						x_start -= 3;
+						x_end += 3;
+					}
+
+					sout += '<path d="M' + x_start + ' ' + y_start +
+							' C' + x_start + ' ' + y_q + ',' +
+							' ' + x_end + ' ' + y_q + ',' +
+							' ' + x_end + ' ' + y_end + '" ';
+				} else {
+
+					// is the edge going forward or backwards?
+					if (x_end > x_start) {
+						x_start += 10;
+						x_end -= 10;
+					} else {
+						x_start -= 10;
+						x_end += 10;
+					}
+
+					sout += '<path d="M' + x_start + ',' + y_start +
+							' Q' + x_mid + ' ' + y_q + ',' +
+							' ' + x_end + ' ' + y_end + '" ';
+				}
 			}
 
 		} else {
 		// this is a very curved edge
-
 			var inverted = false;
 			var copy;
 
-			if (y_start === 100) {
+			if ((y_start === 100) || straight) {
 
 				// well well, this is a very curved edge starting at the main row
 				// as it starts at the main row we handle things a bit differently -
@@ -3900,7 +4199,7 @@ if (!this.bwt[k]) {
 		// insert hashtag character at the beginning of input string
 		// (actually, we are using '^' internally instead of '#', as it has lexicographic
 		// value above all alphabetical characters)
-		str = '^' + ssplit[0];
+		str = this.DK + ssplit[0];
 
 		// graph info appended to h, e.g. in TGA|1,T,2;1,3 the "|1,T,2;1,3" is the graph info
 		var infoblocks = [];
@@ -3994,7 +4293,7 @@ if (!this.bwt[k]) {
 		var h_graph = graph[1];
 
 		// first node: hashtag
-		auto.push({c: '^', p: [], n: [1]});
+		auto.push({c: this.DK, p: [], n: [1]});
 
 		for (var i = 1; i < ha.length - 1; i++) {
 			// add a node for each element of the main row

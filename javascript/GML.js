@@ -79,7 +79,7 @@
 	isAutomatonReverseDeterministic: function(auto);
 	arraysContainSameEls: function(a1, a2);
 	arrayContainsOtherArraysEls: function(a1, a2);
-	generateFfromPrefixesBWTM: function(prefixes, bwt, m);
+	generateFfromBWT: function(bwt);
 	checkAutomatonIsValid: function(auto);
 	computePrefixes: function(auto, spillover_into_auto);
 	workOnAutomatonPrefixes: function(auto, makePrefixSorted, addToSOut, spillover_into_auto);
@@ -898,7 +898,7 @@ window.GML = {
 				sout += 'We now want to do a bit of work on the table, so we add the ' + this.DF + ' vector:';
 			}
 
-			findex[3] = this.generateFfromPrefixesBWTM(findex[0], findex[1], findex[2]);
+			findex[3] = this.generateFfromBWT(findex[1]);
 
 			sout += this.fe_findexToTable(findex, true, true, true);
 
@@ -1146,7 +1146,7 @@ window.GML = {
 			var findex1 = this.getFindexFromAutomaton(auto1, this.bwt_aftersort, flat_merging);
 
 			if (flat_merging) {
-				findex1[3] = this.generateFfromPrefixesBWTM(findex1[0], findex1[1], findex1[2]);
+				findex1[3] = this.generateFfromBWT(findex1[1]);
 			}
 
 			if (this.verbosity > 1) {
@@ -1156,7 +1156,7 @@ window.GML = {
 
 			var findex2 = this.getFindexFromAutomaton(auto2);
 			if (flat_merging) {
-				findex2[3] = this.generateFfromPrefixesBWTM(findex2[0], findex2[1], findex2[2]);
+				findex2[3] = this.generateFfromBWT(findex2[1]);
 			}
 
 			if (this.verbosity > 1) {
@@ -1166,7 +1166,7 @@ window.GML = {
 
 			var findex = this.getFindexFromAutomaton(auto);
 			if (flat_merging) {
-				findex[3] = this.generateFfromPrefixesBWTM(findex[0], findex[1], findex[2]);
+				findex[3] = this.generateFfromBWT(findex[1]);
 			}
 
 			if (this.verbosity > 1) {
@@ -1607,13 +1607,15 @@ window.GML = {
 						}
 						if (i===0) {
 							afterround0have = next_nodes.length;
-							shide += 'After the first round, we are considering ' + afterround0have +
-									 ' node';
-							if (afterround0have !== 1) {
-								shide += 's';
+							if (this.verbosity > 6) {
+								shide += 'After the first round, we are considering ' + afterround0have +
+										 ' node';
+								if (afterround0have !== 1) {
+									shide += 's';
+								}
+								shide += '. This means that we can add so many values to ' +
+										 this.DM + ' in total, including 1s and 0s.' + this.nlnl;
 							}
-							shide += '. This means that we can add so many values to ' +
-									 this.DM + ' in total, including 1s and 0s.' + this.nlnl;
 						}
 					}
 
@@ -1908,9 +1910,7 @@ window.GML = {
 							this.p12[i][0] = this.p12[i][0].replace(this.DS_1_o+this.DK_1_o, '');
 
 							// replace #_1 in BWT with last node of H_1
-							if (this.bwt[i] === this.DK_1_o) {
-								this.bwt[i] = this.lastH1Letter;
-							}
+							this.bwt[i] = this.bwt[i].replace(this.DK_1_o, this.lastH1Letter);
 						}
 					}
 
@@ -1958,7 +1958,7 @@ window.GML = {
 				sout += 'We get:' + this.nlnl;
 			}
 
-			this.f = this.generateFfromPrefixesBWTM(this.p12, this.bwt, this.m);
+			this.f = this.generateFfromBWT(this.bwt);
 
 			var p12_generated = [];
 			for (var i=0; i < this.p12.length; i++) {
@@ -1974,7 +1974,7 @@ window.GML = {
 					this.DF + ' vector ' +
 					'again, which we obtained from the merged graph directly:' + this.nlnl;
 
-			findex[3] = this.generateFfromPrefixesBWTM(findex[0], findex[1], findex[2]);
+			findex[3] = this.generateFfromBWT(findex[1]);
 
 			sout += this.fe_findexToTable(findex, true, true);
 
@@ -5247,39 +5247,23 @@ if (!this.bwt[k]) {
 
 
 
-	// takes in a prefix array, a BWT array and an M bit vector array
-	// gives out the F bit vector array generated from these
-	generateFfromPrefixesBWTM: function(prefixes, bwt, m) {
-
-		// TODO :: this is quite experimental for now, as I don't actually know
-		// if this is how Siren2014 defines the F bit vector... we'll see
+	// takes in a BWT array
+	// gives out the F bit vector array generated from it
+	generateFfromBWT: function(bwt) {
 
 		var f = [];
 
-		// PUSH
-		var orig_p12 = this.p12;
-		this.p12 = prefixes;
-		var orig_bwt = this.bwt;
-		this.bwt = bwt;
-		var orig_m = this.m;
-		this.m = m;
-
 		// generate F
-		for (var i=0; i < prefixes.length; i++) {
+		for (var i=0; i < bwt.length; i++) {
 
 			var newf = '1';
-			var len = this.prevNodes_wo_origin(i).length;
+			var len = bwt[i].split('|').length;
 			for (var j=1; j < len; j++) {
 				newf += '0';
 			}
 
 			f.push(newf);
 		}
-
-		// POP
-		this.p12 = orig_p12;
-		this.bwt = orig_bwt;
-		this.m = orig_m;
 
 		return f;
 	},

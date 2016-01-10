@@ -1886,6 +1886,23 @@ window.GML = {
 						}
 					}
 
+					// if there is some M-value of "#_1" node to add...
+					if (Madd !== '') {
+						// ... then add M-value of "#_1" node to M-value of last node of H_0,
+						// which is right now the "$_1" node ...
+						for (i=0; i < this.p12.length; i++) {
+							if (this.p12[i][0].indexOf(this.DS_1_o) === 0) {
+								// ... but actually this node will be deleted soon, so we need
+								// to check which nodes are preceding this one
+								var prevnodes = this.prevNodes(i);
+								for (var pn=0; pn < prevnodes.length; pn++) {
+									this.m[prevnodes[pn]] += Madd;
+								}
+								break;
+							}
+						}
+					}
+
 					for (i=0; i < this.p12.length; i++) {
 						// take out the "$_1" and "#_1" nodes
 						if ((this.p12[i][0].indexOf(this.DS_1_o) === 0) ||
@@ -1898,14 +1915,6 @@ window.GML = {
 
 						// could be broken because of splicing ;)
 						if (i < this.p12.length) {
-							// if there is some M-value of "#_1" node to add...
-							if (Madd !== '') {
-								// ... then add M-value of "#_1" node to M-value of last node of H_1
-								if (this.p12[i][0].indexOf(this.DS_1_o) === 1) {
-									this.m[i] += Madd;
-								}
-							}
-
 							// replace a "...$_1#_1..." caption with a "......" caption
 							this.p12[i][0] = this.p12[i][0].replace(this.DS_1_o+this.DK_1_o, '');
 

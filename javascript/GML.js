@@ -3322,11 +3322,6 @@ if (!this.bwt[k]) {
 		var further_edges = [];
 		var done_edges = [];
 
-		// put all edges but the first out of the start node on the to-do-list
-		for (var j=1; j < auto[0].n.length; j++) {
-			further_edges.push(0 + '_' + auto[0].n[j]);
-		}
-
 		var auto_to_path = [];
 		var k = 0;
 		auto_to_path[0] = ['mp', k];

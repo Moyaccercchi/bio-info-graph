@@ -1571,7 +1571,6 @@ window.GML = {
 						shide += this.fe_p12ToTableWithHighlights([[firstRedi]], true);
 					}
 
-
 					// 2 - check BWT containing the letter with origin being the same the one of the letter
 					if (this.verbosity > 5) {
 						shide += "We now look through the BWT that has the same origin and " +
@@ -1685,8 +1684,17 @@ window.GML = {
 					}
 
 					if (this.verbosity > 5) {
-						shide += 'These prefixes get added to the original prefix ' + firstRedPrefix +
-								' that we were looking at, producing the following new prefixes:' + this.nlnl;
+						if (replacement_prefixes.length > 1) {
+							shide += 'These prefixes get';
+						} else {
+							shide += 'This prefix gets';
+						}
+						shide += ' added to the original prefix ' + firstRedPrefix +
+								' that we were looking at, producing the following new prefix';
+						if (replacement_prefixes.length > 1) {
+							shide += 'es';
+						}
+						shide += ':' + this.nlnl;
 
 						shide += replacement_prefixes.join(this.nlnl);
 						shide += this.nlnlnl;
@@ -1747,6 +1755,11 @@ window.GML = {
 						if (cur_o === 0) {
 							cur_bwt_aftersort = this.bwt_aftersort;
 						}
+
+						// TODO :: the aftersort generation in here does not really make sense...
+						// but there seems to be a chicken-and-egg problem with making it better:
+						// we would need to have all the prefixes to aftersort them properly,
+						// but we need the aftersort array to actually generate these prefixes o.o
 						if (cur_bwt_aftersort) {
 							var cur_b = this.bwt[firstRedi][0];
 							var cur_before = 0;
@@ -1758,6 +1771,7 @@ window.GML = {
 									// (as the amount of options in the BWT is equal to the
 									// length of F, even though it is not given here)
 									cur_before_offset += 1 - this.bwt[j].split('|').length;
+									// cur_before_offset -= this.m[j].length-1;
 								}
 							}
 
@@ -3167,17 +3181,15 @@ if (!this.bwt[k]) {
 						infoblocks += 'error;';
 					} else {
 						// ... and add this path as new infoblock
-						var from_node = from_n[0] + ':';
-						if (from_node === 'mp:') {
-							from_node = '';
-							from_n[1] += mainpath_offset;
+						var from_node = from_n[0] + ':' + from_n[1];
+						if (from_n[0] === 'mp') {
+							from_node = from_n[1] + mainpath_offset;
 						}
-						var to_node = to_n[0] + ':';
-						if (to_node === 'mp:') {
-							to_node = '';
-							to_n[1] += mainpath_offset;
+						var to_node = to_n[0] + ':' + to_n[1];
+						if (to_n[0] === 'mp') {
+							to_node = to_n[1] + mainpath_offset;
 						}
-						infoblocks += path_name + ',' + from_node + from_n[1] + ',' + path_contains + ',' + to_node + to_n[1] + ';';
+						infoblocks += path_name + ',' + from_node + ',' + path_contains + ',' + to_node + ';';
 					}
 					done_edges.push(further_edges[fp]);
 					further_edges.splice(fp, 1);
@@ -3546,7 +3558,13 @@ if (!this.bwt[k]) {
 							var yoffl = this.visualize_calc_line(firstNode_i, lastNode_i);
 
 							var xoff_start = this.vis_positions[firstNode_i][0];
-							var xoff_end = this.vis_positions[lastNode_i][0];
+							var xoff_end;
+							if (this.vis_positions[lastNode_i]) {
+								xoff_end = this.vis_positions[lastNode_i][0];
+							} else {
+								// this *should* never be necessary, but better be safe than crash
+								xoff_end = xoff_start + 250;
+							}
 
 							var xoff_mid = (xoff_end + xoff_start) / 2;
 							var xoff_width = xoff_end - xoff_start;
@@ -3701,18 +3719,26 @@ if (!this.bwt[k]) {
 
 
 
-
 	// takes in a an automaton index from_i and an automaton index to_i
 	// gives out an offset for nodes and calculates several offsets
 	visualize_calc_line: function(from_i, to_i) {
 
+		from = this.vis_positions[from_i];
+		to = this.vis_positions[to_i];
+
+		// it is slightly suspicious to call the visualizer for edges
+		// without actually providing an edge that needs to be visualized
+		if ((from === undefined) || (to === undefined)) {
+			return '';
+		}
+
+		var from_x = from[0];
+		var from_y = from[1];
+		var to_x = to[0];
+		var to_y = to[1];
+
 		var yoff;   // offset for path starts and ends - small distance from origin
 		var yoffl;  // offset for nodes - large distance from origin
-
-		var from_x = this.vis_positions[from_i][0];
-		var from_y = this.vis_positions[from_i][1];
-		var to_x = this.vis_positions[to_i][0];
-		var to_y = this.vis_positions[to_i][1];
 
 
 		// if we go from the mainpath to the mainpath ...
@@ -4343,7 +4369,7 @@ if (!this.bwt[k]) {
 				return;
 			}
 
-			if (path[2].length === 0) {
+			if (p2.length === 0) {
 				auto[p11].n.push(p31);
 				auto[p31].p.push(p11);
 			} else {
@@ -4871,6 +4897,10 @@ if (!this.bwt[k]) {
 		//           If all this is fulfilled, we can take out the edge
 		//           from B to D and replace it with an edge from A, the
 		//           predecessor of B, to C.
+		//           However, in addition we also have to check that the
+		//           new edge does not already exist - and if it does,
+		//           we just take out the old one, without inserting a
+		//           new one at all. =)
 
 		// check if these are exactly two nodes
 		if (nodesWithSameLabel.length == 2) {
@@ -4910,11 +4940,17 @@ if (!this.bwt[k]) {
 				auto[i].p.splice(auto[i].p.indexOf(nodeL), 1);
 
 				for (var i=0; i < nodesP.length; i++) {
-					// add nodeR to nodeP.n
-					auto[nodesP[i]].n.push(nodeR);
+					// add nodeR to nodeP.n,
+					// if it is not already there due to a previously existing edge
+					if (auto[nodesP[i]].n.indexOf(nodeR) < 0) {
+						auto[nodesP[i]].n.push(nodeR);
+					}
 
-					// add nodeP to nodeR.p
-					auto[nodeR].p.push(nodesP[i]);
+					// add nodeP to nodeR.p,
+					// if it is not already there due to a previously existing edge
+					if (auto[nodeR].p.indexOf(nodesP[i]) < 0) {
+						auto[nodeR].p.push(nodesP[i]);
+					}
 				}
 
 				return true;

@@ -2529,6 +2529,9 @@ if (newM[prevNodes[j]] === '0') {
 				path_namespace = '';
 			}
 
+			// TODO :: achieve this without building an automaton,
+			// just plainly working on the flat XBW table!
+
 			// create an automaton
 			auto = GML.getAutomatonFromFindex(this._publishFindex());
 

@@ -2566,7 +2566,7 @@ if (newM[prevNodes[j]] === '0') {
 					infoblocks = '';
 
 					for (var sx = 0; sx < subXBWs.length; sx++) {
-						var filecontent = subXBWs[sx]._generateGMLfilecontent(mainpath.length, '_'+sx+'_');
+						var filecontent = subXBWs[sx]._generateGMLfilecontent(mainpath.length, sx+'s');
 						mainpath += filecontent[0];
 						infoblocks += filecontent[1];
 					}

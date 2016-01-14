@@ -3110,13 +3110,13 @@ if (!this.bwt[k]) {
 		}
 
 		var infoblocks = '';
-		var fpa, from_n, to_n;
+		var current_edge, from_n, to_n;
 
 		// add direct paths from main row to main row
 		for (var fp=0; fp < further_edges.length; fp++) {
-			fpa = further_edges[fp].split('_');
-			from_n = auto_to_path[fpa[0]];
-			to_n = auto_to_path[fpa[1]];
+			current_edge = further_edges[fp].split('_');
+			from_n = auto_to_path[current_edge[0]];
+			to_n = auto_to_path[current_edge[1]];
 			if (from_n && to_n && (from_n[0] === 'mp') && (to_n[0] === 'mp')) {
 				done_edges.push(further_edges[fp]);
 				further_edges.splice(fp, 1);
@@ -3128,9 +3128,9 @@ if (!this.bwt[k]) {
 
 		// add all other edges to further_edges
 		for (var fp=0; fp < further_edges.length; fp++) {
-			fpa = further_edges[fp].split('_');
-			for (var j=0; j < auto[fpa[1]].n.length; j++) {
-				var newly_proposed_edge = fpa[1] + '_' + auto[fpa[1]].n[j];
+			current_edge = further_edges[fp].split('_');
+			for (var j=0; j < auto[current_edge[1]].n.length; j++) {
+				var newly_proposed_edge = current_edge[1] + '_' + auto[current_edge[1]].n[j];
 				if ((done_edges.indexOf(newly_proposed_edge) < 0) &&
 					(further_edges.indexOf(newly_proposed_edge) < 0)) {
 					further_edges.push(newly_proposed_edge);
@@ -3144,12 +3144,12 @@ if (!this.bwt[k]) {
 		// add non-direct paths from main row to main row
 		while (further_edges.length > 0) {
 			for (var fp=0; fp < further_edges.length; fp++) {
-				fpa = further_edges[fp].split('_');
-				from_n = auto_to_path[fpa[0]];
+				current_edge = further_edges[fp].split('_');
+				from_n = auto_to_path[current_edge[0]];
 
 				// if we find a path starting at a node which we already have in the GML file...
 				if (from_n) {
-					to_n = auto_to_path[fpa[1]];
+					to_n = auto_to_path[current_edge[1]];
 					k = 0;
 					named_path_amount++;
 					path_name = 'p' + path_namespace + named_path_amount;
@@ -3160,16 +3160,16 @@ if (!this.bwt[k]) {
 					// if the automaton is not malformed, then the check for (further_edges.length > 0)
 					// is not really necessary, but better be safe than crash ^^
 					while ((to_n === undefined) && (further_edges.length > 0)) {
-						auto_to_path[fpa[1]] = [path_name, k];
+						auto_to_path[current_edge[1]] = [path_name, k];
 						k++;
-						path_contains += auto[fpa[1]].c;
+						path_contains += auto[current_edge[1]].c;
 						done_edges.push(further_edges[fp]);
 						further_edges.splice(fp, 1);
 						for (var fp2=0; fp2 < further_edges.length; fp2++) {
-							if (further_edges[fp2].split('_')[0] === fpa[1]) {
+							if (further_edges[fp2].split('_')[0] === current_edge[1]) {
 								fp = fp2;
-								fpa = further_edges[fp].split('_');
-								to_n = auto_to_path[fpa[1]];
+								current_edge = further_edges[fp].split('_');
+								to_n = auto_to_path[current_edge[1]];
 								break;
 							}
 						}
@@ -3449,13 +3449,13 @@ if (!this.bwt[k]) {
 
 
 
-		var fpa, from_n, to_n;
+		var current_edge, from_n, to_n;
 
 		// add direct paths from main row to main row
 		for (var fp=0; fp < further_edges.length; fp++) {
-			fpa = further_edges[fp].split('_');
-			from_n = auto_to_path[fpa[0]];
-			to_n = auto_to_path[fpa[1]];
+			current_edge = further_edges[fp].split('_');
+			from_n = auto_to_path[current_edge[0]];
+			to_n = auto_to_path[current_edge[1]];
 			if (from_n && to_n && (from_n[0] === 'mp') && (to_n[0] === 'mp')) {
 				done_edges.push(further_edges[fp]);
 				further_edges.splice(fp, 1);
@@ -3463,19 +3463,19 @@ if (!this.bwt[k]) {
 
 				// just add an edge, but do not add a new node
 
-				this.visualize_calc_line(fpa[0], fpa[1]);
+				this.visualize_calc_line(current_edge[0], current_edge[1]);
 
-				sout += this.visualize_edge(fpa[0], fpa[1], false);
+				sout += this.visualize_edge(current_edge[0], current_edge[1], false);
 			}
 		}
 
 
 
-		// add all other edges to further_edges
+		// add all remaining edges to further_edges
 		for (var fp=0; fp < further_edges.length; fp++) {
-			fpa = further_edges[fp].split('_');
-			for (var j=0; j < auto[fpa[1]].n.length; j++) {
-				var newly_proposed_edge = fpa[1] + '_' + auto[fpa[1]].n[j];
+			current_edge = further_edges[fp].split('_');
+			for (var j=0; j < auto[current_edge[1]].n.length; j++) {
+				var newly_proposed_edge = current_edge[1] + '_' + auto[current_edge[1]].n[j];
 				if ((done_edges.indexOf(newly_proposed_edge) < 0) &&
 					(further_edges.indexOf(newly_proposed_edge) < 0)) {
 					further_edges.push(newly_proposed_edge);
@@ -3491,41 +3491,41 @@ if (!this.bwt[k]) {
 		// add non-direct paths from main row to main row
 		while (further_edges.length > 0) {
 			for (var fp=0; fp < further_edges.length; fp++) {
-				fpa = further_edges[fp].split('_');
-				from_n = auto_to_path[fpa[0]];
+				current_edge = further_edges[fp].split('_');
+				from_n = auto_to_path[current_edge[0]];
 
-				// if we find a path starting at a node which we already have in the GML file...
+				// if we find a path starting at a node which we have already drawn...
 				if (from_n) {
-					to_n = auto_to_path[fpa[1]];
+					to_n = auto_to_path[current_edge[1]];
 					k = 0;
 					named_path_amount++;
 					path_name = 'p' + named_path_amount;
 					// start with node from which the path originates (this node is not itself part
 					// of the path though, and has already been drawn!)
-					var path_contains = [parseInt(fpa[0], 10)];
+					var path_contains = [parseInt(current_edge[0], 10)];
 
 					// ... then we advance from this node forwards until we emerge at another node
 					// which we already have in the file ...
 					// if the automaton is not malformed, then the check for (further_edges.length > 0)
 					// is not really necessary, but better be safe than crash ^^
 					while ((to_n === undefined) && (further_edges.length > 0)) {
-						auto_to_path[fpa[1]] = [path_name, k];
+						auto_to_path[current_edge[1]] = [path_name, k];
 						k++;
-						path_contains.push(parseInt(fpa[1], 10));
+						path_contains.push(parseInt(current_edge[1], 10));
 						done_edges.push(further_edges[fp]);
 						further_edges.splice(fp, 1);
 						for (var fp2=0; fp2 < further_edges.length; fp2++) {
-							if (further_edges[fp2].split('_')[0] === fpa[1]) {
+							if (further_edges[fp2].split('_')[0] === current_edge[1]) {
 								fp = fp2;
-								fpa = further_edges[fp].split('_');
-								to_n = auto_to_path[fpa[1]];
+								current_edge = further_edges[fp].split('_');
+								to_n = auto_to_path[current_edge[1]];
 								break;
 							}
 						}
 					}
 					// add node into which the path leads (this node is not itself part
 					// of the path though, and has already been drawn!)
-					path_contains.push(parseInt(fpa[1], 10));
+					path_contains.push(parseInt(current_edge[1], 10));
 
 					// if the automaton is not malformed, then the check for (to_n === undefined)
 					// is not really necessary, but better be safe than crash ^^

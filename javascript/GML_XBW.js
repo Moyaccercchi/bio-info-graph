@@ -269,11 +269,13 @@ GML.make_xbw_environment = function() {
 			}
 			*/
 
-			if ((c === GML.DK) && (spep.length > 0)) {
+			if ((c === GML.DK) && (spep.length > 0) && (j > 0)) {
 				j--;
-				// just [0, 0], even if we are not in absolute indexing, as there is only one edge
+				// just [0, 0], as there is only one edge
 				// into the end node $ in the previous table
 				spep = [0, 0];
+				c = subXBWs[j]._publishBWT0();
+				spep = subXBWs[j]._lf(spep, c, false, do_rank);
 			}
 
 			return [spep, j];
@@ -328,29 +330,16 @@ GML.make_xbw_environment = function() {
 			i = subXBWs[j]._psi(i, take_edge_no, do_select, do_rank);
 
 			/*
-			if i is $ (considering which indexing method we use!) {
+			if i is $
 				j++
 				set i to #
 			}
 			*/
 
-			if (do_rank) {
-				// we use absolute indexing
-				if (i === 0) {
-					j++;
-					i = nextXBW._publishBWTlenWithF();
-				}
-			} else {
-				// we use BWT-indexing
-				// this rank operation is useless, as we require the start node
-				// to have only one incoming edge anyway
-				// if (rank('1', F, i) === 0) {
-				if (i === 0) {
-					j++;
-					// just the last column, even if we are not in absolute indexing,
-					// as there is only one edge out of the start node # in the next table
-					i = nextXBW._publishBWTlen() - 1;
-				}
+			if ((i === 0) && (j < subXBWs.length-1)) {
+				j++;
+				i = subXBWs[j]._publishBWTlen() - 1;
+				i = subXBWs[j]._psi(i, 0, false, do_rank);
 			}
 
 			return [i, j];
@@ -1145,6 +1134,10 @@ GML.make_xbw_environment = function() {
 			for (var i=0; i < subXBWs.length; i++) {
 				multi_cur_bwt[i] = subXBWs[i]._publishBWTlenWithF()+1;
 			}
+		},
+
+		_publishBWT0: function() {
+			return BWT[0];
 		},
 
 		_publishBWTlen: function() {
@@ -2322,12 +2315,12 @@ if (newM[prevNodes[j]] === '0') {
 
 				sout += '<div>' +
 							'<div class="input-info-container" style="display: inline-block; width: 21%;">' +
-								'<input id="in-string-' + tab + '-xbw-lf" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'lfHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="([0,10];0),G" style="width:100%"></input>' +
+								'<input id="in-string-' + tab + '-xbw-lf" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'lfHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="([0,10];1),#" style="width:100%"></input>' +
 								'<span class="infobtn" onclick="GML_UI.clickOnXBWInfo(event, 1)">Info</span>' +
 							'</div>' +
 							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].lfHTML()" style="width:9%; margin-left:2%;display:inline-block;">LF()</div>' +
 							'<div class="input-info-container" style="display: inline-block; width: 21%; margin-left:2%;">' +
-								'<input id="in-string-' + tab + '-xbw-psi" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'psiHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="(1;1),0" style="width:100%"></input>' +
+								'<input id="in-string-' + tab + '-xbw-psi" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'psiHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="(5;0),0" style="width:100%"></input>' +
 								'<span class="infobtn" onclick="GML_UI.clickOnXBWInfo(event, 2)">Info</span>' +
 							'</div>' +
 							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].psiHTML()" style="width:9%; margin-left:2%;display:inline-block;">&#936;()</div>' +
@@ -2428,7 +2421,7 @@ if (newM[prevNodes[j]] === '0') {
 					'Optionally, you can add two boolean parameters ' +
 					'in the LF() input, e.g. ';
 			if (role === 3) {
-				sout += '([0,10];0),G';
+				sout += '([0,10];1),#';
 			} else {
 				sout += '[7,10],A';
 			}
@@ -2441,7 +2434,7 @@ if (newM[prevNodes[j]] === '0') {
 					'Optionally, you can add two boolean parameters ' +
 					'in the &#936;() input, e.g. ';
 			if (role === 3) {
-				sout += '(1;1)';
+				sout += '(5;0)';
 			} else {
 				sout += '1';
 			}
@@ -2850,7 +2843,7 @@ if (newM[prevNodes[j]] === '0') {
 					}
 
 					outerdiv.innerHTML =
-						subXBWs[sx].generateGraph(highnodes, show_vis_hl);
+						subXBWs[sx].generateGraph();
 
 					outerdiv.childNodes[0].childNodes[2].style.display = prevdispstyle;
 					outerdiv.childNodes[0].childNodes[0].childNodes[0].innerHTML = prevdispcaption;
@@ -2984,6 +2977,8 @@ if (newM[prevNodes[j]] === '0') {
 				res += ';' + (spep[1] + GML.ao) + ')';
 
 				document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML = res;
+
+				this.show_nodes_in_HTML(spep, spep[1]);
 			} else {
 
 				searchfor[0] = searchfor[0].slice(1);
@@ -3001,8 +2996,9 @@ if (newM[prevNodes[j]] === '0') {
 					res = '[' + (spep[0] + GML.ao) + ', ' + (spep[1] + GML.ao) + ']';
 				}
 				document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML = res;
+
+				this.show_nodes_in_HTML(spep);
 			}
-			this.show_nodes_in_HTML(spep);
 		},
 		psiHTML: function() {
 
@@ -3031,12 +3027,13 @@ if (newM[prevNodes[j]] === '0') {
 				document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML = '(' + (abs_next_i[0] + GML.ao) + ';' + (abs_next_i[1] + GML.ao) + ')';
 
 				spep = [[abs_next_i[0], abs_next_i[0]], abs_next_i[1]];
+				this.show_nodes_in_HTML(spep, abs_next_i[1]);
 			} else {
 				document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML = (abs_next_i + GML.ao);
 
 				spep = [abs_next_i, abs_next_i];
+				this.show_nodes_in_HTML(spep);
 			}
-			this.show_nodes_in_HTML(spep);
 		},
 		adjustSearchfor0: function(searchfor0, also_parse_0) {
 

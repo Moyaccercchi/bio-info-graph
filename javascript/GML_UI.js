@@ -425,6 +425,7 @@ window.GML_UI = {
 		'CGCCC|,4,GAC,5;,4,,5;,3,ATG,4 and CAAGCTG|,1,GTTA,5;,5,GA,6',
 		'ACTCCTACTCCAACTA|,9,GTT,13 and ACTACC|,4,ATG,6',
 		'AACTAGGCGCATGTC|,3,CAG,8;,3,GTT,15 and CTTGGC|,3,AGA,6;,2,T,4;,2,CTAT,4;,1,AT,2',
+		'GACGTACCTG|a,2,TAT,6;,a:0,C,a:2 and ACCTG|,1,,5;,1,,3',
 	],
 
 	fuse_tests: [
@@ -554,6 +555,7 @@ window.GML_UI = {
 		'ACTCCTACTCCAACTA|,9,GTT,13 and ACTACC|,4,ATG,6',
 		'GACGTACCTG|p1,1,AGCTTC,5;p2,1,AT,4;p3,5,A,8;p4,5,A,10;p9,p1:1,T,p2:1;p10,p2:1,ACT,p4:0;,p9:0,G,p10:1;,p2:1,,p4:0 and ACCTG',
 		'AAAAGGAGGGATAC and GGATG|,2,A,5',
+		'GACGTACCTG|a,2,TAT,6;,a:0,C,a:2 and ACCTG|,1,,5;,1,,3',
 	],
 
 	invalid_fuse_tests: [
@@ -1502,6 +1504,19 @@ window.GML_UI = {
 		if (input === undefined) {
 			input = 1;
 		}
+
+		// use magic string to determine file type,
+		// or leave file type at pre-determined one if none can be found
+		// (e.g. if the comment is malformed)
+		switch (file_contents[0].slice(1, 4).toLowerCase()) {
+			case 'ffx':
+				this.last_file_was[3] = 'ffx';
+				break;
+			case 'gml':
+				this.last_file_was[3] = 'gml';
+				break;
+		}
+
 		this.file_storage[tab][input] = [this.last_file_was[3], file_contents];
 	},
 

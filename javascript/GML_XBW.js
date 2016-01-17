@@ -2547,7 +2547,7 @@ if (newM[prevNodes[j]] === '0') {
 
 			switch (role) {
 				case 1:
-					source = '>regular_graph' + GML_UI.file_nl;
+					source = '>gml.1 regular_graph' + GML_UI.file_nl;
 
 					var filecontent = this._generateGMLfilecontent();
 					source += filecontent[0];
@@ -2563,7 +2563,7 @@ if (newM[prevNodes[j]] === '0') {
 						mainpath += filecontent[0];
 						infoblocks += filecontent[1];
 					}
-					source = '>fused_graph' + GML_UI.file_nl + mainpath;
+					source = '>gml.1 fused_graph' + GML_UI.file_nl + mainpath;
 					break;
 				default:
 					alert('This XBW environment is not currently performing a role in which it can save its contents.');
@@ -2619,7 +2619,7 @@ if (newM[prevNodes[j]] === '0') {
 
 			switch (role) {
 				case 1:
-					source = '>regular_graph' + GML_UI.file_nl;
+					source = '>ffx.1 regular_graph' + GML_UI.file_nl;
 					source += this._generateFFXfilecontent();
 					break;
 				case 3:
@@ -2627,8 +2627,11 @@ if (newM[prevNodes[j]] === '0') {
 					for (var sx = 0; sx < subXBWs.length; sx++) {
 						if (sx > 0) {
 							source += GML_UI.file_nl;
+							source += '>';
+						} else {
+							source += '>ffx.1 ';
 						}
-						source += '>fused_graph_' + sx + GML_UI.file_nl;
+						source += 'fused_graph_' + sx + GML_UI.file_nl;
 						source += subXBWs[sx]._generateFFXfilecontent();
 					}
 					break;

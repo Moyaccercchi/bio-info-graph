@@ -66,7 +66,7 @@
 	graphToAutomaton: function(graph);
 	sanitizeAutomaton: function(auto);
 	eliminateMultipleEdgesInAutomaton: function(auto);
-	checkAutomatonForLoops: function(auto);
+	checkAutomatonForCycles: function(auto);
 	mergeAutomata: function(auto1, auto2);
 	invertAutomaton: function(auto);
 	makeAutomatonReverseDeterministic: function(auto, addToSOut);
@@ -2466,8 +2466,8 @@ window.GML = {
 				// compare the two automata
 				sout += 'We now check whether the two automata are equivalent. ';
 
-				this.checkAutomatonForLoops(our_auto);
-				this.checkAutomatonForLoops(off_auto);
+				this.checkAutomatonForCycles(our_auto);
+				this.checkAutomatonForCycles(off_auto);
 
 				if (this.automataAreEquivalent(our_auto, off_auto)) {
 					// EPIC WIN
@@ -4415,7 +4415,7 @@ if (!this.bwt[k]) {
 
 		this.eliminateMultipleEdgesInAutomaton(auto);
 
-		this.checkAutomatonForLoops(auto);
+		this.checkAutomatonForCycles(auto);
 
 		this.checkAutomatonForIncorrectChars(auto);
 	},
@@ -4465,7 +4465,7 @@ if (!this.bwt[k]) {
 	// takes in an automaton
 	// gives out nothing, but sets the GML-wide error_flag to true if the
 	//   automaton contains at least one loop or cycle
-	checkAutomatonForLoops: function(auto) {
+	checkAutomatonForCycles: function(auto) {
 
 		var paths = [[0]];
 
@@ -5050,8 +5050,8 @@ if (!this.bwt[k]) {
 	automataAreEquivalent: function(auto1, auto2) {
 
 		this.error_flag = false;
-		this.checkAutomatonForLoops(auto1);
-		this.checkAutomatonForLoops(auto2);
+		this.checkAutomatonForCycles(auto1);
+		this.checkAutomatonForCycles(auto2);
 
 		// abort if we have infinite loops
 		if (this.error_flag) {

@@ -1394,7 +1394,7 @@ window.GML_UI = {
 			source += '\\begin{table}[htb]' + this.file_nl;
 			source += '\\centering' + this.file_nl;
 			source += '\\caption[GML table]{This is a table from GML.}' + this.file_nl;
-			source += '\\begin{tabularx}{1.0\\textwidth}{ ';
+			source += '\\begin{tabular}{ ';
 			
 			// iterate over the cells in the first row and define that many columns in the LaTeX table
 			var rowlen = tbody.children[0].children.length;
@@ -1428,14 +1428,14 @@ window.GML_UI = {
 				}
 			}
 
-			source += '\\end{tabularx}' + this.file_nl;
+			source += '\\end{tabular}' + this.file_nl;
 			source += '\\label{table:gml_table}' + this.file_nl;
 			source += '\\end{table}';
 		}
 
 		// replace some HTML commands with some LaTeX commands which do essentially the same =)
 		source = source.split('$').join('\\$');
-		source = source.split('#').join('\\textbf{\\#}');
+		source = source.split('#').join('$\\#$');
 		source = source.split('\\textbf{<i>i</i>}').join('$\\boldsymbol{i}$');
 		source = source.split('\\textbf{<i>M</i>}').join('$\\boldsymbol{M}$');
 		source = source.split('\\textbf{<i>F</i>}').join('$\\boldsymbol{F}$');
@@ -1443,9 +1443,9 @@ window.GML_UI = {
 		source = source.split('</i>').join('$');
 		source = source.split('First&nbsp;Column').join('FC');
 		source = source.split('&nbsp;').join('~');
-		source = source.split('\\textbf{\\#}<span class="d">0</span>').join('$\\boldsymbol{\\#}_0$');
+		source = source.split('$\\#$<span class="d">0</span>').join('$\\#_0$');
 		source = source.split('\\$<span class="d">0</span>').join('$\\$_0$');
-		source = source.split('$\\$_0$$\\boldsymbol{\\#}_0$').join('$\\$_0\\boldsymbol{\\#}_0$');
+		source = source.split('$\\$_0$$\\#_0$').join('$\\$_0\\#_0$');
 
 		var url = "data:text/plain,"+encodeURIComponent(source);
 

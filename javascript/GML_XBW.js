@@ -368,6 +368,36 @@ GML.make_xbw_environment = function() {
 
 	function find(P) {
 
+		if (role === 3) {
+			// we are the host environment
+
+			var speps = [];
+
+			for (var sx=0; sx < subXBWs.length; sx++) {
+
+				var add_this_spep = true;
+
+				var spep = [[0, subXBWs[sx]._publishBWTlen() - 1], sx];
+				var i = P.length;
+
+				while (i--) {
+					spep = lf(spep, P[i], true, i > 0);
+
+					if ((spep[0].length < 1) || (spep[0][1] < spep[0][0])) {
+						// break out of this while loop and abandon the search in this subtable
+						i = 0;
+						add_this_spep = false;
+					}
+				}
+
+				if (add_this_spep) {
+					speps.push(spep);
+				}
+			}
+
+			return speps;
+		}
+
 		var spep = [0, BWT.length - 1];
 		var i = P.length;
 
@@ -758,7 +788,7 @@ GML.make_xbw_environment = function() {
 				cur_pref = this._publishPrefix(i, true, undefined, true);
 				console.log(cur_pref);
 
-				// EMRGEMRG :: we here need not check for S0K0 in cur_pref, right?
+				// TODO :: we here need not check for S0K0 in cur_pref, right?
 				// I mean, it is ALWAYS there, the question is just how early...
 				// (so is this just a NOT-IN-POS-0 check? and would it be sad to also
 				// allow it being in pos 0?)
@@ -1144,7 +1174,7 @@ GML.make_xbw_environment = function() {
 			return BWT.length;
 		},
 
-		// TODO EMRG :: store this, instead of recalculating again and again =)
+		// TODO :: store this, instead of recalculating again and again =)
 		_publishBWTlenWithF: function() {
 			return rank('1', F, BWT.length-1);
 		},
@@ -1922,12 +1952,6 @@ sout += '<br>' +
 		// split the node in flat table sn_i
 		_splitNode: function(sn_i) {
 
-// () console.log('_splitNode:');
-
-// EMRG aftersort
-// console.log('aftersort before:');
-// console.log(GML.deep_copy_array(aftersort));
-
 			// Thinking about the node table, here is what we want to do:
 			// 1. Take the node and copy it for each 0 in its M node.
 			//    (Here we basically copy the entire node as it is: BWT, FiC, M, F.)
@@ -2005,19 +2029,10 @@ sout += '<br>' +
 				// insert into BWT and F at the same time
 				var newBWT = BWT.slice(0, Floc1+1);
 				var newF = F.slice(0, Floc1+1);
-// () console.log('newBWT start: ' + newBWT);
-// () console.log('  newF start: ' + newF);
-				// see [_splitNode with 2 in and 3 out] for the reason why these funky formulas are necessary
-				// (in a nutshell, when we split a node with 2 ins and 3 outs, then we want to splice the
-				// prevNode results into each other)
+				
 				for (var i=1; i < Mnum; i++) {
-// () console.log('newBWT for this run: ' + BWT[Floc1+foff]);
-// () console.log('  newF for this run: ' + F[Floc1+foff]);
 					newBWT += BWT[Floc1+foff];
 					newF += F[Floc1+foff];
-
-// () console.log('newBWT for prev run: ' + BWT.slice(Floc1+(i*j), Floc1+(i*j)+j).split('').reverse().join(''));
-// () console.log('  newF for prev run: ' + F.slice(Floc1+(i*j), Floc1+(i*j)+j).split('').reverse().join(''));
 
 					// we here reverse because looking at
 					// TACGAAACGACAGTTCCTTATA|,1,A,4;,1,TTA,17;,18,A,21;,15,GAG,17 and ACT
@@ -2025,37 +2040,10 @@ sout += '<br>' +
 					// TODO :: this works for splitting nodes with an indegree of up to 3, but does it work for more?
 					newBWT += BWT.slice(Floc1+(i*j), Floc1+(i*j)+j).split('').reverse().join('');
 					newF += F.slice(Floc1+(i*j), Floc1+(i*j)+j).split('').reverse().join('');
-
-/*
-console.log('newBWT for prev run: ' + BWT.slice(Floc1+(i*j), Floc1+(i*j)+j));
-
-					newBWT += BWT.slice(Floc1+(i*j), Floc1+(i*j)+j);
-
-// overwrite for _splitNode with 3 in and 2 out
-if (j === prevNodes.length-1) {
-	var extraF = F.slice(Floc1+(i*j), Floc1+(i*j)+j);
-	var eflen = extraF.length;
-	if (eflen > 0) {
-		extraF = '';
-		for (var ef=0; ef < eflen-1; ef++) {
-			extraF += '0';
-		}
-		extraF += '1';
-	}
-console.log('  newF for prev run override: ' + extraF);
-	newF += extraF;
-} else {
-console.log('  newF for prev run: ' + F.slice(Floc1+(i*j), Floc1+(i*j)+j));
-	newF += F.slice(Floc1+(i*j), Floc1+(i*j)+j);
-}
-//					newF += F.slice(Floc1+(i*j), Floc1+(i*j)+j);
-*/
 				}
-// () console.log('newBWT end: ' + BWT.slice(Floc1+1+((Mnum-1)*j)));
-// () console.log('  newF end: ' + F.slice(Floc1+1+((Mnum-1)*j)));
+				
 				newBWT += BWT.slice(Floc1+1+((Mnum-1)*j));
 				newF += F.slice(Floc1+1+((Mnum-1)*j));
-
 
 				for (var k=j+1; k < prevNodes.length; k++) {
 					if (prevNodes[k] > prevNodes[j]) {
@@ -2078,83 +2066,44 @@ console.log('  newF for prev run: ' + F.slice(Floc1+(i*j), Floc1+(i*j)+j));
 					}
 					newM += M.slice(Mloc2);
 
+					// TODO :: try to update the aftersort array
+					// => this seems to have no effect either way...
 
-
-// EMRG try to update the aftersort array
-// => this seems to have no effect either way...
-
-/**/
-for (var afs=0; afs < aftersort.length; afs++) {
-	if ((aftersort[afs] !== undefined) && (aftersort[afs] > Mloc)) {
-		aftersort[afs] += Mnum-1;
-	}
-}
-for (var afs=1; afs < Mnum; afs++) {
-	var am = aftersort[Mloc];
-	if (am !== undefined) {
-		am += afs;
-	}
-	aftersort.splice(Mloc+afs-1, 0, am);
-}
-/**/
-
+					for (var afs=0; afs < aftersort.length; afs++) {
+						if ((aftersort[afs] !== undefined) && (aftersort[afs] > Mloc)) {
+							aftersort[afs] += Mnum-1;
+						}
+					}
+					for (var afs=1; afs < Mnum; afs++) {
+						var am = aftersort[Mloc];
+						if (am !== undefined) {
+							am += afs;
+						}
+						aftersort.splice(Mloc+afs-1, 0, am);
+					}
 
 				} else {
 					newM = M;
 				}
 
-/**/
-
 				// 3. Add as many zeroes to the M of the preceding node as nodes were copied.
 
-/*
-// emrg: actually check for Mnum
-if (newM[prevNodes[j]] === '0') {
-	console.log('blubb');
-	var newMn = newM.slice(0, prevNodes[j]+1);
-	for (var i=1; i < Mnum; i++) {
-		newMn += '1';
-	}
-	newMn += newM.slice(prevNodes[j]+1);
-
-} else {
-*/
 				var newMn = newM.slice(0, prevNodes[j]+1);
 				for (var i=1; i < Mnum; i++) {
 					newMn += '0';
 				}
 				newMn += newM.slice(prevNodes[j]+1);
 
-/*
-				var newMn = M.slice(0, prevNodes[j]+1);
-				for (var i=1; i < Mnum; i++) {
-					newMn += '0';
-				}
-				newMn += M.slice(prevNodes[j]+1);
-
-				var newM = newMn.slice(0,Mloc1);
-				for (var i=Mloc1; i < Mloc2; i++) {
-					newM += '1';
-				}
-				newM += newMn.slice(Mloc2);
-				newMn = newM;
-/**/
-
 				// actually update BWT, M and F explicitly
 
 				BWT = newBWT;
 				M = newMn;
 				F = newF;
-/*}*/
 
 			}
 
 			// TODO :: apply directly to char, ord etc., so that no recalculation is necessary
 			recalculate(true);
-
-// EMRG aftersort
-// console.log('aftersort after:');
-// console.log(GML.deep_copy_array(aftersort));
 
 		},
 
@@ -2306,7 +2255,7 @@ if (newM[prevNodes[j]] === '0') {
 
 				sout += '<div>' +
 							'<input id="in-string-' + tab + '-xbw-find" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'findHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="AC" style="display: inline-block; width: 21%;"></input>' +
-							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].findHTML()" style="background-color:#A55;width:9%; margin-left:2%;display:inline-block;">find()</div>' +
+							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].findHTML()" style="width:9%; margin-left:2%;display:inline-block;">find()</div>' +
 							'<input id="in-string-' + tab + '-xbw-pref" class="up" onkeypress="GML_UI.in_func = [' + "'XBW', 'prefHTML'" + ']; GML_UI.inputEnter(event);" type="text" value="(2;0)" style="display: inline-block; width: 21%; margin-left:2%;"></input>' +
 							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].prefHTML()" style="background-color:#A55;width:9%; margin-left:2%;display:inline-block;">prefix()</div>' +
 							'<div class="button" onclick="GML.XBWs[GML_UI.cur_tab].splitNodeHTML()" style="float:right; width:9%; margin-left:2%;">split node()</div>' +
@@ -2872,17 +2821,32 @@ if (newM[prevNodes[j]] === '0') {
 		},
 		findHTML: function() {
 
-			if (role === 3) {
-				alert('This function has not yet been implemented for fused graphs!');
-				return;
-			}
-
 			var searchfor = document.getElementById('in-string-' + GML_UI.cur_tab + '-xbw-find').value;
 
 			// replace '#' with '^' before calculations
 			searchfor = searchfor.toUpperCase().replace(/\#/g, '^');
 
 			var spep = find(searchfor);
+
+			if (role === 3) {
+
+				var res = '[';
+				for (var i=0; i < spep.length; i++) {
+					res += '([' + (spep[i][0][0] + GML.ao) + ', ' + (spep[i][0][1] + GML.ao) + ']; ' + spep[i][1] + '), ';
+				}
+				if (res.length > 1) {
+					res = res.slice(0, -2);
+				}
+				res += ']';
+
+				document.getElementById('span-' + GML_UI.cur_tab + '-xbw-results').innerHTML = res;
+
+				// TODO :: add actual visualization of these results - currently we are just
+				// clearing the output ^^
+				this.show_spep_in_HTML([], ['i', 'char'], undefined, undefined, true);
+
+				return;
+			}
 
 			var res = '[]';
 			if (spep.length > 0) {
@@ -3186,11 +3150,16 @@ if (newM[prevNodes[j]] === '0') {
 
 			if (role === 3) {
 
-				var highnodes = subXBWs[spep[1]].show_spep_in_HTML(
-					spep[0], highrows, override_last_row, override_with, show_vis_hl, spep[1]);
+				if (spep.length > 0) {
+					var highnodes = subXBWs[spep[1]].show_spep_in_HTML(
+						spep[0], highrows, override_last_row, override_with, show_vis_hl, spep[1]);
 
-				this.refreshAllSubTablesExcept(spep[1]);
-				this.refreshAllSubGraphsExcept(spep[1], highnodes, show_vis_hl);
+					this.refreshAllSubTablesExcept(spep[1]);
+					this.refreshAllSubGraphsExcept(spep[1], highnodes, show_vis_hl);
+				} else {
+					this.refreshAllSubTablesExcept(-1);
+					this.refreshAllSubGraphsExcept(-1);
+				}
 
 				return;
 			}

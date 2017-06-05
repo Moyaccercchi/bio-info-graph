@@ -1144,7 +1144,8 @@ window.GML = {
 
 			this.bwt_aftersort = {};
 			var findex1 = this.getFindexFromAutomaton(auto1, this.bwt_aftersort, flat_merging);
-
+console.log('BWT aftersort:');
+console.log(this.bwt_aftersort);
 			if (flat_merging) {
 				findex1[3] = this.generateFfromBWT(findex1[1]);
 			}
@@ -2680,10 +2681,10 @@ window.GML = {
 		// and jump over as many as necessary
 		for (var k=0; k < this.p12.length; k++) {
 
-// EMRG
-if (!this.bwt[k]) {
-	return nodes_found;
-}
+			// the next three lines were originally added as hotfix-code, but seem to work quite well...
+			if (!this.bwt[k]) {
+				return nodes_found;
+			}
 
 			if ((this.p12_itlv[k] === curOrigin) && (this.bwt[k].indexOf(label) > -1)) {
 				// still jumping...
@@ -6155,10 +6156,10 @@ if (!this.bwt[k]) {
 				// has the label $ - if we do not reach such a node, then we may break if we
 				// cannot go on, but do not report that the main row works =)
 
-// EMRG
-if (!auto[nextNode]) {
-	return;
-}
+				// the next three lines were originally added as hotfix-code, but seem to work quite well...
+				if (!auto[nextNode]) {
+					return;
+				}
 
 				if (auto[nextNode].n.length === 0) {
 					if (auto[nextNode].c === this.DS) {

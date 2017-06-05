@@ -18,8 +18,8 @@ window.GML_UI = {
 		// default to default options ;)
 		this.resetOptions();
 
-		// default to tab 5
-		this.showTab(5);
+		// default to tab 2
+		this.showTab(2);
 	},
 
 

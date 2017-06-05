@@ -1144,8 +1144,10 @@ window.GML = {
 
 			this.bwt_aftersort = {};
 			var findex1 = this.getFindexFromAutomaton(auto1, this.bwt_aftersort, flat_merging);
-console.log('BWT aftersort:');
-console.log(this.bwt_aftersort);
+
+			// console.log('BWT aftersort:');
+			// console.log(this.bwt_aftersort);
+			
 			if (flat_merging) {
 				findex1[3] = this.generateFfromBWT(findex1[1]);
 			}
